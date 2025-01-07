@@ -31,12 +31,3 @@ jobs:
 
       - name: Run linters and tests with tox
         run: tox -e ci
-
-      - name: Verify coverage xml report
-        run: ls -la coverage.xml
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: coverage.xml
