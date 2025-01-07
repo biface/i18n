@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "i18n-tools"
 version = "0.0.1"
 authors = [
-    {name="biface"}
+    { name = "biface" }
 ]
 description = "Toolbox to manage localized messages with json and gettext functions."
 readme = "README.md"
@@ -24,11 +24,11 @@ dependencies = [
 ]
 
 # Gestion des tests
-
 [project.optional-dependencies]
 test = [
     "pytest",
     "coverage",
+    "pytest-cov",
     "flake8",
     "pylint",
     "black",
@@ -36,21 +36,8 @@ test = [
     "bandit"
 ]
 
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203", "W503"]
-
-[tool.pylint]
-disable = ["C0114", "C0116"]
-
-[tool.black]
-line-length = 88
-
-[tool.isort]
-profile = "black"
-
 [tool.tox]
-envlist = ["py310", "local", "ci"]
+envlist = ["lint", "format", "pytest", "security", "local", "ci"]
 
 # Définition des environnements
 [testenv]
@@ -63,16 +50,46 @@ deps = [
     "bandit"
 ]
 
+[testenv.lint]
+description = "Lint the code"
+deps = [
+    "flake8"
+]
 commands = [
-    "flake8 src tests --format=default --statistics --show-source --count -v",
-    "pylint src tests -v",
+    "flake8 src tests --format=default --statistics --show-source --count -v"
+]
+
+[testenv.format]
+description = "Check code formatting"
+deps = [
+    "black",
+    "isort"
+]
+commands = [
     "black --check src tests -v",
-    "isort --check-only src tests -v",
+    "isort --check-only src tests -v"
+]
+
+[testenv.pytest]
+description = "Run tests without coverage"
+deps = [
+    "pytest"
+]
+commands = [
+    "pytest {posargs} -v"
+]
+
+[testenv.security]
+description = "Run security checks"
+deps = [
+    "bandit"
+]
+commands = [
     "bandit -r src -v"
 ]
 
 [testenv.local]
-descirption = "Setting up tests in local mode with a single environment"
+description = "Run all checks locally without coverage"
 deps = [
     "pytest",
     "flake8",
@@ -81,10 +98,15 @@ deps = [
     "isort",
     "bandit"
 ]
-commands="pytest {posargs} -v"
+commands = [
+    "tox -e lint",
+    "tox -e format",
+    "tox -e pytest",
+    "tox -e security"
+]
 
 [testenv.ci]
-descirption = "Setting up tests in local mode with muliple environment on repository"
+description = "Run all checks on CI with coverage"
 deps = [
     "pytest",
     "pytest-cov",
@@ -95,7 +117,11 @@ deps = [
     "isort",
     "bandit"
 ]
-commands= [
-    "coverage run -m pytest {posargs:tests} --cov=src/<package_01> --cov-report=xml -v",
+commands = [
+    "flake8 src tests --format=default --statistics --show-source --count -v",
+    "black --check src tests -v",
+    "isort --check-only src tests -v",
+    "bandit -r src -v",
+    "coverage run -m pytest --cov=src/i18n_tools --cov-report=xml -v",
     "coverage xml"
 ]
