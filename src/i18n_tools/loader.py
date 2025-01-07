@@ -18,28 +18,63 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
         path /= sub_dir
     return str(path.resolve())
 
-def load_config(file_path: str) -> Optional[dict]:
+def _load_config_file(config_path: Path) -> dict:
     """
-    Load configuration data from a file.
+    Helper function to load the configuration file based on its extension.
 
-    Supports JSON, YAML, and TOML formats.
-
-    :param file_path: Path to the configuration file.
-    :return: A dictionary containing the configuration data, or None if the file does not exist.
+    :param config_path: Path to the configuration file.
+    :raises ValueError: If the file format is unsupported.
+    :raises Exception: For errors during loading.
+    :return: The configuration content as a dictionary.
     """
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Configuration file not found: {file_path}")
+    [file_extension] = Path(config_path).suffixes
 
-    ext = os.path.splitext(file_path)[-1].lower()
-    with open(file_path, 'r', encoding='utf-8') as f:
-        if ext == '.json':
-            return json.load(f)
-        elif ext in {'.yaml', '.yml'}:
-            return yaml.safe_load(f)
-        elif ext == '.toml':
-            return toml.load(f)
-        else:
-            raise ValueError(f"Unsupported file format: {ext}")
+    try:
+        with open(config_path, 'r', encoding='utf-8') as file:
+            if file_extension == '.yaml':
+                return yaml.safe_load(file)
+            elif file_extension == '.toml':
+                return toml.load(file)
+            elif file_extension == '.json':
+                return json.load(file)
+            else:
+                raise ValueError(f"Unsupported configuration file format: {file_extension}")
+    except Exception as e:
+        raise Exception(f"Error loading configuration file: {config_path}. {e}")
+
+
+def load_config(config_path: str = None) -> dict:
+    """
+    Load the configuration file (YAML, TOML, or JSON) from the application directories
+    (not from the package i18n-tools) and return its contents as a dictionary.
+
+    :param config_path: Optional path to the configuration file. If None, it searches for it in the root of the application.
+    :raises FileNotFoundError: If no configuration file is found in the application directories.
+    :raises ValueError: If the file format is unsupported.
+    :raises Exception: For other errors during loading.
+    """
+    # Si le chemin de configuration est fourni, utiliser ce chemin
+    if config_path:
+        if not Path(config_path).exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        return _load_config_file(config_path)
+
+    # Sinon, rechercher dans les répertoires applicatifs (racine et répertoires locaux)
+    search_dirs = [
+        Path.cwd(),  # Répertoire racine de l'application
+        Path.cwd() / "locales"  # Sous-répertoire locales de l'application
+    ]
+
+    possible_files = ['i18n-tools.yaml', 'i18n-tools.toml', 'i18n-tools.json']
+
+    # Recherche dans les répertoires définis
+    for directory in search_dirs:
+        for file_name in possible_files:
+            config_file_path = directory / file_name
+            if config_file_path.exists():
+                return _load_config_file(config_file_path)
+
+    raise FileNotFoundError("No configuration file found in the application directories (root or locales).")
 
 def save_config(file_path: str, data: dict) -> None:
     """
@@ -50,13 +85,14 @@ def save_config(file_path: str, data: dict) -> None:
     :param file_path: Path to the configuration file.
     :param data: The dictionary containing configuration data.
     """
+
     ext = os.path.splitext(file_path)[-1].lower()
-    with open(file_path, 'w', encoding='utf-8') as f:
+    with open(file_path, 'w', encoding='utf-8') as cf:
         if ext == '.json':
-            json.dump(data, f, indent=4)
+            json.dump(data, cf, indent=4)
         elif ext in {'.yaml', '.yml'}:
-            yaml.safe_dump(data, f, default_flow_style=False)
+            yaml.safe_dump(data, cf, default_flow_style=False)
         elif ext == '.toml':
-            toml.dump(data, f)
+            toml.dump(data, cf)
         else:
             raise ValueError(f"Unsupported file format: {ext}")
