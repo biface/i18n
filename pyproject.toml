@@ -1,0 +1,98 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "i18n-tools"
+version = "0.0.1"
+authors = [
+    {name="biface"}
+]
+description = "Toolbox to manage localized messages with json and gettext functions."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Developers",
+    "License :: CeCILL-C Free Software License Agreement (CECILL-C)",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "ndict-tools>=0.6.0"
+]
+
+# Gestion des tests
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "coverage",
+    "flake8",
+    "pylint",
+    "black",
+    "isort",
+    "bandit"
+]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+
+[tool.pylint]
+disable = ["C0114", "C0116"]
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.tox]
+envlist = ["py310", "local", "ci"]
+
+# Définition des environnements
+[testenv]
+deps = [
+    "pytest",
+    "flake8",
+    "pylint",
+    "black",
+    "isort",
+    "bandit"
+]
+
+commands = [
+    "flake8 src tests --format=default --statistics --show-source --count -v",
+    "pylint src tests -v",
+    "black --check src tests -v",
+    "isort --check-only src tests -v",
+    "bandit -r src -v"
+]
+
+[testenv.local]
+descirption = "Setting up tests in local mode with a single environment"
+deps = [
+    "pytest",
+    "flake8",
+    "pylint",
+    "black",
+    "isort",
+    "bandit"
+]
+commands="pytest {posargs} -v"
+
+[testenv.ci]
+descirption = "Setting up tests in local mode with muliple environment on repository"
+deps = [
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "flake8",
+    "pylint",
+    "black",
+    "isort",
+    "bandit"
+]
+commands="coverage run -m pytest {posargs:tests} --cov=src/<package_01> --cov-report=xml"
