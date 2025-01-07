@@ -95,4 +95,4 @@ deps = [
     "isort",
     "bandit"
 ]
-commands="coverage run -m pytest {posargs:tests} --cov=src/<package_01> --cov-report=xml"
+commands="coverage run -m pytest {posargs:tests} --cov=src/<package_01> --cov-report=xml -v"
