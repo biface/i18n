@@ -1,2 +1,12 @@
-PyYAML==6.0.2
+bandit==1.8.0
+black==24.10.0
+colorama==0.4.6
+flake8==7.1.1
+mypy==1.14.1
+ndict-tools==0.6.0
+pipdeptree==2.24.0
+pylint==3.3.3
+pytest==8.3.4
+setuptools==75.7.0
 toml==0.10.2
+wheel==0.45.1
