@@ -1,0 +1,14 @@
+{
+    "languages": {
+        "source": "fr-FR",
+        "target": ["fr-FR", "en-US"],
+        "fallback": "fr"
+    },
+    "paths": {
+        "application": ["tests", "test/locales"]
+    },
+    "domains": {
+        "package": ["core"],
+        "application": ["test","custom"]
+    }
+}
