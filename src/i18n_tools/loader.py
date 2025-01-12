@@ -1,9 +1,33 @@
-import os
+"""
+loaders.py
+==========
+
+This module handles the file operations necessary for internationalization
+(i18n) tools. It focuses on loading and saving configuration files and
+managing `.pot` files for translation projects.
+
+**Key Features:**
+    - Load and save configuration files in YAML, TOML, or JSON formats.
+    - Search for configuration files in application directories.
+    - Load and save `.pot` files, including metadata headers and translation
+  entries.
+
+**License:**
+This file is distributed under the `CeCILL-C Free Software License Agreement
+<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
+modifying this file, you agree to abide by the terms of this license.
+
+**Author(s):**
+This module is authored and maintained as part of the i18n-tools package.
+"""
+
 import json
-import yaml
-import toml
-from typing import Union, Optional
+import os
 from pathlib import Path
+
+import toml
+import yaml
+
 
 def build_path(base_path: str, *sub_dirs: str) -> str:
     """
@@ -18,6 +42,7 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
         path /= sub_dir
     return str(path.resolve())
 
+
 def _load_config_file(config_path: Path) -> dict:
     """
     Helper function to load the configuration file based on its extension.
@@ -30,15 +55,17 @@ def _load_config_file(config_path: Path) -> dict:
     [file_extension] = Path(config_path).suffixes
 
     try:
-        with open(config_path, 'r', encoding='utf-8') as file:
-            if file_extension == '.yaml':
+        with open(config_path, "r", encoding="utf-8") as file:
+            if file_extension == ".yaml":
                 return yaml.safe_load(file)
-            elif file_extension == '.toml':
+            elif file_extension == ".toml":
                 return toml.load(file)
-            elif file_extension == '.json':
+            elif file_extension == ".json":
                 return json.load(file)
             else:
-                raise ValueError(f"Unsupported configuration file format: {file_extension}")
+                raise ValueError(
+                    f"Unsupported configuration file format: {file_extension}"
+                )
     except Exception as e:
         raise Exception(f"Error loading configuration file: {config_path}. {e}")
 
@@ -48,7 +75,8 @@ def load_config(config_path: str = None) -> dict:
     Load the configuration file (YAML, TOML, or JSON) from the application directories
     (not from the package i18n-tools) and return its contents as a dictionary.
 
-    :param config_path: Optional path to the configuration file. If None, it searches for it in the root of the application.
+    :param config_path: Optional path to the configuration file. If None, it searches
+    for it in the root of the application.
     :raises FileNotFoundError: If no configuration file is found in the application directories.
     :raises ValueError: If the file format is unsupported.
     :raises Exception: For other errors during loading.
@@ -62,10 +90,10 @@ def load_config(config_path: str = None) -> dict:
     # Sinon, rechercher dans les répertoires applicatifs (racine et répertoires locaux)
     search_dirs = [
         Path.cwd(),  # Répertoire racine de l'application
-        Path.cwd() / "locales"  # Sous-répertoire locales de l'application
+        Path.cwd() / "locales",  # Sous-répertoire locales de l'application
     ]
 
-    possible_files = ['i18n-tools.yaml', 'i18n-tools.toml', 'i18n-tools.json']
+    possible_files = ["i18n-tools.yaml", "i18n-tools.toml", "i18n-tools.json"]
 
     # Recherche dans les répertoires définis
     for directory in search_dirs:
@@ -74,7 +102,10 @@ def load_config(config_path: str = None) -> dict:
             if config_file_path.exists():
                 return _load_config_file(config_file_path)
 
-    raise FileNotFoundError("No configuration file found in the application directories (root or locales).")
+    raise FileNotFoundError(
+        "No configuration file found in the application directories (root or locales)."
+    )
+
 
 def save_config(file_path: str, data: dict) -> None:
     """
@@ -87,12 +118,12 @@ def save_config(file_path: str, data: dict) -> None:
     """
 
     ext = os.path.splitext(file_path)[-1].lower()
-    with open(file_path, 'w', encoding='utf-8') as cf:
-        if ext == '.json':
+    with open(file_path, "w", encoding="utf-8") as cf:
+        if ext == ".json":
             json.dump(data, cf, indent=4)
-        elif ext in {'.yaml', '.yml'}:
+        elif ext in {".yaml", ".yml"}:
             yaml.safe_dump(data, cf, default_flow_style=False)
-        elif ext == '.toml':
+        elif ext == ".toml":
             toml.dump(data, cf)
         else:
             raise ValueError(f"Unsupported file format: {ext}")
