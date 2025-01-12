@@ -1,3 +1,4 @@
+# Build systeme
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -22,6 +23,11 @@ classifiers = [
 dependencies = [
     "ndict-tools>=0.6.0"
 ]
+
+[project.urls]
+Homepage = "https://github.com/biface/ndt"
+Repository = "https://github.com/biface/ndt.git"
+Issues = "https://github.com/biface/ndt/issues"
 
 [project.optional-dependencies]
 test = [
@@ -55,6 +61,7 @@ deps = [
     "flake8"
 ]
 commands = [
+    "echo running lint tests",
     "flake8 src tests --format=default --statistics --show-source --count -v"
 ]
 
@@ -65,6 +72,7 @@ deps = [
     "isort"
 ]
 commands = [
+    "echo Checking code formatting",
     "black --check src tests -v",
     "isort --check-only src tests -v"
 ]
@@ -75,6 +83,7 @@ deps = [
     "pytest"
 ]
 commands = [
+    "echo Running tests with pytest",
     "pytest {posargs} -v"
 ]
 
@@ -84,6 +93,7 @@ deps = [
     "bandit"
 ]
 commands = [
+    "echo Performing security checks",
     "bandit -r src -v"
 ]
 
@@ -98,6 +108,7 @@ deps = [
     "bandit"
 ]
 commands = [
+    "echo Reunning sequence locally... >&2",
     "tox -e lint",
     "tox -e format",
     "tox -e pytest",
@@ -121,6 +132,6 @@ commands = [
     "black --check src tests -v",
     "isort --check-only src tests -v",
     "bandit -r src -v",
-    "coverage run -m pytest --cov=src/i18n_tools --cov-report=xml -v",
+    "coverage run -m pytest --cov=src/ndict_tools --cov-report=xml -v",
     "coverage xml"
 ]
