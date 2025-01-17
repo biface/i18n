@@ -38,4 +38,8 @@ jobs:
       run: rm -f coverage && mkdir coverage
 
     - name: Run gh-ci-check environment with tox
-      run: tox -e gh-ci
+      run: tox -e gh-
+
+    - name: Show test results
+      if: failure()
+      run: cat coverage/coverage.xml
