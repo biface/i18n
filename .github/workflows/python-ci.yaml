@@ -31,5 +31,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
 
+    - name: Clean coverage directory
+      run: rm -f coverage && mkdir coverage
+
     - name: Run gh-ci-check environment with tox
       run: tox -e gh-ci
