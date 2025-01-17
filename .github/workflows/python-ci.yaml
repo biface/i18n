@@ -31,22 +31,5 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
 
-    - name: Print Python version
-      run: python --version
-
-    - name: Print installed packages
-      run: pip list
-
-    - name: Create coverage directory
-      run: mkdir -p coverage
-
     - name: Run gh-ci-check environment with tox
-      run: tox -e gh-ci
-
-    - name: Show pytest results
-      if: always()
-      run: cat .tox/gh-ci/log/gh-ci-0.log
-
-    - name: Show coverage.xml content
-      if: always()
-      run: cat coverage/coverage.xml
+      run: tox -e ci
