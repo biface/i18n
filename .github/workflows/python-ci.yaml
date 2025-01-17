@@ -40,6 +40,10 @@ jobs:
     - name: Run gh-ci-check environment with tox
       run: tox -e gh-ci
 
-    - name: Show test results
-      if: failure()
+    - name: Show coverage.xml content
+      if: always()
       run: cat coverage/coverage.xml
+
+    - name: Show pytest results
+      if: always()
+      run: cat tests/.pytest_cache/v/cache/lastfailed
