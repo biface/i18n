@@ -31,6 +31,9 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
 
+    - name: Print installed packages
+      run: pip list
+
     - name: Clean coverage directory
       run: rm -f coverage && mkdir coverage
 
