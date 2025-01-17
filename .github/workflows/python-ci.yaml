@@ -2,9 +2,9 @@ name: Python CI
 
 on:
   push:
-    branches: # Cela inclut toutes les branches
+    branches:
       - "**"
-  pull_request: # Optionnel, pour exécuter également sur les PR
+  pull_request:
     branches:
       - "**"
 
@@ -31,19 +31,37 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
 
+    - name: Print Python version
+      run: python --version
+
     - name: Print installed packages
       run: pip list
 
-    - name: Clean coverage directory
-      run: rm -f coverage && mkdir coverage
+    - name: Create coverage directory
+      run: mkdir -p coverage
 
     - name: Run gh-ci-check environment with tox
       run: tox -e gh-ci
+
+    - name: Show pytest cache content
+      if: always()
+      run: |
+        if [ -d tests/.pytest_cache ]; then
+          echo "pytest cache directory exists"
+          ls -R tests/.pytest_cache
+        else
+          echo "pytest cache directory does not exist"
+        fi
 
     - name: Show coverage.xml content
       if: always()
       run: cat coverage/coverage.xml
 
-    - name: Show pytest results
+    - name: Show pytest last failed results
       if: always()
-      run: cat tests/.pytest_cache/v/cache/lastfailed
+      run: |
+        if [ -f tests/.pytest_cache/v/cache/lastfailed ]; then
+          cat tests/.pytest_cache/v/cache/lastfailed
+        else
+          echo "No last failed tests recorded"
+        fi
