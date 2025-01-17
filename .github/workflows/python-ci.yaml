@@ -32,4 +32,4 @@ jobs:
         pip install tox
 
     - name: Run gh-ci-check environment with tox
-      run: tox -e gh-ci-check
+      run: tox -e gh-ci
