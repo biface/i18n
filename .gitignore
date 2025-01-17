@@ -62,7 +62,8 @@ nosetests.xml
 coverage.xml 
 *.cover 
 .hypothesis/
-tests/coverage
+tests/coverage/
+coverage/
 
 
 # Jupyter Notebook 
