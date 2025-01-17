@@ -43,25 +43,10 @@ jobs:
     - name: Run gh-ci-check environment with tox
       run: tox -e gh-ci
 
-    - name: Show pytest cache content
+    - name: Show pytest results
       if: always()
-      run: |
-        if [ -d tests/.pytest_cache ]; then
-          echo "pytest cache directory exists"
-          ls -R tests/.pytest_cache
-        else
-          echo "pytest cache directory does not exist"
-        fi
+      run: cat .tox/gh-ci/log/gh-ci-0.log
 
     - name: Show coverage.xml content
       if: always()
       run: cat coverage/coverage.xml
-
-    - name: Show pytest last failed results
-      if: always()
-      run: |
-        if [ -f tests/.pytest_cache/v/cache/lastfailed ]; then
-          cat tests/.pytest_cache/v/cache/lastfailed
-        else
-          echo "No last failed tests recorded"
-        fi
