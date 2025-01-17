@@ -18,12 +18,14 @@ modifying this file, you agree to abide by the terms of this license.
 **Author(s):**
 This module is authored and maintained as part of the i18n-tools package.
 """
-from typing import Union, Any, Optional
+
+from typing import Any, Optional, Union
 from uuid import uuid4
 
 from ndict_tools import NestedDictionary, NestedDictionaryException
 
 from i18n_tools import package_path
+
 from .classes import Singleton
 from .loader import build_path, load_config, save_config
 
@@ -148,7 +150,9 @@ class Config(metaclass=Singleton):
             else:
                 raise ValueError("Path must be a non-empty string the attribute.")
         elif not isinstance(path, list) or len(path) == 0:
-            raise ValueError("Path must be a non-empty string or list representing the attribute or nested key.")
+            raise ValueError(
+                "Path must be a non-empty list or list representing the attribute or nested key."
+            )
 
         attr_name = path[0]
         if not hasattr(self, attr_name):
@@ -200,7 +204,9 @@ class Config(metaclass=Singleton):
                 # Re-raise any ndict-tools specific exception directly
                 raise e
 
-    def add_author(self, first_name: str, last_name: str, email: str, url: str, languages: list):
+    def add_author(
+        self, first_name: str, last_name: str, email: str, url: str, languages: list
+    ):
         """
         Add a new author to the authors dictionary.
 

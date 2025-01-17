@@ -27,6 +27,7 @@ def is_valid_language_tag(tag: str) -> bool:
     """
     return langcodes.tag_is_valid(tag)
 
+
 def normalize_language_tag(tag: str) -> str:
     """
     Normalize a language tag to a standard format.

@@ -143,20 +143,29 @@ def test_config_save_with_temp_file(tmp_path):
     config.set(["setup", "paths", "config"],"")
     with pytest.raises(ValueError):
         config.save()
-    config.set(["setup", "paths", "config"],temp_data[3])
+
+def test_config_set_with_key_controls():
+    config.set("details", {"name": "A configuration for life", "description": "This or nothing"})
+    assert config.get(["details", "name"]) == "A configuration for life"
+    assert config.get(["details", "description"]) == "This or nothing"
+    with pytest.raises(KeyError):
+        config.set("details", {"name": "A configuration for life", "descriptions": "This or nothing"})
 
 def test_config_unknown_file():
     config.setup[["paths", "config"]] = "o18n-tools.yaml"
     with pytest.raises(FileNotFoundError):
         config.load()
+    config.set(["setup", "paths", "config"],temp_data[3])
+
 
 def test_config_set_errors():
     with pytest.raises(ValueError):
         config.set("", {})
         config.set((1,2),{})
-        config.set([], {})
+        config.set([], "Path must be specified")
         config.set({'key':1}, {})
     with pytest.raises(KeyError):
         config.set("unknown", {})
     with pytest.raises(TypeError):
         config.set("details", "string")
+        config.set(["details", "name"], ["A test for life"])

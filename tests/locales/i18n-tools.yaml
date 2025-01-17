@@ -1,17 +1,25 @@
-languages:
-  source: fr-FR
-  target:
-    - fr-FR
-    - en-US
-  fallback: fr
-
-paths:
-  application:
-    - "tests", "test/locals"
-
-domains:
-  package:
-    - "core"
-  application:
-    - "test", "custom"
-
+setup:
+  paths:
+    application:
+      - app/locales
+  languages:
+    source: en
+    hierarchy:
+      fr: [ "fr-FR", "fr-BE", "fr-CA" ]
+      en: [ "en-IE", "en-US", "en-GB" ]
+    fallback: fr
+  domains:
+    package: [ domain1 ]
+    application: [ domain2, domain3 ]
+details:
+  name: "Configuration test file"
+  description: "This is a temporary configuration test file"
+authors:
+  123e4567-e89b-12d3-a456-426614174000:
+    first_name: "John"
+    last_name: "Doe"
+    email: "john.doe@example.com"
+    url: "https://johndoe.com"
+    languages:
+      - "en-US"
+      - "fr-CA"
