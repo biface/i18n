@@ -40,6 +40,7 @@ def normalize_language_tag(tag: str) -> str:
 
     return langcodes.standardize_tag(tag)
 
+
 def validate_and_normalize_language_tags(tags: list[str]) -> list[str]:
     """
     Validate and normalize a list of language tags.

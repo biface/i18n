@@ -19,10 +19,13 @@ modifying this file, you agree to abide by the terms of this license.
 This module is authored and maintained as part of the i18n-tools package.
 """
 
+from datetime import datetime
 from typing import Any, Optional, Union
-from uuid import uuid4, UUID
+from uuid import UUID, uuid4
 
-from email_validator import validate_email, EmailNotValidError
+import requests
+import validators
+from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
 from i18n_tools import package_path
@@ -111,7 +114,6 @@ class Config(metaclass=Singleton):
             author_data["email"]: author_id
             for author_id, author_data in self.authors.items()
         }
-
 
     def save(self) -> None:
         """
@@ -237,20 +239,24 @@ class Config(metaclass=Singleton):
             existing_uuid = self._email_index[email]
             raise KeyError(
                 f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
-                           )
+            )
 
         author_id = str(uuid4())
-        self.authors[author_id] = NestedDictionary({
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": email,
-            "url": url,
-            "languages": normalized_languages,
-        }, indent=2, strict=True)
+        self.authors[author_id] = NestedDictionary(
+            {
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "url": url,
+                "languages": normalized_languages,
+            },
+            indent=2,
+            strict=True,
+        )
 
         self._email_index[email] = author_id
 
-    def get_author(self, index:str) -> Optional[dict]:
+    def get_author(self, index: str) -> Optional[dict]:
         """
         Retrieve an author's details by UUID or email.
 
@@ -328,6 +334,139 @@ class Config(metaclass=Singleton):
         # If no match found, return False
         return False
 
+    def add_translator(
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: Optional[str] = None,
+        cost_per_translation: Optional[float] = None,
+        request_limit: Optional[int] = None,
+        key_expiration: Optional[str] = None,
+        priority: Optional[int] = None,
+        success_rate: Optional[float] = None,
+        max_text_size: Optional[int] = None,
+        payment_plan: Optional[str] = None,
+    ):
+        """
+        Add a new translator to the configuration, organized in nested dictionaries under technical.
+
+        :param name: The name of the translator.
+        :param url: The URL for the translator's API.
+        :param status: The status of the translator, either 'free' or 'license'.
+        :param api_key: The API key for the translator's service.
+        :param supported_languages: List of supported languages by the translator.
+        :param translation_type: Type of content the translator is best for (e.g., "general", "technical").
+        :param cost_per_translation: Cost per translation (if applicable).
+        :param request_limit: Limit on the number of requests per day or month.
+        :param key_expiration: Expiration date of the API key (string, format "YYYY-MM-DD").
+        :param priority: The priority of the translator (for sorting purposes).
+        :param success_rate: Estimated success rate of translations (as a percentage).
+        :param max_text_size: Maximum size of text for translation (in characters).
+        :param payment_plan: The payment plan for licensed translators (e.g., "monthly", "annual").
+        """
+
+        # 1. Validation de l'URL
+        if not validators.url(url):
+            raise ValueError(f"L'URL '{url}' n'est pas valide.")
+
+        # Vérification de l'accessibilité de l'URL
+        try:
+            response = requests.get(url, timeout=5)
+            if response.status_code != 200:
+                raise ValueError(
+                    f"L'URL '{url}' est accessible, mais a retourné un code d'erreur {response.status_code}."
+                )
+        except requests.exceptions.RequestException as e:
+            raise ValueError(f"L'URL '{url}' n'est pas accessible. Erreur : {e}")
+
+        # 2. Validation de la date d'expiration de la clé API
+        if key_expiration:
+            try:
+                expiration_date = datetime.strptime(key_expiration, "%Y-%m-%d")
+                if expiration_date < datetime.now():
+                    raise ValueError(
+                        f"La date d'expiration '{key_expiration}' est dans le passé."
+                    )
+            except ValueError:
+                raise ValueError(
+                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'."
+                )
+
+        # 3. Ajout du traducteur
+        if name in self.setup["translators"]:
+            raise KeyError(f"Translator '{name}' already exists.")
+
+        translator_data = {
+            "details": {
+                "name": name,
+                "url": url,
+                "status": status,
+            },
+            "technical": {
+                "api": {
+                    "key": api_key,
+                    "key_expiration": key_expiration,
+                    "request_limit": request_limit,
+                },
+                "performance": {
+                    "max_text_size": max_text_size,
+                    "priority": priority,
+                    "success_rate": success_rate,
+                },
+            },
+            "pricing": {
+                "cost_per_translation": cost_per_translation,
+                "payment_plan": payment_plan,
+            },
+        }
+
+        # Ajout du traducteur au dictionnaire
+        self.setup["translators"][name] = NestedDictionary(
+            translator_data, indent=2, strict=True
+        )
+
+    def get_translator(self, name: str) -> NestedDictionary:
+        """
+        Retrieve the details of a translator by name.
+
+        :param name: The name of the translator.
+        :return: The translator's details as a dictionary, or None if not found.
+        """
+        return self.get(["setup", "translators", name])
+
+    def list_translators(self) -> list:
+        """
+        List all the translators currently in the configuration.
+
+        :return: A list of translator names.
+        """
+        return list(self.setup["translators"].keys())
+
+    def remove_translator(self, name: str) -> bool:
+        """
+        Remove a translator from the setup['translators'] dictionary by its ID.
+
+        :param name: The unique ID of the translator to remove.
+        :return: True if the translator was successfully removed, False if not found.
+        """
+        # Access the translators dictionary
+        translators = self.setup["translators"]
+
+        if name in translators:
+            # Remove the translator
+            translators.pop(name)
+
+            # Ensure the translators dictionary remains a valid empty dictionary if no translators remain
+            if not translators:
+                self.setup["translators"] = NestedDictionary({}, indent=2, strict=True)
+
+            return True
+
+        return False
+
     def __repr__(self):
         """
         Returns a string representation of the Config object.
@@ -336,8 +475,9 @@ class Config(metaclass=Singleton):
         """
         return (
             f"<Config("
-            f"paths={{'config': '{self.setup['paths', 'config']}', 'package': '{self.setup['paths', 'package']}', "
-            f"'application': {self.setup['paths', 'application']}}}, "
+            f"paths={{'config': '{self.get(['setup','paths', 'config'])}', "
+            f"'package': '{self.get(['setup','paths', 'package'])}', "
+            f"'application': {self.get(['setup','paths', 'application'])}}}, "
             f"languages={{'source': '{self.setup['languages', 'source']}', "
             f"'fallback': '{self.setup['languages', 'fallback']}', "
             f"'hierarchy': {self.setup['languages', 'hierarchy']}}}, "
