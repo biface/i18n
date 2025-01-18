@@ -39,3 +39,18 @@ def normalize_language_tag(tag: str) -> str:
         raise ValueError(f"Invalid language tag: {tag}")
 
     return langcodes.standardize_tag(tag)
+
+def validate_and_normalize_language_tags(tags: list[str]) -> list[str]:
+    """
+    Validate and normalize a list of language tags.
+
+    :param tags: A list of IETF language tags to validate and normalize.
+    :return: A list of normalized language tags.
+    :raises ValueError: If any language tag is invalid.
+    """
+    normalized_tags = []
+    for tag in tags:
+        if not is_valid_language_tag(tag):
+            raise ValueError(f"Invalid language tag: {tag}")
+        normalized_tags.append(normalize_language_tag(tag))
+    return normalized_tags

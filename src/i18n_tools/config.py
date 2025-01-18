@@ -20,14 +20,16 @@ This module is authored and maintained as part of the i18n-tools package.
 """
 
 from typing import Any, Optional, Union
-from uuid import uuid4
+from uuid import uuid4, UUID
 
-from ndict_tools import NestedDictionary, NestedDictionaryException
+from email_validator import validate_email, EmailNotValidError
+from ndict_tools import NestedDictionary
 
 from i18n_tools import package_path
 
 from .classes import Singleton
 from .loader import build_path, load_config, save_config
+from .locale import validate_and_normalize_language_tags
 
 
 class Config(metaclass=Singleton):
@@ -83,6 +85,7 @@ class Config(metaclass=Singleton):
         )
 
         self.authors = NestedDictionary({}, indent=2, strict=True)  # Author details
+        self._email_index = NestedDictionary({}, indent=2, strict=True)
 
     def load(self):
         """
@@ -102,6 +105,13 @@ class Config(metaclass=Singleton):
 
         # Load authors
         self.authors.update(config.get("authors", {}))
+
+        # Rebuild email index
+        self._email_index = {
+            author_data["email"]: author_id
+            for author_id, author_data in self.authors.items()
+        }
+
 
     def save(self) -> None:
         """
@@ -216,14 +226,107 @@ class Config(metaclass=Singleton):
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
         """
+        try:
+            validate_email(email)
+        except EmailNotValidError as e:
+            raise e
+
+        normalized_languages = validate_and_normalize_language_tags(languages)
+
+        if email in self._email_index:
+            existing_uuid = self._email_index[email]
+            raise KeyError(
+                f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
+                           )
+
         author_id = str(uuid4())
-        self.authors[author_id] = {
+        self.authors[author_id] = NestedDictionary({
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
             "url": url,
-            "languages": languages,
-        }
+            "languages": normalized_languages,
+        }, indent=2, strict=True)
+
+        self._email_index[email] = author_id
+
+    def get_author(self, index:str) -> Optional[dict]:
+        """
+        Retrieve an author's details by UUID or email.
+
+        :param index: The index to search by, either a UUID or an email address.
+        :type index: str
+        :return: The author's details as a dictionary, or None if not found.
+        :rtype: dict
+        :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
+        """
+        # Check if the input is a valid UUID
+        try:
+            uuid_obj = UUID(index)
+            if index in self.authors:
+                return self.get(["authors", index])
+            else:
+                raise KeyError(
+                    f"Index '{index}' does not exist in the authors dictionary."
+                )  # UUID not found
+        except ValueError:
+            # Not a valid UUID, proceed to check for email
+            pass
+
+        # Validate the email format
+        try:
+            validate_email(index)  # Throws EmailNotValidError if invalid
+        except EmailNotValidError as e:
+            raise ValueError(f"Invalid email format: {e}")
+
+        # Search by email in the email index
+        author_id = self._email_index.get(index)
+        if author_id:
+            return self.get(["authors", author_id])
+
+        # If the email doesn't exist, return None
+        return None
+
+    def remove_author(self, index: str) -> bool:
+        """
+        Remove an author from the configuration by UUID or email.
+
+        :param index: The index to search by, either a UUID or an email address.
+        :return: True if the author was successfully removed, False if not found.
+        :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
+        """
+        # Check if the input is a valid UUID
+        try:
+            uuid_obj = UUID(index)
+            # Remove by UUID if it exists
+            if index in self.authors:
+                # Remove the author
+                author = self.authors.pop(index)
+                # Remove from the email index
+                self._email_index.pop(author["email"], None)
+                return True
+            else:
+                return False  # UUID not found
+        except ValueError:
+            # Not a valid UUID, proceed to check for email
+            pass
+
+        # Validate the email format
+        try:
+            validate_email(index)  # Throws EmailNotValidError if invalid
+        except EmailNotValidError as e:
+            raise ValueError(f"Invalid email format: {e}")
+
+        # Search by email in the email index
+        author_id = self._email_index.get(index)
+        if author_id:
+            # Remove the author and the email index entry
+            self.authors.pop(author_id, None)
+            self._email_index.pop(index, None)
+            return True
+
+        # If no match found, return False
+        return False
 
     def __repr__(self):
         """
