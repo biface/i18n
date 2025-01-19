@@ -23,13 +23,12 @@ from datetime import datetime
 from typing import Any, Optional, Union
 from uuid import UUID, uuid4
 
-import requests
-import validators
 from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
 from i18n_tools import package_path
 
+from .api import validate_api_url
 from .classes import Singleton
 from .loader import build_path, load_config, save_config
 from .locale import validate_and_normalize_language_tags
@@ -63,7 +62,10 @@ class Config(metaclass=Singleton):
                     "package": build_path(
                         package_path, "locales"
                     ),  # Use the loader's build_path function
-                    "application": [],
+                    "application": {
+                        "base": "",
+                        "modules": []
+                    },
                 },
                 "domains": {
                     "package": [],  # List of domains in the package
@@ -217,7 +219,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -335,20 +337,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -368,62 +370,53 @@ class Config(metaclass=Singleton):
         :param payment_plan: The payment plan for licensed translators (e.g., "monthly", "annual").
         """
 
-        # 1. Validation de l'URL
-        if not validators.url(url):
-            raise ValueError(f"L'URL '{url}' n'est pas valide.")
+        # Validation de l'URL
+        validation_result = validate_api_url(url)
+        if validation_result["error"]:
+            raise ValueError(validation_result["error"])
 
-        # Vérification de l'accessibilité de l'URL
-        try:
-            response = requests.get(url, timeout=5)
-            if response.status_code != 200:
-                raise ValueError(
-                    f"L'URL '{url}' est accessible, mais a retourné un code d'erreur {response.status_code}."
-                )
-        except requests.exceptions.RequestException as e:
-            raise ValueError(f"L'URL '{url}' n'est pas accessible. Erreur : {e}")
-
-        # 2. Validation de la date d'expiration de la clé API
+        # 1. Validation de la date d'expiration de la clé API
         if key_expiration:
             try:
                 expiration_date = datetime.strptime(key_expiration, "%Y-%m-%d")
                 if expiration_date < datetime.now():
-                    raise ValueError(
-                        f"La date d'expiration '{key_expiration}' est dans le passé."
-                    )
+                    raise ValueError(f"La date d'expiration '{key_expiration}' est dans le passé.")
             except ValueError:
                 raise ValueError(
-                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'."
-                )
+                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'.")
 
-        # 3. Ajout du traducteur
-        if name in self.setup["translators"]:
-            raise KeyError(f"Translator '{name}' already exists.")
-
+        # 2. Initialisation de toutes les clés du traducteur, même si elles sont vides
         translator_data = {
             "details": {
                 "name": name,
                 "url": url,
                 "status": status,
+                "translation_type": translation_type if translation_type is not None else "",
             },
             "technical": {
                 "api": {
-                    "key": api_key,
-                    "key_expiration": key_expiration,
-                    "request_limit": request_limit,
+                    "key": api_key if api_key else "",
+                    "key_expiration": key_expiration if key_expiration else "",
+                    "request_limit": request_limit if request_limit is not None else 0,
+                    "supported_languages": supported_languages if supported_languages else [],
                 },
                 "performance": {
-                    "max_text_size": max_text_size,
-                    "priority": priority,
-                    "success_rate": success_rate,
+                    "max_text_size": max_text_size if max_text_size is not None else 0,
+                    "priority": priority if priority is not None else 0,
+                    "success_rate": success_rate if success_rate is not None else 0.0,
                 },
             },
             "pricing": {
-                "cost_per_translation": cost_per_translation,
-                "payment_plan": payment_plan,
+                "cost_per_translation": cost_per_translation if cost_per_translation is not None else 0.0,
+                "payment_plan": payment_plan if payment_plan else "",
             },
         }
 
-        # Ajout du traducteur au dictionnaire
+        # 3. Vérification de l'existence du traducteur
+        if name in self.setup["translators"]:
+            raise KeyError(f"Le traducteur '{name}' existe déjà.")
+
+        # 4. Ajout du traducteur au dictionnaire
         self.setup["translators"][name] = NestedDictionary(
             translator_data, indent=2, strict=True
         )
@@ -444,6 +437,59 @@ class Config(metaclass=Singleton):
         :return: A list of translator names.
         """
         return list(self.setup["translators"].keys())
+
+    def update_translator(self, name: str, updates: dict) -> None:
+        """
+        Update an existing translator's details while ensuring the structure remains valid.
+
+        :param name: The name of the translator to update.
+        :param updates: A dictionary containing the updated data.
+        :raises KeyError: If the translator does not exist.
+        :raises ValueError: If the updates contain invalid keys or structure.
+        """
+        # Check if the translator exists
+        if name not in self.setup["translators"]:
+            raise KeyError(f"Translator '{name}' does not exist.")
+
+        # Fetch the existing translator's data
+        existing_translator = self.setup["translators"][name]
+
+        # Recursive function to validate the updates against the existing structure
+        def validate_structure(expected: dict, actual: dict, path: str = ""):
+            for key, value in actual.items():
+                full_path = f"{path}.{key}" if path else key
+
+                if key not in expected:
+                    raise ValueError(f"Invalid key '{full_path}' in updates.")
+
+                # Check for nested dictionaries
+                if isinstance(expected[key], dict):
+                    if not isinstance(value, dict):
+                        raise ValueError(
+                            f"Expected a dictionary for '{full_path}', but got '{type(value).__name__}'."
+                        )
+                    # Recursive validation
+                    validate_structure(expected[key], value, full_path)
+
+                # Ensure type matches for non-dict values
+                elif not isinstance(value, type(expected[key])):
+                    raise ValueError(
+                        f"Type mismatch for '{full_path}': "
+                        f"expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
+                    )
+
+        # Validate updates against the existing translator structure
+        validate_structure(existing_translator, updates)
+
+        # Apply the updates
+        def apply_updates(target: dict, source: dict):
+            for key, value in source.items():
+                if isinstance(value, dict):
+                    apply_updates(target[key], value)
+                else:
+                    target[key] = value
+
+        apply_updates(existing_translator, updates)
 
     def remove_translator(self, name: str) -> bool:
         """
@@ -475,9 +521,9 @@ class Config(metaclass=Singleton):
         """
         return (
             f"<Config("
-            f"paths={{'config': '{self.get(['setup','paths', 'config'])}', "
-            f"'package': '{self.get(['setup','paths', 'package'])}', "
-            f"'application': {self.get(['setup','paths', 'application'])}}}, "
+            f"paths={{'config': '{self.get(['setup', 'paths', 'config'])}', "
+            f"'package': '{self.get(['setup', 'paths', 'package'])}', "
+            f"'application': {self.get(['setup', 'paths', 'application'])}}}, "
             f"languages={{'source': '{self.setup['languages', 'source']}', "
             f"'fallback': '{self.setup['languages', 'fallback']}', "
             f"'hierarchy': {self.setup['languages', 'hierarchy']}}}, "
