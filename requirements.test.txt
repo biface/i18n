@@ -1,3 +1,7 @@
-ndict-tools==0.6.0
+email-validator=2.2.0
+langcodes==3.5.0
 PyYAML==6.0.2
+ndict-tools==0.6.0
+requests==2.32.3
 toml==0.10.2
+validators==0.34.0
