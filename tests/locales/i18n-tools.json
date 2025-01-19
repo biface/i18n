@@ -1,50 +1,80 @@
 {
-  "setup": {
-    "paths": {
-      "application": [
-        "app/locales"
-      ]
+    "setup": {
+        "paths": {
+            "application": {
+                "base": "",
+                "modules": [
+                    "mod-1/locales",
+                    "mod-2/pkg-1/locales",
+                    "mod-2/pkk-2/locales"
+                ]
+            }
+        },
+        "domains": {
+            "package": [
+                "messages"
+            ],
+            "application": [
+                "information",
+                "errors"
+            ]
+        },
+        "languages": {
+            "source": "en",
+            "hierarchy": {
+                "fr": [
+                    "fr-FR",
+                    "fr-BE",
+                    "fr-CA"
+                ],
+                "en": [
+                    "en-IE",
+                    "en-US",
+                    "en-GB"
+                ]
+            },
+            "fallback": "fr"
+        },
+        "translators": {
+            "GoogleTranslate": {
+                "details": {
+                    "name": "GoogleTranslate",
+                    "url": "https://translate.google.com",
+                    "status": "free"
+                },
+                "technical": {
+                    "api": {
+                        "key": "your_api_key",
+                        "key_expiration": "2025-12-31",
+                        "request_limit": 10000
+                    },
+                    "performance": {
+                        "max_text_size": 5000,
+                        "priority": 1,
+                        "success_rate": 99.5
+                    }
+                },
+                "pricing": {
+                    "cost_per_translation": null,
+                    "payment_plan": null
+                }
+            }
+        }
     },
-    "languages": {
-      "source": "en",
-      "hierarchy": {
-        "fr": [
-          "fr-FR",
-          "fr-BE",
-          "fr-CA"
-        ],
-        "en": [
-          "en-IE",
-          "en-US",
-          "en-GB"
-        ]
-      },
-      "fallback": "fr"
+    "details": {
+        "name": "Configuration test file",
+        "description": "This is a temporary configuration test file"
     },
-    "domains": {
-      "package": [
-        "domain1"
-      ],
-      "application": [
-        "domain2",
-        "domain3"
-      ]
+    "authors": {
+        "123e4567-e89b-12d3-a456-426614174000": {
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john.doe@example.com",
+            "url": "https://johndoe.com",
+            "languages": [
+                "en-US",
+                "fr-CA"
+            ]
+        }
     }
-  },
-  "details": {
-    "name": "Configuration test file",
-    "description": "This is a temporary configuration test file"
-  },
-  "authors": {
-    "123e4567-e89b-12d3-a456-426614174000": {
-      "first_name": "John",
-      "last_name": "Doe",
-      "email": "john.doe@example.com",
-      "url": "https://johndoe.com",
-      "languages": [
-        "en-US",
-        "fr-CA"
-      ]
-    }
-  }
 }

@@ -1,25 +1,58 @@
-setup:
-  paths:
-    application:
-      - app/locales
-  languages:
-    source: en
-    hierarchy:
-      fr: [ "fr-FR", "fr-BE", "fr-CA" ]
-      en: [ "en-IE", "en-US", "en-GB" ]
-    fallback: fr
-  domains:
-    package: [ domain1 ]
-    application: [ domain2, domain3 ]
-details:
-  name: "Configuration test file"
-  description: "This is a temporary configuration test file"
 authors:
   123e4567-e89b-12d3-a456-426614174000:
-    first_name: "John"
-    last_name: "Doe"
-    email: "john.doe@example.com"
-    url: "https://johndoe.com"
+    email: john.doe@example.com
+    first_name: John
     languages:
-      - "en-US"
-      - "fr-CA"
+    - en-US
+    - fr-CA
+    last_name: Doe
+    url: https://johndoe.com
+details:
+  description: This is a temporary configuration test file
+  name: Configuration test file
+setup:
+  domains:
+    application:
+    - information
+    - errors
+    package:
+    - messages
+  languages:
+    fallback: fr
+    hierarchy:
+      en:
+      - en-IE
+      - en-US
+      - en-GB
+      fr:
+      - fr-FR
+      - fr-BE
+      - fr-CA
+    source: en
+  paths:
+    application:
+      base: ''
+      modules:
+      - mod-1/locales
+      - mod-2/pkg-1/locales
+      - mod-2/pkk-2/locales
+    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools.yaml
+    package: /home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales
+  translators:
+    GoogleTranslate:
+      details:
+        name: GoogleTranslate
+        status: free
+        url: https://translate.google.com
+      pricing:
+        cost_per_translation: null
+        payment_plan: null
+      technical:
+        api:
+          key: your_api_key
+          key_expiration: '2025-12-31'
+          request_limit: 10000
+        performance:
+          max_text_size: 5000
+          priority: 1
+          success_rate: 99.5
