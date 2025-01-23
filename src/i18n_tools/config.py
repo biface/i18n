@@ -62,10 +62,7 @@ class Config(metaclass=Singleton):
                     "package": build_path(
                         package_path, "locales"
                     ),  # Use the loader's build_path function
-                    "application": {
-                        "base": "",
-                        "modules": []
-                    },
+                    "application": {"base": "", "modules": []},
                 },
                 "domains": {
                     "package": [],  # List of domains in the package
@@ -219,7 +216,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-            self, first_name: str, last_name: str, email: str, url: str, languages: list
+        self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -337,20 +334,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-            self,
-            name: str,
-            url: str,
-            status: str,
-            api_key: str,
-            supported_languages: list,
-            translation_type: Optional[str] = None,
-            cost_per_translation: Optional[float] = None,
-            request_limit: Optional[int] = None,
-            key_expiration: Optional[str] = None,
-            priority: Optional[int] = None,
-            success_rate: Optional[float] = None,
-            max_text_size: Optional[int] = None,
-            payment_plan: Optional[str] = None,
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: Optional[str] = None,
+        cost_per_translation: Optional[float] = None,
+        request_limit: Optional[int] = None,
+        key_expiration: Optional[str] = None,
+        priority: Optional[int] = None,
+        success_rate: Optional[float] = None,
+        max_text_size: Optional[int] = None,
+        payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -380,10 +377,13 @@ class Config(metaclass=Singleton):
             try:
                 expiration_date = datetime.strptime(key_expiration, "%Y-%m-%d")
                 if expiration_date < datetime.now():
-                    raise ValueError(f"La date d'expiration '{key_expiration}' est dans le passé.")
+                    raise ValueError(
+                        f"La date d'expiration '{key_expiration}' est dans le passé."
+                    )
             except ValueError:
                 raise ValueError(
-                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'.")
+                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'."
+                )
 
         # 2. Initialisation de toutes les clés du traducteur, même si elles sont vides
         translator_data = {
@@ -391,14 +391,18 @@ class Config(metaclass=Singleton):
                 "name": name,
                 "url": url,
                 "status": status,
-                "translation_type": translation_type if translation_type is not None else "",
+                "translation_type": (
+                    translation_type if translation_type is not None else ""
+                ),
             },
             "technical": {
                 "api": {
                     "key": api_key if api_key else "",
                     "key_expiration": key_expiration if key_expiration else "",
                     "request_limit": request_limit if request_limit is not None else 0,
-                    "supported_languages": supported_languages if supported_languages else [],
+                    "supported_languages": (
+                        supported_languages if supported_languages else []
+                    ),
                 },
                 "performance": {
                     "max_text_size": max_text_size if max_text_size is not None else 0,
@@ -407,7 +411,9 @@ class Config(metaclass=Singleton):
                 },
             },
             "pricing": {
-                "cost_per_translation": cost_per_translation if cost_per_translation is not None else 0.0,
+                "cost_per_translation": (
+                    cost_per_translation if cost_per_translation is not None else 0.0
+                ),
                 "payment_plan": payment_plan if payment_plan else "",
             },
         }

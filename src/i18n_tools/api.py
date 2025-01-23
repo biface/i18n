@@ -1,6 +1,7 @@
 import requests
 import validators
 
+
 def validate_api_url(url: str, timeout: int = 5) -> dict:
     """
     Valide un lien en vérifiant son format et sa disponibilité.
@@ -28,9 +29,13 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
 
         # Vérifier si le serveur est vivant malgré des codes d'erreur spécifiques
         if response.status_code in {401, 403, 405, 429, 500}:
-            result["is_alive"] = True  # Le serveur est vivant mais un accès correct nécessite des ajustements
+            result["is_alive"] = (
+                True  # Le serveur est vivant mais un accès correct nécessite des ajustements
+            )
         elif 200 <= response.status_code < 300:
-            result["is_alive"] = True  # Le serveur est accessible et répond correctement
+            result["is_alive"] = (
+                True  # Le serveur est accessible et répond correctement
+            )
         else:
             result["error"] = f"Code de statut inattendu: {response.status_code}"
     except requests.exceptions.Timeout:
