@@ -4,9 +4,7 @@ import uuid
 from pathlib import Path
 
 import pytest
-from unittest.mock import patch
 from email_validator import EmailNotValidError
-from datetime import datetime, timedelta
 
 from i18n_tools.config import Config
 
@@ -32,9 +30,9 @@ def temp_dir_with_locales():
             application:
                 base: ''
                 modules:
-                  - mod1/locales
-                  - mod2/pkg1/locales
-                  - mod2/pkg2/locales
+                  - mod1/
+                  - mod2/pkg1/
+                  - mod2/pkg2/
           languages:
             source: en
             hierarchy:
@@ -42,8 +40,12 @@ def temp_dir_with_locales():
               en: ["en-IE", "en-US", "en-GB"]
             fallback: fr
           domains:
-            package: [domain1]
-            application: [domain2, domain3]
+            package: ["domain1"]
+            application: [
+                ["mod1", ["domain2", "domain3"]],
+                ["mod2/pkg1", ["domain4", "domain5"]],
+                ["mod2/pkg2", ["domain6", "domain7"]],
+                ]
         details:
             name: "Configuration test file"
             description: "This is a temporary configuration test file"
@@ -66,9 +68,9 @@ def temp_dir_with_locales():
             application:
                 base: ''
                 modules:
-                    - mod1/locales
-                    - mod2/pkg1/locales
-                    - mod2/pkg2/locales
+                    - mod1/
+                    - mod2/pkg1/
+                    - mod2/pkg2/
           language:
             source: en
             hierarchy:
@@ -97,6 +99,7 @@ def temp_dir_with_locales():
         (temp_dir, locales_dir, temp_path, config_yaml, config_toml, config_err_yaml)
     )
 
+
 temp_data = temp_dir_with_locales()
 config = Config(temp_data[3])
 
@@ -105,6 +108,8 @@ def test_config_singleton():
     config_2 = Config()
     assert config == config_2
 
+
+# Testing config load, content en save
 
 def test_config_with_malformed_file():
     """
@@ -127,11 +132,15 @@ def test_config_with_temp_file():
     assert config.get(["setup", "languages", "source"]) == "en"
     assert config.setup[["languages", "fallback"]] == "fr"
     assert config.setup[["domains", "package"]] == ["domain1"]
-    assert config.setup[["domains", "application"]] == ["domain2", "domain3"]
+    assert config.setup[["domains", "application"]] == [
+        ["mod1", ["domain2", "domain3"]],
+        ["mod2/pkg1", ["domain4", "domain5"]],
+        ["mod2/pkg2", ["domain6", "domain7"]],
+    ]
     assert config.get(["details", "name"]) == "Configuration test file"
     assert (
-        config.get(["authors", "123e4567-e89b-12d3-a456-426614174000", "first_name"])
-        == "John"
+            config.get(["authors", "123e4567-e89b-12d3-a456-426614174000", "first_name"])
+            == "John"
     )
     with pytest.raises(KeyError):
         config.get(["detail", "name"])
@@ -160,6 +169,8 @@ def test_config_save_with_temp_file(tmp_path):
     with pytest.raises(ValueError):
         config.save()
 
+
+# Test set and get functions
 
 def test_config_set_with_key_controls():
     config.set(
@@ -204,11 +215,13 @@ def test_config_set_errors_special():
         config.set(["details", "name"], ["A test for life"])
 
 
+# Testing authors
+
 def test_add_author():
     config.add_author("Albert", "Dupont", "albert.dupont@local.net", "", ["en", "fr"])
     assert (
-        config.get_author("123e4567-e89b-12d3-a456-426614174000")["email"]
-        == "john.doe@example.com"
+            config.get_author("123e4567-e89b-12d3-a456-426614174000")["email"]
+            == "john.doe@example.com"
     )
 
 
@@ -226,8 +239,8 @@ def test_add_author_email_error():
 
 def test_get_author_by_email():
     assert (
-        config.get_author("albert.dupont@local.net")["email"]
-        == "albert.dupont@local.net"
+            config.get_author("albert.dupont@local.net")["email"]
+            == "albert.dupont@local.net"
     )
 
 
@@ -265,4 +278,165 @@ def test_remove_author_error():
         config.remove_author("albert@host")
 
 
+# Testing modules and domains
 
+@pytest.mark.parametrize("module_path", [
+    "mod1/",
+    "mod2/pkg1/",
+    "mod2/pkg2/",
+])
+def test_existing_modules(module_path):
+    assert module_path in config.setup[["paths", "application", "modules"]]
+
+
+@pytest.mark.parametrize("module_path", [
+    "package-alpha/module-1",
+    "package-alpha/module-2",
+    "package-beta/module-a",
+    "package-beta/module-b",
+    "package-beta/module-c",
+    "package-delta/module-1",
+    "package-delta/module-2/sub-21",
+    "package-delta/module-2/sub-22",
+    "package-delta/module-2/sub-23"
+])
+def test_add_module(module_path):
+    """
+    Test adding modules to the manager.
+    """
+    config.add_module(module_path)
+    assert module_path in config.setup[["paths", "application", "modules"]]
+
+
+@pytest.mark.parametrize("module_path", [
+    "package-alpha/module-1",
+    "package-alpha/module-2",
+    "package-beta/module-a",
+    "package-delta/module-1",
+    "package-delta/module-2/sub-21",
+])
+def test_remove_module(module_path):
+    """
+    Test removing modules from the manager.
+    """
+    assert module_path in config.setup[["paths", "application", "modules"]]
+    config.remove_module(module_path)
+    assert module_path not in config.setup[["paths", "application", "modules"]]
+    config.add_module(module_path)
+
+
+@pytest.mark.parametrize("module, domain", [
+    ("package-alpha/module-1", "messages"),
+    ("package-alpha/module-2", "errors"),
+    ("package-beta/module-a", "notifications"),
+    ("package-delta/module-1", "logs"),
+    ("package-delta/module-2/sub-21", "configurations"),
+    ("package-delta/module-2/sub-21", "informations"),
+    ("package-delta/module-2/sub-21", "usages"),
+    ("package-delta/module-2/sub-22", "usages"),
+])
+def test_add_domain(module, domain):
+    """
+    Test adding domains to a module.
+    """
+    config.add_domain(module, domain)
+    domains = config.setup[["domains", "application"]]
+    assert any(entry[0] == module and domain in entry[1] for entry in domains)
+
+
+@pytest.mark.parametrize("module, domain", [
+    ("package-alpha/module-1", "messages"),
+    ("package-alpha/module-2", "errors"),
+    ("package-beta/module-a", "notifications"),
+])
+def test_remove_domain(module, domain):
+    """
+    Test removing domains from a module.
+    """
+    assert any(entry[0] == module and domain in entry[1] for entry in config.setup[["domains", "application"]])
+    config.remove_domain(module, domain)
+    assert not any(entry[0] == module and domain in entry[1] for entry in config.setup[["domains", "application"]])
+
+
+@pytest.mark.parametrize("module", [
+    "package-delta/module-2/sub-21",
+    "package-delta/module-2/sub-22"
+])
+def test_clean_domains_for_module(module):
+    """
+    Test cleaning domains for a specific module.
+    """
+    config.clean_domains(module=module)
+    domains = config.setup[["domains", "application"]]
+    assert not any(entry[0] == module for entry in domains)
+
+def test_clean_all_domains():
+    config.clean_domains()
+    assert not config.setup[["domains", "application"]]
+
+def test_clean_modules():
+    config.add_domain("package-alpha/module-1", "informations")
+    config.clean_modules()
+    assert not config.setup[["domains", "application"]]
+    assert not config.setup[["paths", "application", "modules"]]
+
+# Testing exceptions in modules and domains
+
+@pytest.mark.parametrize("module_path", [
+    "package-alpha/module-1",
+    "package-beta/module-a"
+])
+def test_add_existing_module_raises_exception(module_path):
+    """
+    Test adding an already existing module raises an exception.
+    """
+    config.add_module(module_path)
+    with pytest.raises(ValueError):
+        config.add_module(module_path)
+    config.remove_module(module_path)
+
+@pytest.mark.parametrize("module_path", [
+    "package-alpha/module-1",
+    "package-beta/module-a"
+])
+def test_remove_nonexistent_module_raises_exception(module_path):
+    """
+    Test removing a nonexistent module raises an exception.
+    """
+    assert not config.remove_module(module_path)
+
+@pytest.mark.parametrize("module, domain", [
+    ("package-alpha/module-1", "messages"),
+    ("package-beta/module-a", "notifications")
+])
+def test_add_domain_to_nonexistent_module_raises_exception(module, domain):
+    """
+    Test adding a domain to a nonexistent module raises an exception.
+    """
+    with pytest.raises(ValueError):
+        config.add_domain(module, domain)
+
+
+@pytest.mark.parametrize("module, domain", [
+    ("package-alpha/module-1", "messages"),
+    ("package-beta/module-a", "notifications")
+])
+def test_add_existing_domain_raises_exception(module, domain):
+    """
+    Test adding an already existing domain raises an exception.
+    """
+    config.add_module(module)
+    config.add_domain(module, domain)  # Add domain first
+    with pytest.raises(ValueError):
+        config.add_domain(module, domain)
+
+@pytest.mark.parametrize("module, domain", [
+    ("package-alpha/module-1", "messages"),
+    ("package-beta/module-a", "notifications")
+])
+def test_remove_nonexistent_domain_raises_exception(module, domain):
+    """
+    Test removing a nonexistent domain raises an exception.
+    """
+    config.clean_domains(module)  # Ensure module exists
+    assert not config.remove_domain(module, domain)

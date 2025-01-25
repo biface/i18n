@@ -7,7 +7,7 @@ config = "/home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools
 package = "/home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales"
 
 [setup.domains]
-package = [ "messages",]
+package = [ "api", "config",]
 application = [ "information", "errors",]
 
 [setup.languages]
@@ -23,7 +23,7 @@ languages = [ "en-US", "fr-CA",]
 
 [setup.paths.application]
 base = ""
-modules = [ "mod-1/locales", "mod-2/pkg-1/locales", "mod-2/pkk-2/locales",]
+modules = [ "mod-1/", "mod-2/pkg-1/", "mod-2/pkk-2/",]
 
 [setup.languages.hierarchy]
 fr = [ "fr-FR", "fr-BE", "fr-CA",]

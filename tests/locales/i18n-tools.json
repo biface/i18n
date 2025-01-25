@@ -4,15 +4,15 @@
             "application": {
                 "base": "",
                 "modules": [
-                    "mod-1/locales",
-                    "mod-2/pkg-1/locales",
-                    "mod-2/pkk-2/locales"
+                    "mod-1/",
+                    "mod-2/pkg-1/",
+                    "mod-2/pkk-2/"
                 ]
             }
         },
         "domains": {
             "package": [
-                "messages"
+                "api", "classes"
             ],
             "application": [
                 "information",

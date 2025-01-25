@@ -16,7 +16,8 @@ setup:
     - information
     - errors
     package:
-    - messages
+    - api
+    - config
   languages:
     fallback: fr
     hierarchy:
@@ -33,9 +34,9 @@ setup:
     application:
       base: ''
       modules:
-      - mod-1/locales
-      - mod-2/pkg-1/locales
-      - mod-2/pkk-2/locales
+      - mod-1/
+      - mod-2/pkg-1/
+      - mod-2/pkk-2/
     config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools.yaml
     package: /home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales
   translators:
