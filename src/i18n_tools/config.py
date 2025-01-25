@@ -2,18 +2,19 @@
 config.py
 =========
 
-This module defines the `Config` class, a singleton that manages the global
-configuration of the i18n-tools package.
+This module defines the `Config` class, a singleton that centralizes and manages
+the global configuration for the i18n-tools package.
 
 **Key Features:**
-- Load and save configuration settings.
-- Manage paths for translations, applications, and package locales.
-- Handle language settings, domains, and translator mappings.
+- Load and save configuration settings to/from files.
+- Manage paths for translations, applications, and package-specific locales.
+- Configure language settings, translation domains, and translator API details.
+- Facilitate author and module metadata management.
 
 **License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
+This file is distributed under the terms of the `CeCILL-C Free Software License Agreement
+<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using, modifying, or
+redistributing this file, you agree to comply with the terms of this license.
 
 **Author(s):**
 This module is authored and maintained as part of the i18n-tools package.
@@ -38,14 +39,41 @@ class Config(metaclass=Singleton):
     """
     Configuration class for managing translation settings and paths.
 
-    This class is designed as a Singleton to ensure that only one configuration
-    instance is active at any time. It provides mechanisms for loading, saving,
-    and managing configuration settings.
+    This class centralizes the configuration for translation tools,
+    providing mechanisms for loading, saving, and managing various
+    settings related to translations, translators, authors, and modules.
 
     Attributes:
-        setup (dict): A NestedDictionary object containing the main configuration.
-        details (dict): Contains metadata about the configuration (name, description).
-        authors (dict): A dictionary of authors, each with their details and associated languages.
+        setup (NestedDictionary):
+            Contains the main configuration settings:
+            - `paths`:
+                - `config`: Path to the configuration file (if provided).
+                - `package`: Default path for package locales.
+                - `application`: Includes:
+                    - `base`: Base path for the application.
+                    - `modules`: List of module paths.
+            - `domains`:
+                - `package`: List of domains associated with the package.
+                - `application`: List of domains associated with the application.
+            - `languages`:
+                - `source`: Source language of translations.
+                - `hierarchy`: Language fallback hierarchy.
+                - `fallback`: Default fallback language.
+            - `translators`: Translator details like API keys or endpoints.
+
+        details (NestedDictionary):
+            Metadata about the configuration:
+            - `name`: Name of the configuration.
+            - `description`: Description of the configuration.
+
+        authors (NestedDictionary):
+            Contains author metadata. Each key corresponds to an author and contains:
+            - `email`: Author's email.
+            - `languages`: List of languages the author is associated with.
+            - Additional optional details.
+
+        _email_index (NestedDictionary):
+            An internal index for tracking authors by email address.
     """
 
     def __init__(self, config_path: Optional[str] = None):
@@ -216,7 +244,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -334,20 +362,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -519,22 +547,118 @@ class Config(metaclass=Singleton):
 
         return False
 
-    def __repr__(self):
+    def add_module(self, module_path: str) -> None:
         """
-        Returns a string representation of the Config object.
+        Adds a module path to the application's modules list.
 
-        :return: A formatted string representation of the configuration.
+        If the path contains "locales" or "locale", these parts are removed.
+        If the path is already registered, an exception is raised.
+
+        :param module_path: Path to the module directory.
+        :raises ValueError: If the module path is already registered.
+        """
+        cleaned_path = module_path.replace("locales", "").replace("locale", "").strip("/")
+        modules = self.setup[["paths", "application", "modules"]]
+
+        if cleaned_path in modules:
+            raise ValueError(f"The path '{cleaned_path}' is already registered as a module.")
+
+        modules.append(cleaned_path)
+
+    def remove_module(self, module_path: str) -> bool:
+        """
+        Removes a module from the list and cleans up associated domains.
+
+        :param module_path: Path to the module directory to remove.
+        :return: True if the module was removed, False if it was not found.
+        """
+        cleaned_path = module_path.replace("locales", "").replace("locale", "").strip("/")
+        modules = self.setup[["paths", "application", "modules"]]
+
+        if cleaned_path in modules:
+            modules.remove(cleaned_path)
+            self.clean_domains(module=cleaned_path)
+            return True
+        return False
+
+    def clean_modules(self) -> None:
+        """
+        Resets the list of modules and removes all associated domains.
+        """
+        self.setup[["paths", "application", "modules"]] = []
+        self.setup[["domains", "application"]] = []
+
+    def add_domain(self, module: str, domain: str) -> None:
+        """
+        Adds a domain to a specific module.
+
+        :param module: Path of the module.
+        :param domain: Name of the domain (e.g., 'messages').
+        :raises ValueError: If the module is not registered or the domain already exists.
+        """
+        modules = self.setup[["paths", "application", "modules"]]
+        if module not in modules:
+            raise ValueError(f"The module '{module}' is not registered.")
+
+        domains = self.setup[["domains", "application"]]
+        for entry in domains:
+            if entry[0] == module and domain in entry[1]:
+                raise ValueError(f"The domain '{domain}' is already associated with the module '{module}'.")
+
+        for entry in domains:
+            if entry[0] == module:
+                entry[1].append(domain)
+                break
+        else:
+            domains.append([module, [domain]])
+
+    def remove_domain(self, module: str, domain: str) -> bool:
+        """
+        Removes a domain from a specific module.
+
+        :param module: Path of the module.
+        :param domain: Name of the domain.
+        :return: True if the domain was removed, False otherwise.
+        """
+        domains = self.setup[["domains", "application"]]
+        for entry in domains:
+            if entry[0] == module and domain in entry[1]:
+                entry[1].remove(domain)
+                if not entry[1]:
+                    domains.remove(entry)
+                return True
+        return False
+
+    def clean_domains(self, module: Optional[str] = None) -> None:
+        """
+        Resets domains for a specific module or all modules.
+
+        :param module: Path of the module. If None, all domains are removed.
+        """
+        if module:
+            domains = self.setup[["domains", "application"]]
+            self.setup[["domains", "application"]] = [
+                entry for entry in domains if entry[0] != module
+            ]
+        else:
+            self.setup[["domains", "application"]] = []
+
+    def __repr__(self) -> str:
+        """
+        Represent the `Config` object as a human-readable string.
+
+        This method provides a concise and informative string representation of the
+        `Config` instance, displaying key configuration details for quick reference.
+        It includes the name and description of the configuration, the paths for
+        package and application locales, and the list of source and fallback languages.
+
+        :return: A string summarizing the main configuration details.
         """
         return (
-            f"<Config("
-            f"paths={{'config': '{self.get(['setup', 'paths', 'config'])}', "
-            f"'package': '{self.get(['setup', 'paths', 'package'])}', "
-            f"'application': {self.get(['setup', 'paths', 'application'])}}}, "
-            f"languages={{'source': '{self.setup['languages', 'source']}', "
-            f"'fallback': '{self.setup['languages', 'fallback']}', "
-            f"'hierarchy': {self.setup['languages', 'hierarchy']}}}, "
-            f"domains={{'package': {self.setup['domains', 'package']}, 'application': {self.setup['domains', 'application']}}}, "
-            f"details={{'name': '{self.details['name']}', 'description': '{self.details['description']}'}}, "
-            f"authors={list(self.authors.keys())}"
-            f")>"
+            f"<Config(name='{self.details.get('name', 'Unnamed')}', "
+            f"description='{self.details.get('description', 'No description')}', "
+            f"paths={{'package': '{self.setup['paths']['package']}', "
+            f"'application_base': '{self.setup['paths']['application']['base']}' }}, "
+            f"languages={{'source': '{self.setup['languages']['source']}', "
+            f"'fallback': '{self.setup['languages']['fallback']}'}})>"
         )
