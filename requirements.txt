@@ -11,5 +11,5 @@ pipdeptree==2.24.0
 pytest-cov==6.0.0
 toml==0.10.2
 tomlkit==0.13.2
-tox==4.23.2
+tox==4.24.1
 wheel==0.45.1
