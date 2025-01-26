@@ -23,9 +23,8 @@ setup:
       - - information
         - errors
     package:
-    - - ''
-      - - api
-        - classes
+    - api
+    - classes
   languages:
     fallback: fr
     hierarchy:

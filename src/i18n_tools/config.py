@@ -244,7 +244,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-            self, first_name: str, last_name: str, email: str, url: str, languages: list
+        self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -362,20 +362,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-            self,
-            name: str,
-            url: str,
-            status: str,
-            api_key: str,
-            supported_languages: list,
-            translation_type: Optional[str] = None,
-            cost_per_translation: Optional[float] = None,
-            request_limit: Optional[int] = None,
-            key_expiration: Optional[str] = None,
-            priority: Optional[int] = None,
-            success_rate: Optional[float] = None,
-            max_text_size: Optional[int] = None,
-            payment_plan: Optional[str] = None,
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: Optional[str] = None,
+        cost_per_translation: Optional[float] = None,
+        request_limit: Optional[int] = None,
+        key_expiration: Optional[str] = None,
+        priority: Optional[int] = None,
+        success_rate: Optional[float] = None,
+        max_text_size: Optional[int] = None,
+        payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -557,11 +557,15 @@ class Config(metaclass=Singleton):
         :param module_path: Path to the module directory.
         :raises ValueError: If the module path is already registered.
         """
-        cleaned_path = module_path.replace("locales", "").replace("locale", "").strip("/")
+        cleaned_path = (
+            module_path.replace("locales", "").replace("locale", "").strip("/")
+        )
         modules = self.setup[["paths", "application", "modules"]]
 
         if cleaned_path in modules:
-            raise ValueError(f"The path '{cleaned_path}' is already registered as a module.")
+            raise ValueError(
+                f"The path '{cleaned_path}' is already registered as a module."
+            )
 
         modules.append(cleaned_path)
 
@@ -572,7 +576,9 @@ class Config(metaclass=Singleton):
         :param module_path: Path to the module directory to remove.
         :return: True if the module was removed, False if it was not found.
         """
-        cleaned_path = module_path.replace("locales", "").replace("locale", "").strip("/")
+        cleaned_path = (
+            module_path.replace("locales", "").replace("locale", "").strip("/")
+        )
         modules = self.setup[["paths", "application", "modules"]]
 
         if cleaned_path in modules:
@@ -603,7 +609,9 @@ class Config(metaclass=Singleton):
         domains = self.setup[["domains", "application"]]
         for entry in domains:
             if entry[0] == module and domain in entry[1]:
-                raise ValueError(f"The domain '{domain}' is already associated with the module '{module}'.")
+                raise ValueError(
+                    f"The domain '{domain}' is already associated with the module '{module}'."
+                )
 
         for entry in domains:
             if entry[0] == module:

@@ -7,13 +7,9 @@ from i18n_tools.config import Config
 @pytest.fixture
 def mock_validate_api_url():
     with patch("i18n_tools.config.validate_api_url") as mock_validate:
+
         def side_effect(url):
-            return {
-                "url": url,
-                "is_alive": True,
-                "status_code": 200,
-                "error": None
-            }
+            return {"url": url, "is_alive": True, "status_code": 200, "error": None}
 
         mock_validate.side_effect = side_effect
         yield mock_validate
@@ -30,52 +26,59 @@ config = Config()
 
 
 # Test pour ajouter des traducteurs avec validation simulée
-@pytest.mark.parametrize("translator_data", [
-    {
-        "name": "Translator1",
-        "url": "https://valid-url1.api",
-        "status": "free",
-        "api_key": "apikey123",
-        "supported_languages": ["en", "fr", "es"],
-        "translation_type": "general",
-        "cost_per_translation": 0.0,
-        "request_limit": 1000,
-        "key_expiration": (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"),
-        "priority": 1,
-        "success_rate": 99.0,
-        "max_text_size": 1000,
-        "payment_plan": None,
-    },
-    {
-        "name": "Translator2",
-        "url": "https://valid-url2.api",
-        "status": "license",
-        "api_key": "apikey456",
-        "supported_languages": ["de", "it"],
-        "translation_type": "technical",
-        "cost_per_translation": 0.5,
-        "request_limit": 500,
-        "key_expiration": (datetime.now() + timedelta(days=60)).strftime("%Y-%m-%d"),
-        "priority": 2,
-        "success_rate": 95.0,
-        "max_text_size": 5000,
-        "payment_plan": "monthly",
-    },
-{
-        "name": "Translator3",
-        "url": "https://valid-url3.api",
-        "status": "private",
-        "api_key": "apikey456",
-        "supported_languages": ["fr", "en", "ga", "it"],
-        "translation_type": "technical",
-        "cost_per_translation": 0.5,
-        "request_limit": 500,
-        "priority": 2,
-        "success_rate": 95.0,
-        "max_text_size": 5000,
-        "payment_plan": "monthly",
-    },
-])
+@pytest.mark.parametrize(
+    "translator_data",
+    [
+        {
+            "name": "Translator1",
+            "url": "https://valid-url1.api",
+            "status": "free",
+            "api_key": "apikey123",
+            "supported_languages": ["en", "fr", "es"],
+            "translation_type": "general",
+            "cost_per_translation": 0.0,
+            "request_limit": 1000,
+            "key_expiration": (datetime.now() + timedelta(days=30)).strftime(
+                "%Y-%m-%d"
+            ),
+            "priority": 1,
+            "success_rate": 99.0,
+            "max_text_size": 1000,
+            "payment_plan": None,
+        },
+        {
+            "name": "Translator2",
+            "url": "https://valid-url2.api",
+            "status": "license",
+            "api_key": "apikey456",
+            "supported_languages": ["de", "it"],
+            "translation_type": "technical",
+            "cost_per_translation": 0.5,
+            "request_limit": 500,
+            "key_expiration": (datetime.now() + timedelta(days=60)).strftime(
+                "%Y-%m-%d"
+            ),
+            "priority": 2,
+            "success_rate": 95.0,
+            "max_text_size": 5000,
+            "payment_plan": "monthly",
+        },
+        {
+            "name": "Translator3",
+            "url": "https://valid-url3.api",
+            "status": "private",
+            "api_key": "apikey456",
+            "supported_languages": ["fr", "en", "ga", "it"],
+            "translation_type": "technical",
+            "cost_per_translation": 0.5,
+            "request_limit": 500,
+            "priority": 2,
+            "success_rate": 95.0,
+            "max_text_size": 5000,
+            "payment_plan": "monthly",
+        },
+    ],
+)
 def test_add_translator_with_mocked_validation(mock_validate_api_url, translator_data):
     """Tester l'ajout de traducteurs en simulant la validation de l'URL."""
     config.add_translator(**translator_data)
@@ -95,7 +98,7 @@ def test_get_translator():
     translator = config.get_translator("Translator1")
 
     # Vérification des données
-    assert translator[["details","name"]] == "Translator1"
+    assert translator[["details", "name"]] == "Translator1"
     assert translator[["details", "url"]] == "https://valid-url1.api"
 
 
@@ -112,33 +115,44 @@ def test_list_translators():
 
 
 # Test pour update_translator
-@pytest.mark.parametrize("translator, updated_data, keys, result", [
-    ("Translator1", {
-        "details": {
-            "name": "New Translator1",
-            "translation_type": "Generative",
-        },
-    },
-     ["details", "name"],
-     "New Translator1"),
-    ("Translator2", {
-        "technical": {
-            "api": {
-                "supported_languages": ["en-GB", "fr-CA", "es"],
-            }
-        }
-    },
-     ["technical", "api", "supported_languages"],
-     ["en-GB", "fr-CA", "es"]
-    ),
-    ("Translator3", {
-        "pricing": {
-            "payment_plan": "year",
-        }
-    },
-     ["pricing", "payment_plan"],
-     "year")
-])
+@pytest.mark.parametrize(
+    "translator, updated_data, keys, result",
+    [
+        (
+            "Translator1",
+            {
+                "details": {
+                    "name": "New Translator1",
+                    "translation_type": "Generative",
+                },
+            },
+            ["details", "name"],
+            "New Translator1",
+        ),
+        (
+            "Translator2",
+            {
+                "technical": {
+                    "api": {
+                        "supported_languages": ["en-GB", "fr-CA", "es"],
+                    }
+                }
+            },
+            ["technical", "api", "supported_languages"],
+            ["en-GB", "fr-CA", "es"],
+        ),
+        (
+            "Translator3",
+            {
+                "pricing": {
+                    "payment_plan": "year",
+                }
+            },
+            ["pricing", "payment_plan"],
+            "year",
+        ),
+    ],
+)
 def test_update_translator(translator, updated_data, keys, result):
     config.update_translator(translator, updated_data)
 
