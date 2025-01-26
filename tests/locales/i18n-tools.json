@@ -12,11 +12,12 @@
         },
         "domains": {
             "package": [
-                "api", "classes"
+                ["",["api", "classes"]]
             ],
             "application": [
-                "information",
-                "errors"
+                ["mod-1", ["errors", "information"]],
+                ["mod-2/pkg-1",["usages","information"]],
+                ["mod-2/pkg-2",["information","errors"]]
             ]
         },
         "languages": {

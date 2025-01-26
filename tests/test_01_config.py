@@ -40,7 +40,7 @@ def temp_dir_with_locales():
               en: ["en-IE", "en-US", "en-GB"]
             fallback: fr
           domains:
-            package: ["domain1"]
+            package: ["", ["domain1"]]
             application: [
                 ["mod1", ["domain2", "domain3"]],
                 ["mod2/pkg1", ["domain4", "domain5"]],

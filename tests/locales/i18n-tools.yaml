@@ -13,11 +13,19 @@ details:
 setup:
   domains:
     application:
-    - information
-    - errors
+    - - mod-1
+      - - errors
+        - information
+    - - mod-2/pkg-1
+      - - usages
+        - information
+    - - mod-2/pkg-2
+      - - information
+        - errors
     package:
-    - api
-    - config
+    - - ''
+      - - api
+        - classes
   languages:
     fallback: fr
     hierarchy:
