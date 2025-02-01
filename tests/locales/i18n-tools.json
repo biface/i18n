@@ -1,79 +1,101 @@
 {
-    "setup": {
-        "paths": {
-            "application": {
-                "base": "",
-                "modules": [
-                    "mod-1/",
-                    "mod-2/pkg-1/",
-                    "mod-2/pkk-2/"
-                ]
-            }
-        },
-        "domains": {
-            "package": ["api", "classes"],
-            "application": [
-                ["mod-1", ["errors", "information"]],
-                ["mod-2/pkg-1",["usages","information"]],
-                ["mod-2/pkg-2",["information","errors"]]
-            ]
-        },
-        "languages": {
-            "source": "en",
-            "hierarchy": {
-                "fr": [
-                    "fr-FR",
-                    "fr-BE",
-                    "fr-CA"
-                ],
-                "en": [
-                    "en-IE",
-                    "en-US",
-                    "en-GB"
-                ]
-            },
-            "fallback": "fr"
-        },
-        "translators": {
-            "GoogleTranslate": {
-                "details": {
-                    "name": "GoogleTranslate",
-                    "url": "https://translate.google.com",
-                    "status": "free"
-                },
-                "technical": {
-                    "api": {
-                        "key": "your_api_key",
-                        "key_expiration": "2025-12-31",
-                        "request_limit": 10000
-                    },
-                    "performance": {
-                        "max_text_size": 5000,
-                        "priority": 1,
-                        "success_rate": 99.5
-                    }
-                },
-                "pricing": {
-                    "cost_per_translation": null,
-                    "payment_plan": null
-                }
-            }
-        }
+  "setup": {
+    "paths": {
+      "config": "/home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools.json",
+      "package": {
+        "locale": "/home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales",
+        "base": "/home/fabricemoutte/Personnel/dev/python/i18n/src",
+        "modules": [
+          "i18n_tools"
+        ]
+      },
+      "application": {
+        "base": "",
+        "modules": [
+          "mod-1/",
+          "mod-2/pkg-1/",
+          "mod-2/pkk-2/"
+        ]
+      }
     },
-    "details": {
-        "name": "Configuration test file",
-        "description": "This is a temporary configuration test file"
+    "domains": {
+      "package": {
+        "i18n_tools": [
+          "api",
+          "classes"
+        ]
+      },
+      "application": {
+        "mod-1": [
+          "errors",
+          "information"
+        ],
+        "mod-2/pkg-1/": [
+          "usages",
+          "information"
+        ],
+        "mod-2/pkg-2/": [
+          "information",
+          "errors"
+        ]
+      }
     },
-    "authors": {
-        "123e4567-e89b-12d3-a456-426614174000": {
-            "first_name": "John",
-            "last_name": "Doe",
-            "email": "john.doe@example.com",
-            "url": "https://johndoe.com",
-            "languages": [
-                "en-US",
-                "fr-CA"
-            ]
+    "languages": {
+      "source": "en",
+      "hierarchy": {
+        "fr": [
+          "fr-FR",
+          "fr-BE",
+          "fr-CA"
+        ],
+        "en": [
+          "en-IE",
+          "en-US",
+          "en-GB"
+        ]
+      },
+      "fallback": "fr"
+    },
+    "translators": {
+      "GoogleTranslate": {
+        "details": {
+          "name": "GoogleTranslate",
+          "url": "https://translate.google.com",
+          "status": "free"
+        },
+        "technical": {
+          "api": {
+            "key": "your_api_key",
+            "key_expiration": "2025-12-31",
+            "request_limit": 10000
+          },
+          "performance": {
+            "max_text_size": 5000,
+            "priority": 1,
+            "success_rate": 99.5
+          }
+        },
+        "pricing": {
+          "cost_per_translation": null,
+          "payment_plan": null
         }
+      }
     }
+  },
+  "details": {
+    "name": "Configuration test file",
+    "description": "This is a temporary configuration test file"
+  },
+  "authors": {
+    "123e4567-e89b-12d3-a456-426614174000": {
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@example.com",
+      "url": "https://johndoe.com",
+      "languages": [
+        "en-US",
+        "fr-CA"
+      ]
+    }
+  }
 }

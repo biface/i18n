@@ -27,7 +27,7 @@ from uuid import UUID, uuid4
 from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
-from i18n_tools import package_path
+from i18n_tools import base_path, module_name, package_path
 
 from .api import validate_api_url
 from .classes import Singleton
@@ -87,14 +87,19 @@ class Config(metaclass=Singleton):
             {
                 "paths": {
                     "config": config_path if config_path else None,
-                    "package": build_path(
-                        package_path, "locales"
-                    ),  # Use the loader's build_path function
+                    "package": {
+                        "locale": build_path(package_path, "locales"),
+                        "base": base_path,
+                        "modules": [module_name],
+                    },  # Use the loader's build_path function
                     "application": {"base": "", "modules": []},
                 },
                 "domains": {
-                    "package": [],  # List of domains in the package
-                    "application": [],  # List of domains in the application
+                    # Originally, domains were simply managed by a list of lists, but this format is not very compatible
+                    # with toml. It was therefore changed to a dictionary format, with modules as keys and domains
+                    # contained in lists. This applies to the i18n_tools package and to application modules.
+                    "package": {},
+                    "application": {},
                 },
                 "languages": {
                     "source": "",
@@ -244,7 +249,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -362,20 +367,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -579,6 +584,7 @@ class Config(metaclass=Singleton):
         cleaned_path = (
             module_path.replace("locales", "").replace("locale", "").strip("/")
         )
+
         modules = self.setup[["paths", "application", "modules"]]
 
         if cleaned_path in modules:
@@ -592,7 +598,7 @@ class Config(metaclass=Singleton):
         Resets the list of modules and removes all associated domains.
         """
         self.setup[["paths", "application", "modules"]] = []
-        self.setup[["domains", "application"]] = []
+        self.setup[["domains", "application"]] = {}
 
     def add_domain(self, module: str, domain: str) -> None:
         """
@@ -607,18 +613,15 @@ class Config(metaclass=Singleton):
             raise ValueError(f"The module '{module}' is not registered.")
 
         domains = self.setup[["domains", "application"]]
-        for entry in domains:
-            if entry[0] == module and domain in entry[1]:
-                raise ValueError(
-                    f"The domain '{domain}' is already associated with the module '{module}'."
-                )
 
-        for entry in domains:
-            if entry[0] == module:
-                entry[1].append(domain)
-                break
+        if module not in domains.keys():
+            domains[module] = [domain]
+        elif domain in domains[module]:
+            raise ValueError(
+                f"The domain '{domain}' is already associated with the module '{module}'."
+            )
         else:
-            domains.append([module, [domain]])
+            domains[module].append(domain)
 
     def remove_domain(self, module: str, domain: str) -> bool:
         """
@@ -629,12 +632,12 @@ class Config(metaclass=Singleton):
         :return: True if the domain was removed, False otherwise.
         """
         domains = self.setup[["domains", "application"]]
-        for entry in domains:
-            if entry[0] == module and domain in entry[1]:
-                entry[1].remove(domain)
-                if not entry[1]:
-                    domains.remove(entry)
+
+        if module in domains.keys():
+            if domain in domains[module]:
+                domains[module].remove(domain)
                 return True
+
         return False
 
     def clean_domains(self, module: Optional[str] = None) -> None:
@@ -645,11 +648,10 @@ class Config(metaclass=Singleton):
         """
         if module:
             domains = self.setup[["domains", "application"]]
-            self.setup[["domains", "application"]] = [
-                entry for entry in domains if entry[0] != module
-            ]
+            if module in domains.keys():
+                del domains[module]
         else:
-            self.setup[["domains", "application"]] = []
+            self.setup[["domains", "application"]] = {}
 
     def __repr__(self) -> str:
         """

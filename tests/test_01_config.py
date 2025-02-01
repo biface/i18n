@@ -40,12 +40,19 @@ def temp_dir_with_locales():
               en: ["en-IE", "en-US", "en-GB"]
             fallback: fr
           domains:
-            package: ["domain1"]
-            application: [
-                ["mod1", ["domain2", "domain3"]],
-                ["mod2/pkg1", ["domain4", "domain5"]],
-                ["mod2/pkg2", ["domain6", "domain7"]],
-                ]
+            package:
+              "i18n_tools":
+                - "domain1"
+            application:
+              "mod1":
+                - "domain2"
+                - "domain3"
+              "mod2/pkg1/":
+                - "domain4"
+                - "domain5"
+              "mod2/pkg2/":
+                - "domain6"
+                - "domain7"
         details:
             name: "Configuration test file"
             description: "This is a temporary configuration test file"
@@ -78,12 +85,12 @@ def temp_dir_with_locales():
               en: ["en-IE", "en-US", "en-GB"]
             fallback: fr
           domains:
-            package: ["domain1"]
-            application: [
-                ["mod1", ["domain2", "domain3"]],
-                ["mod2/pkg1", ["domain4", "domain5"]],
-                ["mod2/pkg2", ["domain6", "domain7"]],
-                ]
+            package:
+              "i18n_tools": ["domain1"]
+            application:
+              "mod1": ["domain2", "domain3"]
+              "mod2/pkg1/": ["domain4", "domain5"]
+              "mod2/pkg2/": ["domain6", "domain7"]
         details:
             name: "Configuration test file"
             description: "This is a temporary configuration test file"
@@ -136,12 +143,10 @@ def test_config_with_temp_file():
     config.load()
     assert config.get(["setup", "languages", "source"]) == "en"
     assert config.setup[["languages", "fallback"]] == "fr"
-    assert config.setup[["domains", "package"]] == ["domain1"]
-    assert config.setup[["domains", "application"]] == [
-        ["mod1", ["domain2", "domain3"]],
-        ["mod2/pkg1", ["domain4", "domain5"]],
-        ["mod2/pkg2", ["domain6", "domain7"]],
-    ]
+    assert config.setup[["domains", "package", "i18n_tools"]] == ["domain1"]
+    assert config.setup[["domains", "application","mod1"]] == ["domain2", "domain3"]
+    assert config.setup[["domains", "application","mod2/pkg1/"]] == ["domain4", "domain5"]
+    assert config.setup[["domains", "application","mod2/pkg2/"]] ==["domain6", "domain7"]
     assert config.get(["details", "name"]) == "Configuration test file"
     assert (
         config.get(["authors", "123e4567-e89b-12d3-a456-426614174000", "first_name"])
@@ -155,12 +160,11 @@ def test_config_save_with_temp_file(tmp_path):
     """
     Test saving configuration to a temporary file.
     """
-    save_path = temp_data[2] / "output-config.toml"
+    save_path = temp_data[2] / "output-config.yaml"
     # Initialize Config and modify values
     config.setup[["paths", "config"]] = str(save_path)
     config.setup[["languages"]].update({"source": "fr-FR", "fallback": "es"})
     config.setup[["languages", "application"]] = ["test/locales"]
-    config.setup[["domains", "application"]] = ["domainX", "domainY"]
     # Save the configuration
     config.save()
     assert Path(config.setup[["paths", "config"]]).exists()
@@ -169,7 +173,6 @@ def test_config_save_with_temp_file(tmp_path):
     assert config.setup[["languages", "source"]] == "fr-FR"
     assert config.setup[["languages", "fallback"]] == "es"
     assert config.setup[["languages", "application"]] == ["test/locales"]
-    assert config.setup[["domains", "application"]] == ["domainX", "domainY"]
     config.set(["setup", "paths", "config"], "")
     with pytest.raises(ValueError):
         config.save()
@@ -360,9 +363,7 @@ def test_add_domain(module, domain):
     Test adding domains to a module.
     """
     config.add_domain(module, domain)
-    domains = config.setup[["domains", "application"]]
-    assert any(entry[0] == module and domain in entry[1] for entry in domains)
-
+    assert domain in config.get(["setup", "domains", "application"])[module]
 
 @pytest.mark.parametrize(
     "module, domain",
@@ -376,15 +377,9 @@ def test_remove_domain(module, domain):
     """
     Test removing domains from a module.
     """
-    assert any(
-        entry[0] == module and domain in entry[1]
-        for entry in config.setup[["domains", "application"]]
-    )
+    assert domain in config.get(["setup", "domains", "application"])[module]
     config.remove_domain(module, domain)
-    assert not any(
-        entry[0] == module and domain in entry[1]
-        for entry in config.setup[["domains", "application"]]
-    )
+    assert not domain in config.get(["setup", "domains", "application"])[module]
 
 
 @pytest.mark.parametrize(
