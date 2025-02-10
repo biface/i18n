@@ -9,6 +9,7 @@ langcodes==3.5.0
 mypy==1.14.1
 ndict-tools==0.6.0.post1
 pipdeptree==2.24.0
+polib==1.2.0
 pytest-cov==6.0.0
 toml==0.10.2
 tomlkit==0.13.2
