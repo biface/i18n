@@ -24,6 +24,8 @@ This module is authored and maintained as part of the i18n-tools package.
 import json
 import os
 from pathlib import Path
+from typing import Any, Dict
+from polib import pofile, mofile, POEntry
 
 import toml
 import yaml
@@ -42,6 +44,56 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
         path /= sub_dir
     return str(path.resolve())
 
+
+#TODO : A low level _load_json_file, _load_po_file and _load_pot_file. Idem _save_... and see just to create a file.
+
+def _load_json(file_path: str ) -> Dict[str, Any]:
+    """
+    Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
+    :param file_path: Path to the JSON file.
+    :type file_path: str
+    :return: JSON Translation data content.
+    :rtype: dict
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as json_file:
+            return json.load(json_file)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _load_po(file_path: str) -> pofile:
+    """
+    Load a PO file without managing data structure and integrity and returns its content.
+    :param file_path: Path to the PO file.
+    :type file_path: str
+    :return: PO file object
+    :rtype: pofile
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        return pofile(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _load_mo(file_path: str) -> mofile:
+    """
+    Load a MO file without managing data structure and integrity and returns its content.
+    :param file_path: Path to the MO file.
+    :type file_path: str
+    :return: MO file object
+    :rtype: mofile
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        return mofile(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
+#TODO : A specialized function for json in locale and one for agregate json locales and gzip it.
+
+#TODO : A backup file which tgz the repository
 
 def _load_config_file(config_path: Path) -> dict:
     """
