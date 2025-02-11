@@ -45,9 +45,9 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     return str(path.resolve())
 
 
-#TODO : A low level _load_json_file, _load_po_file and _load_pot_file. Idem _save_... and see just to create a file.
+# TODO : A low level _load_json_file, _load_po_file and _load_pot_file. Idem _save_... and see just to create a file.
 
-def _load_json(file_path: str ) -> Dict[str, Any]:
+def _load_json(file_path: str) -> Dict[str, Any]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
     :param file_path: Path to the JSON file.
@@ -62,6 +62,24 @@ def _load_json(file_path: str ) -> Dict[str, Any]:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+
+def _save_json(file_path: str, data: Dict[str, Any]) -> None:
+    """
+    Save a JSON file without managing data structure and integrity and returns its content.
+    :param file_path: Path to the JSON file.
+    :type file_path: str
+    :param data: JSON Translation data content.
+    :type data: dict
+    :return: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as json_file:
+            json.dump(data, json_file, ensure_ascii=False, indent=4)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
 def _load_po(file_path: str) -> pofile:
     """
     Load a PO file without managing data structure and integrity and returns its content.
@@ -73,6 +91,22 @@ def _load_po(file_path: str) -> pofile:
     """
     try:
         return pofile(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
+def _save_po(file_path: str, po_data:pofile) -> None:
+    """
+    Save a PO file without managing data structure and integrity and returns its content.
+    :param file_path: Path to the PO file.
+    :type file_path: str
+    :param po_data: PO file object.
+    :type po_data: pofile
+    :return: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        po_data.save(file_path)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
@@ -90,10 +124,24 @@ def _load_mo(file_path: str) -> mofile:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+def _save_mo(file_path: str, mo_data:pofile) -> None:
+    """
+    Save a MO file without managing data structure and integrity and returns its content.
+    :param file_path: Path to the MO file.
+    :type file_path: str
+    :param mo_data: MO file object.
+    :type mo_data: pofile
+    :return: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        mo_data.save_as_mofile(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
-#TODO : A specialized function for json in locale and one for agregate json locales and gzip it.
+# TODO : A specialized function for json in locale and one for agregate json locales and gzip it.
 
-#TODO : A backup file which tgz the repository
+# TODO : A backup file which tgz the repository
 
 def _load_config_file(config_path: Path) -> dict:
     """
