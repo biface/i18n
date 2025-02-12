@@ -53,8 +53,8 @@ class Config(metaclass=Singleton):
                     - `base`: Base path for the application.
                     - `modules`: List of module paths.
             - `domains`:
-                - `package`: List of domains associated with the package.
-                - `application`: List of domains associated with the application.
+                - `package`: dictionary where i18n-tools' modules are keys, and value is a list of associated domains.
+                - `application`: dictionary where app's modules are keys, and value is a list of associated domains.
             - `languages`:
                 - `source`: Source language of translations.
                 - `hierarchy`: Language fallback hierarchy.
