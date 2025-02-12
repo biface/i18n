@@ -110,6 +110,37 @@ def _save_po(file_path: str, po_data:pofile) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+def _load_pot(file_path: str) -> pofile:
+    """
+    Load a POT file and return its content.
+
+    :param file_path: Path to the PO file.
+    :type file_path: str
+    :return: PO file object
+    :rtype: pofile
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        return pofile(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _save_pot(file_path: str, pot_data: pofile) -> None:
+    """
+    Save a POT file.
+
+    :param file_path: Path to the PO file.
+    :type file_path: str
+    :param pot_data: PO file object.
+    :type pot_data: pofile
+    :return: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        pot_data.save(file_path)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
 def _load_mo(file_path: str) -> mofile:
     """
     Load a MO file without managing data structure and integrity and returns its content.
