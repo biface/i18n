@@ -24,11 +24,14 @@ This module is authored and maintained as part of the i18n-tools package.
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, List, Dict
 from polib import pofile, mofile, POEntry
 
 import toml
 import yaml
+import tarfile
+import gzip
+import shutil
 
 
 def build_path(base_path: str, *sub_dirs: str) -> str:
@@ -45,7 +48,27 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     return str(path.resolve())
 
 
-# TODO : A low level _load_json_file, _load_po_file and _load_pot_file. Idem _save_... and see just to create a file.
+def file_exists(file_path: str) -> bool:
+    """
+    Checks if a file exists.
+    :param file_path: a path to a file.
+    :type file_path: str
+    :return: True if the file exists.
+    :rtype: bool
+    """
+    return Path(file_path).exists()
+
+
+def create_directory(path: str) -> None:
+    """
+    Create a directory from a path.
+    :param path: a path to a directory.
+    :type path: str
+    :return: None
+    :rtype: None
+    """
+    Path(path).mkdir(parents=True, exist_ok=True)
+
 
 def _load_json(file_path: str) -> Dict[str, Any]:
     """
@@ -80,6 +103,22 @@ def _save_json(file_path: str, data: Dict[str, Any]) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
+def _create_empty_json(file_path: str) -> None:
+    """
+    Create an empty JSON file without managing data structure and integrity and returns its content.
+    :param file_path: JSON file path.
+    :type file_path: str
+    :return: None
+    :rtype: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as json_file:
+            json.dump({}, json_file, ensure_ascii=False, indent=4)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
 def _load_po(file_path: str) -> pofile:
     """
     Load a PO file without managing data structure and integrity and returns its content.
@@ -95,7 +134,7 @@ def _load_po(file_path: str) -> pofile:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _save_po(file_path: str, po_data:pofile) -> None:
+def _save_po(file_path: str, po_data: pofile) -> None:
     """
     Save a PO file without managing data structure and integrity and returns its content.
     :param file_path: Path to the PO file.
@@ -109,6 +148,7 @@ def _save_po(file_path: str, po_data:pofile) -> None:
         po_data.save(file_path)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
 
 def _load_pot(file_path: str) -> pofile:
     """
@@ -124,6 +164,7 @@ def _load_pot(file_path: str) -> pofile:
         return pofile(file_path)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
 
 def _save_pot(file_path: str, pot_data: pofile) -> None:
     """
@@ -141,6 +182,7 @@ def _save_pot(file_path: str, pot_data: pofile) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+
 def _load_mo(file_path: str) -> mofile:
     """
     Load a MO file without managing data structure and integrity and returns its content.
@@ -155,7 +197,8 @@ def _load_mo(file_path: str) -> mofile:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
-def _save_mo(file_path: str, mo_data:pofile) -> None:
+
+def _save_mo(file_path: str, mo_data: pofile) -> None:
     """
     Save a MO file without managing data structure and integrity and returns its content.
     :param file_path: Path to the MO file.
@@ -170,9 +213,53 @@ def _save_mo(file_path: str, mo_data:pofile) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
-# TODO : A specialized function for json in locale and one for agregate json locales and gzip it.
 
-# TODO : A backup file which tgz the repository
+def _create_empty_file(file_path: str) -> None:
+    """
+    Create an empty file.
+    :param file_path: a path to a file.
+    :type file_path: str
+    :return: None
+    :rtype: None
+    :raises FileNotFoundError: File not found.
+    """
+    try:
+        with open(file_path, 'w', encoding='utf-8') as empty_file:
+            empty_file.write("")
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
+def _create_tar_gz(base_path: str, archive_name: str, directory_to_archive: str) -> None:
+    """
+    Create an archive of a directory using tar.gz fonctions.
+    :param base_path: directory to locate the archive.
+    :type base_path: str
+    :param archive_name: archive name
+    :type archive_name: str
+    :param directory_to_archive: directory to be archived.
+    :type directory_to_archive: str
+    :return: None
+    ;rtype: None
+    """
+    tarfile_path = Path(base_path) / archive_name
+    with tarfile.open(tarfile_path, "w:gz") as tar:
+        tar.add(directory_to_archive, arcname=Path(directory_to_archive).name)
+
+
+def _create_gzip(file_path: str) -> None:
+    """
+    Create a compressed file using gzip fonctions.
+    :param file_path: a path to a file.
+    :type file_path: str
+    :return: None
+    :rtype: None
+    """
+    gz_file = f"{file_path}.gz"
+    with open(file_path, "rb") as file_in:
+        with gzip.open(gz_file, "wb") as file_out:
+            shutil.copyfileobj(file_in, file_out)
+
 
 def _load_config_file(config_path: Path) -> dict:
     """
@@ -258,3 +345,193 @@ def save_config(file_path: str, data: dict) -> None:
             toml.dump(data, cf)
         else:
             raise ValueError(f"Unsupported file format: {ext}")
+
+
+def check_json_integrity(data: Dict[str, Any]) -> bool:
+    """
+    Check the integrity of the JSON locale data.
+
+    :param data: The JSON locale data.
+    :type data: dict
+    :return: True if the data is valid, False otherwise.
+    :rtype: bool
+    """
+    for key, value in data.items():
+        if not isinstance(value, list):
+            return False
+
+        # Check that each item in the list is a list
+        if not all(isinstance(item, list) for item in value):
+            return False
+
+        # Check that there is at least one non-empty list
+        if not any(len(item) > 0 for item in value):
+            return False
+
+        # Check that all lists have the same length
+        lengths = [len(item) for item in value]
+        if len(set(lengths)) != 1:
+            return False
+
+    return True
+
+
+def load_locale_json(file_path: str) -> Dict[str, Any]:
+    """
+    This function load a JSON file in the locales repository and containing i18next data. The structure of this
+    dictionary is as follows:
+
+        {
+            "msgid_001": [
+                    ["msgstr_001_000", "msgstr_001_001"],
+                    ["msgplr_001_1_000", "msgplr_001_1_001"],
+                    ["msgplr_001_2_000", "msgplr_001_2_001"]
+                ],
+            "msgid_002": [
+                    ["msgstr_002_000"],
+                    ["msgplr_002_1_000"],
+                    ["msgplr_002_2_000"]
+                ]
+        }
+
+    :param file_path: Path to the JSON locale file.
+    :type file_path: str
+    :return: JSON locale data content.
+    :rtype: dict
+    :raises FileNotFoundError: If the file is not found.
+    :raises ValueError: If the file is not a valid JSON or fails the integrity check.
+    """
+    data = _load_json(file_path)
+    if not check_json_integrity(data):
+        raise ValueError(f"Integrity check failed for file: {file_path}")
+    return data
+
+def aggregate_locale_json(structure: Dict[str, Any],
+                          domains: Dict[str, List[str]],
+                          languages: Dict[str, List[str]]) -> Dict[str, Any]:
+    """
+    Aggregate JSON locale files based on the given structure, domains, and languages.
+
+    :param structure: Dictionary containing 'base' path and list of 'modules'.
+    :type structure: Dict[str, Any]
+    :param domains: Dictionary where keys are module names and values are lists of domains.
+    :type domains: Dict[str, List[str]]
+    :param languages: Dictionary where keys are language codes and values are lists of regional variants.
+    :type languages: Dict[str, List[str]]
+    :return: A consolidated dictionary of locale data.
+    :rtype: dict
+    """
+    aggregated_data = {}
+    base_path = Path(structure['base'])
+    modules = structure['modules']
+
+    for module in modules:
+        module_path = base_path / module / "locales"
+        module_data = {}
+
+        for domain in domains.get(module, []):
+            domain_data = {}
+
+            for lang, variants in languages.items():
+                # Include the main language in the list of variants
+                all_variants = [lang] + variants
+
+                for variant in all_variants:
+                    file_path = module_path / variant / f"{domain}.json"
+
+                    if file_path.exists():
+                        data = load_locale_json(file_path)
+                        domain_data[variant] = data
+
+            module_data[domain] = domain_data
+
+        aggregated_data[module] = module_data
+
+    return aggregated_data
+
+
+def save_locale_json(file_path: str, data: Dict[str, Any]) -> None:
+    """
+    Save data to a JSON locale file.
+
+    :param file_path: Path to the JSON locale file.
+    :type file_path: str
+    :param data: Dictionary containing locale data.
+    :type data: dict
+    :raises FileNotFoundError: If the directory for the file is not found.
+    """
+    _save_json(file_path, data)
+
+def save_aggregated_locale_json(aggregated_data: Dict[str, Any], base_path: str) -> None:
+    """
+    Save the aggregated locale JSON data as gzipped files for each domain in the locales directory,
+    and create a gzipped file for the entire module or sub-module at the base of its directory.
+
+    :param aggregated_data: The aggregated dictionary of locale data.
+    :type aggregated_data: dict
+    :param base_path: The base path where the locales directories are located.
+    :type base_path: str
+    """
+    for module, module_data in aggregated_data.items():
+        # Handle sub-modules by splitting the module key
+        module_parts = module.split('/')
+        module_name = module_parts[-1]
+        module_dir = Path(base_path) / '/'.join(module_parts)
+
+        locales_path = module_dir / "locales"
+        locales_path.mkdir(parents=True, exist_ok=True)
+
+        # Save individual domain files
+        for domain, domain_data in module_data.items():
+            json_file_path = locales_path / f"{domain}.json"
+            _save_json(json_file_path, domain_data)
+            _create_gzip(json_file_path)
+            json_file_path.unlink()
+
+        # Save aggregated module data
+        module_json_path = module_dir / f"{module_name}.json"
+        _save_json(module_json_path, module_data)
+        _create_gzip(module_json_path)
+        module_json_path.unlink()
+
+
+def create_module_archive(base_path: str, module: str, archive_name: str) -> None:
+    """
+    Create a tar.gz archive of a module's contents at the top level of the module.
+
+    :param base_path: The base path where the modules are located.
+    :type base_path: str
+    :param module: The module or sub-module path (e.g., "mod-1/pkg-1").
+    :type module: str
+    :param archive_name: The name of the archive file.
+    :type archive_name: str
+    """
+    module_parts = module.split('/')
+    top_level_module = module_parts[0]
+    module_path = Path(base_path) / module
+    archive_path = Path(base_path) / top_level_module / f"{archive_name}.tar.gz"
+
+    with tarfile.open(archive_path, "w:gz") as tar:
+        tar.add(module_path, arcname=Path(module).name)
+
+def restore_module_from_archive(base_path: str, module: str, archive_name: str) -> None:
+    """
+    Restore a module's contents from a tar.gz archive.
+
+    :param base_path: The base path where the modules are located.
+    :type base_path: str
+    :param module: The module or sub-module path (e.g., "mod-1/pkg-1").
+    :type module: str
+    :param archive_name: The name of the archive file.
+    :type archive_name: str
+    """
+    module_parts = module.split('/')
+    top_level_module = module_parts[0]
+    archive_path = Path(base_path) / top_level_module / f"{archive_name}.tar.gz"
+    module_path = Path(base_path) / module
+
+    if archive_path.exists():
+        with tarfile.open(archive_path, "r:gz") as tar:
+            tar.extractall(path=module_path.parent)
+    else:
+        raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
