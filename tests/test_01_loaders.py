@@ -5,7 +5,7 @@ import tarfile
 import gzip
 import shutil
 from pathlib import Path
-from polib import pofile, mofile
+from polib import POFile, MOFile
 from i18n_tools.loader import (
     file_exists, create_directory,
     _load_json, _save_json, _create_empty_json,
@@ -73,6 +73,29 @@ def test_load_json_raises_exception():
     with pytest.raises(FileNotFoundError):
         _load_json("/nonexistent/path")
 
+def test_load_po_file(temp_po_file):
+    po = _load_po(temp_po_file)
+    assert isinstance(po, POFile)
+
+def test_load_po_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        _load_po("/nonexistent/path")
+
+def test_load_pot_file(temp_po_file):
+    pot = _load_pot(temp_po_file)
+    assert isinstance(pot, POFile)
+
+def test_load_pot_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        _load_pot("/nonexistent/path")
+
+def test_load_mo_file(temp_mo_file):
+    mo = _load_mo(temp_mo_file)
+    assert isinstance(mo, MOFile)
+
+def test_load_mo_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        _load_mo("/nonexistent/path")
 
 def test_save_json(temp_file):
     data = {"key": "value"}
@@ -84,6 +107,36 @@ def test_save_json(temp_file):
 def test_save_json_raises_exception():
     with pytest.raises(FileNotFoundError):
         _save_json("/nonexistent/path", {})
+
+def test_save_po_file(temp_po_file):
+    po = POFile()
+    _save_po(temp_po_file, po)
+    assert file_exists(temp_po_file) == True
+
+def test_save_po_raises_exception():
+    po = POFile()
+    with pytest.raises(FileNotFoundError):
+        _save_po("/nonexistent/path", po)
+
+def test_save_pot_file(temp_po_file):
+    pot = POFile()
+    _save_pot(temp_po_file, pot)
+    assert file_exists(temp_po_file) == True
+
+def test_save_mo_file(temp_mo_file):
+    po_data = POFile()
+    _save_mo(temp_mo_file, po_data)
+    assert file_exists(temp_mo_file) == True
+
+def test_save_mo_raises_exception():
+    po_data = POFile()
+    with pytest.raises(FileNotFoundError):
+        _save_mo("/nonexistent/path", po_data)
+
+def test_save_pot_raises_exception():
+    pot = POFile()
+    with pytest.raises(FileNotFoundError):
+        _save_pot("/nonexistent/path", pot)
 
 def test_create_empty_json(temp_file):
     _create_empty_json(temp_file)
