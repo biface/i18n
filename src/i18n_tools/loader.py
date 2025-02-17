@@ -25,7 +25,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any, List, Dict
-from polib import pofile, mofile, POEntry
+from polib import pofile, mofile, POEntry, POFile, MOFile
 
 import toml
 import yaml
@@ -119,13 +119,13 @@ def _create_empty_json(file_path: str) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_po(file_path: str) -> pofile:
+def _load_po(file_path: str) -> POFile:
     """
     Load a PO file without managing data structure and integrity and returns its content.
     :param file_path: Path to the PO file.
     :type file_path: str
     :return: PO file object
-    :rtype: pofile
+    :rtype: POFile
     :raises FileNotFoundError: File not found.
     """
     try:
@@ -150,21 +150,20 @@ def _save_po(file_path: str, po_data: pofile) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_pot(file_path: str) -> pofile:
+def _load_pot(file_path: str) -> POFile:
     """
     Load a POT file and return its content.
 
     :param file_path: Path to the PO file.
     :type file_path: str
     :return: PO file object
-    :rtype: pofile
+    :rtype: POFile
     :raises FileNotFoundError: File not found.
     """
     try:
         return pofile(file_path)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
 
 def _save_pot(file_path: str, pot_data: pofile) -> None:
     """
@@ -183,17 +182,18 @@ def _save_pot(file_path: str, pot_data: pofile) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_mo(file_path: str) -> mofile:
+def _load_mo(file_path: str) -> MOFile:
     """
     Load a MO file without managing data structure and integrity and returns its content.
     :param file_path: Path to the MO file.
     :type file_path: str
     :return: MO file object
-    :rtype: mofile
+    :rtype: MOFile
     :raises FileNotFoundError: File not found.
     """
     try:
-        return mofile(file_path)
+        with open(file_path, 'rb') as mo_file:
+            return MOFile(mo_file)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
