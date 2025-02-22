@@ -13,7 +13,7 @@ from i18n_tools.loader import (
     _create_empty_file, _create_tar_gz, _create_gzip,
     check_json_integrity, load_locale_json, save_locale_json,
     aggregate_locale_json, save_aggregated_locale_json,
-    create_module_archive, restore_module_from_archive
+    create_module_archive, restore_module_from_archive, _non_traversal_path
 )
 
 
@@ -315,6 +315,51 @@ def test_save_aggregated_locale_json(tmp_path):
     assert (module_path / "locales/domain1.json.gz").exists()
     assert (module_path / "module1.json.gz").exists()
 
+@pytest.fixture
+def tar_members():
+    # Create a mock tarfile with safe and unsafe members
+    safe_members = [
+        tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
+        tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
+    ]
+    unsafe_members = [
+        tarfile.TarInfo("../../etc/passwd"),
+        tarfile.TarInfo("../secret.txt"),
+        tarfile.TarInfo("mod-1/../../etc/shadow"),
+    ]
+    return safe_members, unsafe_members
+
+def test_non_traversal_path_safe(tmp_path,tar_members):
+    """Test normal case where all members are safe."""
+    root_path = tmp_path / "safe_path"
+    module_list = ["mod-1"]
+    safe_members, _ = tar_members
+
+    safe_paths = _non_traversal_path(root_path, module_list, safe_members)
+
+    # Check that all safe members are included
+    assert len(safe_paths) == len(safe_members)
+    for member in safe_members:
+        assert member in safe_paths
+
+def test_non_traversal_path_exclusion(tmp_path,tar_members):
+    """Test exclusion of directory traversal vulnerabilities."""
+    root_path = tmp_path / "unsafe_path"
+    module_list = ["mod-1"]
+    safe_members, unsafe_members = tar_members
+    all_members = safe_members + unsafe_members
+
+    safe_paths = _non_traversal_path(root_path, module_list, all_members)
+
+    # Check that only safe members are included
+    assert len(safe_paths) == len(safe_members)
+    for member in safe_members:
+        assert member in safe_paths
+
+    # Check that unsafe members are excluded
+    for member in unsafe_members:
+        assert member not in safe_paths
+
 def test_create_module_archive(tmp_path):
     module_path = tmp_path / "module1"
     module_path.mkdir()
@@ -333,10 +378,10 @@ def test_restore_module_from_archive(tmp_path):
     archive_name = "module1_archive"
     create_module_archive(str(tmp_path), str(module_path), archive_name)
     module_path.rmdir()
-    restore_module_from_archive(str(tmp_path), str(module_path), archive_name)
+    restore_module_from_archive(str(tmp_path), "module1", archive_name)
     assert module_path.exists()
 
-def test_restore_moudle_raise_exception(tmp_path):
+def test_restore_module_raise_exception(tmp_path):
     module_path = tmp_path / "module1"
     module_path.mkdir()
     module_path = module_path / "pkg-1"
