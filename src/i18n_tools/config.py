@@ -249,7 +249,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def add_author(
-            self, first_name: str, last_name: str, email: str, url: str, languages: list
+        self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -367,20 +367,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-            self,
-            name: str,
-            url: str,
-            status: str,
-            api_key: str,
-            supported_languages: list,
-            translation_type: Optional[str] = None,
-            cost_per_translation: Optional[float] = None,
-            request_limit: Optional[int] = None,
-            key_expiration: Optional[str] = None,
-            priority: Optional[int] = None,
-            success_rate: Optional[float] = None,
-            max_text_size: Optional[int] = None,
-            payment_plan: Optional[str] = None,
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: Optional[str] = None,
+        cost_per_translation: Optional[float] = None,
+        request_limit: Optional[int] = None,
+        key_expiration: Optional[str] = None,
+        priority: Optional[int] = None,
+        success_rate: Optional[float] = None,
+        max_text_size: Optional[int] = None,
+        payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
