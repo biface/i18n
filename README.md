@@ -1,3 +1,6 @@
+![Python](https://img.shields.io/badge/Language-python-green.svg)
+
+--------------
 # Lecteur français
 
 _Unification de l'usage de i18n et i18next en Python_
