@@ -505,6 +505,26 @@ def save_aggregated_locale_json(
         module_json_path.unlink()
 
 
+def save_locale_po(file_path: str, po_data: pofile) -> None:
+    """
+    The public interface to _save_po
+    :param file_path:
+    :param po_data:
+    :return:
+    """
+    _save_json(file_path, po_data)
+
+
+def save_locale_pot(file_path: str, po_data: pofile) -> None:
+    """
+    The public interface to _save_pot
+    :param file_path:
+    :param po_data:
+    :return:
+    """
+    _save_pot(file_path, po_data)
+
+
 def create_module_archive(root_path: str, module: str, archive_name: str) -> None:
     """
     Create a tar.gz archive of a module's contents, including all subdirectories and files,
