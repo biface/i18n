@@ -138,6 +138,7 @@ def test_config_with_malformed_file():
         config.load()
     config.set(["setup", "paths", "config"], temp_data[3])
 
+
 @pytest.fixture
 def config_data():
     return {
@@ -147,82 +148,54 @@ def config_data():
                 "package": {
                     "locale": "/home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales",
                     "base": "/home/fabricemoutte/Personnel/dev/python/i18n/src",
-                    "modules": [
-                        "i18n_tools"
-                    ]
+                    "modules": ["i18n_tools"],
                 },
                 "application": {
                     "base": "",
-                    "modules": [
-                        "mod-1/",
-                        "mod-2/pkg-1/",
-                        "mod-2/pkk-2/"
-                    ]
-                }
+                    "modules": ["mod-1/", "mod-2/pkg-1/", "mod-2/pkk-2/"],
+                },
             },
             "domains": {
-                "package": {
-                    "i18n_tools": [
-                        "api",
-                        "classes"
-                    ]
-                },
+                "package": {"i18n_tools": ["api", "classes"]},
                 "application": {
-                    "mod-1": [
-                        "errors",
-                        "information"
-                    ],
-                    "mod-2/pkg-1/": [
-                        "usages",
-                        "information"
-                    ],
-                    "mod-2/pkg-2/": [
-                        "information",
-                        "errors"
-                    ]
-                }
+                    "mod-1": ["errors", "information"],
+                    "mod-2/pkg-1/": ["usages", "information"],
+                    "mod-2/pkg-2/": ["information", "errors"],
+                },
             },
             "languages": {
                 "source": "en",
                 "hierarchy": {
-                    "fr": [
-                        "fr-FR",
-                        "fr-BE",
-                        "fr-CA"
-                    ],
-                    "en": [
-                        "en-IE",
-                        "en-US",
-                        "en-GB"
-                    ]
+                    "fr": ["fr-FR", "fr-BE", "fr-CA"],
+                    "en": ["en-IE", "en-US", "en-GB"],
                 },
-                "fallback": "fr"
+                "fallback": "fr",
             },
             "translators": {
                 "GoogleTranslate": {
                     "details": {
                         "name": "GoogleTranslate",
                         "url": "https://translate.google.com",
-                        "status": "free"
+                        "status": "free",
                     },
                     "technical": {
                         "api": {
                             "key": "your_api_key",
                             "key_expiration": "2025-12-31",
-                            "request_limit": 10000
+                            "request_limit": 10000,
                         },
                         "performance": {
                             "max_text_size": 5000,
                             "priority": 1,
-                            "success_rate": 99.5
-                        }
-                    }
+                            "success_rate": 99.5,
+                        },
+                    },
                 }
-            }
+            },
         },
         "details": {
             "name": "Configuration test file",
-            "description": "This is a temporary configuration test file"
+            "description": "This is a temporary configuration test file",
         },
         "authors": {
             "123e4567-e89b-12d3-a456-426614174000": {
@@ -230,13 +203,11 @@ def config_data():
                 "last_name": "Doe",
                 "email": "john.doe@example.com",
                 "url": "https://johndoe.com",
-                "languages": [
-                    "en-US",
-                    "fr-CA"
-                ]
+                "languages": ["en-US", "fr-CA"],
             }
-        }
+        },
     }
+
 
 @pytest.fixture
 def temp_config_files(tmp_path, config_data):
@@ -255,15 +226,17 @@ def temp_config_files(tmp_path, config_data):
 
     return [(yaml_path, "yaml"), (toml_path, "toml"), (json_path, "json")]
 
-@pytest.mark.parametrize("config_path, config_format", [
-    ("config.yaml", "yaml"),
-    ("config.toml", "toml"),
-    ("config.json", "json")
-])
+
+@pytest.mark.parametrize(
+    "config_path, config_format",
+    [("config.yaml", "yaml"), ("config.toml", "toml"), ("config.json", "json")],
+)
 def test_load_config_file(temp_config_files, config_path, config_format):
     """Test loading configuration files in different formats."""
     # Find the correct path based on the config_format
-    config_file_path = next((path for path, fmt in temp_config_files if fmt == config_format), None)
+    config_file_path = next(
+        (path for path, fmt in temp_config_files if fmt == config_format), None
+    )
 
     if config_file_path is None:
         pytest.fail(f"Configuration file for format '{config_format}' not found.")
@@ -273,6 +246,7 @@ def test_load_config_file(temp_config_files, config_path, config_format):
 
     # Assert the loaded data matches the expected data
     assert config_data["setup"]["paths"]["package"]["modules"] == ["i18n_tools"]
+
 
 @pytest.fixture
 def setup_temp_dir(tmp_path, config_data):
@@ -306,6 +280,7 @@ def setup_temp_dir(tmp_path, config_data):
 
     return tmp_path
 
+
 def test_load_config_from_root(setup_temp_dir, monkeypatch, config_data):
     """Test loading configuration from the root directory."""
     temp_dir = setup_temp_dir
@@ -317,6 +292,7 @@ def test_load_config_from_root(setup_temp_dir, monkeypatch, config_data):
     loaded_data = load_config()
     assert loaded_data == config_data
 
+
 def test_load_config_from_locales(setup_temp_dir, monkeypatch, config_data):
     """Test loading configuration from the locales directory."""
     temp_dir = setup_temp_dir
@@ -327,6 +303,7 @@ def test_load_config_from_locales(setup_temp_dir, monkeypatch, config_data):
 
     loaded_data = load_config()
     assert loaded_data == config_data
+
 
 def test_load_config_not_found(setup_temp_dir, monkeypatch):
     """Test loading configuration when no config file is found."""
@@ -340,6 +317,7 @@ def test_load_config_not_found(setup_temp_dir, monkeypatch):
     with pytest.raises(FileNotFoundError, match="No configuration file found"):
         load_config()
 
+
 def test_load_config_file_unsupported_format(tmp_path):
     """Test loading an unsupported configuration file format."""
     unsupported_path = tmp_path / "config.txt"
@@ -348,12 +326,14 @@ def test_load_config_file_unsupported_format(tmp_path):
     with pytest.raises(Exception):
         _load_config_file(unsupported_path)
 
+
 def test_load_config_file_not_found(tmp_path):
     """Test loading a configuration file that does not exist."""
     non_existent_path = tmp_path / "non_existent.yaml"
 
     with pytest.raises(Exception, match="Error loading configuration file"):
         _load_config_file(non_existent_path)
+
 
 def test_load_config_file_invalid_yaml(tmp_path):
     """Test loading an invalid YAML configuration file."""
@@ -363,11 +343,15 @@ def test_load_config_file_invalid_yaml(tmp_path):
     with pytest.raises(Exception, match="Error loading configuration file"):
         _load_config_file(invalid_yaml_path)
 
-@pytest.mark.parametrize("config_path, config_format", [
-    ("i18n-tools.yaml", "yaml"),
-    ("i18n-tools.json", "json"),
-    ("i18n-tools.toml", "toml"),
-])
+
+@pytest.mark.parametrize(
+    "config_path, config_format",
+    [
+        ("i18n-tools.yaml", "yaml"),
+        ("i18n-tools.json", "json"),
+        ("i18n-tools.toml", "toml"),
+    ],
+)
 def test_save_config_file(tmp_path, config_path, config_format, config_data):
     """Test saving configuration files in different formats."""
     config_file_path = tmp_path / config_path
@@ -379,12 +363,14 @@ def test_save_config_file(tmp_path, config_path, config_format, config_data):
     # Assert the loaded data matches the expected config_data
     assert loaded_data == config_data
 
+
 def test_save_config_unsupported_format(tmp_path, config_data):
     """Test saving configuration with an unsupported file format."""
     unsupported_path = tmp_path / "config.txt"
 
     with pytest.raises(ValueError, match="Unsupported file format"):
         save_config(unsupported_path, config_data)
+
 
 def test_config_with_temp_file():
     """
@@ -396,12 +382,18 @@ def test_config_with_temp_file():
     assert config.setup[["languages", "fallback"]] == "fr"
     assert config.setup[["domains", "package", "i18n_tools"]] == ["domain1"]
     assert config.setup[["domains", "application", "mod1"]] == ["domain2", "domain3"]
-    assert config.setup[["domains", "application", "mod2/pkg1/"]] == ["domain4", "domain5"]
-    assert config.setup[["domains", "application", "mod2/pkg2/"]] == ["domain6", "domain7"]
+    assert config.setup[["domains", "application", "mod2/pkg1/"]] == [
+        "domain4",
+        "domain5",
+    ]
+    assert config.setup[["domains", "application", "mod2/pkg2/"]] == [
+        "domain6",
+        "domain7",
+    ]
     assert config.get(["details", "name"]) == "Configuration test file"
     assert (
-            config.get(["authors", "123e4567-e89b-12d3-a456-426614174000", "first_name"])
-            == "John"
+        config.get(["authors", "123e4567-e89b-12d3-a456-426614174000", "first_name"])
+        == "John"
     )
     with pytest.raises(KeyError):
         config.get(["detail", "name"])
@@ -481,8 +473,8 @@ def test_config_set_errors_special():
 def test_add_author():
     config.add_author("Albert", "Dupont", "albert.dupont@local.net", "", ["en", "fr"])
     assert (
-            config.get_author("123e4567-e89b-12d3-a456-426614174000")["email"]
-            == "john.doe@example.com"
+        config.get_author("123e4567-e89b-12d3-a456-426614174000")["email"]
+        == "john.doe@example.com"
     )
 
 
@@ -500,8 +492,8 @@ def test_add_author_email_error():
 
 def test_get_author_by_email():
     assert (
-            config.get_author("albert.dupont@local.net")["email"]
-            == "albert.dupont@local.net"
+        config.get_author("albert.dupont@local.net")["email"]
+        == "albert.dupont@local.net"
     )
 
 
