@@ -5,7 +5,7 @@ import tarfile
 import gzip
 import shutil
 from pathlib import Path
-from polib import POFile, MOFile
+from polib import POFile, MOFile, POEntry
 from i18n_tools.loader import (
     file_exists,
     create_directory,
@@ -21,6 +21,7 @@ from i18n_tools.loader import (
     _create_empty_file,
     _create_tar_gz,
     _create_gzip,
+    _non_traversal_path,
     check_json_integrity,
     load_locale_json,
     save_locale_json,
@@ -28,7 +29,7 @@ from i18n_tools.loader import (
     save_aggregated_locale_json,
     create_module_archive,
     restore_module_from_archive,
-    _non_traversal_path,
+    load_locale_po,
     save_locale_po,
     save_locale_pot,
 )
@@ -100,6 +101,41 @@ def test_load_po_file(temp_po_file):
 def test_load_po_raises_exception():
     with pytest.raises(FileNotFoundError):
         _load_po("/nonexistent/path")
+
+
+@pytest.fixture
+def setup_valid_po_file(tmp_path):
+    """Fixture to set up a temporary valid PO file for testing."""
+    po_file_path = tmp_path / "valid.po"
+    po_file = POFile()
+    po_file.append(POEntry(msgid="msgid_001", msgstr="Translation 1"))
+    po_file.append(
+        POEntry(
+            msgid="msgid_002",
+            msgid_plural="msgid_002_plr",
+            msgstr_plural={0: "Translation 2", 1: "Plural Translation 2"},
+        )
+    )
+    save_locale_po(str(po_file_path), po_file)
+    return po_file_path
+
+
+def test_load_locale_po_valid(setup_valid_po_file):
+    """Test load_locale_po with a valid PO file."""
+    po_file_path = setup_valid_po_file
+    po_file = load_locale_po(str(po_file_path))
+
+    assert len(po_file) == 2
+    assert po_file[0].msgid == "msgid_001"
+    assert po_file[1].msgid == "msgid_002"
+
+
+def test_load_locale_po_file_not_found(tmp_path):
+    """Test load_locale_po with a non-existent PO file."""
+    non_existent_path = tmp_path / "non_existent.po"
+
+    with pytest.raises(FileNotFoundError):
+        load_locale_po(str(non_existent_path))
 
 
 def test_load_pot_file(temp_po_file):
