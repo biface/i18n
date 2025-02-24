@@ -292,6 +292,49 @@ def _load_config_file(config_path: Path) -> dict:
         raise Exception(f"Error loading configuration file: {config_path}. {e}")
 
 
+def _non_traversal_path(
+    root_path: str, module_list: List[str], members: List[tarfile.TarInfo]
+) -> List[tarfile.TarInfo]:
+    """
+    Ensure the member paths are safe to be extracted by checking if they are within the expected module paths.
+
+    :param root_path: The root path of the module path.
+    :type root_path: str
+    :param module_list: The list of modules to extract.
+    :type module_list: List[str]
+    :param members: The list of members to extract.
+    :type members: List[tarfile.TarInfo]
+    :return: The safe paths for extraction.
+    :rtype: List[tarfile.TarInfo]
+    """
+
+    # Convert root_path to a Path object and resolve it to an absolute path
+    root_path = Path(root_path).resolve()
+
+    # Create a set of expected module paths by combining root_path with each module in module_list
+    expected_module_paths = {root_path / module for module in module_list}
+
+    # List to store the safe paths for extraction
+    safe_paths = []
+
+    # Iterate over each member in the tar archive
+    for member in members:
+        member_path = Path(member.name)
+
+        # Resolve the member path to check for directory traversal
+        resolved_path = (root_path / member_path).resolve()
+
+        # Check if the resolved path is within the root path and within any of the expected module paths
+        if resolved_path.is_relative_to(root_path):
+            # Ensure the resolved path is within one of the expected module paths
+            if any(
+                resolved_path.is_relative_to(module) for module in expected_module_paths
+            ):
+                safe_paths.append(member)
+
+    return safe_paths
+
+
 def load_config(config_path: str = None) -> dict:
     """
     Load the configuration file (YAML, TOML, or JSON) from the application directories
@@ -457,6 +500,20 @@ def aggregate_locale_json(
     return aggregated_data
 
 
+def load_locale_po(file_path: str) -> POFile:
+    """
+    Public interface to load a PO locale file with integrity check.
+
+    :param file_path: Path to the PO locale file.
+    :type file_path: str
+    :return: PO file object.
+    :rtype: POFile
+    :raises FileNotFoundError: If the file is not found.
+    :raises ValueError: If the file is not a valid PO file or fails the integrity check.
+    """
+    return _load_po(file_path)
+
+
 def save_locale_json(file_path: str, data: Dict[str, Any]) -> None:
     """
     Save data to a JSON locale file.
@@ -512,7 +569,7 @@ def save_locale_po(file_path: str, po_data: pofile) -> None:
     :param po_data:
     :return:
     """
-    _save_json(file_path, po_data)
+    _save_po(file_path, po_data)
 
 
 def save_locale_pot(file_path: str, po_data: pofile) -> None:
@@ -563,49 +620,6 @@ def create_module_archive(root_path: str, module: str, archive_name: str) -> Non
         # The arcname parameter ensures that the directory structure is preserved in the archive
         # This means the archive will contain the top-level module directory and all its contents
         tar.add(module_path, arcname=top_level_module)
-
-
-def _non_traversal_path(
-    root_path: str, module_list: List[str], members: List[tarfile.TarInfo]
-) -> List[tarfile.TarInfo]:
-    """
-    Ensure the member paths are safe to be extracted by checking if they are within the expected module paths.
-
-    :param root_path: The root path of the module path.
-    :type root_path: str
-    :param module_list: The list of modules to extract.
-    :type module_list: List[str]
-    :param members: The list of members to extract.
-    :type members: List[tarfile.TarInfo]
-    :return: The safe paths for extraction.
-    :rtype: List[tarfile.TarInfo]
-    """
-
-    # Convert root_path to a Path object and resolve it to an absolute path
-    root_path = Path(root_path).resolve()
-
-    # Create a set of expected module paths by combining root_path with each module in module_list
-    expected_module_paths = {root_path / module for module in module_list}
-
-    # List to store the safe paths for extraction
-    safe_paths = []
-
-    # Iterate over each member in the tar archive
-    for member in members:
-        member_path = Path(member.name)
-
-        # Resolve the member path to check for directory traversal
-        resolved_path = (root_path / member_path).resolve()
-
-        # Check if the resolved path is within the root path and within any of the expected module paths
-        if resolved_path.is_relative_to(root_path):
-            # Ensure the resolved path is within one of the expected module paths
-            if any(
-                resolved_path.is_relative_to(module) for module in expected_module_paths
-            ):
-                safe_paths.append(member)
-
-    return safe_paths
 
 
 def restore_module_from_archive(root_path: str, module: str, archive_name: str) -> None:
