@@ -162,6 +162,32 @@ def test_update_translator(translator, updated_data, keys, result):
     # Vérifie les nouvelles données
     assert translator[keys] == result
 
+# Test for update_translator with invalid keys
+def test_update_translator_invalid_keys():
+    with pytest.raises(ValueError):
+        # Attempt to update with a key that doesn't exist in the structure
+        config.update_translator("Translator1", {"invalid_key": "value"})
+
+# Test for update_translator with incorrect data types
+def test_update_translator_invalid_data_types():
+    with pytest.raises(ValueError):
+        # Attempt to update with a value that doesn't match the expected type
+        config.update_translator("Translator1", {"details": {"name": 12345}})  # Name should be a string
+
+# Test for update_translator for a non-existent translator
+def test_update_translator_nonexistent():
+    with pytest.raises(KeyError):
+        # Attempt to update a translator that doesn't exist
+        config.update_translator("NonexistentTranslator", {"details": {"name": "New Name"}})
+
+# Test for partial update_translator
+def test_update_translator_partial():
+    # Update only one part of the translator's data
+    config.update_translator("Translator1", {"details": {"translation_type": "Technical"}})
+    translator = config.get_translator("Translator1")
+    assert translator[["details", "translation_type"]] == "Technical"
+    assert translator[["details", "name"]] == "New Translator1"  # Ensure other fields remain unchanged
+
 
 # Test pour remove_translator
 def test_remove_translator():
@@ -175,3 +201,18 @@ def test_remove_translator():
 
     # Assurer que l'autre traducteur est toujours présent
     assert "Translator2" in translators
+
+# Test for remove_translator for a non-existent translator
+def test_remove_translator_nonexistent():
+    # Attempt to remove a translator that doesn't exist
+    result = config.remove_translator("NonexistentTranslator")
+    assert result is False
+
+# Test for removing all translators
+def test_remove_all_translators():
+    # Remove all translators and check if the list is empty
+    config.remove_translator("Translator1")
+    config.remove_translator("Translator2")
+    config.remove_translator("Translator3")
+    translators = config.list_translators()
+    assert len(translators) == 0

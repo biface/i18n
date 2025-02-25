@@ -119,7 +119,6 @@ def setup_valid_po_file(tmp_path):
     save_locale_po(str(po_file_path), po_file)
     return po_file_path
 
-
 def test_load_locale_po_valid(setup_valid_po_file):
     """Test load_locale_po with a valid PO file."""
     po_file_path = setup_valid_po_file
