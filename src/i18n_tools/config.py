@@ -237,9 +237,9 @@ class Config(metaclass=Singleton):
                 )
             # Verify nested keys
             nested_path = path[1:]
-            if not attr.is_key(nested_path[0]):
+            if not all(attr.is_key(k) for k in nested_path):
                 raise KeyError(
-                    f"Key '{nested_path[0]}' is not valid for NestedDictionary attribute '{attr_name}'."
+                    f"Path '{nested_path}' is not valid for NestedDictionary attribute '{attr_name}'."
                 )
             # Update the nested key
             try:
