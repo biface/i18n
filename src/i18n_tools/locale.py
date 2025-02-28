@@ -18,6 +18,8 @@ modifying this file, you agree to abide by the terms of this license.
 This module is authored and maintained as part of the i18n-tools package.
 """
 
+from typing import Dict, List, Set
+
 import langcodes
 
 
@@ -55,3 +57,16 @@ def validate_and_normalize_language_tags(tags: list[str]) -> list[str]:
             raise ValueError(f"Invalid language tag: {tag}")
         normalized_tags.append(normalize_language_tag(tag))
     return normalized_tags
+
+
+def get_all_languages(hierarchy: Dict[str, List[str]]) -> Set[str]:
+    """
+    Collect all unique languages from the hierarchy dictionary.
+
+    :param hierarchy: Dictionary containing language hierarchies.
+    :return: A set of all unique languages.
+    """
+    all_languages = set(hierarchy.keys())
+    for lang_list in hierarchy.values():
+        all_languages.update(lang_list)
+    return all_languages
