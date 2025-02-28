@@ -92,7 +92,7 @@ def _update_po_translations(po_file: POFile, translations: Dict):
     for msgid, msgstr_list in translations.items():
         if len(msgstr_list[0]) == 1:
             msgid_full = msgid
-            msgid_plural = f"{msgid}_plr"
+            msgid_plural = f"{msgid_full}_plr"
             entry = po_file.find(msgid_full)
 
             if len(msgstr_list) > 1:
@@ -117,7 +117,7 @@ def _update_po_translations(po_file: POFile, translations: Dict):
         else:
             for index, msgstr in enumerate(msgstr_list[0]):
                 msgid_full = f"{msgid}_{index:03d}"
-                msgid_plural = f"{msgid}_plr"
+                msgid_plural = f"{msgid_full}_plr"
                 entry = po_file.find(msgid_full)
 
                 if len(msgstr_list) > 1:
@@ -195,3 +195,6 @@ def add_translation_set(repository: Dict[str, Any], translations: Dict):
                 )
                 _update_po_translations(po_file, existing_translations)
                 save_locale_po(str(po_file_path), po_file)
+
+
+# TODO : add update and remove and check missing translations both in json and po files
