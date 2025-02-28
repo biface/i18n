@@ -32,6 +32,7 @@ from typing import Dict, List
 from polib import POEntry, POFile
 
 from i18n_tools.loader import save_locale_pot
+from i18n_tools.locale import get_all_languages
 
 
 def _initialize_pot_file(file_path: str, domain: str, authors: Dict, language: str):
@@ -91,9 +92,7 @@ def populate_pot_files(config: Dict, domains: Dict, languages: Dict, authors: Di
         )
 
     # Flatten the language hierarchy to get a complete list of languages
-    all_languages = set(languages["hierarchy"].keys())
-    for lang_list in languages["hierarchy"].values():
-        all_languages.update(lang_list)
+    all_languages = get_all_languages(languages["hierarchy"])
 
     for module in config["modules"]:
         # Ensure the module exists in the domains dictionary
