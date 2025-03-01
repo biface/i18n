@@ -68,20 +68,24 @@ def _create_po_entry(
     and optionally msgstr_plural.
 
     :param msgid: The message ID.
+    :type msgid: str
     :param msgid_plural: The plural form of the message ID.
     :param msgstr: The singular translation string.
+    :type msgstr: str
     :param msgstr_plural: Optional dictionary of plural translation strings.
+    :type msgstr_plural: Dict[int, str]
     :return: A POEntry object with the specified parameters.
+    :rtype: POEntry
     """
-    po_entry = POEntry(msgid=msgid, msgid_plural=msgid_plural, msgstr=msgstr)
+    po_entry = POEntry(msgid=msgid, msgstr=msgstr)
     if msgstr_plural:
-
+        msgstr_plural[0] = msgstr
+        po_entry.msgid_plural = msgid_plural
         po_entry.msgstr_plural = msgstr_plural
     return po_entry
 
 
 def _update_po_translations(po_file: POFile, translations: Dict):
-    #FIXME : Must manage correctly msgstr, and plurals
     """
     Update translations in a PO file with new data.
 
@@ -97,13 +101,15 @@ def _update_po_translations(po_file: POFile, translations: Dict):
         if len(msgstr_list) == 1:
             msgid_full = msgid
             msgid_plural = f"{msgid_full}_plr"
+            msgstr = msgstr_list[0]
             entry = po_file.find(msgid_full)
 
             if len(msgplr_list) >= 1:
                 msgstr_plural = {
-                    i: msgs_list[i][0] for i in range(1, len(msgs_list))
+                    i: msgs_list[i][0] for i in range(1, len(msgplr_list) + 1)
                 }
                 if entry:
+                    msgstr_plural[0] = msgstr
                     entry.msgstr_plural = msgstr_plural
                 else:
                     po_entry = _create_po_entry(
@@ -112,11 +118,9 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                     po_file.append(po_entry)
             else:
                 if entry:
-                    entry.msgstr = msgstr_list[0]
+                    entry.msgstr = msgstr
                 else:
-                    po_entry = _create_po_entry(
-                        msgid_full, msgid_plural, msgstr_list[0]
-                    )
+                    po_entry = _create_po_entry(msgid_full, msgid_plural, msgstr)
                     po_file.append(po_entry)
         else:
             for index, msgstr in enumerate(msgstr_list):
@@ -124,11 +128,12 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                 msgid_plural = f"{msgid_full}_plr"
                 entry = po_file.find(msgid_full)
 
-                if len(msgs_list) > 1:
+                if len(msgplr_list) >= 1:
                     msgstr_plural = {
-                        i: msgs_list[i][index] for i in range(1, len(msgs_list))
+                        i: msgs_list[i][index] for i in range(1, len(msgplr_list) + 1)
                     }
                     if entry:
+                        msgstr_plural[0] = msgstr
                         entry.msgstr_plural = msgstr_plural
                     else:
                         po_entry = _create_po_entry(
@@ -144,6 +149,7 @@ def _update_po_translations(po_file: POFile, translations: Dict):
 
 
 def add_translation_set(repository: Dict[str, Any], translations: Dict):
+    #FIXME : Working on add translation in target domain.
     """
     Adds a translation set to the translation repository using JSON and PO files.
 

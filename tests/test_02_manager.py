@@ -81,12 +81,12 @@ def test_update_json_translations(existing_translations, translation_data, expec
     [
         (
                 "msgid_001", "msgid_001_plr", "Translation", None,
-                POEntry(msgid="msgid_001", msgid_plural="msgid_001_plr", msgstr="Translation")
+                POEntry(msgid="msgid_001", msgstr="Translation")
         ),
         (
-                "msgid_002", "msgid_002_plr", "Translation", {0: "Plural 1", 1: "Plural 2"},
+                "msgid_002", "msgid_002_plr", "Translation", {1: "Plural 1", 2: "Plural 2"},
                 POEntry(msgid="msgid_002", msgid_plural="msgid_002_plr", msgstr="Translation",
-                        msgstr_plural={0: "Plural 1", 1: "Plural 2"})
+                        msgstr_plural={0: "Translation", 1:"Plural 1", 2: "Plural 2"})
         ),
     ]
 )
@@ -104,21 +104,26 @@ def test_create_po_entry(msgid, msgid_plural, msgstr, msgstr_plural, expected_ou
     [
         (
                 {"msgid_001": [["Translation"]]},
-                [POEntry(msgid="msgid_001", msgid_plural="msgid_001_plr", msgstr="Translation")]
+                [POEntry(msgid="msgid_001", msgstr="Translation")]
+        ),
+        (
+                {"msgid_004": [["Translation 1", "Translation 2"]]},
+                [POEntry(msgid="msgid_004_000", msgstr="Translation 1"),
+                 POEntry(msgid="msgid_004_001", msgstr="Translation 2")]
         ),
         (
                 {"msgid_002": [["Translation"], ["Plural 1"], ["Plural 2"]]},
                 [POEntry(msgid="msgid_002", msgid_plural="msgid_002_plr", msgstr="Translation",
-                         msgstr_plural={1: "Plural 1", 2: "Plural 2"})]
+                         msgstr_plural={0: "Translation", 1: "Plural 1", 2: "Plural 2"})]
         ),
         (
                 {"msgid_003": [["Translation 1", "Traduction 2"],
                                ["Plural 1-1", "Plural 2-1"],
                                ["Plural 2-1", "Plural 2-2"]]},
                 [POEntry(msgid="msgid_003_000", msgid_plural="msgid_003_000_plr", msgstr="Translation 1",
-                         msgstr_plural={1: "Plural 1-1", 2: "Plural 2-1"}),
+                         msgstr_plural={0: "Translation 1", 1: "Plural 1-1", 2: "Plural 2-1"}),
                  POEntry(msgid="msgid_003_001", msgid_plural="msgid_003_001_plr", msgstr="Traduction 2",
-                         msgstr_plural={1: "Plural 2-1", 2: "Plural 2-2"})
+                         msgstr_plural={0:"Traduction 2", 1: "Plural 2-1", 2: "Plural 2-2"})
                  ]
         )
     ]
@@ -134,6 +139,47 @@ def test_update_po_translations(translations, expected_po_entries):
         if expected_entry.msgstr_plural:
             assert entry.msgstr_plural == expected_entry.msgstr_plural
 
+@pytest.mark.parametrize(
+    "translations, expected_po_entries",
+    [
+        (
+                {"msgid_001": [["Translation"]]},
+                [POEntry(msgid="msgid_001", msgstr="Translation")]
+        ),
+        (
+                {"msgid_004": [["Translation 1", "Translation 2"]]},
+                [POEntry(msgid="msgid_004_000", msgstr="Translation 1"),
+                 POEntry(msgid="msgid_004_001", msgstr="Translation 2")]
+        ),
+        (
+                {"msgid_002": [["Translation"], ["Plural 1"], ["Plural 2"]]},
+                [POEntry(msgid="msgid_002", msgid_plural="msgid_002_plr", msgstr="Translation",
+                         msgstr_plural={0: "Translation", 1: "Plural 1", 2: "Plural 2"})]
+        ),
+        (
+                {"msgid_003": [["Translation 1", "Traduction 2"],
+                               ["Plural 1-1", "Plural 2-1"],
+                               ["Plural 2-1", "Plural 2-2"]]},
+                [POEntry(msgid="msgid_003_000", msgid_plural="msgid_003_000_plr", msgstr="Translation 1",
+                         msgstr_plural={0: "Translation 1", 1: "Plural 1-1", 2: "Plural 2-1"}),
+                 POEntry(msgid="msgid_003_001", msgid_plural="msgid_003_001_plr", msgstr="Traduction 2",
+                         msgstr_plural={0:"Traduction 2", 1: "Plural 2-1", 2: "Plural 2-2"})
+                 ]
+        )
+    ]
+)
+def test_update_po_translations_with_entry(translations, expected_po_entries):
+    po_file = POFile()
+    for entry in expected_po_entries:
+        po_file.append(entry)
+    _update_po_translations(po_file, translations)
+    assert len(po_file) == len(expected_po_entries)
+    for entry, expected_entry in zip(po_file, expected_po_entries):
+        assert entry.msgid == expected_entry.msgid
+        assert entry.msgid_plural == expected_entry.msgid_plural
+        assert entry.msgstr == expected_entry.msgstr
+        if expected_entry.msgstr_plural:
+            assert entry.msgstr_plural == expected_entry.msgstr_plural
 
 @pytest.mark.parametrize(
     "translations",
@@ -141,7 +187,10 @@ def test_update_po_translations(translations, expected_po_entries):
         {
             "fr": {
                 "msgid_001": [["Traduction 1"]],
-                "msgid_002": [["Traduction 2"], ["Pluriel 1"], ["Pluriel 2"]]
+                "msgid_002": [["Traduction 2"], ["Pluriel 1"], ["Pluriel 2"]],
+                "msgid_003": [["Traduction 31", "Traduction 32"],
+                              ["Pluriel 1-31", "Pluriel 1-32"],
+                              ["Pluriel 2-31", "Pluriel 2-32"]],
             },
             "fr-FR": {
                 "msgid_001": [["Traduction 1"]],
