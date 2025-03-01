@@ -1,6 +1,6 @@
 import pytest
+import json
 from pathlib import Path
-from unittest.mock import patch
 from i18n_tools.manager import (
     _verify_paths_and_modules,
     _update_json_translations,
@@ -26,7 +26,8 @@ def sample_repository(tmp_path):
         },
         "languages": {
             "fr": ["fr-FR", "fr-BE", "fr-CA"],
-            "en": ["en-IE", "en-US", "en-GB"]
+            "en": ["en-IE", "en-US", "en-GB"],
+            "es": ["es-ES", "es-MX"],
         }
     }
 
@@ -133,4 +134,62 @@ def test_update_po_translations(translations, expected_po_entries):
         if expected_entry.msgstr_plural:
             assert entry.msgstr_plural == expected_entry.msgstr_plural
 
-# TODO : complete test to cover 100%
+
+@pytest.mark.parametrize(
+    "translations",
+    [
+        {
+            "fr": {
+                "msgid_001": [["Traduction 1"]],
+                "msgid_002": [["Traduction 2"], ["Pluriel 1"], ["Pluriel 2"]]
+            },
+            "fr-FR": {
+                "msgid_001": [["Traduction 1"]],
+                "msgid_002": [["Traduction 2"], ["Pluriel 1"], ["Pluriel 2"]]
+            },
+            "en": {
+                "msgid_001": [["Translation 1"]],
+                "msgid_002": [["Translation 2"], ["Plural 1"], ["Plural 2"]]
+            },
+            "es": {
+                "msgid_001": [["Traducción 1"]],
+                "msgid_002": [["Traducción 2"], ["Plural 1"], ["Plural 2"]]
+            }
+        },
+    ]
+)
+def test_add_translation_set(sample_repository, translations):
+    add_translation_set(sample_repository, translations)
+
+    repository_path = Path(sample_repository["base"])
+
+    for lang, translation_data in translations.items():
+        for module in sample_repository["modules"]:
+            for domain in sample_repository["domains"][module]:
+                lang_path = (
+                    repository_path
+                    / module
+                    / "locales"
+                    / lang
+                    / "LC_MESSAGES"
+                )
+                json_file_path = lang_path / f"{domain}.json"
+                po_file_path = lang_path / f"{domain}.po"
+
+                # Verify JSON content
+                with open(json_file_path, "r", encoding="utf-8") as json_file:
+                    saved_json_content = json.load(json_file)
+                    assert saved_json_content == translation_data
+
+                # Verify PO content
+                po_file = POFile(str(po_file_path))
+                for entry in po_file:
+                    msgid = entry.msgid.split("_")[0]
+                    assert msgid in translation_data
+                    if len(translation_data[msgid][0]) == 1:
+                        assert entry.msgstr == translation_data[msgid][0][0]
+                    else:
+                        assert entry.msgstr in translation_data[msgid][0]
+                        if entry.msgstr_plural:
+                            for i, plural in enumerate(translation_data[msgid][1:]):
+                                assert entry.msgstr_plural[i] == plural[0]

@@ -60,7 +60,7 @@ def _update_json_translations(existing_translations: Dict, translation_data: Dic
 
 def _create_po_entry(
     msgid: str, msgid_plural: str, msgstr: str, msgstr_plural: Dict[int, str] = None
-):
+) -> POEntry:
     """
     Create a POEntry with the given parameters.
 
@@ -75,11 +75,13 @@ def _create_po_entry(
     """
     po_entry = POEntry(msgid=msgid, msgid_plural=msgid_plural, msgstr=msgstr)
     if msgstr_plural:
+
         po_entry.msgstr_plural = msgstr_plural
     return po_entry
 
 
 def _update_po_translations(po_file: POFile, translations: Dict):
+    #FIXME : Must manage correctly msgstr, and plurals
     """
     Update translations in a PO file with new data.
 
@@ -89,40 +91,42 @@ def _update_po_translations(po_file: POFile, translations: Dict):
     :param po_file: The POFile object to be updated.
     :param translations: Dictionary of translations to be added or updated.
     """
-    for msgid, msgstr_list in translations.items():
-        if len(msgstr_list[0]) == 1:
+    for msgid, msgs_list in translations.items():
+        msgstr_list = msgs_list[0]
+        msgplr_list = msgs_list[1:]
+        if len(msgstr_list) == 1:
             msgid_full = msgid
             msgid_plural = f"{msgid_full}_plr"
             entry = po_file.find(msgid_full)
 
-            if len(msgstr_list) > 1:
+            if len(msgplr_list) >= 1:
                 msgstr_plural = {
-                    i: msgstr_list[i][0] for i in range(1, len(msgstr_list))
+                    i: msgs_list[i][0] for i in range(1, len(msgs_list))
                 }
                 if entry:
                     entry.msgstr_plural = msgstr_plural
                 else:
                     po_entry = _create_po_entry(
-                        msgid_full, msgid_plural, msgstr_list[0][0], msgstr_plural
+                        msgid_full, msgid_plural, msgstr_list[0], msgstr_plural
                     )
                     po_file.append(po_entry)
             else:
                 if entry:
-                    entry.msgstr = msgstr_list[0][0]
+                    entry.msgstr = msgstr_list[0]
                 else:
                     po_entry = _create_po_entry(
-                        msgid_full, msgid_plural, msgstr_list[0][0]
+                        msgid_full, msgid_plural, msgstr_list[0]
                     )
                     po_file.append(po_entry)
         else:
-            for index, msgstr in enumerate(msgstr_list[0]):
+            for index, msgstr in enumerate(msgstr_list):
                 msgid_full = f"{msgid}_{index:03d}"
                 msgid_plural = f"{msgid_full}_plr"
                 entry = po_file.find(msgid_full)
 
-                if len(msgstr_list) > 1:
+                if len(msgs_list) > 1:
                     msgstr_plural = {
-                        i: msgstr_list[i][index] for i in range(1, len(msgstr_list))
+                        i: msgs_list[i][index] for i in range(1, len(msgs_list))
                     }
                     if entry:
                         entry.msgstr_plural = msgstr_plural
