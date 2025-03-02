@@ -35,7 +35,10 @@ def _verify_paths_and_modules(repository: Dict[str, Any]):
         if not file_exists(module_path):
             raise FileNotFoundError(f"The module path does not exist: {module_path}")
 
-def _verify_available_languages(repository: Dict[str, Any], languages:list[str]) -> None:
+
+def _verify_available_languages(
+    repository: Dict[str, Any], languages: list[str]
+) -> None:
     """
     Verify that languages in translation set are registered in the repository
     :param repository: Dictionary containing the base path and list of modules.
@@ -52,7 +55,8 @@ def _verify_available_languages(repository: Dict[str, Any], languages:list[str])
                 f"The language {language} is not registered in the repository"
             )
 
-def _verify_target_module(repository: Dict[str, Any], target_module:str) -> None:
+
+def _verify_target_module(repository: Dict[str, Any], target_module: str) -> None:
     """
     Verify that target module is registered in the repository
     :param repository: Dictionary containing the base path and list of modules.
@@ -67,6 +71,34 @@ def _verify_target_module(repository: Dict[str, Any], target_module:str) -> None
         raise ValueError(
             f"The target module {target_module} is not registered in the repository"
         )
+
+
+def _verify_target_domain(
+    repository: Dict[str, Any], target_module: str, target_domain: str
+) -> None:
+    """
+    Verify that target domain is registered in the repository
+    :param repository: Dictionary containing the base path and list of modules.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :param target_domain: domain of translation.
+    :type target_domain: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any domain is not registered in the repository.
+    """
+    try:
+        _verify_target_module(repository, target_module)
+        if target_domain not in repository["domains"][target_module]:
+            raise ValueError(
+                f"The target domain {target_domain} is not registered in the repository"
+            )
+    except ValueError as e:
+        raise ValueError(
+            f"The target module {target_module} is not registered in the repository"
+        ) from e
+
 
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
     """
@@ -181,8 +213,9 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                         po_file.append(po_entry)
 
 
-def add_translation_set(repository: Dict[str, Any], translations: Dict):
-    #FIXME : Working on add translation in target domain.
+def add_translation_set(
+    repository: Dict[str, Any], module: str, domain: str, translations: Dict
+):
     """
     Adds a translation set to the translation repository using JSON and PO files.
 
@@ -191,53 +224,49 @@ def add_translation_set(repository: Dict[str, Any], translations: Dict):
     to the languages defined in the repository.
 
     :param repository: Dictionary containing the base path, modules, domains, and languages.
+    :type repository: Dict[str, Any]
+    :param module: Module where should be located domain of translations.
+    :type module: str
+    :param domain: The domain of the translation set.
+    :type domain: str
     :param translations: Dictionary containing the translations to be added.
     :raises ValueError: If the repository path is not absolute or if a language is not supported.
     :raises FileNotFoundError: If any module path does not exist.
     """
+    # verifying components
     _verify_paths_and_modules(repository)
+    _verify_available_languages(repository, list(translations.keys()))
+    _verify_target_domain(repository, module, domain)
 
     repository_path = Path(repository["base"])
     all_languages = get_all_languages(repository["languages"])
 
     for lang, translation_data in translations.items():
-        if lang not in all_languages:
-            raise ValueError(f"Language '{lang}' is not supported in the repository.")
 
         normalized_lang = normalize_language_tag(lang)
-        for module in repository["modules"]:
-            for domain in repository["domains"][module]:
-                lang_path = (
-                    repository_path
-                    / module
-                    / "locales"
-                    / normalized_lang
-                    / "LC_MESSAGES"
-                )
-                lang_path.mkdir(parents=True, exist_ok=True)
+        lang_path = (
+            repository_path / module / "locales" / normalized_lang / "LC_MESSAGES"
+        )
+        lang_path.mkdir(parents=True, exist_ok=True)
 
-                json_file_path = lang_path / f"{domain}.json"
-                po_file_path = lang_path / f"{domain}.po"
+        json_file_path = lang_path / f"{domain}.json"
+        po_file_path = lang_path / f"{domain}.po"
 
-                # Load existing translations
-                existing_translations = (
-                    load_locale_json(str(json_file_path))
-                    if json_file_path.exists()
-                    else {}
-                )
-                existing_translations = _update_json_translations(
-                    existing_translations, translation_data
-                )
-                save_locale_json(str(json_file_path), existing_translations)
+        # Load existing translations
+        existing_translations = (
+            load_locale_json(str(json_file_path)) if json_file_path.exists() else {}
+        )
+        existing_translations = _update_json_translations(
+            existing_translations, translation_data
+        )
+        save_locale_json(str(json_file_path), existing_translations)
 
-                # Load existing PO file
-                po_file = (
-                    load_locale_po(str(po_file_path))
-                    if po_file_path.exists()
-                    else POFile()
-                )
-                _update_po_translations(po_file, existing_translations)
-                save_locale_po(str(po_file_path), po_file)
+        # Load existing PO file
+        po_file = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        )
+        _update_po_translations(po_file, existing_translations)
+        save_locale_po(str(po_file_path), po_file)
 
 
 # TODO : add update and remove and check missing translations both in json and po files

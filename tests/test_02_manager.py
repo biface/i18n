@@ -4,6 +4,7 @@ from pathlib import Path
 from i18n_tools.manager import (
     _verify_available_languages,
     _verify_target_module,
+    _verify_target_domain,
     _verify_paths_and_modules,
     _update_json_translations,
     _create_po_entry,
@@ -90,6 +91,24 @@ def test_verify_target_module(sample_repository, module, check):
     else:
         with pytest.raises(ValueError):
             _verify_target_module(sample_repository, module)
+
+@pytest.mark.parametrize("module, domain, check", [
+    ("module-1", "domain-1", True),
+    ("module-1", "domain-2", True),
+    ("module-1", "domain-3", False),
+    ("module-2", "domain-1", False),
+    ("module-2", "domain-2", True),
+    ("module-2", "domain-3", False),
+    ("module-3", "domain-1", False),
+    ("module-3", "domain-2", False),
+])
+def test_verify_target_module_domains(sample_repository, module, domain, check):
+    if check:
+        _verify_target_domain(sample_repository, module, domain)
+    else:
+        with pytest.raises(ValueError):
+            _verify_target_domain(sample_repository, module, domain)
+
 
 @pytest.mark.parametrize(
     "existing_translations, translation_data, expected_output",
@@ -217,8 +236,10 @@ def test_update_po_translations_with_entry(translations, expected_po_entries):
             assert entry.msgstr_plural == expected_entry.msgstr_plural
 
 @pytest.mark.parametrize(
-    "translations",
-    [
+    "module, domain, translations",
+    [(
+        "module-1",
+        "domain-1",
         {
             "fr": {
                 "msgid_001": [["Traduction 1"]],
@@ -240,40 +261,38 @@ def test_update_po_translations_with_entry(translations, expected_po_entries):
                 "msgid_002": [["Traducción 2"], ["Plural 1"], ["Plural 2"]]
             }
         },
-    ]
+    )]
 )
-def test_add_translation_set(sample_repository, translations):
-    add_translation_set(sample_repository, translations)
+def test_add_translation_set(sample_repository, module, domain, translations):
+    add_translation_set(sample_repository, module, domain, translations)
 
     repository_path = Path(sample_repository["base"])
 
     for lang, translation_data in translations.items():
-        for module in sample_repository["modules"]:
-            for domain in sample_repository["domains"][module]:
-                lang_path = (
-                    repository_path
-                    / module
-                    / "locales"
-                    / lang
-                    / "LC_MESSAGES"
-                )
-                json_file_path = lang_path / f"{domain}.json"
-                po_file_path = lang_path / f"{domain}.po"
+        lang_path = (
+                repository_path
+                / module
+                / "locales"
+                / lang
+                / "LC_MESSAGES"
+        )
+        json_file_path = lang_path / f"{domain}.json"
+        po_file_path = lang_path / f"{domain}.po"
 
-                # Verify JSON content
-                with open(json_file_path, "r", encoding="utf-8") as json_file:
-                    saved_json_content = json.load(json_file)
-                    assert saved_json_content == translation_data
+        # Verify JSON content
+        with open(json_file_path, "r", encoding="utf-8") as json_file:
+            saved_json_content = json.load(json_file)
+            assert saved_json_content == translation_data
 
-                # Verify PO content
-                po_file = POFile(str(po_file_path))
-                for entry in po_file:
-                    msgid = entry.msgid.split("_")[0]
-                    assert msgid in translation_data
-                    if len(translation_data[msgid][0]) == 1:
-                        assert entry.msgstr == translation_data[msgid][0][0]
-                    else:
-                        assert entry.msgstr in translation_data[msgid][0]
-                        if entry.msgstr_plural:
-                            for i, plural in enumerate(translation_data[msgid][1:]):
-                                assert entry.msgstr_plural[i] == plural[0]
+        # Verify PO content
+        po_file = POFile(str(po_file_path))
+        for entry in po_file:
+            msgid = entry.msgid.split("_")[0]
+            assert msgid in translation_data
+            if len(translation_data[msgid][0]) == 1:
+                assert entry.msgstr == translation_data[msgid][0][0]
+            else:
+                assert entry.msgstr in translation_data[msgid][0]
+                if entry.msgstr_plural:
+                    for i, plural in enumerate(translation_data[msgid][1:]):
+                        assert entry.msgstr_plural[i] == plural[0]
