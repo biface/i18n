@@ -4,6 +4,7 @@ from typing import Any, Dict
 from polib import POEntry, POFile
 
 from i18n_tools.loader import (
+    file_exists,
     load_locale_json,
     load_locale_po,
     save_locale_json,
@@ -31,9 +32,41 @@ def _verify_paths_and_modules(repository: Dict[str, Any]):
 
     for module in repository["modules"]:
         module_path = repository_path / module / "locales"
-        if not module_path.exists():
+        if not file_exists(module_path):
             raise FileNotFoundError(f"The module path does not exist: {module_path}")
 
+def _verify_available_languages(repository: Dict[str, Any], languages:list[str]) -> None:
+    """
+    Verify that languages in translation set are registered in the repository
+    :param repository: Dictionary containing the base path and list of modules.
+    :type repository: Dict[str, Any].
+    :param languages: languages in translation set.
+    :type languages: list[str].
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any language does not exist in allowed languages.
+    """
+    for language in languages:
+        if language not in get_all_languages(repository["languages"]):
+            raise ValueError(
+                f"The language {language} is not registered in the repository"
+            )
+
+def _verify_target_module(repository: Dict[str, Any], target_module:str) -> None:
+    """
+    Verify that target module is registered in the repository
+    :param repository: Dictionary containing the base path and list of modules.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any module is not registered in the repository.
+    """
+    if target_module not in repository["modules"]:
+        raise ValueError(
+            f"The target module {target_module} is not registered in the repository"
+        )
 
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
     """

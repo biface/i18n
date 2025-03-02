@@ -27,7 +27,7 @@ import os
 import shutil
 import tarfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from unittest import expectedFailure
 
 import toml
@@ -49,7 +49,7 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     return str(path.resolve())
 
 
-def file_exists(file_path: str) -> bool:
+def file_exists(file_path: Union[Path, str]) -> bool:
     """
     Checks if a file exists.
     :param file_path: a path to a file.
@@ -57,7 +57,9 @@ def file_exists(file_path: str) -> bool:
     :return: True if the file exists.
     :rtype: bool
     """
-    return Path(file_path).exists()
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+    return file_path.exists()
 
 
 def create_directory(path: str) -> None:
