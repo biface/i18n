@@ -437,6 +437,7 @@ def test_config_set_with_key_controls():
             {"name": "A configuration for life", "descriptions": "This or nothing"},
         )
 
+
 def test_config_set_with_nested_key_update():
     # Test updating a nested key in a NestedDictionary
     config.set(["setup", "paths", "application", "base"], "/new/base/path")
@@ -446,6 +447,7 @@ def test_config_set_with_nested_key_update():
     with pytest.raises(KeyError):
         config.set(["setup", "paths", "application", "unknown_key"], "value")
 
+
 def test_config_set_with_invalid_nested_update():
     # Test invalid nested update with incorrect type
     with pytest.raises(TypeError):
@@ -454,6 +456,7 @@ def test_config_set_with_invalid_nested_update():
     # Test invalid nested update with non-existent key
     with pytest.raises(KeyError):
         config.set(["setup", "languages", "unknown_key"], "value")
+
 
 def test_config_unknown_file():
     config.setup[["paths", "config"]] = "o18n-tools.yaml"
@@ -482,6 +485,7 @@ def test_config_set_errors_special():
     with pytest.raises(TypeError):
         config.set("details", "string")
         config.set(["details", "name"], ["A test for life"])
+
 
 def test_config_set_with_type_check():
     # Test type compatibility check for direct attribute update
