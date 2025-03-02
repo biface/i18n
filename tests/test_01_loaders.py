@@ -75,6 +75,13 @@ def test_file_exists(temp_file):
     assert file_exists(temp_file) == True
     assert file_exists("/nonexistent/path") == False
 
+def test_file_exists_path(temp_file):
+    file_path = Path(temp_file)
+    assert file_exists(file_path) == False
+    with open(temp_file, "w", encoding="utf-8") as f:
+        f.write("test content")
+    assert file_exists(file_path) == True
+    assert file_exists(Path("/nonexistent/path")) == False
 
 def test_create_directory(temp_dir):
     create_directory(temp_dir)

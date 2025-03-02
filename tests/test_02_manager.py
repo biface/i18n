@@ -2,6 +2,8 @@ import pytest
 import json
 from pathlib import Path
 from i18n_tools.manager import (
+    _verify_available_languages,
+    _verify_target_module,
     _verify_paths_and_modules,
     _update_json_translations,
     _create_po_entry,
@@ -46,6 +48,8 @@ def sample_translations():
     }
 
 
+
+
 def test_verify_paths_and_modules(sample_repository):
     _verify_paths_and_modules(sample_repository)
 
@@ -55,6 +59,37 @@ def test_verify_paths_and_modules_invalid_path(sample_repository):
     with pytest.raises(FileNotFoundError):
         _verify_paths_and_modules(sample_repository)
 
+def test_verify_not_relative_paths(sample_repository):
+    sample_repository["base"] = "../../relative/path"
+    with pytest.raises(ValueError):
+        _verify_paths_and_modules(sample_repository)
+
+
+@pytest.mark.parametrize("languages, check", [
+    (["en", "en-IE", "en-GB"], True),
+    (["fr", "fr-CA"], True),
+    (["it", "it-IT"], False),
+    (["es", "es-AR", "es-BO"], False),
+])
+def test_verify_available_languages(sample_repository, languages, check):
+    if check:
+        _verify_available_languages(sample_repository, languages)
+    else:
+        with pytest.raises(ValueError):
+            _verify_available_languages(sample_repository, languages)
+
+@pytest.mark.parametrize("module, check", [
+    ("module-1", True),
+    ("module-2", True),
+    ("module-3", False),
+    ("module-4", False),
+])
+def test_verify_target_module(sample_repository, module, check):
+    if check:
+        _verify_target_module(sample_repository, module)
+    else:
+        with pytest.raises(ValueError):
+            _verify_target_module(sample_repository, module)
 
 @pytest.mark.parametrize(
     "existing_translations, translation_data, expected_output",
