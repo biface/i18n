@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Set, Tuple
 
 from polib import POEntry, POFile
 
@@ -13,13 +13,39 @@ from i18n_tools.loader import (
 from i18n_tools.locale import get_all_languages, normalize_language_tag
 
 
+def _translation_lang_files(
+    repository: Dict[str, Any], module: str, domain: str, lang: str
+) -> Tuple[Path, Path]:
+    """
+    Build from repository TLD, path for .po files
+
+    :param repository: Dictionary containing the base path and list of modules
+    :type repository: Dict[str, Any]
+    :param module: Module name
+    :type module: str
+    :param domain: Domain name
+    :type domain: str
+    :param lang: language code
+    :type lang: str
+    :return: a tuple of file path
+    """
+    repository_path = Path(repository["base"])
+    normalized_lang = normalize_language_tag(lang)
+    lang_path = repository_path / module / "locales" / normalized_lang / "LC_MESSAGES"
+    lang_path.mkdir(parents=True, exist_ok=True)
+
+    json_file_path = lang_path / f"{domain}.json"
+    po_file_path = lang_path / f"{domain}.po"
+
+    return json_file_path, po_file_path
+
+
 def _verify_paths_and_modules(repository: Dict[str, Any]):
     """
     Verify that the repository paths and modules exist.
 
     This function checks if the base path is absolute and if all specified modules
     and their corresponding paths exist in the repository.
-
     :param repository: Dictionary containing the base path and list of modules.
     :raises ValueError: If the base path is not an absolute path.
     :raises FileNotFoundError: If any module path does not exist.
@@ -213,6 +239,31 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                         po_file.append(po_entry)
 
 
+def _remove_po_translations(po_file: POFile, msgids_to_remove: Set[Tuple[str, int]]):
+    """
+    Remove specified translations from a PO file.
+
+    This function removes the specified msgids from the PO file, including those with options and indices.
+
+    :param po_file: The POFile object to be updated.
+    :type po_file: POFile
+    :param msgids_to_remove: A set of base msgids with or without options to be removed from the PO file.
+    :type msgids_to_remove: Set[Tuple[str, int]]
+    :return: Nothing
+    :rtype: None
+    """
+    entries_to_remove = []
+    for msgid, options in msgids_to_remove:
+        if options > 1:
+            for index in range(0, options):
+                entries_to_remove.append(f"{msgid}_{index:03d}")
+        else:
+            entries_to_remove.append(msgid)
+
+    for entry in entries_to_remove:
+        po_file.remove(po_file.find(entry))
+
+
 def add_translation_set(
     repository: Dict[str, Any], module: str, domain: str, translations: Dict
 ):
@@ -238,19 +289,11 @@ def add_translation_set(
     _verify_available_languages(repository, list(translations.keys()))
     _verify_target_domain(repository, module, domain)
 
-    repository_path = Path(repository["base"])
-    all_languages = get_all_languages(repository["languages"])
-
     for lang, translation_data in translations.items():
 
-        normalized_lang = normalize_language_tag(lang)
-        lang_path = (
-            repository_path / module / "locales" / normalized_lang / "LC_MESSAGES"
+        json_file_path, po_file_path = _translation_lang_files(
+            repository, module, domain, lang
         )
-        lang_path.mkdir(parents=True, exist_ok=True)
-
-        json_file_path = lang_path / f"{domain}.json"
-        po_file_path = lang_path / f"{domain}.po"
 
         # Load existing translations
         existing_translations = (
@@ -269,4 +312,113 @@ def add_translation_set(
         save_locale_po(str(po_file_path), po_file)
 
 
-# TODO : add update and remove and check missing translations both in json and po files
+def update_translation_set(
+    repository: Dict[str, Any], module: str, domain: str, translations: Dict
+):
+    """
+    Updates existing translations in the translation repository using JSON and PO files.
+
+    This function verifies the repository structure, updates the translation files
+    for each module, domain, and language, and ensures that the translations conform
+    to the languages defined in the repository.
+
+    :param repository: Dictionary containing the base path, modules, domains, and languages.
+    :type repository: Dict[str, Any]
+    :param module: Module where the translation domain should be located.
+    :type module: str
+    :param domain: The domain of the translation set.
+    :type domain: str
+    :param translations: Dictionary containing the translations to be updated.
+    :raises ValueError: If the repository path is not absolute or if a language is not supported.
+    :raises FileNotFoundError: If any module path does not exist.
+    :raises KeyError: If a msgid to be updated does not exist in the current translations.
+    """
+    # Verify components
+    _verify_paths_and_modules(repository)
+    _verify_available_languages(repository, list(translations.keys()))
+    _verify_target_domain(repository, module, domain)
+
+    for lang, translation_data in translations.items():
+
+        json_file_path, po_file_path = _translation_lang_files(
+            repository, module, domain, lang
+        )
+
+        # Load existing translations
+        existing_translations = (
+            load_locale_json(str(json_file_path)) if json_file_path.exists() else {}
+        )
+
+        # Update existing translations
+        for msgid, new_translations in translation_data.items():
+            if msgid not in existing_translations:
+                raise KeyError(
+                    f"msgid '{msgid}' does not exist in the current translations for language '{lang}'."
+                )
+            # Replace or extend existing translations
+            existing_translations[msgid] = new_translations
+
+        save_locale_json(str(json_file_path), existing_translations)
+
+        # Load existing PO file
+        po_file = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        )
+        _update_po_translations(po_file, existing_translations)
+        save_locale_po(str(po_file_path), po_file)
+
+
+def remove_translation_set(
+    repository: Dict[str, Any], module: str, domain: str, translations: Dict
+):
+    """
+    Removes specified translations from the translation repository using JSON and PO files.
+
+    This function verifies the repository structure, removes the specified translations
+    from the translation files for each module, domain, and language, and ensures that
+    the translations conform to the languages defined in the repository.
+
+    :param repository: Dictionary containing the base path, modules, domains, and languages.
+    :type repository: Dict[str, Any]
+    :param module: Module where the translation domain should be located.
+    :type module: str
+    :param domain: The domain of the translation set.
+    :type domain: str
+    :param translations: Dictionary containing the translations to be removed.
+    :raises ValueError: If the repository path is not absolute or if a language is not supported.
+    :raises FileNotFoundError: If any module path does not exist.
+    """
+    # Verify components
+    _verify_paths_and_modules(repository)
+    _verify_available_languages(repository, list(translations.keys()))
+    _verify_target_domain(repository, module, domain)
+
+    for lang, msgids in translations.items():
+
+        json_file_path, po_file_path = _translation_lang_files(
+            repository, module, domain, lang
+        )
+
+        # Load existing translations
+        existing_translations = (
+            load_locale_json(str(json_file_path)) if json_file_path.exists() else {}
+        )
+
+        # Remove specified translations
+        for msgid, options in msgids.items():
+            if msgid in existing_translations:
+                del existing_translations[msgid]
+
+        save_locale_json(str(json_file_path), existing_translations)
+
+        # Load existing PO file
+        po_file = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        )
+
+        # Remove specified translations from PO file
+        msgids_to_remove = {
+            (msgid, len(options[0])) for msgid, options in msgids.items()
+        }
+        _remove_po_translations(po_file, msgids_to_remove)
+        save_locale_po(str(po_file_path), po_file)
