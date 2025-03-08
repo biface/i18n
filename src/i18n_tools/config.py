@@ -653,7 +653,7 @@ class Config(metaclass=Singleton):
         else:
             self.setup[["domains", "application"]] = {}
 
-    def repository(self, package:bool = False) -> NestedDictionary:
+    def repository(self, package: bool = False) -> NestedDictionary:
         """
         Build the repository dictionary from configuration.
         :param package: if true configure repository as i18n-tools, else configure it as application.
@@ -661,21 +661,20 @@ class Config(metaclass=Singleton):
         :return: a configured repository
         :rtype: NestedDictionary
         """
-        repository = NestedDictionary([('base', {}),
-                                       ('modules', {}),
-                                       ('languages',{}),
-                                       ('authors', {})],
-                                      indent=2,
-                                      strict=True)
+        repository = NestedDictionary(
+            [("base", {}), ("modules", {}), ("languages", {}), ("authors", {})],
+            indent=2,
+            strict=True,
+        )
         if package:
-            repository['base'] = self.setup[["paths", "package"]]
-            repository['modules'] = self.setup[["domains", "package"]]
+            repository["base"] = self.setup[["paths", "package"]]
+            repository["modules"] = self.setup[["domains", "package"]]
         else:
-            repository['base'] = self.setup[["paths", "application"]]
-            repository['modules'] = self.setup[["domains", "application"]]
+            repository["base"] = self.setup[["paths", "application"]]
+            repository["modules"] = self.setup[["domains", "application"]]
 
-        repository['languages'] = self.setup["languages"]
-        repository['authors'] = self.authors
+        repository["languages"] = self.setup["languages"]
+        repository["authors"] = self.authors
         return repository
 
     def __repr__(self) -> str:
