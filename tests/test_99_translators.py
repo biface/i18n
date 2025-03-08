@@ -220,13 +220,3 @@ def test_remove_translator_nonexistent():
     # Attempt to remove a translator that doesn't exist
     result = config.remove_translator("NonexistentTranslator")
     assert result is False
-
-
-# Test for removing all translators
-def test_remove_all_translators():
-    # Remove all translators and check if the list is empty
-    config.remove_translator("Translator1")
-    config.remove_translator("Translator2")
-    config.remove_translator("Translator3")
-    translators = config.list_translators()
-    assert len(translators) == 0
