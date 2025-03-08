@@ -13,7 +13,7 @@ details:
 setup:
   domains:
     application:
-      mod-1:
+      mod-1/:
       - errors
       - information
       mod-2/pkg-1/:

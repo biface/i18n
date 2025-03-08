@@ -26,7 +26,7 @@
         ]
       },
       "application": {
-        "mod-1": [
+        "mod-1/": [
           "errors",
           "information"
         ],

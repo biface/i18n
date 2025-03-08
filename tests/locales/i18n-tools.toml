@@ -29,7 +29,7 @@ modules = [ "mod-1/", "mod-2/pkg-1/", "mod-2/pkk-2/",]
 i18n_tools = [ "api", "classes",]
 
 [setup.domains.application]
-mod-1 = [ "errors", "information",]
+"mod-1/" = [ "errors", "information",]
 "mod-2/pkg-1/" = [ "usages", "information",]
 "mod-2/pkg-2/" = [ "information", "errors",]
 
