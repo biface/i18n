@@ -92,7 +92,7 @@ def temp_dir_with_locales():
             package:
               "i18n_tools": ["domain1"]
             application:
-              "mod1": ["domain2", "domain3"]
+              "mod1/": ["domain2", "domain3"]
               "mod2/pkg1/": ["domain4", "domain5"]
               "mod2/pkg2/": ["domain6", "domain7"]
         details:
@@ -158,7 +158,7 @@ def config_data():
             "domains": {
                 "package": {"i18n_tools": ["api", "classes"]},
                 "application": {
-                    "mod-1": ["errors", "information"],
+                    "mod-1/": ["errors", "information"],
                     "mod-2/pkg-1/": ["usages", "information"],
                     "mod-2/pkg-2/": ["information", "errors"],
                 },
@@ -747,3 +747,27 @@ def test_remove_nonexistent_domain_raises_exception(module, domain):
     """
     config.clean_domains(module)  # Ensure module exists
     assert not config.remove_domain(module, domain)
+
+
+@pytest.mark.parametrize(
+    "package, path, assertion",
+    [
+        (True, ["base", "modules"], ["i18n_tools"]),
+        (False, ["modules", "mod-1/"], ["errors", "information"]),
+        (True, ["languages", "source"], "en"),
+        (False, ["languages", "source"], "en"),
+        (False, ["languages", "hierarchy", "fr"], ["fr-FR", "fr-BE", "fr-CA"]),
+        (
+            True,
+            ["authors", "123e4567-e89b-12d3-a456-426614174000", "email"],
+            "john.doe@example.com",
+        ),
+    ],
+)
+def test_config_repository(tmp_path, config_data, package, path, assertion):
+    config_file_path = tmp_path / "repository_config.json"
+    save_config(config_file_path, config_data)
+    config.setup[["paths", "config"]] = config_file_path
+    config.load()
+    repository = config.repository(package)
+    assert repository[path] == assertion
