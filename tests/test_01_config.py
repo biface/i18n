@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from email_validator import EmailNotValidError
 
-from i18n_tools.config import Config
-from i18n_tools.loader import _load_config_file, save_config, load_config
-
+from i18n_tools.config import Config, Repository
+from i18n_tools.loaders.repository import load_config, save_config
+from i18n_tools.loaders.utils import _load_config_file
 
 def temp_dir_with_locales():
     """
@@ -117,7 +117,6 @@ def temp_dir_with_locales():
 
 temp_data = temp_dir_with_locales()
 config = Config(temp_data[3])
-
 
 def test_config_singleton():
     config_2 = Config()
@@ -372,6 +371,11 @@ def test_save_config_unsupported_format(tmp_path, config_data):
         save_config(unsupported_path, config_data)
 
 
+def test_save_config_unknown_directory(config_data):
+    with pytest.raises(Exception):
+        save_config("/tmp/unknown/test.json", config_data)
+
+
 def test_config_with_temp_file():
     """
     Test Config loading from a temporary file.
@@ -493,8 +497,40 @@ def test_config_set_with_type_check():
         config.set("details", "This should be a dictionary")
 
 
-# Testing authors
+def test_config_application_repository(tmp_path):
+    application_path = tmp_path / "repository"
+    application_path.mkdir(parents=True, exist_ok=True)
+    config.set_application_repository(str(application_path), config.get(["setup", "paths", "application", "modules"]))
+    assert config.get(["setup", "paths", "application", "base"]) == str(application_path)
+    assert config.get(["setup", "paths", "application", "locale"]) == str (application_path / "locales")
 
+def test_config_application_repository_failure(tmp_path):
+    application_path = tmp_path / "unknown"
+    with pytest.raises(FileNotFoundError):
+        config.set_application_repository(str(application_path))
+    assert config.get(["setup", "paths", "application", "base"]) != str(application_path)
+    assert config.get(["setup", "paths", "application", "locale"]) != str(application_path / "locales")
+
+def test_config_update_application_repository(tmp_path):
+    application_path = tmp_path / "repository"
+    modules = config.get(["setup", "paths", "application", "modules"])
+    application_path.mkdir(parents=True, exist_ok=True)
+    config.update_application_repository(str(application_path))
+    assert config.get(["setup", "paths", "application", "base"]) == str(application_path)
+    assert config.get(["setup", "paths", "application", "locale"]) == str(application_path / "locales")
+    config.update_application_repository(modules=["mod3"])
+    assert config.get(["setup", "paths", "application", "modules"]) == ["mod3"]
+    config.update_application_repository(modules=modules)
+
+def test_config_update_application_repository_failure(tmp_path):
+    application_path = tmp_path / "unknown"
+    with pytest.raises(ValueError):
+        config.update_application_repository(str(application_path))
+    assert config.get(["setup", "paths", "application", "base"]) != str(application_path)
+    assert config.get(["setup", "paths", "application", "locale"]) != str(application_path / "locales")
+    assert config.get(["setup", "paths", "application", "modules"]) == ["mod1/", "mod2/pkg1/", "mod2/pkg2/"]
+
+# Testing authors
 
 def test_add_author():
     config.add_author("Albert", "Dupont", "albert.dupont@local.net", "", ["en", "fr"])
@@ -771,3 +807,42 @@ def test_config_repository(tmp_path, config_data, package, path, assertion):
     config.load()
     repository = config.repository(package)
     assert repository[path] == assertion
+
+
+@pytest.fixture
+def mock_config():
+    config = Config()
+    config.set(["setup", "paths", "application", "modules"], ["module1", "module2"])
+    config.set(["details", "name"], "Test Project")
+    return config
+
+
+def test_repository_initialization(mock_config):
+    repository = Repository.from_config(mock_config, package=True)
+    assert repository.directory == mock_config.setup["paths"]["package"]
+    assert repository.domains == mock_config.setup["domains"]["package"]
+    assert repository.languages == mock_config.setup["languages"]
+    assert repository.authors == mock_config.authors
+    assert repository.details == mock_config.details
+
+
+def test_repository_from_config_application(mock_config):
+    repository = Repository.from_config(mock_config, package=False)
+    assert repository.directory == mock_config.setup["paths"]["application"]
+    assert repository.domains == mock_config.setup["domains"]["application"]
+
+
+def test_repository_application_repr(mock_config):
+    repository = Repository.from_config(mock_config, package=False)
+    assert "Test Project" in repr(repository)
+    assert "module1" in repr(repository)
+    assert "en" in repr(repository)
+    assert "fr" in repr(repository)
+
+
+def test_repository_package_repr(mock_config):
+    repository = Repository.from_config(mock_config, package=True)
+    assert "Test Project" in repr(repository)
+    assert "i18n_tools" in repr(repository)
+    assert "en" in repr(repository)
+    assert "fr" in repr(repository)

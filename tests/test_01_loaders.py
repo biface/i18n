@@ -1,27 +1,19 @@
 import pytest
 import json
-import os
 import tarfile
 import gzip
 import shutil
 from pathlib import Path
-from polib import POFile, MOFile, POEntry
-from i18n_tools.loader import (
-    file_exists,
-    create_directory,
-    _load_json,
-    _save_json,
-    _create_empty_json,
+from babel.messages.pofile import write_po
+from babel.messages.catalog import Catalog
+from polib import POFile
+from i18n_tools.loaders.loader import (
     _load_po,
     _save_po,
     _load_pot,
     _save_pot,
     _load_mo,
     _save_mo,
-    _create_empty_file,
-    _create_tar_gz,
-    _create_gzip,
-    _non_traversal_path,
     check_json_integrity,
     load_locale_json,
     save_locale_json,
@@ -33,6 +25,9 @@ from i18n_tools.loader import (
     save_locale_po,
     save_locale_pot,
 )
+from i18n_tools.loaders.utils import _load_json, _save_json, _create_empty_json, \
+    _create_empty_file, _create_tar_gz, _create_gzip, _non_traversal_path
+from i18n_tools.loaders import file_exists, create_directory
 
 
 @pytest.fixture
@@ -104,7 +99,7 @@ def test_load_json_raises_exception():
 
 def test_load_po_file(temp_po_file):
     po = _load_po(temp_po_file)
-    assert isinstance(po, POFile)
+    assert isinstance(po, Catalog)
 
 
 def test_load_po_raises_exception():
@@ -114,29 +109,33 @@ def test_load_po_raises_exception():
 
 @pytest.fixture
 def setup_valid_po_file(tmp_path):
-    """Fixture to set up a temporary valid PO file for testing."""
+    """Fixture to set up a temporary valid PO file for testing using Babel."""
     po_file_path = tmp_path / "valid.po"
-    po_file = POFile()
-    po_file.append(POEntry(msgid="msgid_001", msgstr="Translation 1"))
-    po_file.append(
-        POEntry(
-            msgid="msgid_002",
-            msgid_plural="msgid_002_plr",
-            msgstr_plural={0: "Translation 2", 1: "Plural Translation 2"},
-        )
-    )
-    save_locale_po(str(po_file_path), po_file)
+
+    # Create a Babel Catalog object
+    catalog = Catalog()
+
+    # Add a singular entry
+    catalog.add("msgid_001", "Translation 1")
+
+    # Add a plural entry
+    catalog.add("msgid_002", ("Translation 2", "Plural Translation 2"), auto_comments=["Plural form"])
+
+    # Save the catalog to a PO file
+    with open(po_file_path, "wb") as po_file:
+        write_po(po_file, catalog)
+
     return po_file_path
 
 
 def test_load_locale_po_valid(setup_valid_po_file):
     """Test load_locale_po with a valid PO file."""
     po_file_path = setup_valid_po_file
-    po_file = load_locale_po(str(po_file_path))
+    po_catalog = load_locale_po(str(po_file_path))
 
-    assert len(po_file) == 2
-    assert po_file[0].msgid == "msgid_001"
-    assert po_file[1].msgid == "msgid_002"
+    assert len(po_catalog) == 2
+    assert po_catalog["msgid_001"].string == "Translation 1"
+    assert po_catalog["msgid_002"].string == "Translation 2"
 
 
 def test_load_locale_po_file_not_found(tmp_path):
@@ -149,7 +148,7 @@ def test_load_locale_po_file_not_found(tmp_path):
 
 def test_load_pot_file(temp_po_file):
     pot = _load_pot(temp_po_file)
-    assert isinstance(pot, POFile)
+    assert isinstance(pot, Catalog)
 
 
 def test_load_pot_raises_exception():
@@ -159,7 +158,7 @@ def test_load_pot_raises_exception():
 
 def test_load_mo_file(temp_mo_file):
     mo = _load_mo(temp_mo_file)
-    assert isinstance(mo, MOFile)
+    assert isinstance(mo, Catalog)
 
 
 def test_load_mo_raises_exception():
@@ -181,13 +180,13 @@ def test_save_json_raises_exception():
 
 
 def test_save_po_file(temp_po_file):
-    po = POFile()
+    po = Catalog()
     _save_po(temp_po_file, po)
     assert file_exists(temp_po_file) == True
 
 
 def test_save_locale_po_file(temp_po_file):
-    po = POFile()
+    po = Catalog()
     save_locale_po(temp_po_file, po)
     assert file_exists(temp_po_file) == True
 
@@ -199,19 +198,19 @@ def test_save_po_raises_exception():
 
 
 def test_save_pot_file(temp_po_file):
-    pot = POFile()
+    pot = Catalog()
     _save_pot(temp_po_file, pot)
     assert file_exists(temp_po_file) == True
 
 
 def test_save_locale_pot_file(temp_po_file):
-    pot = POFile()
+    pot = Catalog()
     save_locale_pot(temp_po_file, pot)
     assert file_exists(temp_po_file) == True
 
 
 def test_save_mo_file(temp_mo_file):
-    po_data = POFile()
+    po_data = Catalog()
     _save_mo(temp_mo_file, po_data)
     assert file_exists(temp_mo_file) == True
 

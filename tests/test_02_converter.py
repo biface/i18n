@@ -1,5 +1,6 @@
 import pytest
 from pathlib import Path
+from babel.messages.catalog import Catalog
 from polib import pofile
 from i18n_tools.converter import _initialize_pot_file, populate_pot_files
 
@@ -14,7 +15,7 @@ def setup_repository(tmp_path):
 
 @pytest.fixture
 def authors():
-    """Fixture for the authors dictionary."""
+    """Fixture for the dictionary of authors."""
     return {
         "author1": {
             "first_name": "John",
@@ -33,7 +34,7 @@ def authors():
 
 @pytest.fixture
 def languages():
-    """Fixture for the languages dictionary."""
+    """Fixture for the dictionary of languages."""
     return {
         "source": "en",
         "hierarchy": {
@@ -46,7 +47,7 @@ def languages():
 
 @pytest.fixture
 def domains():
-    """Fixture for the domains dictionary."""
+    """Fixture for the dictionary of domains."""
     return {
         "mod-1": ["errors", "information"],
         "mod-2/pkg-1": ["usages", "information"],
@@ -66,10 +67,12 @@ def test_initialize_pot_file(setup_repository, authors):
     _initialize_pot_file(str(pot_file_path), domain, authors, language)
 
     # Load the .pot file and check its content
-    pot_file = pofile(str(pot_file_path))
-    assert len(pot_file) == 1
-    for entry in pot_file:
-        assert "Translation by" in entry.msgid
+    pot_catalog = Catalog()
+    with open(pot_file_path, "rb") as f:
+        pot_catalog.load(f)
+    assert len(pot_catalog) == 1
+    for entry in pot_catalog:
+        assert "Translation by" in entry.id
 
 
 def test_initialize_pot_file_without_author(setup_repository, authors):
@@ -81,8 +84,10 @@ def test_initialize_pot_file_without_author(setup_repository, authors):
     _initialize_pot_file(str(pot_file_path), domain, authors, language)
 
     # Load the .pot file and check its content
-    pot_file = pofile(str(pot_file_path))
-    assert len(pot_file) == 0  # No authors should be included for "fr-FR"
+    pot_catalog = Catalog()
+    with open(pot_file_path, "rb") as f:
+        pot_catalog.load(f)
+    assert len(pot_catalog) == 0  # No authors should be included for "fr-FR"
 
 
 def test_populate_pot_files_raises_value_error_if_not_absolute(
@@ -127,10 +132,12 @@ def test_author_pot_file(setup_repository, authors, language, expected_authors):
     _initialize_pot_file(str(pot_file_path), domain, authors, language)
 
     # Load the .pot file and check its content
-    pot_file = pofile(str(pot_file_path))
-    assert len(pot_file) == len(expected_authors)
-    for entry in pot_file:
-        assert any(author in entry.msgid for author in expected_authors)
+    pot_catalog = Catalog()
+    with open(pot_file_path, "rb") as f:
+        pot_catalog.load(f)
+    assert len(pot_catalog) == len(expected_authors)
+    for entry in pot_catalog:
+        assert any(author in entry.id for author in expected_authors)
 
 
 @pytest.mark.parametrize(
@@ -159,7 +166,9 @@ def test_populate_pot_files(
             assert pot_file_path.exists()
 
             # Load the .pot file and check its content
-            pot_file = pofile(str(pot_file_path))
-            assert len(pot_file) == len(
+            pot_catalog = Catalog()
+            with open(pot_file_path, "rb") as f:
+                pot_catalog.load(f)
+            assert len(pot_catalog) == len(
                 [author for author in authors.values() if lang in author["languages"]]
             )
