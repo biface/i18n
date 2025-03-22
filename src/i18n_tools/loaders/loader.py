@@ -21,379 +21,119 @@ modifying this file, you agree to abide by the terms of this license.
 This module is authored and maintained as part of the i18n-tools package.
 """
 
-import gzip
-import json
-import os
-import shutil
 import tarfile
 from pathlib import Path
-from typing import Any, Dict, List, Union
-from unittest import expectedFailure
+from typing import Any, Dict, List
 
-import toml
-import yaml
-from polib import MOFile, POEntry, POFile, mofile, pofile
+from babel.messages.catalog import Catalog
+from babel.messages.mofile import read_mo, write_mo
+from babel.messages.pofile import read_po, write_po
+
+from i18n_tools.loaders.utils import (
+    _create_gzip,
+    _load_json,
+    _non_traversal_path,
+    _save_json,
+)
 
 
-def build_path(base_path: str, *sub_dirs: str) -> str:
+def _load_po(file_path: str) -> Catalog:
     """
-    Constructs a path by combining a base path with one or more subdirectories.
-
-    :param base_path: The starting path.
-    :param sub_dirs: One or more subdirectory names to append to the base path.
-    :return: The combined path as a string.
-    """
-    path = Path(base_path)
-    for sub_dir in sub_dirs:
-        path /= sub_dir
-    return str(path.resolve())
-
-
-def file_exists(file_path: Union[Path, str]) -> bool:
-    """
-    Checks if a file exists.
-    :param file_path: a path to a file.
-    :type file_path: str
-    :return: True if the file exists.
-    :rtype: bool
-    """
-    if isinstance(file_path, str):
-        file_path = Path(file_path)
-    return file_path.exists()
-
-
-def create_directory(path: str) -> None:
-    """
-    Create a directory from a path.
-    :param path: a path to a directory.
-    :type path: str
-    :return: None
-    :rtype: None
-    """
-    Path(path).mkdir(parents=True, exist_ok=True)
-
-
-def _load_json(file_path: str) -> Dict[str, Any]:
-    """
-    Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
-    :param file_path: Path to the JSON file.
-    :type file_path: str
-    :return: JSON Translation data content.
-    :rtype: dict
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "r", encoding="utf-8") as json_file:
-            return json.load(json_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_json(file_path: str, data: Dict[str, Any]) -> None:
-    """
-    Save a JSON file without managing data structure and integrity and returns its content.
-    :param file_path: Path to the JSON file.
-    :type file_path: str
-    :param data: JSON Translation data content.
-    :type data: dict
-    :return: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "w", encoding="utf-8") as json_file:
-            json.dump(data, json_file, ensure_ascii=False, indent=4)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _create_empty_json(file_path: str) -> None:
-    """
-    Create an empty JSON file without managing data structure and integrity and returns its content.
-    :param file_path: JSON file path.
-    :type file_path: str
-    :return: None
-    :rtype: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "w", encoding="utf-8") as json_file:
-            json.dump({}, json_file, ensure_ascii=False, indent=4)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _load_po(file_path: str) -> POFile:
-    """
-    Load a PO file without managing data structure and integrity and returns its content.
+    Load a PO file and return its content as a Babel Catalog.
     :param file_path: Path to the PO file.
     :type file_path: str
-    :return: PO file object
-    :rtype: POFile
+    :return: Babel Catalog object.
+    :rtype: Catalog
     :raises FileNotFoundError: File not found.
     """
     try:
-        return pofile(file_path)
+        with open(file_path, "r", encoding="utf-8") as po_file:
+            return read_po(po_file)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _save_po(file_path: str, po_data: pofile) -> None:
+def _save_po(file_path: str, po_data: Catalog) -> None:
     """
-    Save a PO file without managing data structure and integrity and returns its content.
+    Save a PO file using Babel.
     :param file_path: Path to the PO file.
     :type file_path: str
-    :param po_data: PO file object.
-    :type po_data: pofile
+    :param po_data: Babel Catalog object.
+    :type po_data: Catalog
     :return: None
     :raises FileNotFoundError: File not found.
     """
     try:
-        po_data.save(file_path)
+        with open(file_path, "r", encoding="utf-8") as po_file:
+            write_po(po_file, po_data)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_pot(file_path: str) -> POFile:
+def _load_pot(file_path: str) -> Catalog:
     """
-    Load a POT file and return its content.
-
-    :param file_path: Path to the PO file.
+    Load a POT file and return its content as a Babel Catalog.
+    :param file_path: Path to the POT file.
     :type file_path: str
-    :return: PO file object
-    :rtype: POFile
+    :return: Babel Catalog object.
+    :rtype: Catalog
     :raises FileNotFoundError: File not found.
     """
     try:
-        return pofile(file_path)
+        with open(file_path, "r", encoding="utf-8") as pot_file:
+            return read_po(pot_file)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _save_pot(file_path: str, pot_data: pofile) -> None:
+def _save_pot(file_path: str, pot_data: Catalog) -> None:
     """
-    Save a POT file.
-
-    :param file_path: Path to the PO file.
+    Save a POT file using Babel.
+    :param file_path: Path to the POT file.
     :type file_path: str
-    :param pot_data: PO file object.
-    :type pot_data: pofile
+    :param pot_data: Babel Catalog object.
+    :type pot_data: Catalog
     :return: None
     :raises FileNotFoundError: File not found.
     """
     try:
-        pot_data.save(file_path)
+        with open(file_path, "w", encoding="utf-8") as pot_file:
+            write_po(pot_file, pot_data)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_mo(file_path: str) -> MOFile:
+def _load_mo(file_path: str) -> Catalog:
     """
-    Load a MO file without managing data structure and integrity and returns its content.
+    Load a MO file and return its content as a Babel Catalog.
     :param file_path: Path to the MO file.
     :type file_path: str
-    :return: MO file object
-    :rtype: MOFile
+    :return: Babel Catalog object.
+    :rtype: Catalog
     :raises FileNotFoundError: File not found.
     """
     try:
         with open(file_path, "rb") as mo_file:
-            return MOFile(mo_file)
+            return read_mo(mo_file)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _save_mo(file_path: str, mo_data: pofile) -> None:
+def _save_mo(file_path: str, mo_data: Catalog) -> None:
     """
-    Save a MO file without managing data structure and integrity and returns its content.
+    Save a MO file using Babel.
     :param file_path: Path to the MO file.
     :type file_path: str
-    :param mo_data: MO file object.
-    :type mo_data: pofile
+    :param mo_data: Babel Catalog object.
+    :type mo_data: Catalog
     :return: None
     :raises FileNotFoundError: File not found.
     """
     try:
-        mo_data.save_as_mofile(file_path)
+        with open(file_path, "wb") as mo_file:
+            write_mo(mo_file, mo_data)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _create_empty_file(file_path: str) -> None:
-    """
-    Create an empty file.
-    :param file_path: a path to a file.
-    :type file_path: str
-    :return: None
-    :rtype: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "w", encoding="utf-8") as empty_file:
-            empty_file.write("")
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _create_tar_gz(
-    base_path: str, archive_name: str, directory_to_archive: str
-) -> None:
-    """
-    Create an archive of a directory using tar.gz fonctions.
-    :param base_path: directory to locate the archive.
-    :type base_path: str
-    :param archive_name: archive name
-    :type archive_name: str
-    :param directory_to_archive: directory to be archived.
-    :type directory_to_archive: str
-    :return: None
-    ;rtype: None
-    """
-    tarfile_path = Path(base_path) / archive_name
-    with tarfile.open(tarfile_path, "w:gz") as tar:
-        tar.add(directory_to_archive, arcname=Path(directory_to_archive).name)
-
-
-def _create_gzip(file_path: str) -> None:
-    """
-    Create a compressed file using gzip fonctions.
-    :param file_path: a path to a file.
-    :type file_path: str
-    :return: None
-    :rtype: None
-    """
-    gz_file = f"{file_path}.gz"
-    with open(file_path, "rb") as file_in:
-        with gzip.open(gz_file, "wb") as file_out:
-            shutil.copyfileobj(file_in, file_out)
-
-
-def _load_config_file(config_path: Path) -> dict:
-    """
-    Helper function to load the configuration file based on its extension.
-
-    :param config_path: Path to the configuration file.
-    :raises ValueError: If the file format is unsupported.
-    :raises Exception: For errors during loading.
-    :return: The configuration content as a dictionary.
-    """
-    [file_extension] = Path(config_path).suffixes
-
-    try:
-        with open(config_path, "r", encoding="utf-8") as file:
-            if file_extension == ".yaml":
-                return yaml.safe_load(file)
-            elif file_extension == ".toml":
-                return toml.load(file)
-            elif file_extension == ".json":
-                return json.load(file)
-            else:
-                raise ValueError(
-                    f"Unsupported configuration file format: {file_extension}"
-                )
-    except Exception as e:
-        raise Exception(f"Error loading configuration file: {config_path}. {e}")
-
-
-def _non_traversal_path(
-    root_path: str, module_list: List[str], members: List[tarfile.TarInfo]
-) -> List[tarfile.TarInfo]:
-    """
-    Ensure the member paths are safe to be extracted by checking if they are within the expected module paths.
-
-    :param root_path: The root path of the module path.
-    :type root_path: str
-    :param module_list: The list of modules to extract.
-    :type module_list: List[str]
-    :param members: The list of members to extract.
-    :type members: List[tarfile.TarInfo]
-    :return: The safe paths for extraction.
-    :rtype: List[tarfile.TarInfo]
-    """
-
-    # Convert root_path to a Path object and resolve it to an absolute path
-    root_path = Path(root_path).resolve()
-
-    # Create a set of expected module paths by combining root_path with each module in module_list
-    expected_module_paths = {root_path / module for module in module_list}
-
-    # List to store the safe paths for extraction
-    safe_paths = []
-
-    # Iterate over each member in the tar archive
-    for member in members:
-        member_path = Path(member.name)
-
-        # Resolve the member path to check for directory traversal
-        resolved_path = (root_path / member_path).resolve()
-
-        # Check if the resolved path is within the root path and within any of the expected module paths
-        if resolved_path.is_relative_to(root_path):
-            # Ensure the resolved path is within one of the expected module paths
-            if any(
-                resolved_path.is_relative_to(module) for module in expected_module_paths
-            ):
-                safe_paths.append(member)
-
-    return safe_paths
-
-
-def load_config(config_path: str = None) -> dict:
-    """
-    Load the configuration file (YAML, TOML, or JSON) from the application directories
-    (not from the package i18n-tools) and return its contents as a dictionary.
-
-    :param config_path: Optional path to the configuration file. If None, it searches
-    for it in the root of the application.
-    :raises FileNotFoundError: If no configuration file is found in the application directories.
-    :raises ValueError: If the file format is unsupported.
-    :raises Exception: For other errors during loading.
-    """
-    # Si le chemin de configuration est fourni, utiliser ce chemin
-    if config_path:
-        if not Path(config_path).exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        return _load_config_file(config_path)
-
-    # Sinon, rechercher dans les répertoires applicatifs (racine et répertoires locaux)
-    search_dirs = [
-        Path.cwd(),  # Répertoire racine de l'application
-        Path.cwd() / "locales",  # Sous-répertoire locales de l'application
-    ]
-
-    possible_files = ["i18n-tools.yaml", "i18n-tools.toml", "i18n-tools.json"]
-
-    # Recherche dans les répertoires définis
-    for directory in search_dirs:
-        for file_name in possible_files:
-            config_file_path = directory / file_name
-            if config_file_path.exists():
-                return _load_config_file(config_file_path)
-
-    raise FileNotFoundError(
-        "No configuration file found in the application directories (root or locales)."
-    )
-
-
-def save_config(file_path: str, data: dict) -> None:
-    """
-    Save configuration data to a file.
-
-    Supports JSON, YAML, and TOML formats.
-
-    :param file_path: Path to the configuration file.
-    :param data: The dictionary containing configuration data.
-    """
-
-    ext = os.path.splitext(file_path)[-1].lower()
-    with open(file_path, "w", encoding="utf-8") as cf:
-        if ext == ".json":
-            json.dump(data, cf, indent=4)
-        elif ext in {".yaml", ".yml"}:
-            yaml.safe_dump(data, cf, default_flow_style=False)
-        elif ext == ".toml":
-            toml.dump(data, cf)
-        else:
-            raise ValueError(f"Unsupported file format: {ext}")
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:
@@ -502,14 +242,14 @@ def aggregate_locale_json(
     return aggregated_data
 
 
-def load_locale_po(file_path: str) -> POFile:
+def load_locale_po(file_path: str) -> Catalog:
     """
     Public interface to load a PO locale file with integrity check.
 
     :param file_path: Path to the PO locale file.
     :type file_path: str
-    :return: PO file object.
-    :rtype: POFile
+    :return: Babel Catalog object.
+    :rtype: Catalog
     :raises FileNotFoundError: If the file is not found.
     :raises ValueError: If the file is not a valid PO file or fails the integrity check.
     """
@@ -564,7 +304,7 @@ def save_aggregated_locale_json(
         module_json_path.unlink()
 
 
-def save_locale_po(file_path: str, po_data: pofile) -> None:
+def save_locale_po(file_path: str, po_data: Catalog) -> None:
     """
     The public interface to _save_po
     :param file_path:
@@ -574,7 +314,7 @@ def save_locale_po(file_path: str, po_data: pofile) -> None:
     _save_po(file_path, po_data)
 
 
-def save_locale_pot(file_path: str, po_data: pofile) -> None:
+def save_locale_pot(file_path: str, po_data: Catalog) -> None:
     """
     The public interface to _save_pot
     :param file_path:
