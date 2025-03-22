@@ -20,11 +20,10 @@ modifying this file, you agree to abide by the terms of this license.
 This module is authored and maintained as part of the i18n-tools package.
 """
 
-import os
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
-from .loader import _create_empty_file, _create_empty_json
+from .loaders.utils import _create_empty_file, _create_empty_json
 from .locale import validate_and_normalize_language_tags
 
 
@@ -75,3 +74,7 @@ def check_repository(tld: str, domains: Dict, languages: Dict):
 
                 if not po_file.exists():
                     _create_empty_file(str(po_file))
+
+
+# TODO: look for json files to be gzipped in domains repository (used before making archives)
+# TODO: look for rebuild partially repository from gzipped or archive files

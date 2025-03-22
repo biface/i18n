@@ -1,10 +1,10 @@
 from pathlib import Path
 from typing import Any, Dict, Set, Tuple
 
-from polib import POEntry, POFile
+from babel.messages.catalog import Catalog
 
-from i18n_tools.loader import (
-    file_exists,
+from i18n_tools.loaders import file_exists
+from i18n_tools.loaders.loader import (
     load_locale_json,
     load_locale_po,
     save_locale_json,
@@ -151,11 +151,11 @@ def _update_json_translations(existing_translations: Dict, translation_data: Dic
 
 def _create_po_entry(
     msgid: str, msgid_plural: str, msgstr: str, msgstr_plural: Dict[int, str] = None
-) -> POEntry:
+) -> Dict[str, Any]:
     """
-    Create a POEntry with the given parameters.
+    Create a POEntry-like dictionary with the given parameters.
 
-    This function creates a POEntry object with the specified msgid, msgid_plural, msgstr,
+    This function creates a dictionary with the specified msgid, msgid_plural, msgstr,
     and optionally msgstr_plural.
 
     :param msgid: The message ID.
@@ -165,25 +165,25 @@ def _create_po_entry(
     :type msgstr: str
     :param msgstr_plural: Optional dictionary of plural translation strings.
     :type msgstr_plural: Dict[int, str]
-    :return: A POEntry object with the specified parameters.
-    :rtype: POEntry
+    :return: A dictionary with the specified parameters.
+    :rtype: Dict[str, Any]
     """
-    po_entry = POEntry(msgid=msgid, msgstr=msgstr)
+    entry = {"msgid": msgid, "msgstr": msgstr}
     if msgstr_plural:
         msgstr_plural[0] = msgstr
-        po_entry.msgid_plural = msgid_plural
-        po_entry.msgstr_plural = msgstr_plural
-    return po_entry
+        entry["msgid_plural"] = msgid_plural
+        entry["msgstr_plural"] = msgstr_plural
+    return entry
 
 
-def _update_po_translations(po_file: POFile, translations: Dict):
+def _update_po_translations(po_catalog: Catalog, translations: Dict):
     """
     Update translations in a PO file with new data.
 
     This function updates the PO file with new translation data.
     It handles both singular and plural forms of translations.
 
-    :param po_file: The POFile object to be updated.
+    :param po_catalog: The Catalog object to be updated.
     :param translations: Dictionary of translations to be added or updated.
     """
     for msgid, msgs_list in translations.items():
@@ -193,7 +193,7 @@ def _update_po_translations(po_file: POFile, translations: Dict):
             msgid_full = msgid
             msgid_plural = f"{msgid_full}_plr"
             msgstr = msgstr_list[0]
-            entry = po_file.find(msgid_full)
+            entry = po_catalog.get(msgid_full, None)
 
             if len(msgplr_list) >= 1:
                 msgstr_plural = {
@@ -201,23 +201,23 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                 }
                 if entry:
                     msgstr_plural[0] = msgstr
-                    entry.msgstr_plural = msgstr_plural
+                    entry.string = msgstr_plural
                 else:
                     po_entry = _create_po_entry(
                         msgid_full, msgid_plural, msgstr_list[0], msgstr_plural
                     )
-                    po_file.append(po_entry)
+                    po_catalog.add(**po_entry)
             else:
                 if entry:
-                    entry.msgstr = msgstr
+                    entry.string = msgstr
                 else:
                     po_entry = _create_po_entry(msgid_full, msgid_plural, msgstr)
-                    po_file.append(po_entry)
+                    po_catalog.add(**po_entry)
         else:
             for index, msgstr in enumerate(msgstr_list):
                 msgid_full = f"{msgid}_{index:03d}"
                 msgid_plural = f"{msgid_full}_plr"
-                entry = po_file.find(msgid_full)
+                entry = po_catalog.get(msgid_full, None)
 
                 if len(msgplr_list) >= 1:
                     msgstr_plural = {
@@ -225,28 +225,30 @@ def _update_po_translations(po_file: POFile, translations: Dict):
                     }
                     if entry:
                         msgstr_plural[0] = msgstr
-                        entry.msgstr_plural = msgstr_plural
+                        entry.string = msgstr_plural
                     else:
                         po_entry = _create_po_entry(
                             msgid_full, msgid_plural, msgstr, msgstr_plural
                         )
-                        po_file.append(po_entry)
+                        po_catalog.add(**po_entry)
                 else:
                     if entry:
-                        entry.msgstr = msgstr
+                        entry.string = msgstr
                     else:
                         po_entry = _create_po_entry(msgid_full, msgid_plural, msgstr)
-                        po_file.append(po_entry)
+                        po_catalog.add(**po_entry)
 
 
-def _remove_po_translations(po_file: POFile, msgids_to_remove: Set[Tuple[str, int]]):
+def _remove_po_translations(
+    po_catalog: Catalog, msgids_to_remove: Set[Tuple[str, int]]
+):
     """
     Remove specified translations from a PO file.
 
     This function removes the specified msgids from the PO file, including those with options and indices.
 
-    :param po_file: The POFile object to be updated.
-    :type po_file: POFile
+    :param po_catalog: The Catalog object to be updated.
+    :type po_catalog: Catalog
     :param msgids_to_remove: A set of base msgids with or without options to be removed from the PO file.
     :type msgids_to_remove: Set[Tuple[str, int]]
     :return: Nothing
@@ -261,7 +263,7 @@ def _remove_po_translations(po_file: POFile, msgids_to_remove: Set[Tuple[str, in
             entries_to_remove.append(msgid)
 
     for entry in entries_to_remove:
-        po_file.remove(po_file.find(entry))
+        po_catalog.delete(entry)
 
 
 def add_translation_set(
@@ -284,7 +286,7 @@ def add_translation_set(
     :raises ValueError: If the repository path is not absolute or if a language is not supported.
     :raises FileNotFoundError: If any module path does not exist.
     """
-    # verifying components
+    # Verifying components
     _verify_paths_and_modules(repository)
     _verify_available_languages(repository, list(translations.keys()))
     _verify_target_domain(repository, module, domain)
@@ -305,11 +307,11 @@ def add_translation_set(
         save_locale_json(str(json_file_path), existing_translations)
 
         # Load existing PO file
-        po_file = (
-            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        po_catalog = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else Catalog()
         )
-        _update_po_translations(po_file, existing_translations)
-        save_locale_po(str(po_file_path), po_file)
+        _update_po_translations(po_catalog, existing_translations)
+        save_locale_po(str(po_file_path), po_catalog)
 
 
 def update_translation_set(
@@ -361,11 +363,11 @@ def update_translation_set(
         save_locale_json(str(json_file_path), existing_translations)
 
         # Load existing PO file
-        po_file = (
-            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        po_catalog = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else Catalog()
         )
-        _update_po_translations(po_file, existing_translations)
-        save_locale_po(str(po_file_path), po_file)
+        _update_po_translations(po_catalog, existing_translations)
+        save_locale_po(str(po_file_path), po_catalog)
 
 
 def remove_translation_set(
@@ -412,13 +414,13 @@ def remove_translation_set(
         save_locale_json(str(json_file_path), existing_translations)
 
         # Load existing PO file
-        po_file = (
-            load_locale_po(str(po_file_path)) if po_file_path.exists() else POFile()
+        po_catalog = (
+            load_locale_po(str(po_file_path)) if po_file_path.exists() else Catalog()
         )
 
         # Remove specified translations from PO file
         msgids_to_remove = {
             (msgid, len(options[0])) for msgid, options in msgids.items()
         }
-        _remove_po_translations(po_file, msgids_to_remove)
-        save_locale_po(str(po_file_path), po_file)
+        _remove_po_translations(po_catalog, msgids_to_remove)
+        save_locale_po(str(po_file_path), po_catalog)

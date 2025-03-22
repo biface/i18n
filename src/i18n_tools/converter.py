@@ -24,14 +24,13 @@ This module is authored and maintained as part of the i18n-tools package.
 
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
-from polib import POEntry, POFile
+from babel.messages.catalog import Catalog
 
-from i18n_tools.loader import save_locale_pot
+from i18n_tools.loaders.loader import save_locale_pot
 from i18n_tools.locale import get_all_languages
 
 
@@ -44,33 +43,31 @@ def _initialize_pot_file(file_path: str, domain: str, authors: Dict, language: s
     :param authors: Dictionary of authors.
     :param language: Language code for the current .pot file.
     """
-    pot_file = POFile()
+    pot_catalog = Catalog()
     now = datetime.now().strftime("%Y-%m-%d %H:%M%z")
-    pot_file.metadata = {
-        "Project-Id-Version": "1.0",
-        "Report-Msgid-Bugs-To": "",
-        "POT-Creation-Date": now,
-        "PO-Revision-Date": now,
-        "Last-Translator": "FULL NAME <EMAIL@ADDRESS>",
-        "Language-Team": f"{language} <LL@li.org>",
-        "Language": language,
-        "MIME-Version": "1.0",
-        "Content-Type": "text/plain; charset=UTF-8",
-        "Content-Transfer-Encoding": "8bit",
-        "Generated-By": "i18n-tools",
-    }
+
+    pot_catalog.project = "i18n-tools"
+    pot_catalog.version = "1.0"
+    pot_catalog.msgid_bugs_addr = ""
+    pot_catalog.creation_date = now
+    pot_catalog.revision_date = now
+    pot_catalog.last_translator = f"FULL NAME <EMAIL@ADDRESS>"
+    pot_catalog.language_team = f"{language} <LL@li.org>"
+    pot_catalog.mime_version = "1.0"
+    pot_catalog.content_type = "text/plain; charset=UTF-8"
+    pot_catalog.content_transfer_encoding = "8bit"
+    pot_catalog.fuzzy = False
 
     # Add entries for authors who can translate the specified language
     for author_id, author_info in authors.items():
         if language in author_info["languages"]:
-            entry = POEntry(
-                msgid=f"Translation by {author_info['first_name']} {author_info['last_name']}",
-                msgstr="",
-                occurrences=[(domain, 0)],
+            pot_catalog.add(
+                id=f"Translation by {author_info['first_name']} {author_info['last_name']}",
+                string="",
+                locations=[(domain, 0)],
             )
-            pot_file.append(entry)
 
-    save_locale_pot(file_path, pot_file)
+    save_locale_pot(file_path, pot_catalog)
 
 
 def populate_pot_files(config: Dict, domains: Dict, languages: Dict, authors: Dict):
