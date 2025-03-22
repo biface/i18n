@@ -20,18 +20,19 @@ redistributing this file, you agree to comply with the terms of this license.
 This module is authored and maintained as part of the i18n-tools package.
 """
 
+import os
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
-from i18n_tools import base_path, module_name, package_path
+from i18n_tools import I18N_TOOLS_MODULE_NAME, I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME
 
 from .api import validate_api_url
 from .classes import Singleton
-from .loader import build_path, load_config, save_config
+from .loaders import build_path, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 
 
@@ -88,11 +89,11 @@ class Config(metaclass=Singleton):
                 "paths": {
                     "config": config_path if config_path else None,
                     "package": {
-                        "locale": build_path(package_path, "locales"),
-                        "base": base_path,
-                        "modules": [module_name],
+                        "locale": build_path(I18N_TOOLS_ROOT, "locales"),
+                        "base": I18N_TOOLS_ROOT_NAME,
+                        "modules": [I18N_TOOLS_MODULE_NAME],
                     },  # Use the loader's build_path function
-                    "application": {"base": "", "modules": []},
+                    "application": {"base": "", "locale": "", "modules": []},
                 },
                 "domains": {
                     # Originally, domains were simply managed by a list of lists, but this format is not very compatible
@@ -247,6 +248,50 @@ class Config(metaclass=Singleton):
             except Exception as e:
                 # Re-raise any ndict-tools specific exception directly
                 raise e
+
+    def set_application_repository(
+        self, base_path: str, modules: Optional[List[str]] = None
+    ):
+        """
+        Set the application repository paths and modules with validation.
+
+        :param base_path: Base path for the application.
+        :param modules: List of module paths.
+        :raises FileNotFoundError: If base_path does not exist or is not a directory.
+        """
+        if not os.path.isdir(base_path):
+            raise FileNotFoundError(
+                f"The base path '{base_path}' does not exist or is not a directory."
+            )
+
+        locale_path = os.path.join(base_path, "locales")
+
+        self.setup[["paths", "application", "base"]] = base_path
+        self.setup[["paths", "application", "locale"]] = locale_path
+        self.setup[["paths", "application", "modules"]] = (
+            modules if modules is not None else []
+        )
+
+    def update_application_repository(
+        self, base_path: Optional[str] = None, modules: Optional[List[str]] = None
+    ):
+        """
+        Update the application repository paths and modules with validation.
+
+        :param base_path: New base path for the application.
+        :param modules: New list of module paths.
+        :raises ValueError: If base_path does not exist.
+        """
+        if base_path is not None:
+            if not os.path.isdir(base_path):
+                raise ValueError(f"The base path '{base_path}' does not exist.")
+            self.setup[["paths", "application", "base"]] = base_path
+            self.setup[["paths", "application", "locale"]] = os.path.join(
+                base_path, "locales"
+            )
+
+        if modules is not None:
+            self.setup[["paths", "application", "modules"]] = modules
 
     def add_author(
         self, first_name: str, last_name: str, email: str, url: str, languages: list
@@ -695,4 +740,90 @@ class Config(metaclass=Singleton):
             f"'application_base': '{self.setup['paths']['application']['base']}' }}, "
             f"languages={{'source': '{self.setup['languages']['source']}', "
             f"'fallback': '{self.setup['languages']['fallback']}'}})>"
+        )
+
+
+class Repository:
+    """
+    Repository class to manage translation-related paths, domains, languages, and authors.
+
+    This class encapsulates the details of a translation repository, providing a structured
+    way to access and manage paths, modules, languages, and authors involved in the translation process.
+
+    Attributes:
+        directory (Dict[str, List[str]]): Base paths for the translation repository.
+        domains (Dict[str, List[str]]): Translation domains associated with modules.
+        languages (Dict[str, Any]): Language settings including source, hierarchy, and fallback.
+        authors (Dict[str, Any]): Metadata about authors contributing to translations.
+        details (Dict[str, Any]): Additional details about the repository, such as the project name.
+    """
+
+    def __init__(
+        self,
+        directory: Dict[str, List[str]],
+        domains: Dict[str, List[str]],
+        languages: Dict[str, Any],
+        authors: Dict[str, Any],
+        details: Dict[str, Any],
+    ):
+        """
+        Initialize the Repository with paths, domains, languages, authors, and details.
+
+        :param directory: Base paths for the translation repository.
+        :type directory: Dict[str, List[str]]
+        :param domains: Translation domains associated with modules.
+        :type domains: Dict[str, List[str]]
+        :param languages: Language settings including source, hierarchy, and fallback.
+        :type languages: Dict[str, Any]
+        :param authors: Metadata about authors contributing to translations.
+        :type authors: Dict[str, Any]
+        :param details: Additional details about the repository, such as the project name.
+        :type details: Dict[str, Any]
+        """
+        self.directory = directory
+        self.domains = domains
+        self.languages = languages
+        self.authors = authors
+        self.details = details
+
+    @classmethod
+    def from_config(cls, config: Config, package: bool = False):
+        """
+        Create a Repository instance from a Config object.
+
+        :param config: The Config object to extract repository details from.
+        :type config: Config
+        :param package: If True, configure the repository as i18n-tools; otherwise, as an application.
+        :type package: bool
+        :return: An instance of Repository.
+        :rtype: Repository
+        """
+        if package:
+            return cls(
+                directory=config.get(["setup", "paths", "package"]),
+                domains=config.get(["setup", "domains", "package"]),
+                languages=config.get(["setup", "languages"]),
+                authors=config.authors,
+                details=config.details,
+            )
+        else:
+            return cls(
+                directory=config.get(["setup", "paths", "application"]),
+                domains=config.get(["setup", "domains", "application"]),
+                languages=config.get(["setup", "languages"]),
+                authors=config.authors,
+                details=config.details,
+            )
+
+    def __repr__(self):
+        """
+        Provide a string representation of the Repository instance.
+
+        :return: A string summarizing the repository details.
+        """
+        return (
+            f"<Repository(directory='{self.directory}', "
+            f"domains={list(self.domains.keys())}, \n"
+            f"languages={{'\nsource': '{self.languages['source']}',\n'available languages': '{list(self.languages['hierarchy'].items())}',\nfallback': '{self.languages['fallback']}'}}, "
+            f"details={{'\nname': '{self.details.get('name', 'Unnamed')}'}})>"
         )
