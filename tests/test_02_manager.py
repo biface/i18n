@@ -1,20 +1,22 @@
-import pytest
 import json
 from pathlib import Path
+
+import pytest
+from polib import POEntry, POFile
+
 from i18n_tools.manager import (
-    _verify_available_languages,
-    _verify_target_module,
-    _verify_target_domain,
-    _verify_paths_and_modules,
-    _update_json_translations,
     _create_po_entry,
-    _update_po_translations,
     _remove_po_translations,
+    _update_json_translations,
+    _update_po_translations,
+    _verify_available_languages,
+    _verify_paths_and_modules,
+    _verify_target_domain,
+    _verify_target_module,
     add_translation_set,
-    update_translation_set,
     remove_translation_set,
+    update_translation_set,
 )
-from polib import POFile, POEntry
 
 
 @pytest.fixture

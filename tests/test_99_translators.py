@@ -1,6 +1,8 @@
-import pytest
-from unittest.mock import patch
 from datetime import datetime, timedelta
+from unittest.mock import patch
+
+import pytest
+
 from i18n_tools.config import Config
 
 

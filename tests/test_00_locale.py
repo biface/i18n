@@ -1,9 +1,10 @@
 import pytest
+
 from i18n_tools.locale import (
-    normalize_language_tag,
-    is_valid_language_tag,
-    validate_and_normalize_language_tags,
     get_all_languages,
+    is_valid_language_tag,
+    normalize_language_tag,
+    validate_and_normalize_language_tags,
 )
 
 

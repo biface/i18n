@@ -1,7 +1,9 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from babel.messages.catalog import Catalog
 from polib import pofile
+
 from i18n_tools.converter import _initialize_pot_file, populate_pot_files
 
 

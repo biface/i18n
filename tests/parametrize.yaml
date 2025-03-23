@@ -1,0 +1,49 @@
+repository:
+  locale: "locales"
+  configuration:
+    valid: "valid-i18n-tools.yaml"
+    error: "error-i18n-tools.yaml"
+files:
+  yaml: "config.yaml"
+  toml: "config.toml"
+  err_yaml: "config_err.yaml"
+setup:
+  paths:
+    application:
+      base: 'repository'
+      modules:
+        - mod1/
+        - mod2/pkg1/
+        - mod2/pkg2/
+  languages:
+    source: en
+    hierarchy:
+      fr: ["fr-FR", "fr-BE", "fr-CA"]
+      en: ["en-IE", "en-US", "en-GB"]
+    fallback: fr
+  domains:
+    package:
+      "i18n_tools":
+        - "domain1"
+    application:
+      "mod1":
+        - "domain2"
+        - "domain3"
+      "mod2/pkg1/":
+        - "domain4"
+        - "domain5"
+      "mod2/pkg2/":
+        - "domain6"
+        - "domain7"
+details:
+  name: "Configuration test file"
+  description: "This is a temporary configuration test file"
+authors:
+  123e4567-e89b-12d3-a456-426614174000:
+    first_name: "John"
+    last_name: "Doe"
+    email: "john.doe@example.com"
+    url: "https://johndoe.com"
+    languages:
+      - "en-US"
+      - "fr-CA"

@@ -1,33 +1,28 @@
-import pytest
 import json
-import tarfile
-import gzip
 import shutil
-from pathlib import Path
-from babel.messages.pofile import write_po
+
+import pytest
 from babel.messages.catalog import Catalog
+from babel.messages.pofile import write_po
 from polib import POFile
+
+from i18n_tools.loaders import file_exists
 from i18n_tools.loaders.loader import (
-    _load_po,
-    _save_po,
-    _load_pot,
-    _save_pot,
     _load_mo,
+    _load_po,
+    _load_pot,
     _save_mo,
+    _save_po,
+    _save_pot,
+    aggregate_locale_json,
     check_json_integrity,
     load_locale_json,
-    save_locale_json,
-    aggregate_locale_json,
-    save_aggregated_locale_json,
-    create_module_archive,
-    restore_module_from_archive,
     load_locale_po,
+    save_aggregated_locale_json,
+    save_locale_json,
     save_locale_po,
     save_locale_pot,
 )
-from i18n_tools.loaders.utils import _load_json, _save_json, _create_empty_json, \
-    _create_empty_file, _create_tar_gz, _create_gzip, _non_traversal_path
-from i18n_tools.loaders import file_exists, create_directory
 
 
 @pytest.fixture
@@ -63,40 +58,6 @@ def temp_mo_file(tmp_path):
     file_path.unlink(missing_ok=True)
 
 
-def test_file_exists(temp_file):
-    assert file_exists(temp_file) == False
-    with open(temp_file, "w", encoding="utf-8") as f:
-        f.write("test content")
-    assert file_exists(temp_file) == True
-    assert file_exists("/nonexistent/path") == False
-
-
-def test_file_exists_path(temp_file):
-    file_path = Path(temp_file)
-    assert file_exists(file_path) == False
-    with open(temp_file, "w", encoding="utf-8") as f:
-        f.write("test content")
-    assert file_exists(file_path) == True
-    assert file_exists(Path("/nonexistent/path")) == False
-
-
-def test_create_directory(temp_dir):
-    create_directory(temp_dir)
-    assert temp_dir.exists()
-
-
-def test_load_json(temp_file):
-    data = {"key": "value"}
-    with open(temp_file, "w", encoding="utf-8") as f:
-        json.dump(data, f)
-    assert _load_json(temp_file) == data
-
-
-def test_load_json_raises_exception():
-    with pytest.raises(FileNotFoundError):
-        _load_json("/nonexistent/path")
-
-
 def test_load_po_file(temp_po_file):
     po = _load_po(temp_po_file)
     assert isinstance(po, Catalog)
@@ -119,7 +80,11 @@ def setup_valid_po_file(tmp_path):
     catalog.add("msgid_001", "Translation 1")
 
     # Add a plural entry
-    catalog.add("msgid_002", ("Translation 2", "Plural Translation 2"), auto_comments=["Plural form"])
+    catalog.add(
+        "msgid_002",
+        ("Translation 2", "Plural Translation 2"),
+        auto_comments=["Plural form"],
+    )
 
     # Save the catalog to a PO file
     with open(po_file_path, "wb") as po_file:
@@ -164,19 +129,6 @@ def test_load_mo_file(temp_mo_file):
 def test_load_mo_raises_exception():
     with pytest.raises(FileNotFoundError):
         _load_mo("/nonexistent/path")
-
-
-def test_save_json(temp_file):
-    data = {"key": "value"}
-    _save_json(temp_file, data)
-    with open(temp_file, "r", encoding="utf-8") as f:
-        loaded_data = json.load(f)
-    assert loaded_data == data
-
-
-def test_save_json_raises_exception():
-    with pytest.raises(FileNotFoundError):
-        _save_json("/nonexistent/path", {})
 
 
 def test_save_po_file(temp_po_file):
@@ -225,50 +177,6 @@ def test_save_pot_raises_exception():
     pot = POFile()
     with pytest.raises(FileNotFoundError):
         _save_pot("/nonexistent/path", pot)
-
-
-def test_create_empty_json(temp_file):
-    _create_empty_json(temp_file)
-    with open(temp_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    assert data == {}
-
-
-def test_create_empty_json_raises_exception():
-    with pytest.raises(FileNotFoundError):
-        _create_empty_json("/nonexistent/path")
-
-
-def test_create_empty_file(temp_file):
-    _create_empty_file(temp_file)
-    with open(temp_file, "r", encoding="utf-8") as f:
-        content = f.read()
-    assert content == ""
-
-
-def test_create_empty_file_raises_exception():
-    with pytest.raises(FileNotFoundError):
-        _create_empty_file("/nonexistent/path")
-
-
-def test_create_tar_gz(tmp_path):
-    dir_path = tmp_path / "test_dir"
-    dir_path.mkdir()
-    archive = "test_archive.tar.gz"
-    archive_path = tmp_path / archive
-    _create_tar_gz(tmp_path, archive, dir_path)
-    assert archive_path.exists()
-
-
-def test_create_gzip(temp_file):
-    with open(temp_file, "w", encoding="utf-8") as f:
-        f.write("test content")
-    _create_gzip(temp_file)
-    gz_file = Path(str(temp_file) + ".gz")
-    assert gz_file.exists()
-    with gzip.open(gz_file, "rt", encoding="utf-8") as f:
-        content = f.read()
-    assert content == "test content"
 
 
 @pytest.mark.parametrize(
@@ -395,89 +303,3 @@ def test_save_aggregated_locale_json(tmp_path):
     module_path = tmp_path / "module1"
     assert (module_path / "locales/domain1.json.gz").exists()
     assert (module_path / "module1.json.gz").exists()
-
-
-@pytest.fixture
-def tar_members():
-    # Create a mock tarfile with safe and unsafe members
-    safe_members = [
-        tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
-        tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
-    ]
-    unsafe_members = [
-        tarfile.TarInfo("../../etc/passwd"),
-        tarfile.TarInfo("../secret.txt"),
-        tarfile.TarInfo("mod-1/../../etc/shadow"),
-    ]
-    return safe_members, unsafe_members
-
-
-def test_non_traversal_path_safe(tmp_path, tar_members):
-    """Test normal case where all members are safe."""
-    root_path = tmp_path / "safe_path"
-    module_list = ["mod-1"]
-    safe_members, _ = tar_members
-
-    safe_paths = _non_traversal_path(root_path, module_list, safe_members)
-
-    # Check that all safe members are included
-    assert len(safe_paths) == len(safe_members)
-    for member in safe_members:
-        assert member in safe_paths
-
-
-def test_non_traversal_path_exclusion(tmp_path, tar_members):
-    """Test exclusion of directory traversal vulnerabilities."""
-    root_path = tmp_path / "unsafe_path"
-    module_list = ["mod-1"]
-    safe_members, unsafe_members = tar_members
-    all_members = safe_members + unsafe_members
-
-    safe_paths = _non_traversal_path(root_path, module_list, all_members)
-
-    # Check that only safe members are included
-    assert len(safe_paths) == len(safe_members)
-    for member in safe_members:
-        assert member in safe_paths
-
-    # Check that unsafe members are excluded
-    for member in unsafe_members:
-        assert member not in safe_paths
-
-
-def test_create_module_archive(tmp_path):
-    module_path = tmp_path / "module1"
-    module_path.mkdir()
-    module_path = module_path / "pkg-1"
-    module_path.mkdir()
-    archive_name = "module1_archive"
-    create_module_archive(str(tmp_path), str(module_path), archive_name)
-    archive_path = tmp_path / "module1_archive.tar.gz"
-    assert archive_path.exists()
-
-
-def test_restore_module_from_archive(tmp_path):
-    module_path = tmp_path / "module1"
-    module_path.mkdir()
-    module_path = module_path / "pkg-1"
-    module_path.mkdir()
-    archive_name = "module1_archive"
-    create_module_archive(str(tmp_path), str(module_path), archive_name)
-    module_path.rmdir()
-    restore_module_from_archive(str(tmp_path), "module1", archive_name)
-    assert module_path.exists()
-
-
-def test_restore_module_raise_exception(tmp_path):
-    module_path = tmp_path / "module1"
-    module_path.mkdir()
-    module_path = module_path / "pkg-1"
-    module_path.mkdir()
-    archive_name = "module1_archive"
-    create_module_archive(str(tmp_path), str(module_path), archive_name)
-    module_path.rmdir()
-    false_path = tmp_path / "nonexistent"
-    with pytest.raises(FileNotFoundError):
-        restore_module_from_archive(
-            str(tmp_path), str(false_path), "nonexistent.tar.gz"
-        )

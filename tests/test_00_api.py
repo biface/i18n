@@ -1,6 +1,7 @@
-import pytest
 import os
 import subprocess
+
+import pytest
 
 from i18n_tools.api import validate_api_url
 

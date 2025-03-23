@@ -1,6 +1,8 @@
-import pytest
 import os
 from pathlib import Path
+
+import pytest
+
 from i18n_tools.sync import check_repository
 
 

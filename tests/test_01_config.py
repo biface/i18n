@@ -1,17 +1,17 @@
+import json
 import tempfile
 import uuid
-import yaml
-import toml
-import json
-
 from pathlib import Path
 
 import pytest
+import toml
+import yaml
 from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config, Repository
 from i18n_tools.loaders.repository import load_config, save_config
 from i18n_tools.loaders.utils import _load_config_file
+
 
 def temp_dir_with_locales():
     """
@@ -117,6 +117,7 @@ def temp_dir_with_locales():
 
 temp_data = temp_dir_with_locales()
 config = Config(temp_data[3])
+
 
 def test_config_singleton():
     config_2 = Config()
@@ -500,37 +501,64 @@ def test_config_set_with_type_check():
 def test_config_application_repository(tmp_path):
     application_path = tmp_path / "repository"
     application_path.mkdir(parents=True, exist_ok=True)
-    config.set_application_repository(str(application_path), config.get(["setup", "paths", "application", "modules"]))
-    assert config.get(["setup", "paths", "application", "base"]) == str(application_path)
-    assert config.get(["setup", "paths", "application", "locale"]) == str (application_path / "locales")
+    config.set_application_repository(
+        str(application_path), config.get(["setup", "paths", "application", "modules"])
+    )
+    assert config.get(["setup", "paths", "application", "base"]) == str(
+        application_path
+    )
+    assert config.get(["setup", "paths", "application", "locale"]) == str(
+        application_path / "locales"
+    )
+
 
 def test_config_application_repository_failure(tmp_path):
     application_path = tmp_path / "unknown"
     with pytest.raises(FileNotFoundError):
         config.set_application_repository(str(application_path))
-    assert config.get(["setup", "paths", "application", "base"]) != str(application_path)
-    assert config.get(["setup", "paths", "application", "locale"]) != str(application_path / "locales")
+    assert config.get(["setup", "paths", "application", "base"]) != str(
+        application_path
+    )
+    assert config.get(["setup", "paths", "application", "locale"]) != str(
+        application_path / "locales"
+    )
+
 
 def test_config_update_application_repository(tmp_path):
     application_path = tmp_path / "repository"
     modules = config.get(["setup", "paths", "application", "modules"])
     application_path.mkdir(parents=True, exist_ok=True)
     config.update_application_repository(str(application_path))
-    assert config.get(["setup", "paths", "application", "base"]) == str(application_path)
-    assert config.get(["setup", "paths", "application", "locale"]) == str(application_path / "locales")
+    assert config.get(["setup", "paths", "application", "base"]) == str(
+        application_path
+    )
+    assert config.get(["setup", "paths", "application", "locale"]) == str(
+        application_path / "locales"
+    )
     config.update_application_repository(modules=["mod3"])
     assert config.get(["setup", "paths", "application", "modules"]) == ["mod3"]
     config.update_application_repository(modules=modules)
+
 
 def test_config_update_application_repository_failure(tmp_path):
     application_path = tmp_path / "unknown"
     with pytest.raises(ValueError):
         config.update_application_repository(str(application_path))
-    assert config.get(["setup", "paths", "application", "base"]) != str(application_path)
-    assert config.get(["setup", "paths", "application", "locale"]) != str(application_path / "locales")
-    assert config.get(["setup", "paths", "application", "modules"]) == ["mod1/", "mod2/pkg1/", "mod2/pkg2/"]
+    assert config.get(["setup", "paths", "application", "base"]) != str(
+        application_path
+    )
+    assert config.get(["setup", "paths", "application", "locale"]) != str(
+        application_path / "locales"
+    )
+    assert config.get(["setup", "paths", "application", "modules"]) == [
+        "mod1/",
+        "mod2/pkg1/",
+        "mod2/pkg2/",
+    ]
+
 
 # Testing authors
+
 
 def test_add_author():
     config.add_author("Albert", "Dupont", "albert.dupont@local.net", "", ["en", "fr"])
