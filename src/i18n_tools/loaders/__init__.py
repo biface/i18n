@@ -27,6 +27,11 @@ This module is authored and maintained as part of the i18n-tools package.
 """
 
 from .handler import build_path, create_directory, file_exists
-from .repository import load_config, save_config
+from .repository import (
+    create_module_archive,
+    load_config,
+    restore_module_from_archive,
+    save_config,
+)
 
 __all__ = [build_path, file_exists, create_directory, load_config, save_config]

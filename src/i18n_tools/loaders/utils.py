@@ -3,14 +3,13 @@ import json
 import shutil
 import tarfile
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import toml
 import yaml
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
-from polib import POFile, pofile
 
 # Generic empty files
 
@@ -86,77 +85,7 @@ def _save_json(file_path: str, data: Dict[str, Any]) -> None:
 # PO file handling with polib
 
 
-def _load_text(file_path: str) -> POFile:
-    """
-    Load a PO file using polib and return a POFile object.
-
-    :param file_path: Path to the PO file.
-    :type file_path: str
-    :return: POFile object containing the PO file data.
-    :rtype: POFile
-    :raises FileNotFoundError: If the file is not found.
-    """
-    try:
-        return pofile(file_path)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_text(file_path: str, po_data: POFile) -> None:
-    """
-    Save a POFile object to a PO file.
-
-    :param file_path: Path to the PO file.
-    :type file_path: str
-    :param po_data: POFile object to be saved.
-    :type po_data: POFile
-    :raises FileNotFoundError: If the file path is invalid.
-    """
-    try:
-        po_data.save(file_path)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-# MO file handling with polib
-
-
-def _load_machine(file_path: str) -> POFile:
-    """
-    Load a MO file using polib and return a POFile object.
-
-    :param file_path: Path to the MO file.
-    :type file_path: str
-    :return: POFile object containing the MO file data.
-    :rtype: POFile
-    :raises FileNotFoundError: If the file is not found.
-    """
-    try:
-        return pofile(file_path)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_machine(file_path: str, po_data: POFile) -> None:
-    """
-    Save a POFile object to a MO file.
-
-    :param file_path: Path to the MO file.
-    :type file_path: str
-    :param po_data: POFile object to be saved.
-    :type po_data: POFile
-    :raises FileNotFoundError: If the file path is invalid.
-    """
-    try:
-        po_data.save(file_path)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-# Catalog handling with Babel
-
-
-def _load_catalog(file_path: str) -> Catalog:
+def _load_text(file_path: str) -> Catalog:
     """
     Load a catalog from a PO file using Babel.
 
@@ -173,7 +102,7 @@ def _load_catalog(file_path: str) -> Catalog:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _save_catalog(file_path: str, catalog: Catalog) -> None:
+def _save_text(file_path: str, catalog: Catalog) -> None:
     """
     Save a Catalog object to a PO file using Babel.
 
@@ -187,26 +116,13 @@ def _save_catalog(file_path: str, catalog: Catalog) -> None:
         with open(file_path, "wb") as po_file:
             write_po(po_file, catalog)
     except Exception as exception:
-        raise IOError(exception)
+        raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _convert_catalog(file_path: str) -> None:
-    """
-    Convert a PO catalog to a MO catalog using Babel.
-
-    :param file_path: Path to the PO file.
-    :type file_path: str
-    :raises IOError: If there is an error writing the file.
-    """
-    try:
-        catalog = _load_catalog(file_path)
-        with open(file_path, "wb") as mo_file:
-            write_mo(mo_file, catalog)
-    except Exception as exception:
-        raise IOError(exception)
+# MO file handling with polib
 
 
-def _import_catalog(file_path: str) -> Catalog:
+def _load_machine(file_path: str) -> Catalog:
     """
     Load a catalog from a MO file using Babel.
 
@@ -223,10 +139,46 @@ def _import_catalog(file_path: str) -> Catalog:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
+def _save_machine(file_path: str, catalog: Catalog) -> None:
+    """
+    Save a POFile object to a MO file.
+
+    :param file_path: Path to the MO file.
+    :type file_path: str
+    :param catalog: POFile object to be saved.
+    :type catalog: POFile
+    :raises FileNotFoundError: If the file path is invalid.
+    """
+    try:
+        with open(file_path, "wb") as mo_file:
+            write_mo(mo_file, catalog)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
+def _convert_catalog(file_path: str) -> None:
+    """
+    Convert a PO catalog to a MO catalog using Babel.
+
+    :param file_path: Path to the PO file.
+    :type file_path: str
+    :raises IOError: If there is an error writing the file.
+    """
+    try:
+        catalog = _load_text(file_path)
+        mo_file_path = file_path.replace(".po", ".mo")
+        with open(mo_file_path, "wb") as mo_file:
+            write_mo(mo_file, catalog)
+    except Exception as exception:
+        raise IOError(
+            f'Error converting file "{file_path}" to MO format.'
+        ) from exception
+
+
 # Configuration file load and save
 
 
-def _load_config_file(config_path: Path) -> dict:
+def _load_config_file(config_path: Union[Path, str]) -> dict:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -235,6 +187,9 @@ def _load_config_file(config_path: Path) -> dict:
     :raises Exception: For errors during loading.
     :return: The configuration content as a dictionary.
     """
+    if isinstance(config_path, str):
+        config_path = Path(config_path)
+
     [file_extension] = Path(config_path).suffixes
 
     try:
@@ -253,7 +208,7 @@ def _load_config_file(config_path: Path) -> dict:
         raise Exception(f"Error loading configuration file: {config_path}. {e}")
 
 
-def _save_config_file(config_path: Path, data: dict) -> None:
+def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -262,6 +217,9 @@ def _save_config_file(config_path: Path, data: dict) -> None:
     :raises Exception: For errors during loading.
     :return: The configuration content as a dictionary.
     """
+    if isinstance(config_path, str):
+        config_path = Path(config_path)
+
     [file_extension] = Path(config_path).suffixes
 
     try:
@@ -284,7 +242,9 @@ def _save_config_file(config_path: Path, data: dict) -> None:
 
 
 def _create_tar_gz(
-    base_path: str, archive_name: str, directory_to_archive: str
+    base_path: Union[Path, str],
+    archive_name: str,
+    directory_to_archive: Union[Path, str],
 ) -> None:
     """
     Create an archive of a directory using tar.gz fonctions.
@@ -297,9 +257,16 @@ def _create_tar_gz(
     :return: None
     ;rtype: None
     """
-    tarfile_path = Path(base_path) / archive_name
+    if isinstance(base_path, str):
+        base_path = Path(base_path)
+
+    if isinstance(directory_to_archive, str):
+        directory_to_archive = Path(directory_to_archive)
+
+    tarfile_path = base_path / archive_name
+
     with tarfile.open(tarfile_path, "w:gz") as tar:
-        tar.add(directory_to_archive, arcname=Path(directory_to_archive).name)
+        tar.add(directory_to_archive, arcname=directory_to_archive.name)
 
 
 def _create_gzip(file_path: str) -> None:
