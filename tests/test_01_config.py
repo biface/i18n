@@ -9,7 +9,7 @@ import yaml
 from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config, Repository
-from i18n_tools.loaders.repository import load_config, save_config
+from i18n_tools.loaders import load_config, save_config
 from i18n_tools.loaders.utils import _load_config_file
 
 

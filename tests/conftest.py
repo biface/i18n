@@ -1,11 +1,11 @@
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import patch
 import yaml
 from requests import session
 
-from i18n_tools import I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME, I18N_TOOLS_MODULE_NAME
+from i18n_tools import I18N_TOOLS_MODULE_NAME, I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME
 
 
 @pytest.fixture(scope="session")
@@ -34,9 +34,16 @@ def tmp_repository(root_conf_test, conf_tests, tmp_path) -> list:
     config_toml = temp_path / files_config["toml"]
     config_err_yaml = temp_path / files_config["err_yaml"]
 
-    valid_repository_conf = root_conf_test / repository_config["locale"] / repository_config["configuration"]["valid"]
-    error_repository_conf = root_conf_test / repository_config["locale"] / repository_config["configuration"]["error"]
-
+    valid_repository_conf = (
+        root_conf_test
+        / repository_config["locale"]
+        / repository_config["configuration"]["valid"]
+    )
+    error_repository_conf = (
+        root_conf_test
+        / repository_config["locale"]
+        / repository_config["configuration"]["error"]
+    )
 
     with open(valid_repository_conf, "r", encoding="utf-8") as f:
         config_content = f.read()

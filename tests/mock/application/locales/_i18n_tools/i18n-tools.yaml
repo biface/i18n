@@ -42,10 +42,10 @@ application:
     - fsm/lba
     repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/locales
     root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
-    setup: i18n-tools.yaml
+    settings: i18n-tools.yaml
   translators: {}
+  details:
+    description: This project is a study of implementation of formal Chomsky language
+      and usage of finite state machine
+    name: A toolbox for formal automata
 configuration: application
-details:
-  description: This project is a study of implementation of formal Chomsky language
-    and usage of finite state machine
-  name: A toolbox for formal automata

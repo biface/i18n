@@ -1,11 +1,11 @@
 import gzip
 import json
-import yaml
-import toml
 import tarfile
 from pathlib import Path
 
 import pytest
+import toml
+import yaml
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
@@ -18,16 +18,16 @@ from i18n_tools.loaders.utils import (
     _create_gzip,
     _create_tar_gz,
     _load_json,
-    _save_json,
-    _load_yaml,
-    _save_yaml,
-    _load_toml,
-    _save_toml,
     _load_machine,
     _load_text,
+    _load_toml,
+    _load_yaml,
     _non_traversal_path,
+    _save_json,
     _save_machine,
     _save_text,
+    _save_toml,
+    _save_yaml,
 )
 
 from .conftest import tmp_repository
@@ -40,6 +40,7 @@ def json_test_file(tmp_repository):
         json.dump({"key": "value"}, f)
     return str(json_file)
 
+
 @pytest.fixture(scope="function")
 def yaml_test_file(tmp_repository):
     yaml_file = tmp_repository[0] / "test.yaml"
@@ -47,12 +48,14 @@ def yaml_test_file(tmp_repository):
         yaml.safe_dump({"key": "value"}, f)
     return str(yaml_file)
 
+
 @pytest.fixture(scope="function")
 def toml_test_file(tmp_repository):
     toml_file = tmp_repository[0] / "test.toml"
     with open(toml_file, "w", encoding="utf-8") as f:
         toml.dump({"key": "value"}, f)
     return str(toml_file)
+
 
 @pytest.fixture
 def text_test_file(tmp_repository):
@@ -147,6 +150,7 @@ def test_save_toml(toml_test_file):
 def test_save_toml_raises_exception():
     with pytest.raises(FileNotFoundError):
         _save_toml("/nonexistent/path", {})
+
 
 def test_load_yaml(yaml_test_file):
     assert _load_yaml(str(yaml_test_file)) == {"key": "value"}
@@ -358,7 +362,7 @@ def test_create_tar_gz(tmp_repository, use_path):
         (["module_one", ".", "package_one"], "/module_one/package_one"),
         (["module_one", "sub_module", "..", "package_one"], "/module_one/package_one"),
         (["module_one", "package_one"], "/module_one/package_one"),
-    ]
+    ],
 )
 def test_build_path(tmp_repository, subdir_list, expected):
     # Convert expected to Path object for comparison
