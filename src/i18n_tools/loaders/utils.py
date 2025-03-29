@@ -1,6 +1,6 @@
-import os
 import gzip
 import json
+import os
 import shutil
 import tarfile
 from pathlib import Path
@@ -14,14 +14,17 @@ from babel.messages.pofile import read_po, write_po
 
 # Generic empty files
 
-def __check_path(file_path : Union[Path, str]) -> Path:
+
+def __check_path(file_path: Union[Path, str]) -> Path:
     if isinstance(file_path, str):
         file_path = Path(file_path)
     return file_path
 
+
 def _exist_path(path: Union[Path, str]) -> bool:
     path = __check_path(path)
     return path.exists()
+
 
 def _create_empty_file(file_path: Union[Path, str]) -> None:
     """
@@ -117,6 +120,7 @@ def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+
 def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     """
     Save a
@@ -132,6 +136,7 @@ def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+
 def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
     """
     Load a TOML file without managing data structure and returns its content.
@@ -145,6 +150,7 @@ def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
             return toml.load(toml_file)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
 
 def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     """
@@ -332,6 +338,7 @@ def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
 
 # Utility functions
 
+
 def _build_path(base_path: Union[Path, str], *sub_dirs: str) -> Path:
     """
     Constructs a path by combining a base path with one or more subdirectories.
@@ -434,6 +441,7 @@ def _non_traversal_path(
                 safe_paths.append(member)
 
     return safe_paths
+
 
 def _remove_file(file_path: Union[Path, str]) -> None:
     """
