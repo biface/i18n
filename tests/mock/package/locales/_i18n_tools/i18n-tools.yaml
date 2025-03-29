@@ -1,0 +1,18 @@
+configuration: package
+details:
+  description: ''
+  name: ''
+package:
+  authors: {}
+  domains: {}
+  languages:
+    fallback: ''
+    hierarchy: {}
+    source: ''
+  paths:
+    config: ''
+    modules: []
+    repository: ''
+    root: ''
+    setup: i18n-tools.yaml
+  translators: {}

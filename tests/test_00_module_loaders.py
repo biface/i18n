@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from i18n_tools.loaders import build_path, create_directory, file_exists
+from i18n_tools.loaders import create_directory, file_exists
 from tests.conftest import tmp_repository
 
 
@@ -29,8 +29,3 @@ def test_file_exists(path, tmp_repository):
 def test_create_directory(temp_dir):
     create_directory(temp_dir)
     assert temp_dir.exists()
-
-
-def test_build_path(tmp_repository):
-    path = build_path(tmp_repository[0], "module_one", "package_one")
-    assert path == str(tmp_repository[0] / "module_one" / "package_one")

@@ -1,3 +1,4 @@
+configuration: "mock/"
 repository:
   locale: "locales"
   configuration:

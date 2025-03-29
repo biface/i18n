@@ -1,5 +1,7 @@
 import gzip
 import json
+import yaml
+import toml
 import tarfile
 from pathlib import Path
 
@@ -9,16 +11,21 @@ from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
 
 from i18n_tools.loaders.utils import (
+    _build_path,
     _convert_catalog,
     _create_empty_file,
     _create_empty_json,
     _create_gzip,
     _create_tar_gz,
     _load_json,
+    _save_json,
+    _load_yaml,
+    _save_yaml,
+    _load_toml,
+    _save_toml,
     _load_machine,
     _load_text,
     _non_traversal_path,
-    _save_json,
     _save_machine,
     _save_text,
 )
@@ -33,6 +40,19 @@ def json_test_file(tmp_repository):
         json.dump({"key": "value"}, f)
     return str(json_file)
 
+@pytest.fixture(scope="function")
+def yaml_test_file(tmp_repository):
+    yaml_file = tmp_repository[0] / "test.yaml"
+    with open(yaml_file, "w", encoding="utf-8") as f:
+        yaml.safe_dump({"key": "value"}, f)
+    return str(yaml_file)
+
+@pytest.fixture(scope="function")
+def toml_test_file(tmp_repository):
+    toml_file = tmp_repository[0] / "test.toml"
+    with open(toml_file, "w", encoding="utf-8") as f:
+        toml.dump({"key": "value"}, f)
+    return str(toml_file)
 
 @pytest.fixture
 def text_test_file(tmp_repository):
@@ -95,7 +115,7 @@ def test_load_json_raises_exception():
 
 
 def test_save_json(json_test_file):
-    data = {"key": "value"}
+    data = {"key": "new value"}
     _save_json(json_test_file, data)
     with open(json_test_file, "r", encoding="utf-8") as f:
         loaded_data = json.load(f)
@@ -105,6 +125,49 @@ def test_save_json(json_test_file):
 def test_save_json_raises_exception():
     with pytest.raises(FileNotFoundError):
         _save_json("/nonexistent/path", {})
+
+
+def test_load_toml(toml_test_file):
+    assert _load_toml(str(toml_test_file)) == {"key": "value"}
+
+
+def test_load_toml_raise_exception():
+    with pytest.raises(FileNotFoundError):
+        _load_toml("nonexistent/path")
+
+
+def test_save_toml(toml_test_file):
+    data = {"key": "new value"}
+    _save_toml(toml_test_file, data)
+    with open(toml_test_file, "r", encoding="utf-8") as f:
+        loaded_data = toml.load(f)
+    assert loaded_data == data
+
+
+def test_save_toml_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        _save_toml("/nonexistent/path", {})
+
+def test_load_yaml(yaml_test_file):
+    assert _load_yaml(str(yaml_test_file)) == {"key": "value"}
+
+
+def test_load_yaml_raise_exception():
+    with pytest.raises(FileNotFoundError):
+        _load_yaml("nonexistent/path")
+
+
+def test_save_yaml(yaml_test_file):
+    data = {"key": "new value"}
+    _save_yaml(yaml_test_file, data)
+    with open(yaml_test_file, "r", encoding="utf-8") as f:
+        loaded_data = yaml.safe_load(f)
+    assert loaded_data == data
+
+
+def test_save_yaml_raises_exception():
+    with pytest.raises(FileNotFoundError):
+        _save_yaml("/nonexistent/path", {})
 
 
 def test_load_text(text_test_file):
@@ -284,3 +347,25 @@ def test_create_tar_gz(tmp_repository, use_path):
     archive_name = "repository_archive.tar.gz"
     _create_tar_gz(root_dir, archive_name, directory_to_archive)
     assert (root_dir / Path(archive_name)).exists()
+
+
+@pytest.mark.parametrize(
+    "subdir_list, expected",
+    [
+        (["module_one", "package_one"], "/module_one/package_one"),
+        (["module_one", "package_one"], "/module_one/package_one"),
+        (["module_one", "..", "package_one"], "/package_one"),
+        (["module_one", ".", "package_one"], "/module_one/package_one"),
+        (["module_one", "sub_module", "..", "package_one"], "/module_one/package_one"),
+        (["module_one", "package_one"], "/module_one/package_one"),
+    ]
+)
+def test_build_path(tmp_repository, subdir_list, expected):
+    # Convert expected to Path object for comparison
+    expected_path = Path(str(tmp_repository[0]) + expected).resolve()
+
+    # Build the path using the function
+    result_path = _build_path(tmp_repository[0], *subdir_list).resolve()
+
+    # Assert that the result matches the expected path
+    assert result_path == expected_path

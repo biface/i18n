@@ -1,7 +1,11 @@
 from pathlib import Path
 
 import pytest
+from unittest.mock import patch
 import yaml
+from requests import session
+
+from i18n_tools import I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME, I18N_TOOLS_MODULE_NAME
 
 
 @pytest.fixture(scope="session")
@@ -17,97 +21,30 @@ def conf_tests(root_conf_test) -> dict:
 
 
 @pytest.fixture(scope="function")
-def tmp_repository(conf_tests, tmp_path) -> list:
+def tmp_repository(root_conf_test, conf_tests, tmp_path) -> list:
+
+    repository_config = conf_tests["repository"]
+    files_config = conf_tests["files"]
+
     temp_path = tmp_path / conf_tests["setup"]["paths"]["application"]["base"]
     locales_dir = temp_path / "locales"
     locales_dir.mkdir(parents=True, exist_ok=True)
 
-    config_yaml = temp_path / conf_tests["files"]["yaml"]
-    config_toml = temp_path / conf_tests["files"]["toml"]
-    config_err_yaml = temp_path / conf_tests["files"]["err_yaml"]
+    config_yaml = temp_path / files_config["yaml"]
+    config_toml = temp_path / files_config["toml"]
+    config_err_yaml = temp_path / files_config["err_yaml"]
 
-    config_yaml.write_text(
-        """
-        setup:
-          paths:
-            application:
-                base: ''
-                modules:
-                  - mod1/
-                  - mod2/pkg1/
-                  - mod2/pkg2/
-          languages:
-            source: en
-            hierarchy:
-              fr: ["fr-FR", "fr-BE", "fr-CA"]
-              en: ["en-IE", "en-US", "en-GB"]
-            fallback: fr
-          domains:
-            package:
-              "i18n_tools":
-                - "domain1"
-            application:
-              "mod1":
-                - "domain2"
-                - "domain3"
-              "mod2/pkg1/":
-                - "domain4"
-                - "domain5"
-              "mod2/pkg2/":
-                - "domain6"
-                - "domain7"
-        details:
-            name: "Configuration test file"
-            description: "This is a temporary configuration test file"
-        authors:
-            123e4567-e89b-12d3-a456-426614174000:
-                first_name: "John"
-                last_name: "Doe"
-                email: "john.doe@example.com"
-                url: "https://johndoe.com"
-                languages:
-                    - "en-US"
-                    - "fr-CA"
-        """
-    )
+    valid_repository_conf = root_conf_test / repository_config["locale"] / repository_config["configuration"]["valid"]
+    error_repository_conf = root_conf_test / repository_config["locale"] / repository_config["configuration"]["error"]
 
-    config_err_yaml.write_text(
-        """
-        setup:
-          paths:
-            application:
-                base: ''
-                modules:
-                    - mod1/
-                    - mod2/pkg1/
-                    - mod2/pkg2/
-          language:
-            source: en
-            hierarchy:
-              fr: ["fr-FR", "fr-BE", "fr-CA"]
-              en: ["en-IE", "en-US", "en-GB"]
-            fallback: fr
-          domains:
-            package:
-              "i18n_tools": ["domain1"]
-            application:
-              "mod1/": ["domain2", "domain3"]
-              "mod2/pkg1/": ["domain4", "domain5"]
-              "mod2/pkg2/": ["domain6", "domain7"]
-        details:
-            name: "Configuration test file"
-            description: "This is a temporary configuration test file"
-        authors:
-            123e4567-e89b-12d3-a456-426614174000:
-                first_name: "John"
-                last_name: "Doe"
-                email: "john.doe@example.com"
-                url: "https://johndoe.com"
-                languages:
-                    - "en-US"
-                    - "fr-CA"
-        """
-    )
+
+    with open(valid_repository_conf, "r", encoding="utf-8") as f:
+        config_content = f.read()
+        config_yaml.write_text(config_content)
+
+    with open(error_repository_conf, "r", encoding="utf-8") as f:
+        err_content = f.read()
+        config_err_yaml.write_text(err_content)
 
     return [
         temp_path,
@@ -115,5 +52,6 @@ def tmp_repository(conf_tests, tmp_path) -> list:
         temp_path.parent,
         config_yaml,
         config_toml,
-        config_err_yaml,
+        config_content,
+        err_content,
     ]

@@ -1,31 +1,46 @@
 setup:
   paths:
+    package:
+      base: ''
+      locale: ''
+      modules:
+        - "i18n_tools/"
+        - "i18n_tools/utils/"
     application:
       base: ''
+      locale: ''
       modules:
-        - mod1/
-        - mod2/pkg1/
-        - mod2/pkg2/
+        - "fsm_tools/"
   languages:
-    source: en
+    source: fr
     hierarchy:
-      fr: [ "fr-FR", "fr-BE", "fr-CA" ]
-      en: [ "en-IE", "en-US", "en-GB" ]
-    fallback: fr
+      fr: [ "fr-FR" ]
+      en: [ "en-US", "en-GB" ]
+      de: [ "de-DE" ]
+      es: [ "es-ES"]
+      eo: [ "eo"]
+      ga: [ "ga-IE"]
+      it: [ "it-IT"]
+      sv: [ "sv-SE"]
+    fallback: us
   domains:
     package:
-      "i18n_tools":
-        - "domain1"
+      "i18n_tools/":
+        - "api"
+        - "converter"
+        - "fallback"
+        - "formatter"
+        - "manager"
+        - "synchronization"
+      "i18n_tools/loaders/":
+        - "utils"
+        - "handler"
+        - "repository"
     application:
-      "mod1":
-        - "domain2"
-        - "domain3"
-      "mod2/pkg1/":
-        - "domain4"
-        - "domain5"
-      "mod2/pkg2/":
-        - "domain6"
-        - "domain7"
+      "fsm_tools/":
+        - "django"
+        - "error"
+        - "information"
 details:
   name: "Configuration test file"
   description: "This is a temporary configuration test file"

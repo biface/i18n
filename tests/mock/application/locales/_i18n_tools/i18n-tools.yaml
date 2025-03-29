@@ -1,0 +1,51 @@
+application:
+  authors:
+    7d097ac4-ba77-4333-a63f-76d48a75b38c:
+      email: john@doe.com
+      first_name: John
+      languages:
+      - fr
+      - en
+      last_name: Doe
+      url: ''
+    baf52b25-d1ed-4651-a3e6-273850901cf0:
+      email: jeanne@doe.com
+      first_name: Jeanne
+      languages:
+      - fr
+      - en
+      last_name: Doe
+      url: ''
+  domains:
+    fsm:
+    - usage
+    fsm/lba:
+    - information
+    - error
+    fsm/turing:
+    - information
+    - error
+  languages:
+    fallback: en
+    hierarchy:
+      en:
+      - en-US
+      - en-GB
+      fr:
+      - fr-FR
+    source: en
+  paths:
+    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/locales/_i18n_tools
+    modules:
+    - fsm/
+    - fsm/turing/
+    - fsm/lba
+    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/locales
+    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
+    setup: i18n-tools.yaml
+  translators: {}
+configuration: application
+details:
+  description: This project is a study of implementation of formal Chomsky language
+    and usage of finite state machine
+  name: A toolbox for formal automata
