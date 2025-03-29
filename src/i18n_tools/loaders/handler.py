@@ -1,22 +1,25 @@
 from pathlib import Path
-from typing import Union, Dict, Any
+from typing import Any, Dict, Union
+
 from babel.messages.catalog import Catalog
+
 from .utils import (
-    _exist_path,
     _build_path,
+    _convert_catalog,
     _create_empty_file,
     _create_empty_json,
+    _exist_path,
     _load_json,
-    _save_json,
-    _load_yaml,
-    _save_yaml,
-    _load_toml,
-    _save_toml,
     _load_text,
+    _load_toml,
+    _load_yaml,
+    _remove_file,
+    _save_json,
     _save_text,
-    _convert_catalog,
-    _remove_file
+    _save_toml,
+    _save_yaml,
 )
+
 
 def build_path(base_path: str, *sub_dirs: str) -> str:
     """
@@ -37,7 +40,7 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     constructed_path = _build_path(base_path, *sub_dirs)
 
     # Remove any '..' or other invalid elements
-    cleaned_path = Path(*[part for part in constructed_path.parts if part != '..'])
+    cleaned_path = Path(*[part for part in constructed_path.parts if part != ".."])
 
     # Check if the cleaned path exists
     if not cleaned_path.exists():
@@ -84,7 +87,9 @@ def build_config_repository(app_root: str) -> None:
     if not _exist_path(config_path):
         create_directory(config_path)
 
+
 # Create operations
+
 
 def create_template(base_path: str, module: str, domain: str) -> None:
     """
@@ -104,6 +109,7 @@ def create_template(base_path: str, module: str, domain: str) -> None:
     template_dir.mkdir(parents=True, exist_ok=True)
     template_file = template_dir / f"{domain}.pot"
     _create_empty_file(str(template_file))
+
 
 def create_catalog(base_path: str, module: str, language: str, domain: str) -> None:
     """
@@ -126,6 +132,7 @@ def create_catalog(base_path: str, module: str, language: str, domain: str) -> N
     catalog_file = lang_dir / f"{domain}.po"
     _save_text(str(catalog_file), Catalog())
 
+
 def create_dictionary(base_path: str, module: str, language: str, domain: str) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -147,7 +154,9 @@ def create_dictionary(base_path: str, module: str, language: str, domain: str) -
     dictionary_file = lang_dir / f"{domain}.json"
     _create_empty_json(str(dictionary_file))
 
+
 # Read operations
+
 
 def fetch_template(base_path: str, module: str, domain: str) -> str:
     """
@@ -170,6 +179,7 @@ def fetch_template(base_path: str, module: str, domain: str) -> str:
             return file.read()
     return ""
 
+
 def fetch_catalog(base_path: str, module: str, language: str, domain: str) -> Catalog:
     """
     Fetches the translation catalog for a given language and domain.
@@ -190,7 +200,10 @@ def fetch_catalog(base_path: str, module: str, language: str, domain: str) -> Ca
     catalog_file = Path(base_path) / module / f"locales/{language}/{domain}.po"
     return _load_text(str(catalog_file)) if catalog_file.exists() else Catalog()
 
-def fetch_dictionary(base_path: str, module: str, language: str, domain: str) -> Dict[str, Any]:
+
+def fetch_dictionary(
+    base_path: str, module: str, language: str, domain: str
+) -> Dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
 
@@ -210,9 +223,13 @@ def fetch_dictionary(base_path: str, module: str, language: str, domain: str) ->
     dictionary_file = Path(base_path) / module / f"locales/{language}/{domain}.json"
     return _load_json(str(dictionary_file)) if dictionary_file.exists() else {}
 
+
 # Update operations
 
-def update_catalog(base_path: str, module: str, language: str, domain: str, catalog: Catalog) -> None:
+
+def update_catalog(
+    base_path: str, module: str, language: str, domain: str, catalog: Catalog
+) -> None:
     """
     Updates the translation catalog for a given language and domain.
 
@@ -234,7 +251,10 @@ def update_catalog(base_path: str, module: str, language: str, domain: str, cata
     _save_text(str(catalog_file), catalog)
     _convert_catalog(str(catalog_file))  # Update the .mo file
 
-def update_dictionary(base_path: str, module: str, language: str, domain: str, data: Dict[str, Any]) -> None:
+
+def update_dictionary(
+    base_path: str, module: str, language: str, domain: str, data: Dict[str, Any]
+) -> None:
     """
     Updates the translation dictionary for a given language and domain.
 
@@ -254,7 +274,9 @@ def update_dictionary(base_path: str, module: str, language: str, domain: str, d
     dictionary_file = Path(base_path) / module / f"locales/{language}/{domain}.json"
     _save_json(str(dictionary_file), data)
 
+
 # Delete operations
+
 
 def remove_template(base_path: str, module: str, domain: str) -> None:
     """
@@ -275,6 +297,7 @@ def remove_template(base_path: str, module: str, domain: str) -> None:
         _remove_file(template_file)
     except FileNotFoundError:
         raise FileNotFoundError(f"Template file not found: {template_file}")
+
 
 def remove_catalog(base_path: str, module: str, language: str, domain: str) -> None:
     """
@@ -304,6 +327,7 @@ def remove_catalog(base_path: str, module: str, language: str, domain: str) -> N
     except FileNotFoundError:
         raise FileNotFoundError(f"Machine file not found: {machine_file}")
 
+
 def remove_dictionary(base_path: str, module: str, language: str, domain: str) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -320,7 +344,9 @@ def remove_dictionary(base_path: str, module: str, language: str, domain: str) -
     :type domain: str
     :raises FileNotFoundError: If the dictionary file does not exist.
     """
-    dictionary_file = build_path(base_path, module, f"locales/{language}", f"{domain}.json")
+    dictionary_file = build_path(
+        base_path, module, f"locales/{language}", f"{domain}.json"
+    )
     try:
         _remove_file(dictionary_file)
     except FileNotFoundError:

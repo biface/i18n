@@ -5,8 +5,6 @@ from i18n_tools.loaders import (
     build_path,
     create_directory,
     file_exists,
-    load_config,
-    save_config,
 )
 
 I18N_TOOLS_ROOT = Path(__file__).resolve().parent
@@ -19,6 +17,4 @@ __ALL__ = [
     build_path,
     file_exists,
     create_directory,
-    load_config,
-    save_config,
 ]
