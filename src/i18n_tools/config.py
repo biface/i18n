@@ -83,6 +83,32 @@ class Config(metaclass=Singleton):
 
         :param config_path: Optional path to the configuration file.
         """
+
+        def _setup_configuration(root: Optional[str] = "", modules: Optional[List[str]] = None) -> NestedDictionary:
+            return NestedDictionary(
+                {
+                    "paths": {
+                        "root": build_path(root) if root else "",
+                        "repository": build_path(root, "locales") if root else "",
+                        "config": build_path(root, "locales", "_i18n_tools") if root else "",
+                        "setup": "i18n-tools.yaml",  # May be changed for .json or .toml
+                        "modules": modules if modules is not None else [],
+                    },
+                    "domains": {},
+                    "languages": {
+                        "source": "",
+                        "hierarchy": {},
+                        "fallback": "",
+                    },
+                    "translators": {},
+                    "authors": {},
+                },
+                indent=2,
+                strict=True
+            )
+
+        self.package = _setup_configuration(I18N_TOOLS_ROOT)
+        self.application = _setup_configuration(root=config_path)
         self.setup = NestedDictionary(indent=2, strict=True)
         self.setup.update(
             {
@@ -122,30 +148,34 @@ class Config(metaclass=Singleton):
 
         self.authors = NestedDictionary({}, indent=2, strict=True)  # Author details
         self._email_index = NestedDictionary({}, indent=2, strict=True)
+        self._current_config = "application"
 
     def load(self):
         """
         Load the configuration file and dynamically set attributes based on the configuration dictionary.
         """
-        config = load_config(self.setup[["paths", "config"]])
+        current_config = self.__getattribute__(self._current_config)
+        config_file = current_config[["paths", "config"]] + "/" + current_config[["paths", "setup"]]
+        config = load_config(config_file)
+
+        if config.get("configuration") != self._current_config:
+            raise IndexError(
+                f"Configuration file {config_file} does not match current configuration {self._current_config}")
 
         # Load general setup
-        for key, value in config.get("setup", {}).items():
-            if key in self.setup.keys():
-                self.setup[key].update(value)
+        for key, value in config.get(self._current_config, {}).items():
+            if key in current_config.keys():
+                current_config[key].update(value)
             else:
                 raise AttributeError(f"Unknown configuration key '{key}' in setup.")
 
         # Load details
         self.details.update(config.get("details", {}))
 
-        # Load authors
-        self.authors.update(config.get("authors", {}))
-
         # Rebuild email index
         self._email_index = {
             author_data["email"]: author_id
-            for author_id, author_data in self.authors.items()
+            for author_id, author_data in self.__getattribute__(self._current_config)["authors"].items()
         }
 
     def save(self) -> None:
@@ -155,15 +185,22 @@ class Config(metaclass=Singleton):
         Uses the `loader.save_config` function to write the configuration
         to `self.paths['config']`.
         """
-        if not self.setup[["paths", "config"]]:
+        current_config = self.__getattribute__(self._current_config)
+        config_file = current_config[["paths", "setup"]]
+        if config_file == "":
             raise ValueError("No configuration file path is set.")
 
         data = {
-            "setup": self.setup.to_dict(),
+            "configuration": self._current_config,
+            self._current_config: current_config.to_dict(),
             "details": self.details.to_dict(),
-            "authors": self.authors.to_dict(),
         }
-        save_config(self.setup[["paths", "config"]], data)
+
+        try:
+            save_path = current_config[["paths", "config"]] + "/" + config_file
+            save_config(save_path, data)
+        except Exception as e:
+            raise e
 
     def get(self, key: list) -> Any:
         """
@@ -250,7 +287,7 @@ class Config(metaclass=Singleton):
                 raise e
 
     def set_application_repository(
-        self, base_path: str, modules: Optional[List[str]] = None
+            self, base_path: str, modules: Optional[List[str]] = None
     ):
         """
         Set the application repository paths and modules with validation.
@@ -273,7 +310,7 @@ class Config(metaclass=Singleton):
         )
 
     def update_application_repository(
-        self, base_path: Optional[str] = None, modules: Optional[List[str]] = None
+            self, base_path: Optional[str] = None, modules: Optional[List[str]] = None
     ):
         """
         Update the application repository paths and modules with validation.
@@ -294,7 +331,7 @@ class Config(metaclass=Singleton):
             self.setup[["paths", "application", "modules"]] = modules
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -314,24 +351,32 @@ class Config(metaclass=Singleton):
 
         if email in self._email_index:
             existing_uuid = self._email_index[email]
-            raise KeyError(
-                f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
+            if existing_uuid in self.__getattribute__(self._current_config)["authors"].keys():
+                raise KeyError(
+                    f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
+                )
+            else:
+                author_id = existing_uuid
+                if self._current_config == "application":
+                    author = self.package[["authors", existing_uuid]]
+                else:
+                    author = self.application[["authors", existing_uuid]]
+        else:
+            author_id = str(uuid4())
+            author = NestedDictionary(
+                {
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "url": url,
+                    "languages": normalized_languages,
+                },
+                indent=2,
+                strict=True,
             )
+            self._email_index[email] = author_id
 
-        author_id = str(uuid4())
-        self.authors[author_id] = NestedDictionary(
-            {
-                "first_name": first_name,
-                "last_name": last_name,
-                "email": email,
-                "url": url,
-                "languages": normalized_languages,
-            },
-            indent=2,
-            strict=True,
-        )
-
-        self._email_index[email] = author_id
+        self.__getattribute__(self._current_config)[["authors", author_id]] = author
 
     def get_author(self, index: str) -> Optional[dict]:
         """
@@ -343,11 +388,14 @@ class Config(metaclass=Singleton):
         :rtype: dict
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         """
+        current_config = self.__getattribute__(self._current_config)
+
         # Check if the input is a valid UUID
+
         try:
             uuid_obj = UUID(index)
             if index in self.authors:
-                return self.get(["authors", index])
+                return current_config[["authors", index]]
             else:
                 raise KeyError(
                     f"Index '{index}' does not exist in the authors dictionary."
@@ -365,7 +413,7 @@ class Config(metaclass=Singleton):
         # Search by email in the email index
         author_id = self._email_index.get(index)
         if author_id:
-            return self.get(["authors", author_id])
+            return current_config[["authors", author_id]]
 
         # If the email doesn't exist, return None
         return None
@@ -382,7 +430,7 @@ class Config(metaclass=Singleton):
         try:
             uuid_obj = UUID(index)
             # Remove by UUID if it exists
-            if index in self.authors:
+            if index in self.__getattribute__(self._current_config)["authors"]:
                 # Remove the author
                 author = self.authors.pop(index)
                 # Remove from the email index
@@ -412,20 +460,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -698,29 +746,32 @@ class Config(metaclass=Singleton):
         else:
             self.setup[["domains", "application"]] = {}
 
-    def repository(self, package: bool = False) -> NestedDictionary:
+    def repository(self) -> NestedDictionary:
         """
         Build the repository dictionary from configuration.
-        :param package: if true configure repository as i18n-tools, else configure it as application.
-        :type package: bool
+
         :return: a configured repository
         :rtype: NestedDictionary
         """
-        repository = NestedDictionary(
-            [("base", {}), ("modules", {}), ("languages", {}), ("authors", {})],
-            indent=2,
-            strict=True,
-        )
-        if package:
-            repository["base"] = self.setup[["paths", "package"]]
-            repository["modules"] = self.setup[["domains", "package"]]
-        else:
-            repository["base"] = self.setup[["paths", "application"]]
-            repository["modules"] = self.setup[["domains", "application"]]
+        return self.__getattribute__(self._current_config)
 
-        repository["languages"] = self.setup["languages"]
-        repository["authors"] = self.authors
-        return repository
+    def switch_to_package_config(self):
+        """
+        Switch the current configuration context to the package configuration.
+        """
+        self._current_config = "package"
+
+    def switch_to_application_config(self):
+        """
+        Switch the current configuration context to the application configuration.
+        """
+        self._current_config = "application"
+
+    def toggle_config(self):
+        """
+        Toggle the current configuration context between package and application.
+        """
+        self._current_config = "application" if self._current_config == "package" else "package"
 
     def __repr__(self) -> str:
         """
@@ -759,12 +810,12 @@ class Repository:
     """
 
     def __init__(
-        self,
-        directory: Dict[str, List[str]],
-        domains: Dict[str, List[str]],
-        languages: Dict[str, Any],
-        authors: Dict[str, Any],
-        details: Dict[str, Any],
+            self,
+            directory: Dict[str, List[str]],
+            domains: Dict[str, List[str]],
+            languages: Dict[str, Any],
+            authors: Dict[str, Any],
+            details: Dict[str, Any],
     ):
         """
         Initialize the Repository with paths, domains, languages, authors, and details.

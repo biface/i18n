@@ -1,3 +1,4 @@
+import os
 import gzip
 import json
 import shutil
@@ -13,16 +14,27 @@ from babel.messages.pofile import read_po, write_po
 
 # Generic empty files
 
+def __check_path(file_path : Union[Path, str]) -> Path:
+    if isinstance(file_path, str):
+        file_path = Path(file_path)
+    return file_path
 
-def _create_empty_file(file_path: str) -> None:
+def _exist_path(path: Union[Path, str]) -> bool:
+    path = __check_path(path)
+    return path.exists()
+
+def _create_empty_file(file_path: Union[Path, str]) -> None:
     """
     Create an empty file.
     :param file_path: a path to a file.
     :type file_path: str
-    :return: None
+    :return: Nothing
     :rtype: None
     :raises FileNotFoundError: File not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "w", encoding="utf-8") as empty_file:
             empty_file.write("")
@@ -33,15 +45,18 @@ def _create_empty_file(file_path: str) -> None:
 # JSON load and save files
 
 
-def _create_empty_json(file_path: str) -> None:
+def _create_empty_json(file_path: Union[Path, str]) -> None:
     """
     Create an empty JSON file without managing data structure and integrity and returns its content.
     :param file_path: JSON file path.
     :type file_path: str
-    :return: None
+    :return: Nothing
     :rtype: None
     :raises FileNotFoundError: File not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "w", encoding="utf-8") as json_file:
             json.dump({}, json_file, ensure_ascii=False, indent=4)
@@ -49,7 +64,7 @@ def _create_empty_json(file_path: str) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _load_json(file_path: str) -> Dict[str, Any]:
+def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
     :param file_path: Path to the JSON file.
@@ -58,6 +73,9 @@ def _load_json(file_path: str) -> Dict[str, Any]:
     :rtype: dict
     :raises FileNotFoundError: File not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "r", encoding="utf-8") as json_file:
             return json.load(json_file)
@@ -65,7 +83,7 @@ def _load_json(file_path: str) -> Dict[str, Any]:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _save_json(file_path: str, data: Dict[str, Any]) -> None:
+def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     """
     Save a JSON file without managing data structure and integrity and returns its content.
     :param file_path: Path to the JSON file.
@@ -75,6 +93,9 @@ def _save_json(file_path: str, data: Dict[str, Any]) -> None:
     :return: None
     :raises FileNotFoundError: File not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "w", encoding="utf-8") as json_file:
             json.dump(data, json_file, ensure_ascii=False, indent=4)
@@ -82,10 +103,68 @@ def _save_json(file_path: str, data: Dict[str, Any]) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
+def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
+    """
+    Load a
+    :param file_path:
+    :return:
+    """
+    file_path = __check_path(file_path)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as yaml_file:
+            return yaml.load(yaml_file, Loader=yaml.SafeLoader)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
+    """
+    Save a
+    :param file_path:
+    :param data:
+    :return:
+    """
+    file_path = __check_path(file_path)
+
+    try:
+        with open(file_path, "w", encoding="utf-8") as yaml_file:
+            yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
+    """
+    Load a TOML file without managing data structure and returns its content.
+    :param file_path:
+    :return:
+    """
+    file_path = __check_path(file_path)
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as toml_file:
+            return toml.load(toml_file)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
+    """
+    Save a TOML file without managing data structure and returns its content.
+    :param file_path:
+    :param data:
+    :return:
+    """
+    file_path = __check_path(file_path)
+    try:
+        with open(file_path, "w", encoding="utf-8") as toml_file:
+            toml.dump(data, toml_file)
+    except Exception as exception:
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
 # PO file handling with polib
 
 
-def _load_text(file_path: str) -> Catalog:
+def _load_text(file_path: Union[Path, str]) -> Catalog:
     """
     Load a catalog from a PO file using Babel.
 
@@ -95,6 +174,9 @@ def _load_text(file_path: str) -> Catalog:
     :rtype: Catalog
     :raises FileNotFoundError: If the file is not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "r", encoding="utf-8") as po_file:
             return read_po(po_file)
@@ -102,7 +184,7 @@ def _load_text(file_path: str) -> Catalog:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _save_text(file_path: str, catalog: Catalog) -> None:
+def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
     """
     Save a Catalog object to a PO file using Babel.
 
@@ -112,17 +194,20 @@ def _save_text(file_path: str, catalog: Catalog) -> None:
     :type catalog: Catalog
     :raises IOError: If there is an error writing the file.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "wb") as po_file:
             write_po(po_file, catalog)
     except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.')
+        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
 # MO file handling with polib
 
 
-def _load_machine(file_path: str) -> Catalog:
+def _load_machine(file_path: Union[Path, str]) -> Catalog:
     """
     Load a catalog from a MO file using Babel.
 
@@ -132,6 +217,9 @@ def _load_machine(file_path: str) -> Catalog:
     :rtype: Catalog
     :raises FileNotFoundError: If the file is not found.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "rb") as mo_file:
             return read_mo(mo_file)
@@ -139,7 +227,7 @@ def _load_machine(file_path: str) -> Catalog:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _save_machine(file_path: str, catalog: Catalog) -> None:
+def _save_machine(file_path: Union[Path, str], catalog: Catalog) -> None:
     """
     Save a POFile object to a MO file.
 
@@ -149,6 +237,9 @@ def _save_machine(file_path: str, catalog: Catalog) -> None:
     :type catalog: POFile
     :raises FileNotFoundError: If the file path is invalid.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         with open(file_path, "wb") as mo_file:
             write_mo(mo_file, catalog)
@@ -156,7 +247,7 @@ def _save_machine(file_path: str, catalog: Catalog) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _convert_catalog(file_path: str) -> None:
+def _convert_catalog(file_path: Union[Path, str]) -> None:
     """
     Convert a PO catalog to a MO catalog using Babel.
 
@@ -164,9 +255,12 @@ def _convert_catalog(file_path: str) -> None:
     :type file_path: str
     :raises IOError: If there is an error writing the file.
     """
+
+    file_path = __check_path(file_path)
+
     try:
         catalog = _load_text(file_path)
-        mo_file_path = file_path.replace(".po", ".mo")
+        mo_file_path = file_path.with_suffix(".mo")
         with open(mo_file_path, "wb") as mo_file:
             write_mo(mo_file, catalog)
     except Exception as exception:
@@ -187,10 +281,9 @@ def _load_config_file(config_path: Union[Path, str]) -> dict:
     :raises Exception: For errors during loading.
     :return: The configuration content as a dictionary.
     """
-    if isinstance(config_path, str):
-        config_path = Path(config_path)
 
-    [file_extension] = Path(config_path).suffixes
+    config_path = __check_path(config_path)
+    [file_extension] = config_path.suffixes
 
     try:
         with open(config_path, "r", encoding="utf-8") as file:
@@ -217,10 +310,9 @@ def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
     :raises Exception: For errors during loading.
     :return: The configuration content as a dictionary.
     """
-    if isinstance(config_path, str):
-        config_path = Path(config_path)
 
-    [file_extension] = Path(config_path).suffixes
+    config_path = __check_path(config_path)
+    [file_extension] = config_path.suffixes
 
     try:
         with open(config_path, "w", encoding="utf-8") as cf:
@@ -240,6 +332,27 @@ def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
 
 # Utility functions
 
+def _build_path(base_path: Union[Path, str], *sub_dirs: str) -> Path:
+    """
+    Constructs a path by combining a base path with one or more subdirectories.
+
+    This function takes a base path and appends one or more subdirectory names to it,
+    resolving the final path as an absolute path.
+
+    :param base_path: The starting path.
+    :type base_path: Union[Path, str]
+    :param sub_dirs: One or more subdirectory names to append to the base path.
+    :type sub_dirs: str
+    :return: The combined path as a Path object.
+    :rtype: Path
+    """
+    if isinstance(base_path, str):
+        base_path = Path(base_path)
+
+    for sub_dir in sub_dirs:
+        base_path /= sub_dir
+    return base_path.resolve()
+
 
 def _create_tar_gz(
     base_path: Union[Path, str],
@@ -257,27 +370,24 @@ def _create_tar_gz(
     :return: None
     ;rtype: None
     """
-    if isinstance(base_path, str):
-        base_path = Path(base_path)
-
-    if isinstance(directory_to_archive, str):
-        directory_to_archive = Path(directory_to_archive)
-
+    base_path = __check_path(base_path)
+    directory_to_archive = __check_path(directory_to_archive)
     tarfile_path = base_path / archive_name
 
     with tarfile.open(tarfile_path, "w:gz") as tar:
         tar.add(directory_to_archive, arcname=directory_to_archive.name)
 
 
-def _create_gzip(file_path: str) -> None:
+def _create_gzip(file_path: Union[Path, str]) -> None:
     """
     Create a compressed file using gzip fonctions.
     :param file_path: a path to a file.
     :type file_path: str
-    :return: None
+    :return: Nothing
     :rtype: None
     """
-    gz_file = f"{file_path}.gz"
+    file_path = __check_path(file_path)
+    gz_file = file_path.with_suffix(file_path.suffix + ".gz")
     with open(file_path, "rb") as file_in:
         with gzip.open(gz_file, "wb") as file_out:
             shutil.copyfileobj(file_in, file_out)
@@ -324,3 +434,16 @@ def _non_traversal_path(
                 safe_paths.append(member)
 
     return safe_paths
+
+def _remove_file(file_path: Union[Path, str]) -> None:
+    """
+
+    :param file_path:
+    :return:
+    """
+    file_path = __check_path(file_path)
+
+    if file_path.exists():
+        os.remove(file_path)
+    else:
+        raise FileNotFoundError(f'File "{file_path}" not found.')

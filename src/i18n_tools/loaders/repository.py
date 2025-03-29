@@ -4,6 +4,7 @@ from pathlib import Path
 from .utils import _load_config_file, _non_traversal_path, _save_config_file
 
 
+
 def load_config(config_path: str = None) -> dict:
     """
     Load the configuration file (YAML, TOML, or JSON) from the application directories
@@ -25,6 +26,7 @@ def load_config(config_path: str = None) -> dict:
     search_dirs = [
         Path.cwd(),  # Répertoire racine de l'application
         Path.cwd() / "locales",  # Sous-répertoire locales de l'application
+        Path.cwd() / "locales" / "_i18n_tools", # Sous-répertoire configuration
     ]
 
     possible_files = ["i18n-tools.yaml", "i18n-tools.toml", "i18n-tools.json"]
