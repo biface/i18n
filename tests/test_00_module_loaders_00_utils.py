@@ -30,36 +30,36 @@ from i18n_tools.loaders.utils import (
     _save_yaml,
 )
 
-from .conftest import tmp_repository
+from .conftest import tmp_full_repository
 
 
 @pytest.fixture(scope="function")
-def json_test_file(tmp_repository):
-    json_file = tmp_repository[0] / "test.json"
+def json_test_file(tmp_full_repository):
+    json_file = tmp_full_repository[3] / "test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump({"key": "value"}, f)
     return str(json_file)
 
 
 @pytest.fixture(scope="function")
-def yaml_test_file(tmp_repository):
-    yaml_file = tmp_repository[0] / "test.yaml"
+def yaml_test_file(tmp_full_repository):
+    yaml_file = tmp_full_repository[3] / "test.yaml"
     with open(yaml_file, "w", encoding="utf-8") as f:
         yaml.safe_dump({"key": "value"}, f)
     return str(yaml_file)
 
 
 @pytest.fixture(scope="function")
-def toml_test_file(tmp_repository):
-    toml_file = tmp_repository[0] / "test.toml"
+def toml_test_file(tmp_full_repository):
+    toml_file = tmp_full_repository[3] / "test.toml"
     with open(toml_file, "w", encoding="utf-8") as f:
         toml.dump({"key": "value"}, f)
     return str(toml_file)
 
 
 @pytest.fixture
-def text_test_file(tmp_repository):
-    file_path = tmp_repository[0] / "test_file.po"
+def text_test_file(tmp_full_repository):
+    file_path = tmp_full_repository[3] / "test_file.po"
     catalog = Catalog(
         project="i18n-tools", version="1.0", copyright_holder="Personal dev"
     )
@@ -74,16 +74,16 @@ def text_test_file(tmp_repository):
 
 
 @pytest.fixture
-def mo_test_file(tmp_repository):
-    file_path = tmp_repository[0] / "test_file.mo"
+def mo_test_file(tmp_full_repository):
+    file_path = tmp_full_repository[3] / "test_file.mo"
     catalog = Catalog(project="i18n-tools", version="1.0")
     with open(file_path, "wb") as f:
         write_mo(f, catalog)
     yield str(file_path)
 
 
-def test_create_empty_file(tmp_repository):
-    temp_file = tmp_repository[0] / "empty.txt"
+def test_create_empty_file(tmp_full_repository):
+    temp_file = tmp_full_repository[3] / "empty.txt"
     _create_empty_file(temp_file)
     with open(temp_file, "r", encoding="utf-8") as f:
         content = f.read()
@@ -95,8 +95,8 @@ def test_create_empty_file_raises_exception():
         _create_empty_file("/nonexistent/path")
 
 
-def test_create_empty_json(tmp_repository):
-    temp_file = tmp_repository[0] / "another.json"
+def test_create_empty_json(tmp_full_repository):
+    temp_file = tmp_full_repository[3] / "another.json"
     _create_empty_json(temp_file)
     with open(temp_file, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -312,10 +312,10 @@ def test_convert_catalog_raises_exception():
     ],
 )
 def test_non_traversal_path_exclusion(
-    tmp_repository, module_list, safe_members, unsafe_members
+    tmp_full_repository, module_list, safe_members, unsafe_members
 ):
     """Test exclusion of directory traversal vulnerabilities."""
-    root_path = tmp_repository[0]
+    root_path = tmp_full_repository[3]
     all_members = safe_members + unsafe_members
 
     safe_paths = _non_traversal_path(root_path, module_list, all_members)
@@ -340,9 +340,9 @@ def test_create_gzip(json_test_file):
 
 
 @pytest.mark.parametrize("use_path", [True, False])
-def test_create_tar_gz(tmp_repository, use_path):
-    root_dir = tmp_repository[0]
-    directory_to_archive = tmp_repository[1]
+def test_create_tar_gz(tmp_full_repository, use_path):
+    root_dir = tmp_full_repository[3]
+    directory_to_archive = tmp_full_repository[1]
 
     if not use_path:
         root_dir = str(root_dir)
@@ -364,12 +364,12 @@ def test_create_tar_gz(tmp_repository, use_path):
         (["module_one", "package_one"], "/module_one/package_one"),
     ],
 )
-def test_build_path(tmp_repository, subdir_list, expected):
+def test_build_path(tmp_full_repository, subdir_list, expected):
     # Convert expected to Path object for comparison
-    expected_path = Path(str(tmp_repository[0]) + expected).resolve()
+    expected_path = Path(str(tmp_full_repository[3]) + expected).resolve()
 
     # Build the path using the function
-    result_path = _build_path(tmp_repository[0], *subdir_list).resolve()
+    result_path = _build_path(tmp_full_repository[3], *subdir_list).resolve()
 
     # Assert that the result matches the expected path
     assert result_path == expected_path

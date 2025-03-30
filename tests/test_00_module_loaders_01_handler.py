@@ -1,6 +1,6 @@
 import pytest
 from babel.messages.catalog import Catalog
-from conftest import conf_tests, tmp_repository
+from conftest import conf_tests, tmp_full_repository, tmp_repository
 
 from i18n_tools.loaders.handler import (
     build_config_repository,
@@ -41,17 +41,31 @@ def build_test_repository(tmp_repository):
 
 
 @pytest.mark.parametrize(
-    "base_path, sub_dirs, expected",
+    "module, sub_dirs, expected, verified",
     [
-        ("fsm_tools", ["locales", "templates"], "fsm_tools/locales/templates"),
-        ("fsm_tools", ["locales", "..", "templates"], "fsm_tools/templates"),
+        ("package", ["locales", "_i18n_tools"], "locales/_i18n_tools", True),
+        (
+            "application",
+            ["undiscovered", "..", "locales", "templates"],
+            "locales/templates",
+            True,
+        ),
+        ("application", ["locales", "..", "templates"], "locales/templates", False),
     ],
 )
-def test_build_path(tmp_repository, base_path, sub_dirs, expected):
-    base_path = str(tmp_repository[0] / base_path)
-    expected_path = tmp_repository[0] / expected
-    path = build_path(base_path, *sub_dirs)
-    assert path == str(expected_path)
+def test_build_path(
+    tmp_full_repository, conf_tests, module, sub_dirs, expected, verified
+):
+    base_path = tmp_full_repository[0] + "/" + conf_tests["repository"][module]
+    expected_path = (
+        tmp_full_repository[0] + "/" + conf_tests["repository"][module] + "/" + expected
+    )
+    if verified:
+        path = build_path(base_path, *sub_dirs)
+        assert path == expected_path
+    else:
+        with pytest.raises(OSError):
+            path = build_path(base_path, *sub_dirs)
 
 
 @pytest.mark.parametrize(

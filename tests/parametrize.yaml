@@ -1,5 +1,10 @@
-configuration: "mock/"
+configuration:
+  application: "mock/application"
+  package: "mock/package"
 repository:
+  application: "repository-test"
+  package: "package-configuration"
+  other : "test-function"
   locale: "locales"
   configuration:
     valid: "valid-i18n-tools.yaml"
