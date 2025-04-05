@@ -11,6 +11,8 @@ import yaml
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
+from ndict_tools import NestedDictionary
+
 
 # Generic empty files
 
@@ -44,6 +46,32 @@ def _create_empty_file(file_path: Union[Path, str]) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+def _create_directory(file_path: Union[Path, str]) -> None:
+    """
+    Create a directory.
+    :param file_path:
+    :type file_path: str
+    :return: nothing
+    :rtype: None
+    :raises FileExistsError: directory already exists.
+    """
+    file_path = __check_path(file_path)
+
+    if not file_path.is_dir():
+        file_path.mkdir(parents=True, exist_ok=True)
+    else:
+        raise FileExistsError(f'Directory "{file_path}" already exists.')
+
+def _get_parent_root(file_path: Union[Path, str]) -> str:
+    """
+    Return the parent root of the file path as a string.
+    :param file_path: root file path.
+    :type file_path: Union[Path, str]
+    :return: parent root path.
+    :rtype: str
+    """
+    file_path = __check_path(file_path)
+    return file_path.parent.name
 
 # JSON load and save files
 
@@ -455,3 +483,45 @@ def _remove_file(file_path: Union[Path, str]) -> None:
         os.remove(file_path)
     else:
         raise FileNotFoundError(f'File "{file_path}" not found.')
+
+# Other module specific and private tools
+
+def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
+    """
+    This function verify that a module or a list of modules are defined in the repository.
+    :param repository: data representing the translation repository.
+    :type repository: NestedDictionary
+    :param module_list: The list of modules to verify.
+    :type module_list: List[str]
+    :return: True (if not raised)
+    :rtype: bool
+    :raises: ValueError
+    """
+    for module in module_list:
+        if module not in repository[["paths", "modules"]]:
+            raise ValueError(f'Module "{module}" not found in repository : "{repository[["paths", "modules"]]}".')
+
+    return True
+
+def _check_domains(repository: NestedDictionary, module: str, domain_list: List[str]) -> bool:
+    """
+    This function verify that a domain or a list of domains are defined in the repository.
+    :param repository: data representing the translation repository.
+    :type repository: NestedDictionary
+    :param module: The module containing domains.
+    :type module: str
+    :param domain_list: The list of domains to verify.
+    :type domain_list: List[str]
+    :return: True
+    :rtype: bool
+    :raises: ValueError
+    """
+    try:
+        _check_module(repository, [module])
+        for domain in domain_list:
+            if domain not in repository[["domains", module]]:
+                raise ValueError(f"Domain {domain} not found in repository : {repository[['domains', module]]}")
+    except ValueError as e:
+        raise e
+
+    return True

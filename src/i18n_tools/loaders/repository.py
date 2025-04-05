@@ -3,7 +3,8 @@ from __future__ import annotations
 import tarfile
 from pathlib import Path
 
-from .utils import _non_traversal_path
+from .utils import _non_traversal_path, _exist_path
+from .handler import build_path, create_directory
 
 
 def create_module_archive(root_path: str, module: str, archive_name: str) -> None:
@@ -82,3 +83,15 @@ def restore_module_from_archive(root_path: str, module: str, archive_name: str) 
     else:
         # Raise an error if the archive file does not exist
         raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
+
+
+def build_config_repository(app_root: str) -> None:
+    """
+
+    :param app_root:
+    :return:
+    """
+    #TODO : Move to repository.py
+    config_path = build_path(app_root, "locales", "_18n_tools")
+    if not _exist_path(config_path):
+        create_directory(config_path)
