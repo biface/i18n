@@ -1,9 +1,8 @@
 import pytest
 from babel.messages.catalog import Catalog
-from conftest import conf_tests, tmp_full_repository, tmp_repository
+from conftest import conf_tests, tmp_module_repository, tmp_function_repository, tmp_repository
 
 from i18n_tools.loaders.handler import (
-    build_config_repository,
     build_path,
     create_catalog,
     create_dictionary,
@@ -19,6 +18,7 @@ from i18n_tools.loaders.handler import (
     update_catalog,
     update_dictionary,
 )
+from i18n_tools.loaders.repository import build_config_repository
 
 
 @pytest.fixture
@@ -54,11 +54,11 @@ def build_test_repository(tmp_repository):
     ],
 )
 def test_build_path(
-    tmp_full_repository, conf_tests, module, sub_dirs, expected, verified
+        tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
 ):
-    base_path = tmp_full_repository[0] + "/" + conf_tests["repository"][module]
+    base_path = tmp_function_repository[0][0] + "/" + conf_tests["repository"][module]
     expected_path = (
-        tmp_full_repository[0] + "/" + conf_tests["repository"][module] + "/" + expected
+            tmp_function_repository[0][0] + "/" + conf_tests["repository"][module] + "/" + expected
     )
     if verified:
         path = build_path(base_path, *sub_dirs)
@@ -74,36 +74,21 @@ def test_build_path(
         ("fsm_tools", ["locales", "..", "invalid"]),
     ],
 )
-def test_build_path_exception(tmp_repository, base_path, sub_dirs):
-    base_path = str(tmp_repository[0] / base_path)
+def test_build_path_exception(tmp_function_repository, base_path, sub_dirs):
+    base_path = str(tmp_function_repository[3][1] / base_path)
     with pytest.raises(IOError):
         build_path(base_path, *sub_dirs)
-
-
-@pytest.mark.parametrize(
-    "file_path, exists",
-    [
-        ("config.yaml", True),
-        ("config_err.yaml", True),
-        ("config.txt", False),
-        ("config_err.txt", False),
-        ("config_json", False),
-    ],
-)
-def test_file_exists(tmp_repository, file_path, exists):
-    test_file = tmp_repository[0] / file_path
-    assert file_exists(test_file) == exists
-
 
 @pytest.mark.parametrize(
     "dir_path",
     [
-        ("new_dir"),
-        ("nested/new_dir"),
+        "fsm_tools/turing",
+        "fsm_tools/lba",
+        "django/fsm_tools/extended"
     ],
 )
-def test_create_directory(tmp_repository, dir_path):
-    dir_path = tmp_repository[0] / dir_path
+def test_create_directory(tmp_module_repository, dir_path):
+    dir_path = tmp_module_repository[2][1] / dir_path
     create_directory(str(dir_path))
     assert dir_path.exists() == True
 

@@ -1,14 +1,27 @@
 configuration:
-  application: "mock/application"
-  package: "mock/package"
+  root: "mock"
+  application: "mock/application/"
+  package: "mock/package/"
 repository:
-  application: "repository-test"
-  package: "package-configuration"
+  application:
+    root: "repository-test"
+    repository: "repository-test/fsm_tools"
+    config: "repository-test/fsm_tools/locales/_i18n_tools"
+    settings: "i18n-tools.yaml"
+  package:
+    root: "package-configuration"
+    repository: "package-configuration/i18n_tools"
+    config: "package-configuration/i18n_tools/locales/_i18n_tools"
+    settings: "i18n-tools.yaml"
   other : "test-function"
   locale: "locales"
   configuration:
     valid: "valid-i18n-tools.yaml"
     error: "error-i18n-tools.yaml"
+config:
+  yaml: "config/yaml"
+  toml: "config/toml"
+  json: "config/json"
 files:
   yaml: "config.yaml"
   toml: "config.toml"

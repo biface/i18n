@@ -27,12 +27,13 @@ package:
         - fr-FR
     source: 'fr-FR'
   paths:
-    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/locales/_i18n_tools
+    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/locales/_i18n_tools
+    backup: ''
     modules:
     - i18n_tools
     - i18n_tools/loaders
-    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/locales
-    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package
+    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/
+    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/
     settings: i18n-tools.yaml
   translators: {}
   details:

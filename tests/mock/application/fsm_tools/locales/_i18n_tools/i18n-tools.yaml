@@ -35,13 +35,16 @@ application:
       - fr-FR
     source: en
   paths:
-    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/locales/_i18n_tools
+    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools/
     modules:
-    - fsm/
-    - fsm/turing/
-    - fsm/lba
-    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/locales
-    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
+    - fsm_tools/
+    - fsm_tools/turing
+    - fsm_tools/lba
+    - django-fsm_tools
+    - django-fsm_tools/context
+    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/
+    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/
+    backup: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools/backup
     settings: i18n-tools.yaml
   translators:
     GoogleTranslate:

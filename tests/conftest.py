@@ -4,7 +4,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-from dill.pointers import parent
 
 
 @pytest.fixture(scope="session")
@@ -61,46 +60,67 @@ def tmp_repository(root_conf_test, conf_tests, tmp_path) -> list:
         err_content,
     ]
 
+def update_tmp_repository(key, root_dir, test_dir_conf):
+    config_file = root_dir /test_dir_conf["config"] / test_dir_conf["settings"]
+    with open(config_file, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    data[key]["paths"]["root"] = str(root_dir) + "/" + test_dir_conf["root"]
+    data[key]["paths"]["repository"] = str(root_dir) + "/" + test_dir_conf["repository"]
+    data[key]["paths"]["config"] = str(root_dir) + "/" + test_dir_conf["config"]
+    data[key]["paths"]["settings"] = test_dir_conf["settings"]
+
+    with open(config_file, "w", encoding="utf-8") as f:
+        yaml.dump(data, f)
 
 @pytest.fixture(scope="function")
-def tmp_full_repository(root_conf_test, conf_tests, tmp_path) -> list:
-    def update_file(key, file_path):
-        with open(
-            file_path / "locales/_i18n_tools/i18n-tools.yaml", "r", encoding="utf-8"
-        ) as f:
-            data = yaml.safe_load(f)
-
-        data[key]["paths"]["root"] = str(file_path)
-        data[key]["paths"]["repository"] = str(file_path / "locales")
-        data[key]["paths"]["config"] = str(file_path / "locales/_i18n_tools/")
-        data[key]["paths"]["settings"] = str(
-            file_path / "locales/_i18n_tools/error/i18n-tools.yaml"
-        )
-
-        with open(
-            file_path / "locales/_i18n_tools/i18n-tools.yaml", "w", encoding="utf-8"
-        ) as f:
-            yaml.dump(data, f)
+def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
 
     source_package = root_conf_test / conf_tests["configuration"]["package"]
-    destination_package = tmp_path / conf_tests["repository"]["package"]
+    destination_package = tmp_path / conf_tests["repository"]["package"]["root"]
     shutil.copytree(source_package, destination_package)
 
-    update_file("package", destination_package)
+    update_tmp_repository("package", tmp_path, conf_tests["repository"]["package"])
 
     source_application = root_conf_test / conf_tests["configuration"]["application"]
-    destination_application = tmp_path / conf_tests["repository"]["application"]
+    destination_application = tmp_path / conf_tests["repository"]["application"]["root"]
     shutil.copytree(source_application, destination_application)
 
-    update_file("application", destination_application)
+    update_tmp_repository("application", tmp_path, conf_tests["repository"]["application"])
 
     other = tmp_path / conf_tests["repository"]["other"]
     os.makedirs(other, exist_ok=True)
 
     return [
-        str(tmp_path),
-        str(destination_package),
-        str(destination_application),
-        other,
+        [str(tmp_path), tmp_path],
+        [str(destination_package), destination_package],
+        [str(destination_application), destination_package],
+        [str(other), other],
         conf_tests,
+    ]
+
+@pytest.fixture(scope="module")
+def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
+
+    tmp_path = tmp_path_factory.mktemp("module-factory")
+    source_package = root_conf_test / conf_tests["configuration"]["package"]
+    destination_package = tmp_path / conf_tests["repository"]["package"]["root"]
+    shutil.copytree(source_package, destination_package)
+
+    update_tmp_repository("package", tmp_path, conf_tests["repository"]["package"])
+
+    source_application = root_conf_test / conf_tests["configuration"]["application"]
+    destination_application = tmp_path / conf_tests["repository"]["application"]["root"]
+    shutil.copytree(source_application, destination_application)
+
+    update_tmp_repository("application", tmp_path, conf_tests["repository"]["application"])
+
+    other = tmp_path / conf_tests["repository"]["other"]
+    os.makedirs(other, exist_ok=True)
+
+    return [
+        [str(tmp_path), tmp_path],
+        [str(destination_package), destination_package],
+        [str(destination_application), destination_application],
+        [str(other), other],
     ]
