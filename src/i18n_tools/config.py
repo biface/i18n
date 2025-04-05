@@ -30,11 +30,12 @@ from uuid import UUID, uuid4
 from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
-from i18n_tools import I18N_TOOLS_MODULE_NAME, I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME
+from i18n_tools import I18N_TOOLS_MODULE_NAME, I18N_TOOLS_ROOT, I18N_TOOLS_ROOT_NAME, I18N_TOOLS_CONFIG_DIR, \
+    I18N_TOOLS_CONFIG_FILE
 
 from .api import validate_api_url
 from .classes import Singleton
-from .loaders import build_path, load_config, save_config
+from .loaders import file_exists, build_path, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 
 
@@ -79,16 +80,32 @@ class Config(metaclass=Singleton):
             An internal index for tracking authors by email address.
     """
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_file: Optional[str] = None):
         """
         Initialize the configuration with default paths and settings.
 
-        :param config_path: Optional path to the configuration file.
+        :param config_file: Optional path to the configuration file. If config file is a directory, the default
+        settings `i18n-tools.yaml` format  will be used.
+        :type config_file: str
+        :return: nothing
+        :rtype: None
+        :raise FileNotFoundError: if the configuration file does not exist.
         """
 
         def _setup_configuration(
-            root: Optional[str] = "", modules: Optional[List[str]] = None
+                config_dir: Optional[str] = "", settings_file: Optional[str] = ""
         ) -> NestedDictionary:
+            """
+            This private initialization function is de dedicated to set up configuration parameters and initializes the
+            nested dictionary with spécific keys which will be used as to verify while loading the configuration.
+
+            :param config_dir: directory part of configuration file
+            :type config_dir: str
+            :param settings_file: file part of configuration file
+            :type settings_file: str
+            :return: an initialized nested dictionary with used keys
+            :rtype: NestedDictionary
+            """
             return NestedDictionary(
                 {
                     "details": {
@@ -96,13 +113,13 @@ class Config(metaclass=Singleton):
                         "description": "",  # Configuration description
                     },
                     "paths": {
-                        "root": build_path(root) if root else "",
-                        "repository": build_path(root, "locales") if root else "",
-                        "config": (
-                            build_path(root, "locales", "_i18n_tools") if root else ""
-                        ),
-                        "settings": "i18n-tools.yaml",  # May be changed for .json or .toml
-                        "modules": modules if modules is not None else [],
+                        "root": "",
+                        "repository": "",
+                        "config": config_dir if config_dir else "",
+                        "backup": "",
+                        "settings": settings_file if settings_file else "i18n-tools.yaml",
+                        # May be changed for .json or .toml
+                        "modules": [],
                     },
                     "domains": {},
                     "languages": {
@@ -117,13 +134,24 @@ class Config(metaclass=Singleton):
                 strict=True,
             )
 
-        self.package = _setup_configuration(I18N_TOOLS_ROOT)
-        self.application = _setup_configuration(root=config_path)
+        self.package = _setup_configuration(I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE)
+
+        if config_file:
+            if not file_exists(config_file):
+                raise FileNotFoundError(f"File {config_file} does not exist.")
+
+            self.application = _setup_configuration(
+                config_dir=config_file.rsplit("/", 1)[0],
+                settings_file=config_file.rsplit("/", 1)[1])
+        else:
+            self.application = _setup_configuration()
+
+        """
         self.setup = NestedDictionary(indent=2, strict=True)
         self.setup.update(
             {
                 "paths": {
-                    "config": config_path if config_path else None,
+                    "config": config_file if config_file else None,
                     "package": {
                         "locale": build_path(I18N_TOOLS_ROOT, "locales"),
                         "base": I18N_TOOLS_ROOT_NAME,
@@ -157,6 +185,7 @@ class Config(metaclass=Singleton):
         )
 
         self.authors = NestedDictionary({}, indent=2, strict=True)  # Author details
+        """
         self._email_index = NestedDictionary({}, indent=2, strict=True)
         self._current_config = "application"
 
@@ -166,9 +195,9 @@ class Config(metaclass=Singleton):
         """
         current_config = self.__getattribute__(self._current_config)
         config_file = (
-            current_config[["paths", "config"]]
-            + "/"
-            + current_config[["paths", "settings"]]
+                current_config[["paths", "config"]]
+                + "/"
+                + current_config[["paths", "settings"]]
         )
         config = load_config(config_file)
 
@@ -190,8 +219,8 @@ class Config(metaclass=Singleton):
             {
                 author_data["email"]: author_id
                 for author_id, author_data in self.__getattribute__(
-                    self._current_config
-                )["authors"].items()
+                self._current_config
+            )["authors"].items()
             }
         )
 
@@ -312,7 +341,7 @@ class Config(metaclass=Singleton):
         return self.__getattribute__(self._current_config)
 
     def set_repository(
-        self, base_path: str, setting_file_ext: str, modules: Optional[List[str]] = None
+            self, base_path: str, setting_file_ext: str, modules: Optional[List[str]] = None
     ):
         """
         Set the application repository paths and modules with validation.
@@ -330,8 +359,8 @@ class Config(metaclass=Singleton):
                 f"The base path '{base_path}' does not exist or is not a directory."
             )
 
-        locale_path = os.path.join(base_path, "locales")
-        config_path = os.path.join(locale_path, "_i18n_tools")
+        locale_path = build_path(base_path, "locales")
+        config_path = build_path(locale_path, "_i18n_tools")
         setting_file_ext = setting_file_ext.lower()
         if setting_file_ext in ["json", "yaml", "toml"]:
             settings_file = "i18n-tools." + setting_file_ext.lower()
@@ -349,10 +378,10 @@ class Config(metaclass=Singleton):
         )
 
     def update_repository(
-        self,
-        base_path: Optional[str] = None,
-        setting_file_ext: Optional[str] = None,
-        modules: Optional[List[str]] = None,
+            self,
+            base_path: Optional[str] = None,
+            setting_file_ext: Optional[str] = None,
+            modules: Optional[List[str]] = None,
     ):
         """
         Update the application repository paths and modules with validation.
@@ -387,7 +416,7 @@ class Config(metaclass=Singleton):
             current_repository[["paths", "modules"]] = modules
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ):
         """
         Add a new author to the authors dictionary.
@@ -408,8 +437,8 @@ class Config(metaclass=Singleton):
         if email in self._email_index:
             existing_uuid = self._email_index[email]
             if (
-                existing_uuid
-                in self.__getattribute__(self._current_config)["authors"].keys()
+                    existing_uuid
+                    in self.__getattribute__(self._current_config)["authors"].keys()
             ):
                 raise KeyError(
                     f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
@@ -521,20 +550,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ):
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -875,9 +904,9 @@ class Repository:
     """
 
     def __init__(
-        self,
-        configuration: str,
-        repository: Dict[str, Any],
+            self,
+            configuration: str,
+            repository: Dict[str, Any],
     ):
         """
         Initialize the Repository with paths, domains, languages, authors, and details.
