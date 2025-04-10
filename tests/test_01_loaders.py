@@ -7,6 +7,7 @@ from babel.messages.pofile import write_po
 from polib import POFile
 
 from i18n_tools.loaders import file_exists
+from i18n_tools.loaders.handler import check_json_integrity
 from i18n_tools.loaders.loader import (
     _load_mo,
     _load_po,
@@ -15,7 +16,6 @@ from i18n_tools.loaders.loader import (
     _save_po,
     _save_pot,
     aggregate_locale_json,
-    check_json_integrity,
     load_locale_json,
     load_locale_po,
     save_aggregated_locale_json,

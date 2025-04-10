@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from i18n_tools.config import Config
 
 @pytest.fixture(scope="session")
 def root_conf_test() -> Path:
@@ -60,8 +61,9 @@ def tmp_repository(root_conf_test, conf_tests, tmp_path) -> list:
         err_content,
     ]
 
+
 def update_tmp_repository(key, root_dir, test_dir_conf):
-    config_file = root_dir /test_dir_conf["config"] / test_dir_conf["settings"]
+    config_file = root_dir / test_dir_conf["config"] / test_dir_conf["settings"]
     with open(config_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
@@ -73,20 +75,31 @@ def update_tmp_repository(key, root_dir, test_dir_conf):
     with open(config_file, "w", encoding="utf-8") as f:
         yaml.dump(data, f)
 
+
+def copy_and_update_repository(root_conf_test, tmp_path, conf_tests, key):
+    conf = conf_tests["repository"][key]
+    source = root_conf_test / conf_tests["configuration"][key]
+    destination = tmp_path / conf["root"]
+    shutil.copytree(source, destination)
+    update_tmp_repository(key, tmp_path, conf)
+    return destination
+
+def config_data(config_path_test, config_file_test):
+    config = Config()
+    config.application[["paths","config"]] = config_path_test
+    config.application[["paths","settings"]] = config_file_test
+    config.load()
+    return config
+
+
 @pytest.fixture(scope="function")
 def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
-
-    source_package = root_conf_test / conf_tests["configuration"]["package"]
-    destination_package = tmp_path / conf_tests["repository"]["package"]["root"]
-    shutil.copytree(source_package, destination_package)
-
-    update_tmp_repository("package", tmp_path, conf_tests["repository"]["package"])
-
-    source_application = root_conf_test / conf_tests["configuration"]["application"]
-    destination_application = tmp_path / conf_tests["repository"]["application"]["root"]
-    shutil.copytree(source_application, destination_application)
-
-    update_tmp_repository("application", tmp_path, conf_tests["repository"]["application"])
+    destination_package = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "package"
+    )
+    destination_application = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "application"
+    )
 
     other = tmp_path / conf_tests["repository"]["other"]
     os.makedirs(other, exist_ok=True)
@@ -99,21 +112,17 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
         conf_tests,
     ]
 
+
 @pytest.fixture(scope="module")
 def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
 
     tmp_path = tmp_path_factory.mktemp("module-factory")
-    source_package = root_conf_test / conf_tests["configuration"]["package"]
-    destination_package = tmp_path / conf_tests["repository"]["package"]["root"]
-    shutil.copytree(source_package, destination_package)
-
-    update_tmp_repository("package", tmp_path, conf_tests["repository"]["package"])
-
-    source_application = root_conf_test / conf_tests["configuration"]["application"]
-    destination_application = tmp_path / conf_tests["repository"]["application"]["root"]
-    shutil.copytree(source_application, destination_application)
-
-    update_tmp_repository("application", tmp_path, conf_tests["repository"]["application"])
+    destination_package = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "package"
+    )
+    destination_application = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "application"
+    )
 
     other = tmp_path / conf_tests["repository"]["other"]
     os.makedirs(other, exist_ok=True)
@@ -123,4 +132,5 @@ def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
         [str(destination_package), destination_package],
         [str(destination_application), destination_application],
         [str(other), other],
+        config_data(str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"), "i18n-tools.yaml"),
     ]

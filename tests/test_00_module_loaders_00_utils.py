@@ -11,14 +11,14 @@ from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
 
 from i18n_tools.loaders.utils import (
-    _exist_path,
     _build_path,
     _convert_catalog,
+    _create_directory,
     _create_empty_file,
     _create_empty_json,
     _create_gzip,
     _create_tar_gz,
-    _create_directory,
+    _exist_path,
     _load_json,
     _load_machine,
     _load_text,
@@ -84,13 +84,18 @@ def mo_test_file(tmp_function_repository):
     yield str(file_path)
 
 
-@pytest.mark.parametrize("path, expected", [
-    ("locales/backup/test.txt", True),
-    ("locales/backup/test.json", False),
-])
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("fsm_tools/locales/backup/test.txt", True),
+        ("locales/backup/test.json", False),
+        ("fsm_tools/locales/backup/test.toml", False),
+    ],
+)
 def test_exist_paths(tmp_function_repository, conf_tests, path, expected):
     temp_file = tmp_function_repository[2][0] + "/" + path
     assert _exist_path(temp_file) == expected
+
 
 def test_create_empty_file(tmp_function_repository):
     temp_file = tmp_function_repository[3][1] / "empty.txt"
@@ -288,36 +293,36 @@ def test_convert_catalog_raises_exception():
     "module_list, safe_members, unsafe_members",
     [
         (
-            ["mod-1"],
-            [
-                tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
-                tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
-            ],
-            [
-                tarfile.TarInfo("../../etc/passwd"),
-                tarfile.TarInfo("../secret.txt"),
-                tarfile.TarInfo("mod-1/../../etc/shadow"),
-            ],
+                ["mod-1"],
+                [
+                    tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
+                    tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
+                ],
+                [
+                    tarfile.TarInfo("../../etc/passwd"),
+                    tarfile.TarInfo("../secret.txt"),
+                    tarfile.TarInfo("mod-1/../../etc/shadow"),
+                ],
         ),
         (
-            [
-                "module-1",
-                "module-2",
-            ],
-            [
-                tarfile.TarInfo("module-1/locales/fr/apps.json"),
-                tarfile.TarInfo("module-1/locales/en/apps.json"),
-                tarfile.TarInfo("module-2/utils/locales/fr/errors.json"),
-                tarfile.TarInfo("module-2/utils/locales/en/errors.json"),
-                tarfile.TarInfo("module-2/locales/fr/usages.json"),
-                tarfile.TarInfo("module-2/locales/rn/usages.json"),
-            ],
-            [
-                tarfile.TarInfo("/home/user/../../etc/passwd"),
-                tarfile.TarInfo("../secret.txt"),
-                tarfile.TarInfo("mod-1/../../etc/shadow"),
-                tarfile.TarInfo("module-1/../etc/passwd"),
-            ],
+                [
+                    "module-1",
+                    "module-2",
+                ],
+                [
+                    tarfile.TarInfo("module-1/locales/fr/apps.json"),
+                    tarfile.TarInfo("module-1/locales/en/apps.json"),
+                    tarfile.TarInfo("module-2/utils/locales/fr/errors.json"),
+                    tarfile.TarInfo("module-2/utils/locales/en/errors.json"),
+                    tarfile.TarInfo("module-2/locales/fr/usages.json"),
+                    tarfile.TarInfo("module-2/locales/rn/usages.json"),
+                ],
+                [
+                    tarfile.TarInfo("/home/user/../../etc/passwd"),
+                    tarfile.TarInfo("../secret.txt"),
+                    tarfile.TarInfo("mod-1/../../etc/shadow"),
+                    tarfile.TarInfo("module-1/../etc/passwd"),
+                ],
         ),
     ],
 )
@@ -384,17 +389,21 @@ def test_build_path(tmp_function_repository, subdir_list, expected):
     # Assert that the result matches the expected path
     assert result_path == expected_path
 
-    result_path = _build_path(str(tmp_function_repository[3][1]), *subdir_list).resolve()
+    result_path = _build_path(
+        str(tmp_function_repository[3][1]), *subdir_list
+    ).resolve()
 
     assert result_path == expected_path
 
+
 @pytest.mark.parametrize(
-    "dir_path, path", [
+    "dir_path, path",
+    [
         ("fsm_tools/lba", False),
-        ("fsm_tools/locales/en", True),
+        ("fsm_tools/locales/en-US", True),
         ("fsm_tools/locales/fr", False),
-        ("fsm_tools/lba/locales/fr", False)
-    ]
+        ("fsm_tools/lba/locales/fr", False),
+    ],
 )
 def test_create_directories(tmp_module_repository, dir_path, path):
     if not path:
@@ -406,15 +415,17 @@ def test_create_directories(tmp_module_repository, dir_path, path):
         _create_directory(dir_path)
         assert dir_path.is_dir()
 
+
 @pytest.mark.parametrize(
-    "dir_path, path", [
+    "dir_path, path",
+    [
         ("fsm_tools", True),
         ("fsm_tools/lba", True),
         ("fsm_tools/locales/en", True),
         ("fsm_tools/locales/fr", True),
         ("fsm_tools/locales/fr-FR", False),
-        ("fsm_tools/lba/locales/en-US", False)
-    ]
+        ("fsm_tools/lba/locales/en-US", False),
+    ],
 )
 def test_create_directories_with_failures(tmp_module_repository, dir_path, path):
     dir_path = tmp_module_repository[2][1] / Path(dir_path)

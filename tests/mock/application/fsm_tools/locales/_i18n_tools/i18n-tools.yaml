@@ -17,14 +17,23 @@ application:
       last_name: Doe
       url: ''
   domains:
-    fsm:
+    fsm_tools:
     - usage
-    fsm/lba:
+    - model
+    fsm_tools/lba:
     - information
     - error
-    fsm/turing:
+    fsm_tools/turing:
     - information
     - error
+    django-fsm_tools:
+      - usage
+      - information
+      - error
+    django-fsm_tools/context:
+      - usage
+      - error
+      - output
   languages:
     fallback: en
     hierarchy:
@@ -35,15 +44,15 @@ application:
       - fr-FR
     source: en
   paths:
-    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools/
+    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools
     modules:
-    - fsm_tools/
+    - fsm_tools
     - fsm_tools/turing
     - fsm_tools/lba
     - django-fsm_tools
     - django-fsm_tools/context
-    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/
-    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/
+    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
+    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
     backup: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools/backup
     settings: i18n-tools.yaml
   translators:
@@ -65,7 +74,10 @@ application:
           priority: 1
           success_rate: 99.5
   details:
-    description: This project is a study of implementation of formal Chomsky language
+    description: This project is a study of implementation of Chomsky's formal language
       and usage of finite state machine
-    name: A toolbox for formal automata
+    name: fsm-tools
+    summary: A toolbox for Chomsky's formal language hierarchy
+    version: 0.0.1
+
 configuration: application

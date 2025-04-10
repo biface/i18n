@@ -1,16 +1,21 @@
 configuration:
   root: "mock"
-  application: "mock/application/"
-  package: "mock/package/"
+  application: "mock/application"
+  package: "mock/package"
+  config: "_i18n_tools"
+  backup: "backup"
+  locale: "locales"
+  messages: "LC_MESSAGES"
+  template: "templates"
 repository:
   application:
     root: "repository-test"
-    repository: "repository-test/fsm_tools"
+    repository: "repository-test"
     config: "repository-test/fsm_tools/locales/_i18n_tools"
     settings: "i18n-tools.yaml"
   package:
     root: "package-configuration"
-    repository: "package-configuration/i18n_tools"
+    repository: "package-configuration"
     config: "package-configuration/i18n_tools/locales/_i18n_tools"
     settings: "i18n-tools.yaml"
   other : "test-function"
@@ -18,6 +23,23 @@ repository:
   configuration:
     valid: "valid-i18n-tools.yaml"
     error: "error-i18n-tools.yaml"
+catalog:
+  "fsm_tools":
+    project: "fsm-tools"
+    locale: ["fr", "en", "en-US", "fr-FR"]
+    domain: ["usage", "model"]
+  "fsm_tools/turing":
+    project: "fsm_tools"
+    locale: ["fr", "en", "en-GB", "fr-FR"]
+    domain: ["information", "error"]
+  "fsm_tools/lba":
+    project: "fsm_tools"
+    locale: [ "fr", "en", "en-US", "en-GB", "fr-FR" ]
+    domain: [ "information", "error"]
+  "django-fsm_tools":
+    project: "fsm_tools"
+    locale: [ "fr", "en", "en-GB", "fr-FR" ]
+    domain: [ "usage", "information", "error"]
 config:
   yaml: "config/yaml"
   toml: "config/toml"
