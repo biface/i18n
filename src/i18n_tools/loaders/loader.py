@@ -28,6 +28,7 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 
+from i18n_tools.loaders.handler import check_json_integrity
 from i18n_tools.loaders.utils import (
     _create_gzip,
     _load_json,
@@ -132,35 +133,6 @@ def _save_mo(file_path: str, mo_data: Catalog) -> None:
             write_mo(mo_file, mo_data)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def check_json_integrity(data: Dict[str, Any]) -> bool:
-    """
-    Check the integrity of the JSON locale data.
-
-    :param data: The JSON locale data.
-    :type data: dict
-    :return: True if the data is valid, False otherwise.
-    :rtype: bool
-    """
-    for key, value in data.items():
-        if not isinstance(value, list):
-            return False
-
-        # Check that each item in the list is a list
-        if not all(isinstance(item, list) for item in value):
-            return False
-
-        # Check that there is at least one non-empty list
-        if not any(len(item) > 0 for item in value):
-            return False
-
-        # Check that all lists have the same length
-        lengths = [len(item) for item in value]
-        if len(set(lengths)) != 1:
-            return False
-
-    return True
 
 
 def load_locale_json(file_path: str) -> Dict[str, Any]:

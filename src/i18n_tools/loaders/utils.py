@@ -13,7 +13,6 @@ from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 from ndict_tools import NestedDictionary
 
-
 # Generic empty files
 
 
@@ -46,6 +45,7 @@ def _create_empty_file(file_path: Union[Path, str]) -> None:
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
+
 def _create_directory(file_path: Union[Path, str]) -> None:
     """
     Create a directory.
@@ -62,6 +62,7 @@ def _create_directory(file_path: Union[Path, str]) -> None:
     else:
         raise FileExistsError(f'Directory "{file_path}" already exists.')
 
+
 def _get_parent_root(file_path: Union[Path, str]) -> str:
     """
     Return the parent root of the file path as a string.
@@ -72,6 +73,7 @@ def _get_parent_root(file_path: Union[Path, str]) -> str:
     """
     file_path = __check_path(file_path)
     return file_path.parent.name
+
 
 # JSON load and save files
 
@@ -484,7 +486,9 @@ def _remove_file(file_path: Union[Path, str]) -> None:
     else:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
+
 # Other module specific and private tools
+
 
 def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
     """
@@ -499,11 +503,16 @@ def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
     """
     for module in module_list:
         if module not in repository[["paths", "modules"]]:
-            raise ValueError(f'Module "{module}" not found in repository : "{repository[["paths", "modules"]]}".')
+            raise ValueError(
+                f'Module "{module}" not found in repository : "{repository[["paths", "modules"]]}".'
+            )
 
     return True
 
-def _check_domains(repository: NestedDictionary, module: str, domain_list: List[str]) -> bool:
+
+def _check_domains(
+    repository: NestedDictionary, module: str, domain_list: List[str]
+) -> bool:
     """
     This function verify that a domain or a list of domains are defined in the repository.
     :param repository: data representing the translation repository.
@@ -520,7 +529,9 @@ def _check_domains(repository: NestedDictionary, module: str, domain_list: List[
         _check_module(repository, [module])
         for domain in domain_list:
             if domain not in repository[["domains", module]]:
-                raise ValueError(f"Domain {domain} not found in repository : {repository[['domains', module]]}")
+                raise ValueError(
+                    f"Domain {domain} not found in repository : {repository[['domains', module]]}"
+                )
     except ValueError as e:
         raise e
 
