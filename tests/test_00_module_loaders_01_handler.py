@@ -1,3 +1,5 @@
+from pyexpat.errors import messages
+
 import pytest
 from babel.core import Locale
 from babel.messages.catalog import Catalog, Message
@@ -243,71 +245,79 @@ def test_fetch_dictionary(tmp_module_repository, module, domain, language, conte
             dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
 
 @pytest.mark.parametrize(
-    "module, language, domain",
+    "module, language, domain, data",
     [
-        ("fsm_tools", "fr-FR", "django"),
+        ("fsm_tools", "fr-FR", "usage", {
+            "1000": {
+                "string": "La machine de turing",
+                "location": "",
+                "previous_id": ""
+            },
+            "1000_001": {
+                "string": "Automate linéairement borné",
+                "location": "",
+                "previous_id": "1000"
+            }
+        }),
     ],
 )
-def test_update_catalog(tmp_repository, module, language, domain):
-    catalog_file = tmp_repository[0] / module / f"locales/{language}/{domain}.po"
-    catalog_file.parent.mkdir(parents=True, exist_ok=True)
-    catalog_file.write_text('msgid ""\nmsgstr ""\n')
-    new_catalog = Catalog()
-    new_catalog.add("test_id", locations=[("test.py", 1)])
-    update_catalog(str(tmp_repository[0]), module, language, domain, new_catalog)
-    updated_catalog = fetch_catalog(str(tmp_repository[0]), module, language, domain)
-    assert "test_id" in updated_catalog
-
+def test_update_catalog(conf_tests, tmp_module_repository, module, language, domain, data):
+    update_catalog(tmp_module_repository[4].get_repository(), module, language, domain, data)
+    catalog = fetch_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
+    assert catalog.locale == Locale.parse(language, sep="-")
+    assert catalog.domain == domain
+    message = catalog.get("1000_001")
+    assert message.string == data["1000_001"]["string"]
 
 @pytest.mark.parametrize(
-    "module, language, domain, new_data",
+    "module, language, domain, data",
     [
-        ("fsm_tools", "fr-FR", "django", {"new_key": "new_value"}),
+        ("fsm_tools", "fr-FR", "usage", {
+            "1000": [["La machine de turing", "Automate linéairement borné"],
+                     ["Les machines de turing", "Les automates linéairement bornés"]],
+            "2000": [["Automate"],
+                     ["Automates"],
+                     ["Automatons"]]
+
+        }),
     ],
 )
-def test_update_dictionary(tmp_repository, module, language, domain, new_data):
-    dictionary_file = tmp_repository[0] / module / f"locales/{language}/{domain}.json"
-    dictionary_file.parent.mkdir(parents=True, exist_ok=True)
-    dictionary_file.write_text("{}")
-    update_dictionary(str(tmp_repository[0]), module, language, domain, new_data)
-    updated_data = fetch_dictionary(str(tmp_repository[0]), module, language, domain)
-    assert updated_data == new_data
-
+def test_update_dictionary(tmp_module_repository, module, language, domain, data):
+    update_dictionary(tmp_module_repository[4].get_repository(), module, language, domain, data)
+    dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
+    assert dictionary.get("1000") == data["1000"]
 
 @pytest.mark.parametrize(
     "module, domain",
     [
-        ("fsm_tools", "django"),
+      ("fsm_tools", "model"),
     ],
 )
-def test_remove_template(tmp_repository, module, domain):
-    create_template(str(tmp_repository[0]), module, domain)
-    template_file = tmp_repository[0] / module / "locales/templates" / f"{domain}.pot"
-    remove_template(str(tmp_repository[0]), module, domain)
+def test_remove_template(tmp_module_repository, module, domain):
+    remove_template(tmp_module_repository[4].get_repository(), module, domain)
+    template_file = tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
     assert not template_file.exists()
 
 
 @pytest.mark.parametrize(
     "module, language, domain",
     [
-        ("fsm_tools", "fr-FR", "django"),
+        ("fsm_tools", "fr-FR", "usage"),
     ],
 )
-def test_remove_catalog(tmp_repository, module, language, domain):
-    create_catalog(str(tmp_repository[0]), module, language, domain)
-    catalog_file = tmp_repository[0] / module / f"locales/{language}/{domain}.po"
-    remove_catalog(str(tmp_repository[0]), module, language, domain)
+def test_remove_catalog(tmp_module_repository, module, language, domain):
+    catalog_file = tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+    remove_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not catalog_file.exists()
 
 
 @pytest.mark.parametrize(
     "module, language, domain",
     [
-        ("fsm_tools", "fr-FR", "django"),
+        ("fsm_tools", "fr-FR", "usage"),
     ],
 )
-def test_remove_dictionary(tmp_repository, module, language, domain):
-    create_dictionary(str(tmp_repository[0]), module, language, domain)
-    dictionary_file = tmp_repository[0] / module / f"locales/{language}/{domain}.json"
-    remove_dictionary(str(tmp_repository[0]), module, language, domain)
+def test_remove_dictionary(tmp_module_repository, module, language, domain):
+    dictionary_file = tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
+    remove_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not dictionary_file.exists()

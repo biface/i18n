@@ -357,7 +357,7 @@ def update_catalog(
     module: str,
     language: str,
     domain: str,
-    catalog: Catalog,
+    data: Dict[str, Dict[str, str]],
 ) -> None:
     """
     Updates the translation catalog for a given language and domain.
@@ -373,8 +373,8 @@ def update_catalog(
     :type language: str
     :param domain: The domain name.
     :type domain: str
-    :param catalog: The catalog to update.
-    :type catalog: Catalog
+    :param data: An adapted translation dictionary.
+    :type data: Dict[str, Dict[str, str]]
     """
 
     try:
@@ -387,10 +387,18 @@ def update_catalog(
             I18N_TOOLS_MESSAGES,
         )
         catalog_path = path + f"/{domain}.po"
-        stored_catalog = _load_text(catalog_path)
+        catalog = _load_text(catalog_path)
 
-        if catalog.locale != stored_catalog.locale or catalog.project != stored_catalog.project:
-            raise ValueError(f"The given catalog ({catalog}) does not match with stored catalog ({stored_catalog}).")
+        for key, value in data.items():
+            if isinstance(value, dict):
+                catalog.add(id=key,
+                            string=value.get("string", ""),
+                            locations=value.get("locations", ()),
+                            previous_id=value.get("previous_id", ""),
+                            )
+
+            else:
+                raise ValueError(f"{value} is not a dictionary")
 
         _save_text(catalog_path, catalog)
         _convert_catalog(catalog_path)
@@ -560,7 +568,6 @@ def load_config(config_path: str = None) -> dict:
     :raises ValueError: If the file format is unsupported.
     :raises Exception: For other errors during loading.
     """
-    #TODO: Use repository instead of config_path
 
     # Si le chemin de configuration est fourni, utiliser ce chemin
     if config_path:
@@ -598,6 +605,5 @@ def save_config(file_path: str, data: dict) -> None:
     :param file_path: Path to the configuration file.
     :param data: The dictionary containing configuration data.
     """
-    # TODO: Use repository instead of config_path
 
     _save_config_file(file_path, data)
