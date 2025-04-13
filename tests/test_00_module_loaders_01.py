@@ -87,7 +87,7 @@ def mo_test_file(tmp_function_repository):
 @pytest.mark.parametrize(
     "path, expected",
     [
-        ("fsm_tools/locales/backup/test.txt", True),
+        ("fsm_tools/locales/_i18n_tools/backup/test.txt", True),
         ("locales/backup/test.json", False),
         ("fsm_tools/locales/backup/test.toml", False),
     ],

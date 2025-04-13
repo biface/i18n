@@ -13,6 +13,7 @@ repository:
     repository: "repository-test"
     config: "repository-test/fsm_tools/locales/_i18n_tools"
     settings: "i18n-tools.yaml"
+    failed: "failed-i18n-tools.yaml"
   package:
     root: "package-configuration"
     repository: "package-configuration"

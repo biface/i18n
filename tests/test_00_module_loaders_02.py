@@ -1,4 +1,4 @@
-from pyexpat.errors import messages
+import os
 
 import pytest
 from babel.core import Locale
@@ -26,7 +26,10 @@ from i18n_tools.loaders.handler import (
     update_dictionary,
 )
 
-from i18n_tools.config import Config
+from i18n_tools.loaders.repository import (
+    create_module_archive,
+    restore_module_from_archive
+)
 
 
 @pytest.fixture
@@ -250,6 +253,7 @@ def test_fetch_dictionary(tmp_module_repository, module, domain, language, conte
         ("fsm_tools", "fr-FR", "usage", {
             "1000": {
                 "string": "La machine de turing",
+                "plural": "Les machines de turing",
                 "location": "",
                 "previous_id": ""
             },
@@ -288,6 +292,22 @@ def test_update_dictionary(tmp_module_repository, module, language, domain, data
     assert dictionary.get("1000") == data["1000"]
 
 @pytest.mark.parametrize(
+    "module, archive, valid", [
+        ("fsm_tools", "fsm-tools", True),
+        ("django", "django", False),
+    ]
+)
+def test_create_module_archive(tmp_module_repository, module, archive, valid):
+    if valid:
+        create_module_archive(tmp_module_repository[4].get_repository(), module, archive)
+        archive_file = tmp_module_repository[4].get_repository()[["paths", "repository"]] +"/" + module + "/locales/_i18n_tools/backup/" + archive + ".tar.gz"
+        assert os.path.exists(archive_file)
+    else:
+        with pytest.raises(Exception):
+            create_module_archive(tmp_module_repository[4].get_repository(), module, archive)
+
+
+@pytest.mark.parametrize(
     "module, domain",
     [
       ("fsm_tools", "model"),
@@ -321,3 +341,23 @@ def test_remove_dictionary(tmp_module_repository, module, language, domain):
     dictionary_file = tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
     remove_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not dictionary_file.exists()
+
+
+@pytest.mark.parametrize(
+    "module, archive, valid", [
+        ("fsm_tools", "fsm-tools", True),
+        ("django", "django", False),
+    ]
+)
+def test_restore_module_from_archive(tmp_module_repository, module, archive, valid):
+    if valid:
+        files_names = [f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/fr-FR/LC_MESSAGES/usage.{ext}" for ext in ["json", "po", "mo"]]
+        """files_names.append(f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/templates/usage.pot")"""
+        for file in files_names:
+            assert not os.path.exists(file)
+        restore_module_from_archive(tmp_module_repository[4].get_repository(), module, archive)
+        for file in files_names:
+            assert os.path.exists(file)
+    else:
+        with pytest.raises(Exception):
+            restore_module_from_archive(tmp_module_repository[4].get_repository(), module, archive)

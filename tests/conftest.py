@@ -109,7 +109,7 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
         [str(destination_package), destination_package],
         [str(destination_application), destination_package],
         [str(other), other],
-        conf_tests,
+        config_data(str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"), "i18n-tools.yaml"),
     ]
 
 
