@@ -42,12 +42,8 @@ test = [
 ]
 
 [tool.tox]
-envlist = ["lint", "format", "pytest", "security", "local", "ci"]
-
-
-[tool.tox]
 minversion = "3.24.5"
-envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "gh-ci"]
+envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "ci"]
 
 [tool.tox.testenv]
 setenv = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
