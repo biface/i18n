@@ -44,94 +44,109 @@ test = [
 [tool.tox]
 envlist = ["lint", "format", "pytest", "security", "local", "ci"]
 
-# Définition des environnements
-[testenv]
+
+[tool.tox]
+minversion = "3.24.5"
+envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "gh-ci"]
+
+[tool.tox.testenv]
+setenv = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
 deps = [
+    "email-validator",
+    "langcodes",
+    "babel",
+    "PyYAML",
+    "ndict-tools",
+    "toml",
+    "polib",
     "pytest",
-    "flake8",
-    "pylint",
-    "black",
-    "isort",
-    "bandit"
-]
-
-[testenv.lint]
-description = "Lint the code"
-deps = [
-    "flake8"
+    "pytest-cov"
 ]
 commands = [
-    "echo running lint tests",
-    "flake8 src tests --format=default --statistics --show-source --count -v"
+    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
 ]
 
-[testenv.format]
-description = "Check code formatting"
-deps = [
-    "black",
-    "isort"
-]
+[tool.tox.testenv.lint]
+description = "Lint the code with flake8"
+deps = ["flake8"]
+commands = ["flake8 src tests"]
+
+[tool.tox.testenv.isort]
+description = "Check import sorting with isort"
+deps = ["isort"]
+commands = ["isort --check-only --diff src"]
+
+[tool.tox.testenv.black]
+description = "Check code formatting with black"
+deps = ["black"]
+commands = ["black --check src"]
+
+[tool.tox.testenv.fix]
+description = "Auto-fix formatting of package code (tests are excluded) issues using Black and isort"
+deps = ["black", "isort"]
 commands = [
-    "echo Checking code formatting",
-    "black --check src tests -v",
-    "isort --check-only src tests -v"
+    "black src",
+    "isort src"
 ]
 
-[testenv.pytest]
-description = "Run tests without coverage"
-deps = [
-    "pytest"
-]
+[tool.tox.testenv.coverage]
+description = "Generate code coverage report"
+deps = ["pytest", "pytest-cov"]
 commands = [
-    "echo Running tests with pytest",
-    "pytest {posargs} -v"
+    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
 ]
 
-[testenv.security]
-description = "Run security checks"
-deps = [
-    "bandit"
-]
-commands = [
-    "echo Performing security checks",
-    "bandit -r src -v"
-]
+[tool.tox.testenv.bandit]
+description = "Run security analysis with bandit"
+deps = ["bandit"]
+commands = ["bandit -r src"]
 
-[testenv.local]
-description = "Run all checks locally without coverage"
+[tool.tox.testenv.local]
+description = "Run fix, lint, bandit, and coverage in sequence"
 deps = [
+    "email-validator",
+    "langcodes",
+    "babel",
+    "PyYAML",
+    "ndict-tools",
+    "toml",
+    "polib",
     "pytest",
-    "flake8",
-    "pylint",
-    "black",
-    "isort",
-    "bandit"
+    "pytest-cov"
 ]
 commands = [
-    "echo Reunning sequence locally... >&2",
-    "tox -e lint",
-    "tox -e format",
-    "tox -e pytest",
-    "tox -e security"
+    "black src tests",
+    "isort src tests",
+    "bandit -r src",
+    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
 ]
 
-[testenv.ci]
-description = "Run all checks on CI with coverage"
+[tool.tox.testenv.gh-ci]
+description = "Run checks (Black, isort, Bandit, pytest with coverage) for GitHub CI"
 deps = [
+    "email-validator",
+    "langcodes",
+    "babel",
+    "PyYAML",
+    "ndict-tools",
+    "toml",
+    "polib",
     "pytest",
-    "pytest-cov",
-    "coverage",
-    "flake8",
-    "pylint",
-    "black",
-    "isort",
-    "bandit"
+    "pytest-cov"
 ]
 commands = [
-    "flake8 src tests --format=default --statistics --show-source --count -v",
-    "black --check src tests -v",
-    "isort --check-only src tests -v",
-    "bandit -r src -v",
-    "coverage run -m pytest --cov=src/ndict_tools --cov-report=xml -v",
-    "coverage xml"
+    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
 ]
+
+[tool.flake8]
+max-line-length = 88
+ignore = ["E501"]
+extend-ignore = ["E203", "W503"]
+exclude = [".tox", ".git", "__pycache__", "build", "dist"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = "src"
+multi_line_output = 3
+include_trailing_comma = true
