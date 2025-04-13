@@ -121,7 +121,7 @@ commands = [
     "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
 ]
 
-[tool.tox.testenv.gh-ci]
+[tool.tox.testenv.ci]
 description = "Run checks (Black, isort, Bandit, pytest with coverage) for GitHub CI"
 deps = [
     "email-validator",
