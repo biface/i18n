@@ -1,0 +1,59 @@
+{
+    "configuration": "package",
+    "package": {
+        "details": {
+            "name": "i18n_tools",
+            "description": "Implementation of extensive tools form i18n translations"
+        },
+        "paths": {
+            "root": "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/",
+            "repository": "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/",
+            "config": "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/locales/_i18n_tools",
+            "settings": "i18n-tools.json",
+            "modules": [
+                "i18n_tools",
+                "i18n_tools/loaders"
+            ]
+        },
+        "domains": {
+            "i18n_tools": [
+                "api",
+                "config",
+                "sync"
+            ],
+            "i18n_tools/loaders": [
+                "utils",
+                "repository",
+                "handler",
+                "config"
+            ]
+        },
+        "languages": {
+            "source": "fr-FR",
+            "hierarchy": {
+                "en": [
+                    "en-US",
+                    "en-GB"
+                ],
+                "fr": [
+                    "fr-FR"
+                ]
+            },
+            "fallback": "en"
+        },
+        "translators": {},
+        "authors": {
+            "51e7a015-d78e-4bdc-abb9-6ce43e8ce2c4": {
+                "email": "mike.l.fakeuphead@gmail.com",
+                "first_name": "Micha\u00ebl",
+                "languages": [
+                    "en",
+                    "fr",
+                    "fr-FR"
+                ],
+                "last_name": "Fecq-Heupe H\u00e8de",
+                "url": ""
+            }
+        }
+    }
+}

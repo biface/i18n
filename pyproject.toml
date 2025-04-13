@@ -21,7 +21,8 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "ndict-tools>=0.6.0"
+    "ndict-tools>=0.6.0",
+    "babel"
 ]
 
 [project.urls]
@@ -120,13 +121,6 @@ commands = [
 [tool.tox.testenv.ci]
 description = "Run checks (Black, isort, Bandit, pytest with coverage) for GitHub CI"
 deps = [
-    "email-validator",
-    "langcodes",
-    "babel",
-    "PyYAML",
-    "ndict-tools",
-    "toml",
-    "polib",
     "pytest",
     "pytest-cov"
 ]

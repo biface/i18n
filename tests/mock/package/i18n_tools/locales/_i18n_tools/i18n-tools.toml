@@ -1,0 +1,33 @@
+configuration = "package"
+
+[package.details]
+name = "i18n_tools"
+description = "Implementation of extensive tools form i18n translations"
+
+[package.paths]
+root = "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/"
+repository = "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/locales"
+config = "/home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/locales/_i18n_tools"
+settings = "i18n-tools.toml"
+modules = [ "i18n_tools", "i18n_tools/loaders",]
+
+[package.domains]
+i18n_tools = [ "api", "config", "sync",]
+"i18n_tools/loaders" = [ "utils", "repository", "handler", "config",]
+
+[package.languages]
+source = "fr-FR"
+fallback = "en"
+
+[package.translators]
+
+[package.languages.hierarchy]
+en = [ "en-US", "en-GB",]
+fr = [ "fr-FR",]
+
+[package.authors.51e7a015-d78e-4bdc-abb9-6ce43e8ce2c4]
+email = "mike.l.fakeuphead@gmail.com"
+first_name = "Michaël"
+languages = [ "en", "fr", "fr-FR",]
+last_name = "Fecq-Heupe Hède"
+url = ""
