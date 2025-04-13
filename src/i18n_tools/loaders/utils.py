@@ -235,7 +235,7 @@ def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
 
     try:
         with open(file_path, "wb") as po_file:
-            write_po(po_file, catalog)
+            write_po(po_file, catalog, sort_output=True, include_previous=False)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 

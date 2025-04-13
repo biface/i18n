@@ -1,13 +1,18 @@
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Union, List
+from pyexpat.errors import messages
+from typing import Any, Dict, List, Union
 
 from babel.core import Locale
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import NestedDictionary
 
-from i18n_tools.__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE, I18N_TOOLS_CONFIG, I18N_TOOLS_LOCALE
-
+from i18n_tools.__static__ import (
+    I18N_TOOLS_CONFIG,
+    I18N_TOOLS_LOCALE,
+    I18N_TOOLS_MESSAGES,
+    I18N_TOOLS_TEMPLATE,
+)
 
 from .utils import (
     _build_path,
@@ -233,9 +238,13 @@ def create_dictionary(
         )
         dictionary_path = path + f"/{domain}.json"
         if not _exist_path(dictionary_path):
-            _save_json(dictionary_path, { ".i18n_tools" : repository["details"].to_dict() })
+            _save_json(
+                dictionary_path, {".i18n_tools": repository["details"].to_dict()}
+            )
         else:
-            raise FileExistsError(f"The path '{dictionary_path}' already exists. You cannot overwrite it")
+            raise FileExistsError(
+                f"The path '{dictionary_path}' already exists. You cannot overwrite it"
+            )
     except Exception as e:
         raise e
 
@@ -262,7 +271,10 @@ def fetch_template(repository: NestedDictionary, module: str, domain: str) -> Ca
     try:
         _check_domains(repository, module, [domain])
         path = build_path(
-            repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE
+            repository[["paths", "repository"]],
+            module,
+            I18N_TOOLS_LOCALE,
+            I18N_TOOLS_TEMPLATE,
         )
         template_file = path + f"/{domain}.pot"
         catalog = _load_text(template_file)
@@ -357,7 +369,7 @@ def update_catalog(
     module: str,
     language: str,
     domain: str,
-    data: Dict[str, Dict[str, str]],
+    data: Dict[any, Dict[str, str]],
 ) -> None:
     """
     Updates the translation catalog for a given language and domain.
@@ -391,11 +403,13 @@ def update_catalog(
 
         for key, value in data.items():
             if isinstance(value, dict):
-                catalog.add(id=key,
-                            string=value.get("string", ""),
-                            locations=value.get("locations", ()),
-                            previous_id=value.get("previous_id", ""),
-                            )
+                message = catalog.add(
+                    id=key,
+                    string=value.get("string", ""),
+                    locations=value.get("locations", ()),
+                    previous_id=value.get("previous_id", ""),
+                    flags=["python-format"],
+                )
 
             else:
                 raise ValueError(f"{value} is not a dictionary")
@@ -478,7 +492,10 @@ def remove_template(repository: NestedDictionary, module: str, domain: str) -> N
     try:
         _check_domains(repository, module, [domain])
         path = build_path(
-            repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE
+            repository[["paths", "repository"]],
+            module,
+            I18N_TOOLS_LOCALE,
+            I18N_TOOLS_TEMPLATE,
         )
         template_path = path + f"/{domain}.pot"
         _remove_file(template_path)
@@ -579,7 +596,9 @@ def load_config(config_path: str = None) -> dict:
     search_dirs = [
         Path.cwd(),  # Répertoire racine de l'application
         Path.cwd() / I18N_TOOLS_LOCALE,  # Sous-répertoire locales de l'application
-        Path.cwd() / I18N_TOOLS_LOCALE / I18N_TOOLS_CONFIG,  # Sous-répertoire configuration
+        Path.cwd()
+        / I18N_TOOLS_LOCALE
+        / I18N_TOOLS_CONFIG,  # Sous-répertoire configuration
     ]
 
     possible_files = ["i18n-tools.yaml", "i18n-tools.toml", "i18n-tools.json"]

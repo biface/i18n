@@ -5,7 +5,7 @@ I18N_TOOLS_LOCALE = "locales"
 I18N_TOOLS_MESSAGES = "LC_MESSAGES"
 I18N_TOOLS_BACKUP = "backup"
 I18N_TOOLS_TEMPLATE = "templates"
-I18N_TOOLS_CONFIG = "_18n_tools"
+I18N_TOOLS_CONFIG = "_i18n_tools"
 
 I18N_TOOLS_ROOT = Path(__file__).resolve().parent
 I18N_TOOLS_MODULE_NAME = os.path.basename(I18N_TOOLS_ROOT)

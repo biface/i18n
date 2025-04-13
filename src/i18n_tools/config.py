@@ -34,8 +34,8 @@ from i18n_tools import (
     I18N_TOOLS_MODULE_NAME,
     I18N_TOOLS_ROOT_NAME,
 )
-from .__static__ import I18N_TOOLS_ROOT, I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE
 
+from .__static__ import I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE, I18N_TOOLS_ROOT
 from .api import validate_api_url
 from .classes import Singleton
 from .loaders import build_path, file_exists, load_config, save_config
