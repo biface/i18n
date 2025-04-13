@@ -1,0 +1,19 @@
+# This POT file is generated for fsm-tools project.
+# By i18n-tools builder and is dedicated to usage domain
+# of translations.
+# This file is distributed under the same license as the fsm-tools
+# project.
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: fsm-tools 0.0.1\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-04-06 16:00+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
