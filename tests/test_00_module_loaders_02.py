@@ -9,6 +9,7 @@ from conftest import (
     tmp_module_repository,
     tmp_repository,
 )
+from isort.profiles import django
 
 from i18n_tools.loaders.handler import (
     build_path,
@@ -19,16 +20,17 @@ from i18n_tools.loaders.handler import (
     fetch_catalog,
     fetch_dictionary,
     fetch_template,
+    load_config,
     remove_catalog,
     remove_dictionary,
     remove_template,
+    save_config,
     update_catalog,
     update_dictionary,
 )
-
 from i18n_tools.loaders.repository import (
     create_module_archive,
-    restore_module_from_archive
+    restore_module_from_archive,
 )
 
 
@@ -54,26 +56,35 @@ def build_test_repository(tmp_repository):
 @pytest.mark.parametrize(
     "module, sub_dirs, expected, verified",
     [
-        ("package", ["i18n_tools", "locales", "_i18n_tools"], "i18n_tools/locales/_i18n_tools", True),
         (
-                "application",
-                ["fsm_tools", "undiscovered", "..", "locales", "templates"],
-                "fsm_tools/locales/templates",
-                True,
+            "package",
+            ["i18n_tools", "locales", "_i18n_tools"],
+            "i18n_tools/locales/_i18n_tools",
+            True,
+        ),
+        (
+            "application",
+            ["fsm_tools", "undiscovered", "..", "locales", "templates"],
+            "fsm_tools/locales/templates",
+            True,
         ),
         ("application", ["locales", "..", "templates"], "locales/templates", False),
     ],
 )
 def test_build_path(
-        tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
+    tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
 ):
-    base_path = tmp_function_repository[0][0] + "/" + conf_tests["repository"][module]["repository"]
+    base_path = (
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
+    )
     expected_path = (
-            tmp_function_repository[0][0]
-            + "/"
-            + conf_tests["repository"][module]["repository"]
-            + "/"
-            + expected
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
+        + "/"
+        + expected
     )
     if verified:
         path = build_path(base_path, *sub_dirs)
@@ -97,18 +108,19 @@ def test_build_path_exception(tmp_function_repository, base_path, sub_dirs):
 
 @pytest.mark.parametrize(
     "dir_path",
-    ["fsm_tools/turing/locales/templates",
-     "fsm_tools/locales/en-US/LC_MESSAGES",
-     "fsm_tools/locales/en-GB/LC_MESSAGES",
-     "fsm_tools/locales/fr/LC_MESSAGES",
-     "fsm_tools/locales/fr-FR/LC_MESSAGES",
-     "fsm_tools/lba",
-     "django/fsm_tools/extended",
-     "fsm_tools/turing/locales/en-US/LC_MESSAGES",
-     "fsm_tools/turing/locales/en-GB/LC_MESSAGES",
-     "fsm_tools/turing/locales/fr/LC_MESSAGES",
-     "fsm_tools/turing/locales/fr-FR/LC_MESSAGES",
-     ],
+    [
+        "fsm_tools/turing/locales/templates",
+        "fsm_tools/locales/en-US/LC_MESSAGES",
+        "fsm_tools/locales/en-GB/LC_MESSAGES",
+        "fsm_tools/locales/fr/LC_MESSAGES",
+        "fsm_tools/locales/fr-FR/LC_MESSAGES",
+        "fsm_tools/lba",
+        "django/fsm_tools/extended",
+        "fsm_tools/turing/locales/en-US/LC_MESSAGES",
+        "fsm_tools/turing/locales/en-GB/LC_MESSAGES",
+        "fsm_tools/turing/locales/fr/LC_MESSAGES",
+        "fsm_tools/turing/locales/fr-FR/LC_MESSAGES",
+    ],
 )
 def test_create_directory(tmp_module_repository, dir_path):
     dir_path = tmp_module_repository[2][1] / dir_path
@@ -130,7 +142,9 @@ def test_create_directory(tmp_module_repository, dir_path):
 def test_create_template(tmp_module_repository, module, domain, valid):
     if valid:
         create_template(tmp_module_repository[4].get_repository(), module, domain)
-        template_file = tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+        template_file = (
+            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+        )
         assert template_file.exists() == True
     else:
         with pytest.raises(Exception):
@@ -152,14 +166,26 @@ def test_create_template(tmp_module_repository, module, domain, valid):
 )
 def test_create_catalog(tmp_module_repository, module, language, domain, valid):
     if valid:
-        create_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
-        catalog_file = tmp_module_repository[2][1] / module / f"locales/{language}/LC_MESSAGES/{domain}.po"
+        create_catalog(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
+        catalog_file = (
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.po"
+        )
         assert catalog_file.exists() == True
-        machine_file = tmp_module_repository[2][1] / module / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+        machine_file = (
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+        )
         assert machine_file.exists() == True
     else:
         with pytest.raises(Exception):
-            create_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
+            create_catalog(
+                tmp_module_repository[4].get_repository(), module, language, domain
+            )
 
 
 @pytest.mark.parametrize(
@@ -177,12 +203,20 @@ def test_create_catalog(tmp_module_repository, module, language, domain, valid):
 )
 def test_create_dictionary(tmp_module_repository, module, language, domain, valid):
     if valid:
-        create_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
-        catalog_file = tmp_module_repository[2][1] / module / f"locales/{language}/LC_MESSAGES/{domain}.json"
+        create_dictionary(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
+        catalog_file = (
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.json"
+        )
         assert catalog_file.exists() == True
     else:
         with pytest.raises(Exception):
-            create_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
+            create_dictionary(
+                tmp_module_repository[4].get_repository(), module, language, domain
+            )
 
 
 @pytest.mark.parametrize(
@@ -198,12 +232,16 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
 )
 def test_fetch_template(tmp_module_repository, module, domain, content, valid):
     if valid:
-        catalog = fetch_template(tmp_module_repository[4].get_repository(), module, domain)
+        catalog = fetch_template(
+            tmp_module_repository[4].get_repository(), module, domain
+        )
         assert catalog.project == content[0]
         assert catalog.domain == content[1]
     else:
         with pytest.raises(Exception):
-            catalog = fetch_template(tmp_module_repository[4].get_repository(), module, domain)
+            catalog = fetch_template(
+                tmp_module_repository[4].get_repository(), module, domain
+            )
 
 
 @pytest.mark.parametrize(
@@ -218,13 +256,18 @@ def test_fetch_template(tmp_module_repository, module, domain, content, valid):
 )
 def test_fetch_catalog(tmp_module_repository, module, language, domain, content, valid):
     if valid:
-        catalog = fetch_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
+        catalog = fetch_catalog(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
         assert catalog.project == content[0]
         assert catalog.domain == content[1]
         assert catalog.locale == Locale.parse(language, sep="-")
     else:
         with pytest.raises(Exception):
-            catalog = fetch_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
+            catalog = fetch_catalog(
+                tmp_module_repository[4].get_repository(), module, language, domain
+            )
+
 
 @pytest.mark.parametrize(
     "module, language, domain, content, valid",
@@ -236,86 +279,185 @@ def test_fetch_catalog(tmp_module_repository, module, language, domain, content,
         ("fsm_tools", "fr-FR", "usage", ["fsm-tools", "0.0.1"], True),
         ("fsm_tools/turing", "fr", "error", ["fsm-tools", "0.0.1"], True),
         ("fsm_tools/turing", "fr-FR", "error", ["fsm-tools", "0.0.1"], True),
+        ("fms_tools/lba", "fr", "information", ["fsm-tools", "information"], False),
     ],
 )
-def test_fetch_dictionary(tmp_module_repository, module, domain, language, content, valid):
+def test_fetch_dictionary(
+    tmp_module_repository, module, domain, language, content, valid
+):
     if valid:
-        dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
+        dictionary = fetch_dictionary(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
         assert dictionary[".i18n_tools"]["name"] == content[0]
         assert dictionary[".i18n_tools"]["version"] == content[1]
     else:
         with pytest.raises(Exception):
-            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
+            dictionary = fetch_dictionary(
+                tmp_module_repository[4].get_repository(), module, language, domain
+            )
+
 
 @pytest.mark.parametrize(
-    "module, language, domain, data",
+    "module, language, domain, data, valid",
     [
-        ("fsm_tools", "fr-FR", "usage", {
-            "1000": {
-                "string": "La machine de turing",
-                "plural": "Les machines de turing",
-                "location": "",
-                "previous_id": ""
+        (
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
+                },
+                "1000_001": {
+                    "string": "Automate linéairement borné",
+                    "location": "",
+                    "previous_id": "1000",
+                },
             },
-            "1000_001": {
-                "string": "Automate linéairement borné",
-                "location": "",
-                "previous_id": "1000"
-            }
-        }),
+            True,
+        ),
+        (
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
+                },
+                "1000_001": [
+                    "Automate linéairement borné",
+                    "",
+                    "1000",
+                ],
+            },
+            False,
+        ),
     ],
 )
-def test_update_catalog(conf_tests, tmp_module_repository, module, language, domain, data):
-    update_catalog(tmp_module_repository[4].get_repository(), module, language, domain, data)
-    catalog = fetch_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
-    assert catalog.locale == Locale.parse(language, sep="-")
-    assert catalog.domain == domain
-    message = catalog.get("1000_001")
-    assert message.string == data["1000_001"]["string"]
+def test_update_catalog(
+    conf_tests, tmp_module_repository, module, language, domain, data, valid
+):
+    if valid:
+        update_catalog(
+            tmp_module_repository[4].get_repository(), module, language, domain, data
+        )
+        catalog = fetch_catalog(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
+        assert catalog.locale == Locale.parse(language, sep="-")
+        assert catalog.domain == domain
+        message = catalog.get("1000_001")
+        assert message.string == data["1000_001"]["string"]
+    else:
+        with pytest.raises(Exception):
+            update_catalog(
+                tmp_module_repository[4].get_repository(),
+                module,
+                language,
+                domain,
+                data,
+            )
+
 
 @pytest.mark.parametrize(
-    "module, language, domain, data",
+    "module, language, domain, data, valid",
     [
-        ("fsm_tools", "fr-FR", "usage", {
-            "1000": [["La machine de turing", "Automate linéairement borné"],
-                     ["Les machines de turing", "Les automates linéairement bornés"]],
-            "2000": [["Automate"],
-                     ["Automates"],
-                     ["Automatons"]]
-
-        }),
+        (
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate"], ["Automates"], ["Automatons"]],
+            },
+            True,
+        ),
+        (
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate", "Automates"], ["Automatons"]],
+            },
+            False,
+        ),
     ],
 )
-def test_update_dictionary(tmp_module_repository, module, language, domain, data):
-    update_dictionary(tmp_module_repository[4].get_repository(), module, language, domain, data)
-    dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
-    assert dictionary.get("1000") == data["1000"]
+def test_update_dictionary(
+    tmp_module_repository, module, language, domain, data, valid
+):
+    if valid:
+        update_dictionary(
+            tmp_module_repository[4].get_repository(), module, language, domain, data
+        )
+        dictionary = fetch_dictionary(
+            tmp_module_repository[4].get_repository(), module, language, domain
+        )
+        assert dictionary.get("1000") == data["1000"]
+    else:
+        with pytest.raises(Exception):
+            update_dictionary(
+                tmp_module_repository[4].get_repository(),
+                module,
+                language,
+                domain,
+                data,
+            )
+
 
 @pytest.mark.parametrize(
-    "module, archive, valid", [
+    "module, archive, valid",
+    [
         ("fsm_tools", "fsm-tools", True),
         ("django", "django", False),
-    ]
+    ],
 )
 def test_create_module_archive(tmp_module_repository, module, archive, valid):
     if valid:
-        create_module_archive(tmp_module_repository[4].get_repository(), module, archive)
-        archive_file = tmp_module_repository[4].get_repository()[["paths", "repository"]] +"/" + module + "/locales/_i18n_tools/backup/" + archive + ".tar.gz"
+        create_module_archive(
+            tmp_module_repository[4].get_repository(), module, archive
+        )
+        archive_file = (
+            tmp_module_repository[4].get_repository()[["paths", "repository"]]
+            + "/"
+            + module
+            + "/locales/_i18n_tools/backup/"
+            + archive
+            + ".tar.gz"
+        )
         assert os.path.exists(archive_file)
     else:
         with pytest.raises(Exception):
-            create_module_archive(tmp_module_repository[4].get_repository(), module, archive)
+            create_module_archive(
+                tmp_module_repository[4].get_repository(), module, archive
+            )
 
 
 @pytest.mark.parametrize(
     "module, domain",
     [
-      ("fsm_tools", "model"),
+        ("fsm_tools", "model"),
     ],
 )
 def test_remove_template(tmp_module_repository, module, domain):
     remove_template(tmp_module_repository[4].get_repository(), module, domain)
-    template_file = tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+    template_file = (
+        tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+    )
     assert not template_file.exists()
 
 
@@ -326,7 +468,9 @@ def test_remove_template(tmp_module_repository, module, domain):
     ],
 )
 def test_remove_catalog(tmp_module_repository, module, language, domain):
-    catalog_file = tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+    catalog_file = (
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+    )
     remove_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not catalog_file.exists()
 
@@ -338,26 +482,51 @@ def test_remove_catalog(tmp_module_repository, module, language, domain):
     ],
 )
 def test_remove_dictionary(tmp_module_repository, module, language, domain):
-    dictionary_file = tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
-    remove_dictionary(tmp_module_repository[4].get_repository(), module, language, domain)
+    dictionary_file = (
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
+    )
+    remove_dictionary(
+        tmp_module_repository[4].get_repository(), module, language, domain
+    )
     assert not dictionary_file.exists()
 
 
 @pytest.mark.parametrize(
-    "module, archive, valid", [
+    "module, archive, valid",
+    [
         ("fsm_tools", "fsm-tools", True),
         ("django", "django", False),
-    ]
+    ],
 )
 def test_restore_module_from_archive(tmp_module_repository, module, archive, valid):
     if valid:
-        files_names = [f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/fr-FR/LC_MESSAGES/usage.{ext}" for ext in ["json", "po", "mo"]]
+        files_names = [
+            f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/fr-FR/LC_MESSAGES/usage.{ext}"
+            for ext in ["json", "po", "mo"]
+        ]
         """files_names.append(f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/templates/usage.pot")"""
         for file in files_names:
             assert not os.path.exists(file)
-        restore_module_from_archive(tmp_module_repository[4].get_repository(), module, archive)
+        restore_module_from_archive(
+            tmp_module_repository[4].get_repository(), module, archive
+        )
         for file in files_names:
             assert os.path.exists(file)
     else:
         with pytest.raises(Exception):
-            restore_module_from_archive(tmp_module_repository[4].get_repository(), module, archive)
+            restore_module_from_archive(
+                tmp_module_repository[4].get_repository(), module, archive
+            )
+
+
+def test_remove_with_failed_paths(tmp_module_repository):
+    with pytest.raises(Exception):
+        remove_template(
+            tmp_module_repository[4].get_repository(), "django-fsm_tools", "usage"
+        )
+        remove_catalog(
+            tmp_module_repository[4].get_repository(), "django-fsm_tools", "fr", "usage"
+        )
+        remove_dictionary(
+            tmp_module_repository[4].get_repository(), "django-fsm_tools", "fr", "usage"
+        )

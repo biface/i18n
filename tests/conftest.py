@@ -7,6 +7,7 @@ import yaml
 
 from i18n_tools.config import Config
 
+
 @pytest.fixture(scope="session")
 def root_conf_test() -> Path:
     return Path(__file__).parent
@@ -84,10 +85,11 @@ def copy_and_update_repository(root_conf_test, tmp_path, conf_tests, key):
     update_tmp_repository(key, tmp_path, conf)
     return destination
 
+
 def config_data(config_path_test, config_file_test):
     config = Config()
-    config.application[["paths","config"]] = config_path_test
-    config.application[["paths","settings"]] = config_file_test
+    config.application[["paths", "config"]] = config_path_test
+    config.application[["paths", "settings"]] = config_file_test
     config.load()
     return config
 
@@ -109,7 +111,10 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
         [str(destination_package), destination_package],
         [str(destination_application), destination_package],
         [str(other), other],
-        config_data(str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"), "i18n-tools.yaml"),
+        config_data(
+            str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"),
+            "i18n-tools.yaml",
+        ),
     ]
 
 
@@ -132,5 +137,8 @@ def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
         [str(destination_package), destination_package],
         [str(destination_application), destination_application],
         [str(other), other],
-        config_data(str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"), "i18n-tools.yaml"),
+        config_data(
+            str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"),
+            "i18n-tools.yaml",
+        ),
     ]

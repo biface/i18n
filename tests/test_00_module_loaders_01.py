@@ -19,12 +19,15 @@ from i18n_tools.loaders.utils import (
     _create_gzip,
     _create_tar_gz,
     _exist_path,
+    _load_config_file,
     _load_json,
     _load_machine,
     _load_text,
     _load_toml,
     _load_yaml,
     _non_traversal_path,
+    _remove_file,
+    _save_config_file,
     _save_json,
     _save_machine,
     _save_text,
@@ -293,41 +296,41 @@ def test_convert_catalog_raises_exception():
     "module_list, safe_members, unsafe_members",
     [
         (
-                ["mod-1"],
-                [
-                    tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
-                    tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
-                ],
-                [
-                    tarfile.TarInfo("../../etc/passwd"),
-                    tarfile.TarInfo("../secret.txt"),
-                    tarfile.TarInfo("mod-1/../../etc/shadow"),
-                ],
+            ["mod-1"],
+            [
+                tarfile.TarInfo("mod-1/pkg-1/file1.txt"),
+                tarfile.TarInfo("mod-1/pkg-2/file2.txt"),
+            ],
+            [
+                tarfile.TarInfo("../../etc/passwd"),
+                tarfile.TarInfo("../secret.txt"),
+                tarfile.TarInfo("mod-1/../../etc/shadow"),
+            ],
         ),
         (
-                [
-                    "module-1",
-                    "module-2",
-                ],
-                [
-                    tarfile.TarInfo("module-1/locales/fr/apps.json"),
-                    tarfile.TarInfo("module-1/locales/en/apps.json"),
-                    tarfile.TarInfo("module-2/utils/locales/fr/errors.json"),
-                    tarfile.TarInfo("module-2/utils/locales/en/errors.json"),
-                    tarfile.TarInfo("module-2/locales/fr/usages.json"),
-                    tarfile.TarInfo("module-2/locales/rn/usages.json"),
-                ],
-                [
-                    tarfile.TarInfo("/home/user/../../etc/passwd"),
-                    tarfile.TarInfo("../secret.txt"),
-                    tarfile.TarInfo("mod-1/../../etc/shadow"),
-                    tarfile.TarInfo("module-1/../etc/passwd"),
-                ],
+            [
+                "module-1",
+                "module-2",
+            ],
+            [
+                tarfile.TarInfo("module-1/locales/fr/apps.json"),
+                tarfile.TarInfo("module-1/locales/en/apps.json"),
+                tarfile.TarInfo("module-2/utils/locales/fr/errors.json"),
+                tarfile.TarInfo("module-2/utils/locales/en/errors.json"),
+                tarfile.TarInfo("module-2/locales/fr/usages.json"),
+                tarfile.TarInfo("module-2/locales/rn/usages.json"),
+            ],
+            [
+                tarfile.TarInfo("/home/user/../../etc/passwd"),
+                tarfile.TarInfo("../secret.txt"),
+                tarfile.TarInfo("mod-1/../../etc/shadow"),
+                tarfile.TarInfo("module-1/../etc/passwd"),
+            ],
         ),
     ],
 )
 def test_non_traversal_path_exclusion(
-        tmp_function_repository, module_list, safe_members, unsafe_members
+    tmp_function_repository, module_list, safe_members, unsafe_members
 ):
     """Test exclusion of directory traversal vulnerabilities."""
     root_path = tmp_function_repository[3][1]
@@ -435,3 +438,50 @@ def test_create_directories_with_failures(tmp_module_repository, dir_path, path)
     else:
         _create_directory(dir_path)
         assert dir_path.is_dir()
+
+
+@pytest.mark.parametrize(
+    "source, valid_s, destination, valid_d",
+    [
+        ("i18n-tools.json", False, "i18n-tools.json", False),
+        ("i18n-tools.yaml", True, "i18n-tools.json", True),
+        ("i18n-tools.yaml", True, "i18n-tools.csv", False),
+        ("i18n-tools.json", True, "i18n-tools.toml", True),
+        ("i18n-tools.txt", False, "i18n-tools.json", True),
+        ("i18n-tools.toml", True, "config.toml", True),
+    ],
+)
+def test_load_and_save_config(
+    tmp_module_repository, source, valid_s, destination, valid_d
+):
+    source_file = (
+        tmp_module_repository[2][1] / "fsm_tools" / "locales" / "_i18n_tools" / source
+    )
+    destination_file = (
+        tmp_module_repository[2][1]
+        / "fsm_tools"
+        / "locales"
+        / "_i18n_tools"
+        / destination
+    )
+    if valid_s:
+        data = _load_config_file(source_file)
+        if valid_d:
+            _save_config_file(destination_file, data)
+        else:
+            with pytest.raises(Exception):
+                _save_config_file(destination_file, data)
+    else:
+        with pytest.raises(Exception):
+            _load_config_file(source_file)
+
+
+def test_load_and_save_config_failed_path():
+    with pytest.raises(Exception):
+        _load_config_file("non-existent-path/i18n-tools.json")
+        _save_config_file("non-existent-path/i18n-tools.json", {})
+
+
+def test_remove_failed_path():
+    with pytest.raises(FileNotFoundError):
+        _remove_file("non-existent-path/i18n-tools.json")
