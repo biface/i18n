@@ -35,7 +35,7 @@ from i18n_tools import (
     I18N_TOOLS_ROOT_NAME,
 )
 
-from .__static__ import I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE, I18N_TOOLS_ROOT
+from .__static__ import I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG, I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE
 from .api import validate_api_url
 from .classes import Singleton
 from .loaders import build_path, file_exists, load_config, save_config
@@ -350,26 +350,26 @@ class Config(metaclass=Singleton):
         return self.__getattribute__(self._current_config)
 
     def set_repository(
-        self, base_path: str, setting_file_ext: str, modules: Optional[List[str]] = None
+        self, repository_path: str, setting_file_ext: str, main_module:str, additional_modules: Optional[List[str]] = None
     ):
         """
         Set the application repository paths and modules with validation.
 
-        :param base_path: Base path for the application.
+        :param repository_path: Base path for the application.
         :param setting_file_ext: File extension of the settings file.
-        :param modules: List of module paths.
+        :param additional_modules: List of module paths.
         :raises FileNotFoundError: If base_path does not exist or is not a directory.
         """
-
+        #FIXME : Review and simplify this function
         current_repository = self.__getattribute__(self._current_config)
 
-        if not os.path.isdir(base_path):
+        if not os.path.isdir(repository_path):
             raise FileNotFoundError(
-                f"The base path '{base_path}' does not exist or is not a directory."
+                f"The base path '{repository_path}' does not exist or is not a directory."
             )
 
-        locale_path = build_path(base_path, "locales")
-        config_path = build_path(locale_path, "_i18n_tools")
+        locale_path = build_path(repository_path, main_module, I18N_TOOLS_LOCALE)
+        config_path = build_path(repository_path, main_module, I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG)
         setting_file_ext = setting_file_ext.lower()
         if setting_file_ext in ["json", "yaml", "toml"]:
             settings_file = "i18n-tools." + setting_file_ext.lower()
@@ -378,12 +378,12 @@ class Config(metaclass=Singleton):
                 f"The file format is not supported : {setting_file_ext} not in ['json', 'yaml', 'toml']."
             )
 
-        current_repository[["paths", "root"]] = base_path
+        current_repository[["paths", "root"]] = repository_path
         current_repository[["paths", "repository"]] = locale_path
         current_repository[["paths", "config"]] = config_path
         current_repository[["paths", "settings"]] = settings_file
         current_repository[["paths", "modules"]] = (
-            modules if modules is not None else []
+            additional_modules if additional_modules is not None else []
         )
 
     def update_repository(

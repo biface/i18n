@@ -16,6 +16,10 @@ from ndict_tools import NestedDictionary
 # Generic empty files
 
 
+def __check_config_extension(ext: str) -> bool:
+    return ext.lstrip(".").lower() in ["json", "yaml", "yml", "toml"]
+
+
 def __check_path(file_path: Union[Path, str]) -> Path:
     if isinstance(file_path, str):
         file_path = Path(file_path)
@@ -61,18 +65,6 @@ def _create_directory(file_path: Union[Path, str]) -> None:
         file_path.mkdir(parents=True, exist_ok=True)
     else:
         raise FileExistsError(f'Directory "{file_path}" already exists.')
-
-
-def _get_parent_root(file_path: Union[Path, str]) -> str:
-    """
-    Return the parent root of the file path as a string.
-    :param file_path: root file path.
-    :type file_path: Union[Path, str]
-    :return: parent root path.
-    :rtype: str
-    """
-    file_path = __check_path(file_path)
-    return file_path.parent.name
 
 
 # JSON load and save files
@@ -322,17 +314,16 @@ def _load_config_file(config_path: Union[Path, str]) -> dict:
     [file_extension] = config_path.suffixes
 
     try:
-        with open(config_path, "r", encoding="utf-8") as file:
-            if file_extension == ".yaml":
-                return yaml.safe_load(file)
-            elif file_extension == ".toml":
-                return toml.load(file)
-            elif file_extension == ".json":
-                return json.load(file)
-            else:
-                raise ValueError(
-                    f"Unsupported configuration file format: {file_extension}"
-                )
+        if not __check_config_extension(file_extension):
+            raise ValueError(f"Unsupported configuration file format: {file_extension}")
+        else:
+            with open(config_path, "r", encoding="utf-8") as file:
+                if file_extension == ".yaml":
+                    return yaml.safe_load(file)
+                elif file_extension == ".toml":
+                    return toml.load(file)
+                elif file_extension == ".json":
+                    return json.load(file)
     except Exception as e:
         raise Exception(f"Error loading configuration file: {config_path}. {e}")
 
@@ -351,15 +342,16 @@ def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
     [file_extension] = config_path.suffixes
 
     try:
-        with open(config_path, "w", encoding="utf-8") as cf:
-            if file_extension == ".json":
-                json.dump(data, cf, indent=4)
-            elif file_extension in {".yaml", ".yml"}:
-                yaml.safe_dump(data, cf, default_flow_style=False)
-            elif file_extension == ".toml":
-                toml.dump(data, cf)
-            else:
-                raise ValueError(f"Unsupported file format: {file_extension}")
+        if not __check_config_extension(file_extension):
+            raise ValueError(f"Unsupported configuration file format: {file_extension}")
+        else:
+            with open(config_path, "w", encoding="utf-8") as cf:
+                if file_extension == ".json":
+                    json.dump(data, cf, indent=4)
+                elif file_extension in {".yaml", ".yml"}:
+                    yaml.safe_dump(data, cf, default_flow_style=False)
+                elif file_extension == ".toml":
+                    toml.dump(data, cf)
     except ValueError as uff:
         raise uff
     except Exception as e:
