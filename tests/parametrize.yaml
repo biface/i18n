@@ -24,23 +24,6 @@ repository:
   configuration:
     valid: "valid-i18n-tools.yaml"
     error: "error-i18n-tools.yaml"
-catalog:
-  "fsm_tools":
-    project: "fsm-tools"
-    locale: ["fr", "en", "en-US", "fr-FR"]
-    domain: ["usage", "model"]
-  "fsm_tools/turing":
-    project: "fsm_tools"
-    locale: ["fr", "en", "en-GB", "fr-FR"]
-    domain: ["information", "error"]
-  "fsm_tools/lba":
-    project: "fsm_tools"
-    locale: [ "fr", "en", "en-US", "en-GB", "fr-FR" ]
-    domain: [ "information", "error"]
-  "django-fsm_tools":
-    project: "fsm_tools"
-    locale: [ "fr", "en", "en-GB", "fr-FR" ]
-    domain: [ "usage", "information", "error"]
 config:
   application:
     authors:
