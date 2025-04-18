@@ -35,7 +35,12 @@ from i18n_tools import (
     I18N_TOOLS_ROOT_NAME,
 )
 
-from .__static__ import I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG, I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE
+from .__static__ import (
+    I18N_TOOLS_CONFIG,
+    I18N_TOOLS_CONFIG_DIR,
+    I18N_TOOLS_CONFIG_FILE,
+    I18N_TOOLS_LOCALE,
+)
 from .api import validate_api_url
 from .classes import Singleton
 from .loaders import build_path, file_exists, load_config, save_config
@@ -350,17 +355,21 @@ class Config(metaclass=Singleton):
         return self.__getattribute__(self._current_config)
 
     def set_repository(
-        self, repository_path: str, setting_file_ext: str, main_module:str, additional_modules: Optional[List[str]] = None
-    ):
+        self,
+        repository_path: str,
+        setting_file_ext: str,
+        main_module: str,
+        additional_modules: Optional[List[str]] = None,
+    ) -> None:
         """
         Set the application repository paths and modules with validation.
 
         :param repository_path: Base path for the application.
         :param setting_file_ext: File extension of the settings file.
+        :param main_module: Main module of the application.
         :param additional_modules: List of module paths.
         :raises FileNotFoundError: If base_path does not exist or is not a directory.
         """
-        #FIXME : Review and simplify this function
         current_repository = self.__getattribute__(self._current_config)
 
         if not os.path.isdir(repository_path):
@@ -369,7 +378,9 @@ class Config(metaclass=Singleton):
             )
 
         locale_path = build_path(repository_path, main_module, I18N_TOOLS_LOCALE)
-        config_path = build_path(repository_path, main_module, I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG)
+        config_path = build_path(
+            repository_path, main_module, I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG
+        )
         setting_file_ext = setting_file_ext.lower()
         if setting_file_ext in ["json", "yaml", "toml"]:
             settings_file = "i18n-tools." + setting_file_ext.lower()
@@ -388,32 +399,35 @@ class Config(metaclass=Singleton):
 
     def update_repository(
         self,
-        base_path: Optional[str] = None,
+        root_path: Optional[str] = None,
         setting_file_ext: Optional[str] = None,
+        main_module: str = None,
         modules: Optional[List[str]] = None,
-    ):
+    ) -> None:
         """
         Update the application repository paths and modules with validation.
 
-        :param base_path: New base path for the application.
+        :param root_path: New base path for the application.
         :param setting_file_ext: File extension of the settings file.
+        :param main_module: Main module of the application.
         :param modules: New list of module paths.
         :raises ValueError: If base_path does not exist.
         """
 
         current_repository = self.__getattribute__(self._current_config)
 
-        if base_path is not None:
-            if not os.path.isdir(base_path):
-                raise ValueError(f"The base path '{base_path}' does not exist.")
+        if root_path is not None:
+            if not os.path.isdir(root_path):
+                raise FileNotFoundError(
+                    f"This path '{root_path}' does not exist or is not a directory."
+                )
             if setting_file_ext in ["json", "yaml", "toml"]:
-                current_repository[["paths", "root"]] = base_path
-                current_repository[["paths", "repository"]] = os.path.join(
-                    base_path, "locales"
-                )
-                current_repository[["paths", "config"]] = os.path.join(
-                    base_path, "locales/_i18n_tools"
-                )
+                current_repository[["paths", "root"]] = root_path
+                current_repository[["paths", "repository"]] = root_path
+                if main_module:
+                    current_repository[["paths", "config"]] = build_path(
+                        root_path, main_module, I18N_TOOLS_LOCALE, I18N_TOOLS_CONFIG
+                    )
                 setting_file = "i18n-tools." + setting_file_ext.lower()
                 current_repository[["paths", "settings"]] = setting_file
             else:
@@ -422,11 +436,14 @@ class Config(metaclass=Singleton):
                 )
 
         if modules is not None:
-            current_repository[["paths", "modules"]] = modules
+            if main_module is None:
+                current_repository[["paths", "modules"]] = modules
+            else:
+                current_repository[["paths", "modules"]] = [main_module] + modules
 
     def add_author(
         self, first_name: str, last_name: str, email: str, url: str, languages: list
-    ):
+    ) -> None:
         """
         Add a new author to the authors dictionary.
 
@@ -435,13 +452,14 @@ class Config(metaclass=Singleton):
         :param email: Email address of the author.
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
+        :raises EmailNotValidError: if email is malformed
+        :raises ValueError: If at least one of the languages is not an IETF tag
         """
         try:
             validate_email(email)
-        except EmailNotValidError as e:
+            normalized_languages = validate_and_normalize_language_tags(languages)
+        except Exception as e:
             raise e
-
-        normalized_languages = validate_and_normalize_language_tags(languages)
 
         if email in self._email_index:
             existing_uuid = self._email_index[email]
@@ -491,7 +509,7 @@ class Config(metaclass=Singleton):
 
         try:
             uuid_obj = UUID(index)
-            if index in self.authors:
+            if index in current_config["authors"]:
                 return current_config[["authors", index]]
             else:
                 raise KeyError(
@@ -573,7 +591,7 @@ class Config(metaclass=Singleton):
         success_rate: Optional[float] = None,
         max_text_size: Optional[int] = None,
         payment_plan: Optional[str] = None,
-    ):
+    ) -> None:
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
 
@@ -594,25 +612,23 @@ class Config(metaclass=Singleton):
 
         current_repository = self.__getattribute__(self._current_config)
 
-        # Validation de l'URL
+        # Validate the URL
         validation_result = validate_api_url(url)
         if validation_result["error"]:
             raise ValueError(validation_result["error"])
 
-        # 1. Validation de la date d'expiration de la clé API
+        # 1. Validate the API key expiration date
         if key_expiration:
             try:
                 expiration_date = datetime.strptime(key_expiration, "%Y-%m-%d")
                 if expiration_date < datetime.now():
                     raise ValueError(
-                        f"La date d'expiration '{key_expiration}' est dans le passé."
+                        f"The expiration date '{key_expiration}' is in the past."
                     )
-            except ValueError:
-                raise ValueError(
-                    f"Le format de la date d'expiration '{key_expiration}' est invalide. Utilisez 'YYYY-MM-DD'."
-                )
+            except ValueError as e:
+                raise e
 
-        # 2. Initialisation de toutes les clés du traducteur, même si elles sont vides
+        # 2. Initialize all translator keys, even if they are empty
         translator_data = {
             "details": {
                 "name": name,
@@ -645,11 +661,11 @@ class Config(metaclass=Singleton):
             },
         }
 
-        # 3. Vérification de l'existence du traducteur
-        if name in self.setup["translators"]:
-            raise KeyError(f"Le traducteur '{name}' existe déjà.")
+        # 3. Check if the translator already exists
+        if name in current_repository["translators"]:
+            raise KeyError(f"Translator '{name}' already exists.")
 
-        # 4. Ajout du traducteur au dictionnaire
+        # 4. Add the translator to the dictionary
         current_repository["translators"][name] = NestedDictionary(
             translator_data, indent=2, strict=True
         )
@@ -856,19 +872,19 @@ class Config(metaclass=Singleton):
         else:
             self.__getattribute__(self._current_config)["domains"] = {}
 
-    def switch_to_package_config(self):
+    def switch_to_package_config(self) -> None:
         """
         Switch the current configuration context to the package configuration.
         """
         self._current_config = "package"
 
-    def switch_to_application_config(self):
+    def switch_to_application_config(self) -> None:
         """
         Switch the current configuration context to the application configuration.
         """
         self._current_config = "application"
 
-    def toggle_config(self):
+    def toggle_config(self) -> None:
         """
         Toggle the current configuration context between package and application.
         """
@@ -894,68 +910,4 @@ class Config(metaclass=Singleton):
             f"<Config(name='{current_repository[['details']].get('name', 'None')}',\n"
             f"paths={{'repository': '{current_repository['paths'].get('repository', 'Not specified')}',\n"
             f"'settings': '{current_repository['paths'].get('settings', 'Not specified')}"
-        )
-
-
-class Repository:
-    """
-    Repository class to manage translation-related paths, domains, languages, and authors.
-
-    This class encapsulates the details of a translation repository, providing a structured
-    way to access and manage paths, modules, languages, and authors involved in the translation process.
-
-    Attributes:
-        directory (Dict[str, List[str]]): Base paths for the translation repository.
-        domains (Dict[str, List[str]]): Translation domains associated with modules.
-        languages (Dict[str, Any]): Language settings including source, hierarchy, and fallback.
-        authors (Dict[str, Any]): Metadata about authors contributing to translations.
-        details (Dict[str, Any]): Additional details about the repository, such as the project name.
-    """
-
-    def __init__(
-        self,
-        configuration: str,
-        repository: Dict[str, Any],
-    ):
-        """
-        Initialize the Repository with paths, domains, languages, authors, and details.
-
-        :param repository: Base paths for the translation repository.
-        :type repository: Dict[str, Any]
-        :param configuration: current configuration managed.
-        :type configuration: str
-        """
-        self.configuration = configuration
-        self.repository = repository
-
-    @classmethod
-    def from_config(cls, config: Config):
-        """
-        Create a Repository instance from a Config object.
-
-        :param config: The Config object to extract repository details from.
-        :type config: Config
-        :return: An instance of Repository.
-        :rtype: Repository
-        """
-        return cls(
-            configuration=config._current_config,
-            repository=config.__getattribute__(config._current_config),
-        )
-
-    def __repr__(self):
-        """
-        Provide a string representation of the Repository instance.
-
-        :return: A string summarizing the repository details.
-        """
-        paths = self.repository["paths"]
-        domains = self.repository["domains"]
-        languages = self.repository["languages"]
-        return (
-            f"<Repository(paths=['{paths['root']}','{paths['settings']}')',\n"
-            f"modules=['{paths['modules']}', \n"
-            f"domains={list(domains.keys())}, \n"
-            f"languages={{'\nsource': '{languages['source']}',\n'available languages': '{list(languages['hierarchy'].items())}',\nfallback': '{languages['fallback']}'}}, "
-            f"details={{'\nname': '{self.repository['details'].get('name', 'Unnamed')}'}})>"
         )
