@@ -1,6 +1,4 @@
-from datetime import datetime
 from pathlib import Path
-from pyexpat.errors import messages
 from typing import Any, Dict, List, Union
 
 from babel import __version__ as babel_version
@@ -148,7 +146,9 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
             version=repository[["details", "version"]],
             copyright_holder=f"i18n-tools ({i18n_tools.__version__}) builder",
             msgid_bugs_address=repository[["details", "report-bugs-to"]],
-            fuzzy= True if repository[["details", "flags", "fuzzy"]] == "True" else False
+            fuzzy=(
+                True if repository[["details", "flags", "fuzzy"]] == "True" else False
+            ),
         )
         catalog.header_comment = f"""
 # This POT file is generated for PROJECT project.
@@ -166,17 +166,27 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
 """
         catalog.domain = domain
         catalog.mime_headers = [
-            ("Project-Id-Version", f"{repository[['details','name']]} {repository[['details','version']]}"),
-            ("Report-Msgid-Bugs-To", repository[["details","report-bugs-to"]]),
-            ("POT-Creation-Date", repository[["details","creation_date"]]),
+            (
+                "Project-Id-Version",
+                f"{repository[['details','name']]} {repository[['details','version']]}",
+            ),
+            ("Report-Msgid-Bugs-To", repository[["details", "report-bugs-to"]]),
+            ("POT-Creation-Date", repository[["details", "creation_date"]]),
             ("PO-Revision-Date", "YEAR-MO-DA HO:MI+ZONE"),
             ("Last-Translator", ""),
-            ("Language-Team", repository[["details","language_team"]]),
+            ("Language-Team", repository[["details", "language_team"]]),
             ("Language", ""),
             ("MIME-Version", "1.0"),
-            ("Content-Type", f"{repository[['details','content_type']]}; charset=utf-8"),
+            (
+                "Content-Type",
+                f"{repository[['details','content_type']]}; charset=utf-8",
+            ),
             ("Content-Transfer-Encoding", "8bit"),
-            ("Generated-By", f"i18n-tools ({i18n_tools.__version__}) using Babel ({babel_version})")]
+            (
+                "Generated-By",
+                f"i18n-tools ({i18n_tools.__version__}) using Babel ({babel_version})",
+            ),
+        ]
 
         template_file = path + f"/{domain}.pot"
         if not _exist_path(template_file):
@@ -432,16 +442,18 @@ def update_catalog(
 
                 # If the key is a tuple/list (pluralizable) and the string is not,
                 # convert the string to a tuple with appropriate number of elements
-                if isinstance(key, (tuple, list)) and not isinstance(string_value, (tuple, list)):
+                if isinstance(key, (tuple, list)) and not isinstance(
+                    string_value, (tuple, list)
+                ):
                     # For pluralizable messages, string should be a tuple/list
                     # with the same number of elements as the key
                     if string_value:
                         # If we have a string, use it as the first element (singular form)
                         # and add empty strings for the plural forms
-                        string_value = tuple([string_value] + [''] * (len(key) - 1))
+                        string_value = tuple([string_value] + [""] * (len(key) - 1))
                     else:
                         # If we don't have a string, create a tuple with empty strings
-                        string_value = tuple([''] * len(key))
+                        string_value = tuple([""] * len(key))
 
                 message = catalog.add(
                     id=key,

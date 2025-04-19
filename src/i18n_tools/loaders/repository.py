@@ -8,9 +8,19 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_BACKUP,
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
+    I18N_TOOLS_MESSAGES,
+    I18N_TOOLS_TEMPLATE,
 )
+from i18n_tools.locale import get_all_languages
 
-from .handler import build_path, create_directory
+from .handler import (
+    build_path,
+    create_catalog,
+    create_dictionary,
+    create_directory,
+    create_template,
+    file_exists,
+)
 from .utils import _exist_path, _non_traversal_path
 
 
@@ -110,14 +120,66 @@ def restore_module_from_archive(
         raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
 
 
-def build_config_repository(app_root: str) -> None:
+def build_repository(repository: NestedDictionary) -> None:
     """
+    This function builds the repository from the modulee and populates files in the repository directory respectively
+    to domains and language registered in the repository. It checks existence of already existing files and only creates
+    the necessary files and directories.
 
-    :param app_root:
-    :return:
+    :param repository: The data representing the repository.
+    :type repository: NestedDictionary
+    :return: Nothing
+    :type: None
     """
-    # TODO : implement repository data
+    # Get the list of modules from the repository
+    modules = repository[["paths", "modules"]]
 
-    config_path = build_path(app_root, "locales", "_18n_tools")
-    if not _exist_path(config_path):
-        create_directory(config_path)
+    # Get the list of languages from the repository
+    languages = get_all_languages(repository[["languages", "hierarchy"]])
+
+    # Iterate through each module
+    for module in modules:
+        # Get the list of domains for this module
+        domains = repository[["domains", module]]
+
+        module_directory = (
+            repository[["paths", "repository"]] + "/" + module + "/" + I18N_TOOLS_LOCALE
+        )
+        module_template_directory = module_directory + "/" + I18N_TOOLS_TEMPLATE
+
+        if not _exist_path(module_template_directory):
+            create_directory(module_template_directory)
+
+        # Iterate through each domain
+        for domain in domains:
+            try:
+                # Create a template for this module and domain
+                create_template(repository, module, domain)
+            except FileExistsError:
+                # Skip if the template already exists
+                pass
+
+            # Iterate through each language
+            for language in languages:
+
+                language_directory = (
+                    module_directory + "/" + language + "/" + I18N_TOOLS_MESSAGES
+                )
+
+                if not file_exists(language_directory):
+                    print(f"Creating directory {language_directory}")
+                    create_directory(language_directory)
+
+                try:
+                    # Create a catalog for this module, language, and domain
+                    create_catalog(repository, module, language, domain)
+                except FileExistsError:
+                    # Skip if the catalog already exists
+                    pass
+
+                try:
+                    # Create a dictionary for this module, language, and domain
+                    create_dictionary(repository, module, language, domain)
+                except FileExistsError:
+                    # Skip if the dictionary already exists
+                    pass

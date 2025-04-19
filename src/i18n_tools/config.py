@@ -30,11 +30,6 @@ from uuid import UUID, uuid4
 from email_validator import EmailNotValidError, validate_email
 from ndict_tools import NestedDictionary
 
-from i18n_tools import (
-    I18N_TOOLS_MODULE_NAME,
-    I18N_TOOLS_ROOT_NAME,
-)
-
 from .__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_CONFIG_DIR,
@@ -130,7 +125,7 @@ class Config(metaclass=Singleton):
                             "fuzzy": True,
                             "python-format": True,
                         },
-                        "report-bugs-to": ""
+                        "report-bugs-to": "",
                     },
                     "paths": {
                         "root": "",
@@ -485,7 +480,6 @@ class Config(metaclass=Singleton):
         if copyright_holder is not None:
             current_repository[["details", "copyright_holder"]] = copyright_holder
 
-
     def update_details(self, d_key: str, d_value: Any) -> None:
         """
         update the details of the repository to the configuration..
@@ -498,7 +492,9 @@ class Config(metaclass=Singleton):
             if type(d_value) == type(current_repository["details"][d_key]):
                 current_repository["details"][d_key] = d_value
             else:
-                raise TypeError(f"The type of the value for {d_key} is not the same as the existing value.")
+                raise TypeError(
+                    f"The type of the value for {d_key} is not the same as the existing value."
+                )
         else:
             raise KeyError(f"The key {d_key} is not in the details of the repository.")
 
