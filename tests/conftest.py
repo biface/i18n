@@ -8,8 +8,8 @@ import pytest
 import yaml
 from email_validator import EmailNotValidError
 
-from i18n_tools.config import Config
 from i18n_tools.api import validate_api_url
+from i18n_tools.config import Config
 
 
 @pytest.fixture(scope="session")
@@ -385,7 +385,7 @@ def mock_validate_email(email):
     print(f"mock_validate_email called with email: {email}")
 
     # Basic email validation
-    if '@' not in email or '.' not in email.split('@')[1]:
+    if "@" not in email or "." not in email.split("@")[1]:
         raise EmailNotValidError(f"The email address '{email}' is not valid.")
 
     # Return a dictionary with the normalized email address
@@ -414,8 +414,9 @@ def patch_validate_api_url(is_main_branch):
     else:
         # On other branches, use the mock function
         # Patch both the direct import in api module and the import in config module
-        with mock.patch('i18n_tools.api.validate_api_url', mock_validate_api_url), \
-             mock.patch('i18n_tools.config.validate_api_url', mock_validate_api_url):
+        with mock.patch(
+            "i18n_tools.api.validate_api_url", mock_validate_api_url
+        ), mock.patch("i18n_tools.config.validate_api_url", mock_validate_api_url):
             yield
 
 
@@ -441,6 +442,7 @@ def patch_validate_email(is_main_branch):
     else:
         # On other branches, use the mock function
         # Patch both the direct import in email_validator module and the import in config module
-        with mock.patch('email_validator.validate_email', mock_validate_email), \
-             mock.patch('i18n_tools.config.validate_email', mock_validate_email):
+        with mock.patch(
+            "email_validator.validate_email", mock_validate_email
+        ), mock.patch("i18n_tools.config.validate_email", mock_validate_email):
             yield

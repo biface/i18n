@@ -1256,7 +1256,7 @@ def test_clean_modules(tmp_module_repository):
                 "description": "Test Description",
                 "version": "1.0.0",
                 "content_type": "text/plain",
-                "copyright_holder": "Test Copyright Holder"
+                "copyright_holder": "Test Copyright Holder",
             },
             {
                 "name": "Test App",
@@ -1264,8 +1264,8 @@ def test_clean_modules(tmp_module_repository):
                 "description": "Test Description",
                 "version": "1.0.0",
                 "content_type": "text/plain",
-                "copyright_holder": "Test Copyright Holder"
-            }
+                "copyright_holder": "Test Copyright Holder",
+            },
         ),
         (
             "package",
@@ -1275,12 +1275,9 @@ def test_clean_modules(tmp_module_repository):
                 "description": "Test Package Description",
                 "version": None,
                 "content_type": None,
-                "copyright_holder": None
+                "copyright_holder": None,
             },
-            {
-                "name": "Test Package",
-                "description": "Test Package Description"
-            }
+            {"name": "Test Package", "description": "Test Package Description"},
         ),
         (
             "application",
@@ -1290,11 +1287,9 @@ def test_clean_modules(tmp_module_repository):
                 "description": None,
                 "version": None,
                 "content_type": None,
-                "copyright_holder": None
+                "copyright_holder": None,
             },
-            {
-                "summary": "Only Summary"
-            }
+            {"summary": "Only Summary"},
         ),
         (
             "package",
@@ -1304,14 +1299,14 @@ def test_clean_modules(tmp_module_repository):
                 "description": None,
                 "version": "2.0.0",
                 "content_type": "application/json",
-                "copyright_holder": "New Copyright Holder"
+                "copyright_holder": "New Copyright Holder",
             },
             {
                 "version": "2.0.0",
                 "content_type": "application/json",
-                "copyright_holder": "New Copyright Holder"
-            }
-        )
+                "copyright_holder": "New Copyright Holder",
+            },
+        ),
     ],
 )
 def test_add_details(tmp_module_repository, repository, details, expected):
@@ -1343,7 +1338,7 @@ def test_add_details(tmp_module_repository, repository, details, expected):
             description=details.get("description"),
             version=details.get("version"),
             content_type=details.get("content_type"),
-            copyright_holder=details.get("copyright_holder")
+            copyright_holder=details.get("copyright_holder"),
         )
 
         # Verify that the values were correctly updated
@@ -1359,53 +1354,18 @@ def test_add_details(tmp_module_repository, repository, details, expected):
 @pytest.mark.parametrize(
     "repository, key, value, valid, exception, error_message",
     [
-        (
-            "application",
-            "name",
-            "Updated App Name",
-            True,
-            None,
-            None
-        ),
-        (
-            "package",
-            "description",
-            "Updated Package Description",
-            True,
-            None,
-            None
-        ),
-        (
-            "application",
-            "version",
-            "2.0.0",
-            True,
-            None,
-            None
-        ),
-        (
-            "package",
-            "content_type",
-            "application/json",
-            True,
-            None,
-            None
-        ),
-        (
-            "application",
-            "copyright_holder",
-            "New Copyright Holder",
-            True,
-            None,
-            None
-        ),
+        ("application", "name", "Updated App Name", True, None, None),
+        ("package", "description", "Updated Package Description", True, None, None),
+        ("application", "version", "2.0.0", True, None, None),
+        ("package", "content_type", "application/json", True, None, None),
+        ("application", "copyright_holder", "New Copyright Holder", True, None, None),
         (
             "package",
             "non_existent_key",
             "Some Value",
             False,
             KeyError,
-            "The key non_existent_key is not in the details of the repository."
+            "The key non_existent_key is not in the details of the repository.",
         ),
         (
             "application",
@@ -1413,7 +1373,7 @@ def test_add_details(tmp_module_repository, repository, details, expected):
             123,
             False,
             TypeError,
-            "The type of the value for name is not the same as the existing value."
+            "The type of the value for name is not the same as the existing value.",
         ),
         (
             "package",
@@ -1421,11 +1381,13 @@ def test_add_details(tmp_module_repository, repository, details, expected):
             ["1.0.0"],
             False,
             TypeError,
-            "The type of the value for version is not the same as the existing value."
-        )
+            "The type of the value for version is not the same as the existing value.",
+        ),
     ],
 )
-def test_update_details(tmp_module_repository, repository, key, value, valid, exception, error_message):
+def test_update_details(
+    tmp_module_repository, repository, key, value, valid, exception, error_message
+):
     """
     Test updating details in the configuration.
 

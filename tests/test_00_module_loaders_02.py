@@ -29,6 +29,7 @@ from i18n_tools.loaders.handler import (
     update_dictionary,
 )
 from i18n_tools.loaders.repository import (
+    build_repository,
     create_module_archive,
     restore_module_from_archive,
 )
@@ -57,34 +58,34 @@ def build_test_repository(tmp_repository):
     "module, sub_dirs, expected, verified",
     [
         (
-                "package",
-                ["i18n_tools", "locales", "_i18n_tools"],
-                "i18n_tools/locales/_i18n_tools",
-                True,
+            "package",
+            ["i18n_tools", "locales", "_i18n_tools"],
+            "i18n_tools/locales/_i18n_tools",
+            True,
         ),
         (
-                "application",
-                ["fsm_tools", "undiscovered", "..", "locales", "templates"],
-                "fsm_tools/locales/templates",
-                True,
+            "application",
+            ["fsm_tools", "undiscovered", "..", "locales", "templates"],
+            "fsm_tools/locales/templates",
+            True,
         ),
         ("application", ["locales", "..", "templates"], "locales/templates", False),
     ],
 )
 def test_build_path(
-        tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
+    tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
 ):
     base_path = (
-            tmp_function_repository[0][0]
-            + "/"
-            + conf_tests["repository"][module]["repository"]
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
     )
     expected_path = (
-            tmp_function_repository[0][0]
-            + "/"
-            + conf_tests["repository"][module]["repository"]
-            + "/"
-            + expected
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
+        + "/"
+        + expected
     )
     if verified:
         path = build_path(base_path, *sub_dirs)
@@ -144,7 +145,7 @@ def test_create_template(tmp_module_repository, module, domain, valid, exception
     if valid:
         create_template(tmp_module_repository[4].get_repository(), module, domain)
         template_file = (
-                tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
         )
         assert template_file.exists() == True
     else:
@@ -171,15 +172,15 @@ def test_create_catalog(tmp_module_repository, module, language, domain, valid):
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.po"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.po"
         )
         assert catalog_file.exists() == True
         machine_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.mo"
         )
         assert machine_file.exists() == True
     else:
@@ -208,9 +209,9 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.json"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.json"
         )
         assert catalog_file.exists() == True
     else:
@@ -284,7 +285,7 @@ def test_fetch_catalog(tmp_module_repository, module, language, domain, content,
     ],
 )
 def test_fetch_dictionary(
-        tmp_module_repository, module, domain, language, content, valid
+    tmp_module_repository, module, domain, language, content, valid
 ):
     if valid:
         dictionary = fetch_dictionary(
@@ -303,47 +304,47 @@ def test_fetch_dictionary(
     "module, language, domain, data, valid",
     [
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": {
-                        "string": "La machine de turing",
-                        "plural": "Les machines de turing",
-                        "location": "",
-                        "previous_id": "",
-                    },
-                    "1000_001": {
-                        "string": "Automate linéairement borné",
-                        "location": "",
-                        "previous_id": "1000",
-                    },
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
                 },
-                True,
+                "1000_001": {
+                    "string": "Automate linéairement borné",
+                    "location": "",
+                    "previous_id": "1000",
+                },
+            },
+            True,
         ),
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": {
-                        "string": "La machine de turing",
-                        "plural": "Les machines de turing",
-                        "location": "",
-                        "previous_id": "",
-                    },
-                    "1000_001": [
-                        "Automate linéairement borné",
-                        "",
-                        "1000",
-                    ],
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
                 },
-                False,
+                "1000_001": [
+                    "Automate linéairement borné",
+                    "",
+                    "1000",
+                ],
+            },
+            False,
         ),
     ],
 )
 def test_update_catalog(
-        conf_tests, tmp_module_repository, module, language, domain, data, valid
+    conf_tests, tmp_module_repository, module, language, domain, data, valid
 ):
     if valid:
         update_catalog(
@@ -371,35 +372,35 @@ def test_update_catalog(
     "module, language, domain, data, valid",
     [
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": [
-                        ["La machine de turing", "Automate linéairement borné"],
-                        ["Les machines de turing", "Les automates linéairement bornés"],
-                    ],
-                    "2000": [["Automate"], ["Automates"], ["Automatons"]],
-                },
-                True,
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate"], ["Automates"], ["Automatons"]],
+            },
+            True,
         ),
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": [
-                        ["La machine de turing", "Automate linéairement borné"],
-                        ["Les machines de turing", "Les automates linéairement bornés"],
-                    ],
-                    "2000": [["Automate", "Automates"], ["Automatons"]],
-                },
-                False,
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate", "Automates"], ["Automatons"]],
+            },
+            False,
         ),
     ],
 )
 def test_update_dictionary(
-        tmp_module_repository, module, language, domain, data, valid
+    tmp_module_repository, module, language, domain, data, valid
 ):
     if valid:
         update_dictionary(
@@ -433,12 +434,12 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
             tmp_module_repository[4].get_repository(), module, archive
         )
         archive_file = (
-                tmp_module_repository[4].get_repository()[["paths", "repository"]]
-                + "/"
-                + module
-                + "/locales/_i18n_tools/backup/"
-                + archive
-                + ".tar.gz"
+            tmp_module_repository[4].get_repository()[["paths", "repository"]]
+            + "/"
+            + module
+            + "/locales/_i18n_tools/backup/"
+            + archive
+            + ".tar.gz"
         )
         assert os.path.exists(archive_file)
     else:
@@ -457,7 +458,7 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
 def test_remove_template(tmp_module_repository, module, domain):
     remove_template(tmp_module_repository[4].get_repository(), module, domain)
     template_file = (
-            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+        tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
     )
     assert not template_file.exists()
 
@@ -470,7 +471,7 @@ def test_remove_template(tmp_module_repository, module, domain):
 )
 def test_remove_catalog(tmp_module_repository, module, language, domain):
     catalog_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
     )
     remove_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not catalog_file.exists()
@@ -484,7 +485,7 @@ def test_remove_catalog(tmp_module_repository, module, language, domain):
 )
 def test_remove_dictionary(tmp_module_repository, module, language, domain):
     dictionary_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
     )
     remove_dictionary(
         tmp_module_repository[4].get_repository(), module, language, domain
@@ -531,3 +532,56 @@ def test_remove_with_failed_paths(tmp_module_repository):
         remove_dictionary(
             tmp_module_repository[4].get_repository(), "django-fsm_tools", "fr", "usage"
         )
+
+
+@pytest.mark.parametrize(
+    "modules, domains, languages",
+    [
+        (
+            ["fsm_tools", "fsm_tools/turing"],
+            {
+                "fsm_tools": ["model", "usage"],
+                "fsm_tools/turing": ["error", "information"],
+            },
+            ["fr", "en-US", "en-GB", "fr-FR"],
+        ),
+    ],
+)
+def test_build_repository(tmp_module_repository, modules, domains, languages):
+    # Call build_repository
+    build_repository(tmp_module_repository[4].get_repository())
+
+    # Check that template files exist for each module and domain
+    for module in modules:
+        for domain in domains.get(module, []):
+            template_file = (
+                tmp_module_repository[2][1]
+                / module
+                / "locales/templates"
+                / f"{domain}.pot"
+            )
+            assert template_file.exists() == True
+
+            # Check that catalog files exist for each module, domain, and language
+            for language in languages:
+                catalog_file = (
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.po"
+                )
+                assert catalog_file.exists() == True
+
+                machine_file = (
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+                )
+                assert machine_file.exists() == True
+
+                # Check that dictionary files exist for each module, domain, and language
+                dictionary_file = (
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.json"
+                )
+                assert dictionary_file.exists() == True
