@@ -1,11 +1,15 @@
 import os
 import shutil
+import subprocess
 from pathlib import Path
+from unittest import mock
 
 import pytest
 import yaml
+from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config
+from i18n_tools.api import validate_api_url
 
 
 @pytest.fixture(scope="session")
@@ -142,3 +146,301 @@ def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
             "i18n-tools.yaml",
         ),
     ]
+
+
+def get_current_git_branch():
+    """
+    Retrieves the current Git branch name.
+
+    First, it checks for environment variables `GITHUB_REF` (GitHub) or `CI_COMMIT_REF_NAME` (GitLab).
+    If those are not available, it attempts to retrieve the branch name from the local Git repository.
+
+    Returns:
+        str: The name of the current Git branch, or None if it cannot be determined.
+    """
+
+    github_branch = os.getenv("GITHUB_REF")
+    if github_branch and github_branch.startswith("refs/heads/"):
+        return github_branch.replace("refs/heads/", "")
+
+    gitlab_branch = os.getenv("CI_COMMIT_REF_NAME")
+    if gitlab_branch:
+        return gitlab_branch
+
+    try:
+        branch = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
+        ).strip()
+        return branch
+    except Exception:
+        return None
+
+
+@pytest.fixture(scope="session")
+def is_main_branch():
+    """
+    Determines if the current Git branch is a main branch (main or master).
+
+    Returns:
+        bool: True if the current branch is main or master, False otherwise.
+    """
+    return get_current_git_branch() in {"main", "master"}
+
+
+@pytest.fixture(scope="session")
+def use_real_network_resources(is_main_branch):
+    """
+    Determines whether to use real network resources or mocked versions.
+
+    On main/master branches, real network resources are used.
+    On other branches, mocked versions are used to avoid network dependencies.
+
+    Returns:
+        bool: True if real network resources should be used, False if mocks should be used.
+    """
+    return is_main_branch
+
+
+def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
+    """
+    Simulates the validate_api_url function by returning predefined responses for various scenarios.
+
+    The function uses hardcoded responses for specific URLs to mock behaviors like valid responses,
+    errors, or connection timeouts. Simulated error messages should be adapted to the developer's
+    environment (locale) to ensure better clarity during testing.
+
+    Args:
+        url (str): The URL to validate.
+        timeout (int): The timeout threshold (in seconds) to simulate delay-based responses.
+
+    Returns:
+        dict: A simulated response containing the keys:
+              - "url" (str): The input URL.
+              - "is_alive" (bool): Whether the URL is considered reachable.
+              - "status_code" (int or None): The HTTP status code, if applicable.
+              - "error" (str or None): An error message, if applicable.
+    """
+    simulated_responses = {
+        # Valid cases
+        "https://jsonplaceholder.typicode.com/posts": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://httpbin.org/get": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://api.github.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://httpstat.us/204": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 204,
+            "error": None,
+        },
+        "https://httpstat.us/401": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 401,
+            "error": None,
+        },
+        "https://httpstat.us/403": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 403,
+            "error": None,
+        },
+        "https://httpstat.us/405": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 405,
+            "error": None,
+        },
+        "https://httpstat.us/429": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 429,
+            "error": None,
+        },
+        "https://httpstat.us/500": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 500,
+            "error": None,
+        },
+        # URLs used in translator tests
+        "https://dupont.org": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://dupont.com": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Le délai de connexion a expiré.",
+        },
+        "https://joe.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://doe.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        # Simulating delays
+        "https://httpbin.org/delay/10": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Le délai de connexion a expiré." if timeout < 10 else None,
+        },
+        "https://httpbin.org/delay/15": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Le délai de connexion a expiré." if timeout < 15 else None,
+        },
+        "https://httpbin.org/delay/25": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Le délai de connexion a expiré." if timeout < 25 else None,
+        },
+        # Error cases
+        "invalid_url": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "L'URL 'invalid_url' n'est pas valide au format.",
+        },
+        "ftp://example.com": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "No connection adapters were found for 'ftp://example.com'.",
+        },
+        "http://": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "L'URL 'http://' n'est pas valide au format.",
+        },
+        "https://": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "L'URL 'https://' n'est pas valide au format.",
+        },
+        "https://thisurldoesnotexist12345.com": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Impossible de se connecter au serveur.",
+        },
+    }
+
+    # Retourner une réponse simulée si elle existe, sinon une erreur générique
+    print(f"mock_validate_api_url called with URL: {url}")
+    return simulated_responses.get(
+        url,
+        {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": f"Aucune réponse simulée pour l'URL '{url}'.",
+        },
+    )
+
+
+def mock_validate_email(email):
+    """
+    Simulates the validate_email function by validating email addresses and raising EmailNotValidError for invalid ones.
+
+    This function checks if the email address follows a basic pattern and raises EmailNotValidError
+    if it doesn't. It's a simplified version of the real validate_email function for testing purposes.
+
+    Args:
+        email (str): The email address to validate.
+
+    Returns:
+        dict: A dictionary containing the normalized email address.
+
+    Raises:
+        EmailNotValidError: If the email address is invalid.
+    """
+    print(f"mock_validate_email called with email: {email}")
+
+    # Basic email validation
+    if '@' not in email or '.' not in email.split('@')[1]:
+        raise EmailNotValidError(f"The email address '{email}' is not valid.")
+
+    # Return a dictionary with the normalized email address
+    return {"email": email}
+
+
+@pytest.fixture(scope="function", autouse=True)
+def patch_validate_api_url(is_main_branch):
+    """
+    Conditionally patches the validate_api_url function based on the Git branch.
+
+    If the current branch is "main" or "master", the real validate_api_url function is used.
+    Otherwise, the mock_validate_api_url function is used.
+
+    This fixture is automatically applied to all tests (autouse=True).
+
+    Args:
+        is_main_branch: Fixture that determines if the current branch is main or master.
+
+    Yields:
+        None: This fixture doesn't yield a value, it just applies the patch.
+    """
+    if is_main_branch:
+        # On main/master branches, use the real function
+        yield
+    else:
+        # On other branches, use the mock function
+        # Patch both the direct import in api module and the import in config module
+        with mock.patch('i18n_tools.api.validate_api_url', mock_validate_api_url), \
+             mock.patch('i18n_tools.config.validate_api_url', mock_validate_api_url):
+            yield
+
+
+@pytest.fixture(scope="function", autouse=True)
+def patch_validate_email(is_main_branch):
+    """
+    Conditionally patches the validate_email function based on the Git branch.
+
+    If the current branch is "main" or "master", the real validate_email function is used.
+    Otherwise, the mock_validate_email function is used.
+
+    This fixture is automatically applied to all tests (autouse=True).
+
+    Args:
+        is_main_branch: Fixture that determines if the current branch is main or master.
+
+    Yields:
+        None: This fixture doesn't yield a value, it just applies the patch.
+    """
+    if is_main_branch:
+        # On main/master branches, use the real function
+        yield
+    else:
+        # On other branches, use the mock function
+        # Patch both the direct import in email_validator module and the import in config module
+        with mock.patch('email_validator.validate_email', mock_validate_email), \
+             mock.patch('i18n_tools.config.validate_email', mock_validate_email):
+            yield

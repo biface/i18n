@@ -1,40 +1,6 @@
-import os
-import subprocess
-
 import pytest
 
 from i18n_tools.api import validate_api_url
-
-
-def get_current_git_branch():
-    """
-    Retrieves the current Git branch name.
-
-    First, it checks for environment variables `GITHUB_REF` (GitHub) or `CI_COMMIT_REF_NAME` (GitLab).
-    If those are not available, it attempts to retrieve the branch name from the local Git repository.
-
-    Returns:
-        str: The name of the current Git branch, or None if it cannot be determined.
-    """
-
-    github_branch = os.getenv("GITHUB_REF")
-    if github_branch and github_branch.startswith("refs/heads/"):
-        return github_branch.replace("refs/heads/", "")
-
-    gitlab_branch = os.getenv("CI_COMMIT_REF_NAME")
-    if gitlab_branch:
-        return gitlab_branch
-
-    try:
-        branch = subprocess.check_output(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"], text=True
-        ).strip()
-        return branch
-    except Exception:
-        return None
-
-
-IS_MAIN_BRANCH = get_current_git_branch() in {"main", "master"}
 
 
 def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
@@ -176,17 +142,25 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     )
 
 
-def get_validate_api_url():
+@pytest.fixture
+def get_validate_api_url(use_real_network_resources):
     """
     Determines which validate_api_url function to use based on the Git branch.
 
     If the current branch is "main" or "master", it uses the real validate_api_url function.
     Otherwise, it uses the mock_validate_api_url for testing purposes.
 
+    Note: This fixture is now redundant with the `patch_validate_api_url` fixture in conftest.py,
+    which automatically patches the validate_api_url function based on the Git branch.
+    For new tests, consider importing and calling validate_api_url directly instead of using this fixture.
+
+    Args:
+        use_real_network_resources: Fixture that determines if real network resources should be used.
+
     Returns:
         function: The appropriate validate_api_url function to use.
     """
-    if IS_MAIN_BRANCH:
+    if use_real_network_resources:
         return validate_api_url
     return mock_validate_api_url
 
@@ -216,11 +190,13 @@ def get_validate_api_url():
         ),
     ],
 )
-def test_mock_validate_api_url_valid_cases(url, expected):
+def test_validate_api_url_valid_cases(url, expected, get_validate_api_url):
     """
     Tests the validate_api_url function with valid URLs to ensure proper responses.
+
+    Uses either the real or mock function based on the current Git branch.
     """
-    result = get_validate_api_url()(url)
+    result = get_validate_api_url(url)
     assert result["is_alive"] == expected["is_alive"]
     assert result["status_code"] == expected["status_code"]
     assert result["error"] == expected["error"]
@@ -271,11 +247,13 @@ def test_mock_validate_api_url_valid_cases(url, expected):
         ),
     ],
 )
-def test_mock_validate_api_url_invalid_cases(url, expected):
+def test_validate_api_url_invalid_cases(url, expected, get_validate_api_url):
     """
     Tests the validate_api_url function with invalid or erroneous URLs.
+
+    Uses either the real or mock function based on the current Git branch.
     """
-    result = get_validate_api_url()(url)
+    result = get_validate_api_url(url)
     assert result["is_alive"] == expected["is_alive"]
     assert result["status_code"] == expected["status_code"]
     assert result["error"] == expected["error"]
@@ -301,11 +279,50 @@ def test_mock_validate_api_url_invalid_cases(url, expected):
         ),
     ],
 )
-def test_mock_validate_api_url_timeouts(url, timeout, expected):
+def test_validate_api_url_timeouts(url, timeout, expected, get_validate_api_url):
     """
-    Tests the mock_validate_api_url function with URLs simulating timeouts.
+    Tests the validate_api_url function with URLs simulating timeouts.
+
+    Uses either the real or mock function based on the current Git branch.
     """
-    result = get_validate_api_url()(url, timeout=timeout)
+    result = get_validate_api_url(url, timeout=timeout)
+    assert result["is_alive"] == expected["is_alive"]
+    assert result["status_code"] == expected["status_code"]
+    assert result["error"] == expected["error"]
+
+
+@pytest.mark.parametrize(
+    "url,expected",
+    [
+        (
+            "https://jsonplaceholder.typicode.com/posts",
+            {"is_alive": True, "status_code": 200, "error": None},
+        ),
+        (
+            "invalid_url",
+            {
+                "is_alive": False,
+                "status_code": None,
+                "error": "L'URL 'invalid_url' n'est pas valide au format.",
+            },
+        ),
+    ],
+)
+def test_direct_validate_api_url(url, expected):
+    """
+    Tests the validate_api_url function directly, without using the get_validate_api_url fixture.
+
+    This test demonstrates how to use the patched validate_api_url function directly.
+    The patch_validate_api_url fixture in conftest.py automatically patches the function
+    based on the Git branch, so you can import and call it directly.
+
+    On main/master branches, this will use the real function.
+    On other branches, this will use the mock function.
+    """
+    # Import the function directly - it will be patched automatically by the patch_validate_api_url fixture
+    from i18n_tools.api import validate_api_url
+
+    result = validate_api_url(url)
     assert result["is_alive"] == expected["is_alive"]
     assert result["status_code"] == expected["status_code"]
     assert result["error"] == expected["error"]

@@ -1,37 +1,26 @@
-import json
 import os
-import tempfile
-import uuid
 from datetime import datetime, timedelta
-from pathlib import Path
-from pickle import FALSE
-from unittest import expectedFailure
-from unittest.mock import patch
 
 import pytest
-import toml
-import yaml
 from conftest import conf_tests, tmp_module_repository
 from email_validator import EmailNotValidError
 
 from i18n_tools.classes import Singleton
 from i18n_tools.config import Config
-from i18n_tools.loaders import load_config, save_config
-from i18n_tools.loaders.utils import _load_config_file
 
 # Modifying Singleton to verify initials paraméters
 
 
 def test_config_failed_path(tmp_module_repository):
-    True_singleton = Singleton._instances
+    true_singleton = Singleton._instances
     Singleton._instances = {}
     with pytest.raises(FileNotFoundError):
-        config = Config(tmp_module_repository[3][0] + "/" + "config.toml")
-    Singleton._instances = True_singleton
+        Config(tmp_module_repository[3][0] + "/" + "config.toml")
+    Singleton._instances = true_singleton
 
 
 def test_config_init(tmp_module_repository):
-    True_singleton = Singleton._instances
+    true_singleton = Singleton._instances
     Singleton._instances = {}
     config = Config(
         tmp_module_repository[4].get_repository()[["paths", "config"]]
@@ -46,7 +35,7 @@ def test_config_init(tmp_module_repository):
         config.application[["paths", "settings"]]
         == tmp_module_repository[4].get_repository()[["paths", "settings"]]
     )
-    Singleton._instances = True_singleton
+    Singleton._instances = true_singleton
 
 
 def test_config_singleton(tmp_module_repository):
@@ -1178,7 +1167,7 @@ def test_remove_translator(tmp_module_repository, repository, translator, valid)
 
 def test_config_with_malformed_file(conf_tests, tmp_module_repository):
     """
-    Test load configuration with malformed file
+    Test load configuration with a malformed file
     """
     tmp_module_repository[4].switch_to_application_config()
     tmp_module_repository[4].get_repository()[["paths", "settings"]] = conf_tests[
