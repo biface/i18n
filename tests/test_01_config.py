@@ -141,6 +141,28 @@ def test_set_config(
             config.set(path, value)
 
 
+@pytest.mark.parametrize(
+    "path, expected_value, valid, exp_except",
+    [
+        (["application", "details", "name"], "fsm-tools", True, None),
+        (["package", "details", "name"], "another", True, None),
+        (["application", "details", "version"], "0.0.1", True, None),
+        (["applications", "details", "name"], None, False, KeyError),
+        (["application", "detail", "name"], None, False, KeyError),
+        (["non-existent-attribute"], None, False, KeyError),
+    ],
+)
+def test_get_config(
+    conf_tests, tmp_function_repository, path, expected_value, valid, exp_except
+):
+    config = tmp_function_repository[4]
+    if valid:
+        assert config.get(path) == expected_value
+    else:
+        with pytest.raises(exp_except):
+            config.get(path)
+
+
 # Test repository functions
 
 
@@ -1218,3 +1240,228 @@ def test_clean_modules(tmp_module_repository):
     config.clean_modules()
     assert config.get_repository()[["paths", "modules"]] == []
     assert config.get_repository()["domains"] == {}
+
+
+# Test details functions
+
+
+@pytest.mark.parametrize(
+    "repository, details, expected",
+    [
+        (
+            "application",
+            {
+                "name": "Test App",
+                "summary": "Test Summary",
+                "description": "Test Description",
+                "version": "1.0.0",
+                "content_type": "text/plain",
+                "copyright_holder": "Test Copyright Holder"
+            },
+            {
+                "name": "Test App",
+                "summary": "Test Summary",
+                "description": "Test Description",
+                "version": "1.0.0",
+                "content_type": "text/plain",
+                "copyright_holder": "Test Copyright Holder"
+            }
+        ),
+        (
+            "package",
+            {
+                "name": "Test Package",
+                "summary": None,
+                "description": "Test Package Description",
+                "version": None,
+                "content_type": None,
+                "copyright_holder": None
+            },
+            {
+                "name": "Test Package",
+                "description": "Test Package Description"
+            }
+        ),
+        (
+            "application",
+            {
+                "name": None,
+                "summary": "Only Summary",
+                "description": None,
+                "version": None,
+                "content_type": None,
+                "copyright_holder": None
+            },
+            {
+                "summary": "Only Summary"
+            }
+        ),
+        (
+            "package",
+            {
+                "name": None,
+                "summary": None,
+                "description": None,
+                "version": "2.0.0",
+                "content_type": "application/json",
+                "copyright_holder": "New Copyright Holder"
+            },
+            {
+                "version": "2.0.0",
+                "content_type": "application/json",
+                "copyright_holder": "New Copyright Holder"
+            }
+        )
+    ],
+)
+def test_add_details(tmp_module_repository, repository, details, expected):
+    """
+    Test adding details to the configuration.
+
+    This test verifies that the add_details function correctly updates the details
+    of the repository configuration with the provided values.
+    """
+    config = tmp_module_repository[4]
+
+    # Switch to the appropriate repository
+    if repository == "application":
+        config.switch_to_application_config()
+    elif repository == "package":
+        config.switch_to_package_config()
+
+    # Save original values to restore later
+    original_values = {}
+    for key in details.keys():
+        if key in config.get_repository()["details"]:
+            original_values[key] = config.get_repository()["details"][key]
+
+    try:
+        # Call add_details with the provided parameters
+        config.add_details(
+            name=details.get("name"),
+            summary=details.get("summary"),
+            description=details.get("description"),
+            version=details.get("version"),
+            content_type=details.get("content_type"),
+            copyright_holder=details.get("copyright_holder")
+        )
+
+        # Verify that the values were correctly updated
+        for key, value in expected.items():
+            assert config.get_repository()["details"][key] == value
+
+    finally:
+        # Restore original values
+        for key, value in original_values.items():
+            config.get_repository()["details"][key] = value
+
+
+@pytest.mark.parametrize(
+    "repository, key, value, valid, exception, error_message",
+    [
+        (
+            "application",
+            "name",
+            "Updated App Name",
+            True,
+            None,
+            None
+        ),
+        (
+            "package",
+            "description",
+            "Updated Package Description",
+            True,
+            None,
+            None
+        ),
+        (
+            "application",
+            "version",
+            "2.0.0",
+            True,
+            None,
+            None
+        ),
+        (
+            "package",
+            "content_type",
+            "application/json",
+            True,
+            None,
+            None
+        ),
+        (
+            "application",
+            "copyright_holder",
+            "New Copyright Holder",
+            True,
+            None,
+            None
+        ),
+        (
+            "package",
+            "non_existent_key",
+            "Some Value",
+            False,
+            KeyError,
+            "The key non_existent_key is not in the details of the repository."
+        ),
+        (
+            "application",
+            "name",
+            123,
+            False,
+            TypeError,
+            "The type of the value for name is not the same as the existing value."
+        ),
+        (
+            "package",
+            "version",
+            ["1.0.0"],
+            False,
+            TypeError,
+            "The type of the value for version is not the same as the existing value."
+        )
+    ],
+)
+def test_update_details(tmp_module_repository, repository, key, value, valid, exception, error_message):
+    """
+    Test updating details in the configuration.
+
+    This test verifies that the update_details function correctly updates a specific
+    detail in the repository configuration, and that it properly handles error cases.
+    """
+    config = tmp_module_repository[4]
+
+    # Switch to the appropriate repository
+    if repository == "application":
+        config.switch_to_application_config()
+    elif repository == "package":
+        config.switch_to_package_config()
+
+    # Save original value to restore later
+    original_value = None
+    if key in config.get_repository()["details"]:
+        original_value = config.get_repository()["details"][key]
+
+    try:
+        if valid:
+            # Call update_details with the provided parameters
+            config.update_details(key, value)
+
+            # Verify that the value was correctly updated
+            assert config.get_repository()["details"][key] == value
+        else:
+            # Verify that the appropriate exception is raised
+            with pytest.raises(exception) as excinfo:
+                config.update_details(key, value)
+
+            # Verify the error message if provided
+            if error_message:
+                assert error_message in str(excinfo.value)
+
+    finally:
+        # Restore original value if it existed
+        if original_value is not None and key in config.get_repository()["details"]:
+            config.get_repository()["details"][key] = original_value
