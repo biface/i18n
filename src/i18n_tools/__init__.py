@@ -17,3 +17,5 @@ __ALL__ = [
     file_exists,
     create_directory,
 ]
+
+__version__ = "0.1.0"

@@ -120,6 +120,17 @@ class Config(metaclass=Singleton):
                         "name": "",  # Configuration name
                         "summary": "",
                         "description": "",  # Configuration description
+                        "version": "",
+                        "content_type": "text/plain",
+                        "copyright_holder": "",
+                        "creation_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "language": "",
+                        "language_team": "",
+                        "flags": {
+                            "fuzzy": True,
+                            "python-format": True,
+                        },
+                        "report-bugs-to": ""
                     },
                     "paths": {
                         "root": "",
@@ -440,6 +451,56 @@ class Config(metaclass=Singleton):
                 current_repository[["paths", "modules"]] = modules
             else:
                 current_repository[["paths", "modules"]] = [main_module] + modules
+
+    def add_details(
+        self,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        version: Optional[str] = None,
+        content_type: Optional[str] = None,
+        copyright_holder: Optional[str] = None,
+    ) -> None:
+        """
+        This function adds the details of the application to the configuration.
+        :param name:
+        :param summary:
+        :param description:
+        :param version:
+        :param content_type:
+        :param copyright_holder:
+        :return:
+        """
+        current_repository = self.__getattribute__(self._current_config)
+        if name is not None:
+            current_repository[["details", "name"]] = name
+        if summary is not None:
+            current_repository[["details", "summary"]] = summary
+        if description is not None:
+            current_repository[["details", "description"]] = description
+        if version is not None:
+            current_repository[["details", "version"]] = version
+        if content_type is not None:
+            current_repository[["details", "content_type"]] = content_type
+        if copyright_holder is not None:
+            current_repository[["details", "copyright_holder"]] = copyright_holder
+
+
+    def update_details(self, d_key: str, d_value: Any) -> None:
+        """
+        update the details of the repository to the configuration..
+        :param d_key:
+        :param d_value:
+        :return:
+        """
+        current_repository = self.__getattribute__(self._current_config)
+        if d_key in current_repository["details"].keys():
+            if type(d_value) == type(current_repository["details"][d_key]):
+                current_repository["details"][d_key] = d_value
+            else:
+                raise TypeError(f"The type of the value for {d_key} is not the same as the existing value.")
+        else:
+            raise KeyError(f"The key {d_key} is not in the details of the repository.")
 
     def add_author(
         self, first_name: str, last_name: str, email: str, url: str, languages: list
