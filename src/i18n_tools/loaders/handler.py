@@ -40,23 +40,24 @@ def check_json_integrity(data: Dict[str, Any]) -> bool:
     :return: True if the data is valid, False otherwise.
     :rtype: bool
     """
+
     for key, value in data.items():
-        if not isinstance(value, list):
-            return False
+        if key != ".i18n_tools":
+            if not isinstance(value, list):
+                return False
 
-        # Check that each item in the list is a list
-        if not all(isinstance(item, list) for item in value):
-            return False
+            # Check that each item in the list is a list
+            if not all(isinstance(item, list) for item in value):
+                return False
 
-        # Check that there is at least one non-empty list
-        if not any(len(item) > 0 for item in value):
-            return False
+            # Check that there is at least one non-empty list
+            if not any(len(item) > 0 for item in value):
+                return False
 
-        # Check that all lists have the same length
-        lengths = [len(item) for item in value]
-        if len(set(lengths)) != 1:
-            return False
-
+            # Check that all lists have the same length
+            lengths = [len(item) for item in value]
+            if len(set(lengths)) != 1:
+                return False
     return True
 
 
@@ -273,7 +274,7 @@ def create_dictionary(
         dictionary_path = path + f"/{domain}.json"
         if not _exist_path(dictionary_path):
             _save_json(
-                dictionary_path, {".i18n_tools": repository["details"].to_dict()}
+                dictionary_path, {}
             )
         else:
             raise FileExistsError(
@@ -422,6 +423,8 @@ def update_catalog(
     :param data: An adapted translation dictionary.
     :type data: Dict[str, Dict[str, str]]
     """
+
+    #TODO: Must update template file as well
 
     try:
         _check_domains(repository, module, [domain])

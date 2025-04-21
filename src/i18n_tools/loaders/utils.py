@@ -30,6 +30,10 @@ def _exist_path(path: Union[Path, str]) -> bool:
     path = __check_path(path)
     return path.exists()
 
+def _is_absolute_path(path: Union[Path, str]) -> bool:
+    path = __check_path(path)
+    return path.is_absolute()
+
 
 def _create_empty_file(file_path: Union[Path, str]) -> None:
     """
