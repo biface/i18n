@@ -19,6 +19,7 @@ from i18n_tools.loaders.utils import (
     _create_gzip,
     _create_tar_gz,
     _exist_path,
+    _is_absolute_path,
     _load_config_file,
     _load_json,
     _load_machine,
@@ -98,6 +99,20 @@ def mo_test_file(tmp_function_repository):
 def test_exist_paths(tmp_function_repository, conf_tests, path, expected):
     temp_file = tmp_function_repository[2][0] + "/" + path
     assert _exist_path(temp_file) == expected
+
+@pytest.mark.parametrize("path, expected", [
+    ("fsm_tools/locales/_i18n_tools/backup/test.txt", True),
+    ("../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml", True),
+    ("../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml", False),
+    ("fsm_tools/locales/_i18n_tools/backup/test.txt", False),
+])
+def test_is_absolute_path(tmp_function_repository, conf_tests, path, expected):
+    if expected:
+        temp_file = tmp_function_repository[2][0] + "/" + path
+    else:
+        temp_file = path
+
+    assert _is_absolute_path(temp_file) == expected
 
 
 def test_create_empty_file(tmp_function_repository):
