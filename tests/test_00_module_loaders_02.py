@@ -19,13 +19,12 @@ from i18n_tools.loaders.handler import (
     fetch_catalog,
     fetch_dictionary,
     fetch_template,
-    load_config,
     remove_catalog,
     remove_dictionary,
     remove_template,
-    save_config,
     update_catalog,
     update_dictionary,
+    dump_dictionary,
 )
 from i18n_tools.loaders.repository import (
     _translation_lang_files,
@@ -813,7 +812,11 @@ def test_update_json_translation(existing_translation, translation_data, expecte
                  ],
                  "10102": [
                      ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
-                 ]
+                 ],
+                 "10103": [["Dois être supprimé"]],
+                 "10104": [[""]],
+                 "10106": [[""]],
+                 "10109": [[""]],
              },
              "en": {
                  "10101": [
@@ -822,7 +825,12 @@ def test_update_json_translation(existing_translation, translation_data, expecte
                  ],
                  "10102": [
                      ["The automaton could not write the symbol '{symbol}' because it is already present."]
-                 ]}
+                 ],
+                 "10103": [["Must be erased"]],
+                 "10104": [[""]],
+                 "10106": [[""]],
+                 "10109": [[""]],
+             }
          },
          True,
          [
@@ -855,8 +863,220 @@ def test_update_json_translation(existing_translation, translation_data, expecte
          ],
          None,
          None),
+        ("fsm_tools",
+         "usage",
+         {
+             "fr-BE": {
+                 "10101": [[
+                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."]
+                 ],
+                 "10102": [
+                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
+                 ],
+                 "10104": [[""]],
+                 "10106": [[""]],
+                 "10109": [[""]],
+             }
+
+         },
+         False,
+         [],
+         ValueError,
+         None),
+        ("fsm_tools",
+         "usages",
+         {},
+         False,
+         [],
+         IndexError,
+         "")
     ]
 )
 def tests_add_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
                               exception, msg_error):
-    add_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+    if valid:
+        add_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        for paths, data in expected_result:
+            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            assert dictionary[paths[1]] == data
+    else:
+        with pytest.raises(exception):
+            add_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+
+
+@pytest.mark.parametrize(
+    "module, domain, translation_data, valid, expected_result, exception, msg_error",
+    [
+        ("fsm_tools",
+         "usage",
+         {
+             "fr": {
+                 "10104": [
+                     ["Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ],
+                 "10106": [
+                     ["Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ],
+                 "10109": [
+                     ["Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ]
+             },
+             "en": {
+                 "10104": [
+                     ["Delete an element from the set of terminals of a recursively enumerable grammar"]
+                 ],
+                 "10106": [
+                     ["Modify an element of the set of terminals of a recursively enumerable grammar"]
+                 ],
+                 "10109": [
+                     ["Search for a symbol in the set of terminals of a recursively enumerable grammar"]
+                 ]}
+         },
+         True,
+         [
+             [
+                 ["fr", "10101"],
+                 [[
+                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."
+                 ]]
+             ],
+             [
+                 ["fr", "10102"],
+                 [
+                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
+                 ]
+             ],
+             [
+                 ["fr", "10103"],
+                 [
+                     ["Dois être supprimé"]
+                 ]
+             ],
+             [
+                 ["fr", "10104"],
+                 [
+                     ["Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ]
+             ],
+             [
+                 ["fr", "10106"],
+                 [
+                     ["Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ]
+             ],
+             [
+                 ["fr", "10109"],
+                 [
+                     ["Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"]
+                 ]
+             ],
+             [
+                 ["en", "10101"],
+                 [
+                     ["The automaton could not read the symbol because the alphabet is empty.",
+                      "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet."]
+                 ]
+             ],
+             [
+                 ["en", "10102"],
+                 [
+                     ["The automaton could not write the symbol '{symbol}' because it is already present."]
+                 ]
+             ],
+             [
+                 ["en", "10103"],
+                 [
+                     ["Must be erased"]
+                 ]
+             ],
+
+         ],
+         None,
+         None),
+        ("fsm_tools",
+         "usages",
+         {},
+         False,
+         [],
+         IndexError,
+         ""),
+        ("fsm_tools",
+         "usage",
+         {"en": {
+             "10199": [
+                 ["Delete the entire set of terminals of a recursively enumerable grammar"]
+             ]
+         }
+         },
+         False,
+         [],
+         KeyError,
+         "")
+    ]
+)
+def tests_update_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
+                                 exception, msg_error):
+    if valid:
+        update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        for paths, data in expected_result:
+            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            assert dictionary[paths[1]] == data
+    else:
+        with pytest.raises(exception):
+            update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+
+
+@pytest.mark.parametrize(
+    "module, domain, translation_data, valid, expected_result, exception, msg_error",
+    [
+        ("fsm_tools",
+         "usage",
+         {
+             "fr": {
+                 "10103": [
+                     ["Dois être supprimé"]
+                 ],
+             },
+             "en": {
+                 "10103": [
+                     ["Must be erased"]
+                 ],
+             }
+         },
+         True,
+         [
+             [
+                 ["fr", "10103"],
+                 [["Dois être supprimé"]]
+             ],
+             [
+                 ["en", "10103"],
+                 [
+                     ["Must be erased"]
+                 ]
+             ],
+
+         ],
+         None,
+         None),
+        ("fsm_tools",
+         "usages",
+         {},
+         False,
+         [],
+         IndexError,
+         ""),
+    ]
+)
+def tests_remove_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
+                                 exception, msg_error):
+    if valid:
+        remove_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        for paths, data in expected_result:
+            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            assert paths[1] not in dictionary.keys()
+    else:
+        with pytest.raises(exception):
+            update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
