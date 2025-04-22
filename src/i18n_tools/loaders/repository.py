@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import tarfile
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 from ndict_tools import NestedDictionary
 
@@ -20,10 +20,22 @@ from .handler import (
     create_dictionary,
     create_directory,
     create_template,
+    dump_catalog,
+    dump_dictionary,
     fetch_dictionary,
-    file_exists, update_dictionary, update_catalog, dump_dictionary, dump_catalog
+    file_exists,
+    update_catalog,
+    update_dictionary,
 )
-from .utils import _exist_path, _is_absolute_path, _non_traversal_path, _check_module, _check_domains, _save_json, _create_gzip
+from .utils import (
+    _check_domains,
+    _check_module,
+    _create_gzip,
+    _exist_path,
+    _is_absolute_path,
+    _non_traversal_path,
+    _save_json,
+)
 
 
 def _translation_lang_files(
@@ -44,10 +56,15 @@ def _translation_lang_files(
     """
     repository_path = repository[["paths", "repository"]]
     normalized_lang = normalize_language_tag(lang)
-    lang_path = build_path(repository_path, module, I18N_TOOLS_LOCALE, normalized_lang, I18N_TOOLS_MESSAGES)
+    lang_path = build_path(
+        repository_path, module, I18N_TOOLS_LOCALE, normalized_lang, I18N_TOOLS_MESSAGES
+    )
     json_file_path = lang_path + f"/{domain}.json"
     po_file_path = lang_path + f"/{domain}.po"
-    pot_file = build_path(repository_path, module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE) + f"/{domain}.pot"
+    pot_file = (
+        build_path(repository_path, module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE)
+        + f"/{domain}.pot"
+    )
 
     return json_file_path, po_file_path, pot_file
 
@@ -107,7 +124,7 @@ def _verify_target_module(repository: NestedDictionary, target_module: str) -> N
     :rtype: None
     :raises ValueError: If any module is not registered in the repository.
     """
-    if target_module not in repository[["paths","modules"]]:
+    if target_module not in repository[["paths", "modules"]]:
         raise ValueError(
             f"The target module {target_module} is not registered in the repository"
         )
@@ -141,6 +158,7 @@ def _verify_target_domain(
             f"The target module '{target_module}' is not registered in the repository"
         )
 
+
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
     """
     Update translations in JSON with new data.
@@ -155,6 +173,7 @@ def _update_json_translations(existing_translations: Dict, translation_data: Dic
     for msgid, msgstr_list in translation_data.items():
         existing_translations[msgid] = msgstr_list
     return existing_translations
+
 
 def create_module_archive(
     repository: NestedDictionary, module: str, archive_name: str
@@ -348,12 +367,16 @@ def verify_repository(repository: NestedDictionary) -> bool:
                 return False
 
             # Check module directory structure
-            module_directory = build_path(repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE)
+            module_directory = build_path(
+                repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
+            )
             if not _exist_path(module_directory):
                 return False
 
             # Check template directory
-            module_template_directory = build_path(module_directory, I18N_TOOLS_TEMPLATE)
+            module_template_directory = build_path(
+                module_directory, I18N_TOOLS_TEMPLATE
+            )
             if not _exist_path(module_template_directory):
                 return False
 
@@ -367,7 +390,9 @@ def verify_repository(repository: NestedDictionary) -> bool:
                 # Check each language
                 for language in languages:
                     # Check language directory
-                    language_directory = build_path(module_directory, language, I18N_TOOLS_MESSAGES)
+                    language_directory = build_path(
+                        module_directory, language, I18N_TOOLS_MESSAGES
+                    )
                     if not _exist_path(language_directory):
                         return False
 
@@ -388,7 +413,10 @@ def verify_repository(repository: NestedDictionary) -> bool:
         print(f"Error verifying repository: {str(e)}")
         return False
 
-def aggregate_dictionaries(repository: NestedDictionary, module: str, domain: str) -> None:
+
+def aggregate_dictionaries(
+    repository: NestedDictionary, module: str, domain: str
+) -> None:
     """
     This function aggregates all dictionaries for a given module and domain into a single JSON file.
     :param repository:
@@ -402,16 +430,17 @@ def aggregate_dictionaries(repository: NestedDictionary, module: str, domain: st
 
     for language in languages:
         try:
-            domain_dictionary[language] = fetch_dictionary(repository, module, language, domain)
+            domain_dictionary[language] = fetch_dictionary(
+                repository, module, language, domain
+            )
         except Exception as e:
             raise e
 
-    module_directory = build_path(repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE)
+    module_directory = build_path(
+        repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
+    )
     _save_json(module_directory + f"/{domain}.json", domain_dictionary)
     _create_gzip(module_directory + f"/{domain}.json")
-
-
-
 
 
 def add_translation_set(
@@ -446,8 +475,14 @@ def add_translation_set(
         )
 
         # Load existing translations
-        existing_translations = fetch_dictionary(repository, module, lang, domain) if file_exists(json_file_path) else {}
-        existing_translations = _update_json_translations(existing_translations, translation_data)
+        existing_translations = (
+            fetch_dictionary(repository, module, lang, domain)
+            if file_exists(json_file_path)
+            else {}
+        )
+        existing_translations = _update_json_translations(
+            existing_translations, translation_data
+        )
         update_dictionary(repository, module, lang, domain, existing_translations)
 
         # Load existing PO file
@@ -487,7 +522,11 @@ def update_translation_set(
         )
 
         # Load existing translations
-        existing_translations = fetch_dictionary(repository, module, lang, domain) if file_exists(json_file_path) else {}
+        existing_translations = (
+            fetch_dictionary(repository, module, lang, domain)
+            if file_exists(json_file_path)
+            else {}
+        )
 
         # Update existing translations
         for msgid, new_translations in translation_data.items():
@@ -534,7 +573,11 @@ def remove_translation_set(
         )
 
         # Load existing translations
-        existing_translations = fetch_dictionary(repository, module, lang, domain) if file_exists(json_file_path) else {}
+        existing_translations = (
+            fetch_dictionary(repository, module, lang, domain)
+            if file_exists(json_file_path)
+            else {}
+        )
 
         # Remove specified translations
         for msgid, options in msgids.items():

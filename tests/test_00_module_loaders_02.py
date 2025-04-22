@@ -16,6 +16,7 @@ from i18n_tools.loaders.handler import (
     create_dictionary,
     create_directory,
     create_template,
+    dump_dictionary,
     fetch_catalog,
     fetch_dictionary,
     fetch_template,
@@ -24,23 +25,22 @@ from i18n_tools.loaders.handler import (
     remove_template,
     update_catalog,
     update_dictionary,
-    dump_dictionary,
 )
 from i18n_tools.loaders.repository import (
     _translation_lang_files,
-    _verify_paths_and_modules,
+    _update_json_translations,
     _verify_available_languages,
+    _verify_paths_and_modules,
     _verify_target_domain,
     _verify_target_module,
-    _update_json_translations,
+    add_translation_set,
+    aggregate_dictionaries,
     build_repository,
     create_module_archive,
-    restore_module_from_archive,
-    verify_repository,
-    aggregate_dictionaries,
-    add_translation_set,
-    update_translation_set,
     remove_translation_set,
+    restore_module_from_archive,
+    update_translation_set,
+    verify_repository,
 )
 
 
@@ -67,34 +67,34 @@ def build_test_repository(tmp_repository):
     "module, sub_dirs, expected, verified",
     [
         (
-                "package",
-                ["i18n_tools", "locales", "_i18n_tools"],
-                "i18n_tools/locales/_i18n_tools",
-                True,
+            "package",
+            ["i18n_tools", "locales", "_i18n_tools"],
+            "i18n_tools/locales/_i18n_tools",
+            True,
         ),
         (
-                "application",
-                ["fsm_tools", "undiscovered", "..", "locales", "templates"],
-                "fsm_tools/locales/templates",
-                True,
+            "application",
+            ["fsm_tools", "undiscovered", "..", "locales", "templates"],
+            "fsm_tools/locales/templates",
+            True,
         ),
         ("application", ["locales", "..", "templates"], "locales/templates", False),
     ],
 )
 def test_build_path(
-        tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
+    tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
 ):
     base_path = (
-            tmp_function_repository[0][0]
-            + "/"
-            + conf_tests["repository"][module]["repository"]
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
     )
     expected_path = (
-            tmp_function_repository[0][0]
-            + "/"
-            + conf_tests["repository"][module]["repository"]
-            + "/"
-            + expected
+        tmp_function_repository[0][0]
+        + "/"
+        + conf_tests["repository"][module]["repository"]
+        + "/"
+        + expected
     )
     if verified:
         path = build_path(base_path, *sub_dirs)
@@ -142,7 +142,7 @@ def test_create_template(tmp_module_repository, module, domain, valid, exception
     if valid:
         create_template(tmp_module_repository[4].get_repository(), module, domain)
         template_file = (
-                tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
         )
         assert template_file.exists() == True
     else:
@@ -169,15 +169,15 @@ def test_create_catalog(tmp_module_repository, module, language, domain, valid):
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.po"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.po"
         )
         assert catalog_file.exists() == True
         machine_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.mo"
         )
         assert machine_file.exists() == True
     else:
@@ -206,9 +206,9 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.json"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.json"
         )
         assert catalog_file.exists() == True
     else:
@@ -282,7 +282,7 @@ def test_fetch_catalog(tmp_module_repository, module, language, domain, content,
     ],
 )
 def test_fetch_dictionary(
-        tmp_module_repository, module, domain, language, content, valid
+    tmp_module_repository, module, domain, language, content, valid
 ):
     if valid:
         dictionary = fetch_dictionary(
@@ -300,47 +300,47 @@ def test_fetch_dictionary(
     "module, language, domain, data, valid",
     [
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": {
-                        "string": "La machine de turing",
-                        "plural": "Les machines de turing",
-                        "location": "",
-                        "previous_id": "",
-                    },
-                    "1000_001": {
-                        "string": "Automate linéairement borné",
-                        "location": "",
-                        "previous_id": "1000",
-                    },
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
                 },
-                True,
+                "1000_001": {
+                    "string": "Automate linéairement borné",
+                    "location": "",
+                    "previous_id": "1000",
+                },
+            },
+            True,
         ),
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": {
-                        "string": "La machine de turing",
-                        "plural": "Les machines de turing",
-                        "location": "",
-                        "previous_id": "",
-                    },
-                    "1000_001": [
-                        "Automate linéairement borné",
-                        "",
-                        "1000",
-                    ],
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": {
+                    "string": "La machine de turing",
+                    "plural": "Les machines de turing",
+                    "location": "",
+                    "previous_id": "",
                 },
-                False,
+                "1000_001": [
+                    "Automate linéairement borné",
+                    "",
+                    "1000",
+                ],
+            },
+            False,
         ),
     ],
 )
 def test_update_catalog(
-        conf_tests, tmp_module_repository, module, language, domain, data, valid
+    conf_tests, tmp_module_repository, module, language, domain, data, valid
 ):
     if valid:
         update_catalog(
@@ -368,35 +368,35 @@ def test_update_catalog(
     "module, language, domain, data, valid",
     [
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": [
-                        ["La machine de turing", "Automate linéairement borné"],
-                        ["Les machines de turing", "Les automates linéairement bornés"],
-                    ],
-                    "2000": [["Automate"], ["Automates"], ["Automatons"]],
-                },
-                True,
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate"], ["Automates"], ["Automatons"]],
+            },
+            True,
         ),
         (
-                "fsm_tools",
-                "fr-FR",
-                "usage",
-                {
-                    "1000": [
-                        ["La machine de turing", "Automate linéairement borné"],
-                        ["Les machines de turing", "Les automates linéairement bornés"],
-                    ],
-                    "2000": [["Automate", "Automates"], ["Automatons"]],
-                },
-                False,
+            "fsm_tools",
+            "fr-FR",
+            "usage",
+            {
+                "1000": [
+                    ["La machine de turing", "Automate linéairement borné"],
+                    ["Les machines de turing", "Les automates linéairement bornés"],
+                ],
+                "2000": [["Automate", "Automates"], ["Automatons"]],
+            },
+            False,
         ),
     ],
 )
 def test_update_dictionary(
-        tmp_module_repository, module, language, domain, data, valid
+    tmp_module_repository, module, language, domain, data, valid
 ):
     if valid:
         update_dictionary(
@@ -430,12 +430,12 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
             tmp_module_repository[4].get_repository(), module, archive
         )
         archive_file = (
-                tmp_module_repository[4].get_repository()[["paths", "repository"]]
-                + "/"
-                + module
-                + "/locales/_i18n_tools/backup/"
-                + archive
-                + ".tar.gz"
+            tmp_module_repository[4].get_repository()[["paths", "repository"]]
+            + "/"
+            + module
+            + "/locales/_i18n_tools/backup/"
+            + archive
+            + ".tar.gz"
         )
         assert os.path.exists(archive_file)
     else:
@@ -454,7 +454,7 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
 def test_remove_template(tmp_module_repository, module, domain):
     remove_template(tmp_module_repository[4].get_repository(), module, domain)
     template_file = (
-            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+        tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
     )
     assert not template_file.exists()
 
@@ -467,7 +467,7 @@ def test_remove_template(tmp_module_repository, module, domain):
 )
 def test_remove_catalog(tmp_module_repository, module, language, domain):
     catalog_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
     )
     remove_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not catalog_file.exists()
@@ -481,7 +481,7 @@ def test_remove_catalog(tmp_module_repository, module, language, domain):
 )
 def test_remove_dictionary(tmp_module_repository, module, language, domain):
     dictionary_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
     )
     remove_dictionary(
         tmp_module_repository[4].get_repository(), module, language, domain
@@ -494,7 +494,7 @@ def test_remove_dictionary(tmp_module_repository, module, language, domain):
     [
         ("fsm_tools", "fsm-tools", True),
         ("django", "django", False),
-        ("fsm_tools", "no-archive", False)
+        ("fsm_tools", "no-archive", False),
     ],
 )
 def test_restore_module_from_archive(tmp_module_repository, module, archive, valid):
@@ -540,12 +540,12 @@ def test_remove_with_failed_paths(tmp_module_repository):
     "modules, domains, languages",
     [
         (
-                ["fsm_tools", "fsm_tools/turing"],
-                {
-                    "fsm_tools": ["model", "usage"],
-                    "fsm_tools/turing": ["error", "information"],
-                },
-                ["fr", "en-US", "en-GB", "fr-FR"],
+            ["fsm_tools", "fsm_tools/turing"],
+            {
+                "fsm_tools": ["model", "usage"],
+                "fsm_tools/turing": ["error", "information"],
+            },
+            ["fr", "en-US", "en-GB", "fr-FR"],
         ),
     ],
 )
@@ -557,34 +557,34 @@ def test_build_repository(tmp_module_repository, modules, domains, languages):
     for module in modules:
         for domain in domains.get(module, []):
             template_file = (
-                    tmp_module_repository[2][1]
-                    / module
-                    / "locales/templates"
-                    / f"{domain}.pot"
+                tmp_module_repository[2][1]
+                / module
+                / "locales/templates"
+                / f"{domain}.pot"
             )
             assert template_file.exists() == True
 
             # Check that catalog files exist for each module, domain, and language
             for language in languages:
                 catalog_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.po"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.po"
                 )
                 assert catalog_file.exists() == True
 
                 machine_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.mo"
                 )
                 assert machine_file.exists() == True
 
                 # Check that dictionary files exist for each module, domain, and language
                 dictionary_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.json"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.json"
                 )
                 assert dictionary_file.exists() == True
 
@@ -599,9 +599,11 @@ def test_verify_repository(tmp_module_repository):
         ("fsm_tools", "usage", True, None),
         ("fsm_tools/turing", "information", True, None),
         ("fsm-tools/turing", "information", False, ValueError),
-    ]
+    ],
 )
-def test_aggregate_dictionaries(tmp_module_repository, module, domain, valid, exception):
+def test_aggregate_dictionaries(
+    tmp_module_repository, module, domain, valid, exception
+):
     config = tmp_module_repository[4]
     if valid:
         aggregate_dictionaries(config.get_repository(), module, domain)
@@ -621,18 +623,45 @@ def test_aggregate_dictionaries(tmp_module_repository, module, domain, valid, ex
         ("fsm_tools", "usage", "fr", True, None),
         ("fsm_tools/turing", "information", "en-US", True, None),
         ("fsm_tools/turing", "information", "en-IE", False, OSError),
-        ("fsm_tools/turing", "information", "ja.Latn/hepburn@heploc", False, ValueError),
-
-    ]
+        (
+            "fsm_tools/turing",
+            "information",
+            "ja.Latn/hepburn@heploc",
+            False,
+            ValueError,
+        ),
+    ],
 )
-def test_translation_lang_file(tmp_module_repository, module, domain, lang, valid, exception):
+def test_translation_lang_file(
+    tmp_module_repository, module, domain, lang, valid, exception
+):
     repository = tmp_module_repository[4].get_repository()
     if valid:
-        file_json, file_po, file_pot = _translation_lang_files(repository, module, domain, lang)
-        assert file_json == repository["paths"][
-            "repository"] + "/" + module + "/locales/" + lang + "/LC_MESSAGES/" + domain + ".json"
-        assert file_po == repository["paths"][
-            "repository"] + "/" + module + "/locales/" + lang + "/LC_MESSAGES/" + domain + ".po"
+        file_json, file_po, file_pot = _translation_lang_files(
+            repository, module, domain, lang
+        )
+        assert (
+            file_json
+            == repository["paths"]["repository"]
+            + "/"
+            + module
+            + "/locales/"
+            + lang
+            + "/LC_MESSAGES/"
+            + domain
+            + ".json"
+        )
+        assert (
+            file_po
+            == repository["paths"]["repository"]
+            + "/"
+            + module
+            + "/locales/"
+            + lang
+            + "/LC_MESSAGES/"
+            + domain
+            + ".po"
+        )
     else:
         with pytest.raises(exception):
             _translation_lang_files(repository, module, domain, lang)
@@ -644,9 +673,11 @@ def test_translation_lang_file(tmp_module_repository, module, domain, lang, vali
         ("application", "", True, None),
         ("package", "", False, FileNotFoundError),
         ("application", "fsm_tools/turing", False, ValueError),
-    ]
+    ],
 )
-def test_verify_path_and_modules(tmp_module_repository, repository, modified_path, valid, exception):
+def test_verify_path_and_modules(
+    tmp_module_repository, repository, modified_path, valid, exception
+):
     config = tmp_module_repository[4]
     if repository == "application":
         config.switch_to_application_config()
@@ -654,7 +685,9 @@ def test_verify_path_and_modules(tmp_module_repository, repository, modified_pat
     elif repository == "package":
         config.switch_to_package_config()
         config.get_repository()["paths"]["repository"] = tmp_module_repository[1][0]
-        config.get_repository()["paths"]["config"] = tmp_module_repository[1][0] + "/i18n_tools/locales/_i18n_tools"
+        config.get_repository()["paths"]["config"] = (
+            tmp_module_repository[1][0] + "/i18n_tools/locales/_i18n_tools"
+        )
         config.get_repository()["paths"]["settings"] = "i18n-tools.yaml"
         config.load()
 
@@ -677,16 +710,24 @@ def test_verify_path_and_modules(tmp_module_repository, repository, modified_pat
     [
         (["fr", "en-US", "en-GB"], True, None),
         (["en", "en-US", "en-GB", "fr-FR"], True, None),
-        (["fr", "en-US", "en-GB", "fr-FR", "ja.Latn/hepburn@heploc"], False, ValueError),
+        (
+            ["fr", "en-US", "en-GB", "fr-FR", "ja.Latn/hepburn@heploc"],
+            False,
+            ValueError,
+        ),
         (["sv", "en-US", "en-GB", "fr-FR"], False, ValueError),
-    ]
+    ],
 )
 def test_verify_available_language(tmp_module_repository, languages, valid, exception):
     if valid:
-        _verify_available_languages(tmp_module_repository[4].get_repository(), languages)
+        _verify_available_languages(
+            tmp_module_repository[4].get_repository(), languages
+        )
     else:
         with pytest.raises(exception):
-            _verify_available_languages(tmp_module_repository[4].get_repository(), languages)
+            _verify_available_languages(
+                tmp_module_repository[4].get_repository(), languages
+            )
 
 
 @pytest.mark.parametrize(
@@ -695,7 +736,7 @@ def test_verify_available_language(tmp_module_repository, languages, valid, exce
         ("fsm_tools", True, None),
         ("fsm_tools/turing", True, None),
         ("fsm-tools/turing", False, ValueError),
-    ]
+    ],
 )
 def test_verify_target_module(tmp_module_repository, module, valid, exception):
     if valid:
@@ -709,374 +750,456 @@ def test_verify_target_module(tmp_module_repository, module, valid, exception):
     "module, domain, valid, exception, msg_error",
     [
         ("fsm_tools", "usage", True, None, None),
-        ("fsm_tools/turing", "model", False, IndexError,
-         "The target domain 'model' is not registered in the repository"),
-        ("fsm-tools/turing", "information", False, ValueError,
-         "The target module 'fsm-tools/turing' is not registered in the repository"),
-    ]
+        (
+            "fsm_tools/turing",
+            "model",
+            False,
+            IndexError,
+            "The target domain 'model' is not registered in the repository",
+        ),
+        (
+            "fsm-tools/turing",
+            "information",
+            False,
+            ValueError,
+            "The target module 'fsm-tools/turing' is not registered in the repository",
+        ),
+    ],
 )
-def test_verify_target_domain(tmp_module_repository, module, domain, valid, exception, msg_error):
+def test_verify_target_domain(
+    tmp_module_repository, module, domain, valid, exception, msg_error
+):
     if valid:
         _verify_target_domain(tmp_module_repository[4].get_repository(), module, domain)
     else:
         with pytest.raises(exception, match=msg_error):
-            _verify_target_domain(tmp_module_repository[4].get_repository(), module, domain)
+            _verify_target_domain(
+                tmp_module_repository[4].get_repository(), module, domain
+            )
 
 
 @pytest.mark.parametrize(
     "existing_translation, translation_data, expected_result",
-    [({},
-      {"1000": [
-          ["Dictionary"],
-          ["Dictionaries"]
-      ]},
-      {"1000": [
-          ["Dictionary"],
-          ["Dictionaries"]
-      ]}
-      ),
-     ({"1000": [
-         ["Dictionary"],
-         ["Dictionaries"]
-     ]},
-      {"1001": [
-          ["Mouse"],
-          ["Mice"]
-      ]},
-      {
-          "1000": [
-              ["Dictionary"],
-              ["Dictionaries"]
-          ],
-          "1001": [
-              ["Mouse"],
-              ["Mice"]
-          ]}
-     ),
-     ({},
-      {"1000": [
-          ["Un dictionnaire", "Le dictionnaire"],
-          ["Deux dictionnaires", "Les deux dictionnaires"],
-          ["Des dictionnaires", "Les dictionnaires"]
-      ]},
-      {"1000": [
-          ["Un dictionnaire", "Le dictionnaire"],
-          ["Deux dictionnaires", "Les deux dictionnaires"],
-          ["Des dictionnaires", "Les dictionnaires"]
-      ]}
-      ),
-     ({"1000": [
-         ["Un dictionnaire", "Le dictionnaire"],
-         ["Deux dictionnaires", "Les deux dictionnaires"],
-         ["Des dictionnaires", "Les dictionnaires"]
-     ]},
-      {"1000": [
-          ["Un dictionnaire", "Le dictionnaire"],
-          ["Deux dictionnaires", "Les deux dictionnaires"],
-          ["Trois dictionnaires", "Les trois dictionnaires"],
-          ["Des dictionnaires", "Les dictionnaires"]
-      ],
-          "1010": [
-              ["Un bateau", "Le bateau"],
-              ["Deux bateaux", "Les deux bateaux"],
-              ["Des bateaux", "Les bateaux"]
-          ]},
-      {"1000": [
-          ["Un dictionnaire", "Le dictionnaire"],
-          ["Deux dictionnaires", "Les deux dictionnaires"],
-          ["Trois dictionnaires", "Les trois dictionnaires"],
-          ["Des dictionnaires", "Les dictionnaires"]
-      ],
-          "1010": [
-              ["Un bateau", "Le bateau"],
-              ["Deux bateaux", "Les deux bateaux"],
-              ["Des bateaux", "Les bateaux"]
-          ]}
-     )
-     ]
+    [
+        (
+            {},
+            {"1000": [["Dictionary"], ["Dictionaries"]]},
+            {"1000": [["Dictionary"], ["Dictionaries"]]},
+        ),
+        (
+            {"1000": [["Dictionary"], ["Dictionaries"]]},
+            {"1001": [["Mouse"], ["Mice"]]},
+            {"1000": [["Dictionary"], ["Dictionaries"]], "1001": [["Mouse"], ["Mice"]]},
+        ),
+        (
+            {},
+            {
+                "1000": [
+                    ["Un dictionnaire", "Le dictionnaire"],
+                    ["Deux dictionnaires", "Les deux dictionnaires"],
+                    ["Des dictionnaires", "Les dictionnaires"],
+                ]
+            },
+            {
+                "1000": [
+                    ["Un dictionnaire", "Le dictionnaire"],
+                    ["Deux dictionnaires", "Les deux dictionnaires"],
+                    ["Des dictionnaires", "Les dictionnaires"],
+                ]
+            },
+        ),
+        (
+            {
+                "1000": [
+                    ["Un dictionnaire", "Le dictionnaire"],
+                    ["Deux dictionnaires", "Les deux dictionnaires"],
+                    ["Des dictionnaires", "Les dictionnaires"],
+                ]
+            },
+            {
+                "1000": [
+                    ["Un dictionnaire", "Le dictionnaire"],
+                    ["Deux dictionnaires", "Les deux dictionnaires"],
+                    ["Trois dictionnaires", "Les trois dictionnaires"],
+                    ["Des dictionnaires", "Les dictionnaires"],
+                ],
+                "1010": [
+                    ["Un bateau", "Le bateau"],
+                    ["Deux bateaux", "Les deux bateaux"],
+                    ["Des bateaux", "Les bateaux"],
+                ],
+            },
+            {
+                "1000": [
+                    ["Un dictionnaire", "Le dictionnaire"],
+                    ["Deux dictionnaires", "Les deux dictionnaires"],
+                    ["Trois dictionnaires", "Les trois dictionnaires"],
+                    ["Des dictionnaires", "Les dictionnaires"],
+                ],
+                "1010": [
+                    ["Un bateau", "Le bateau"],
+                    ["Deux bateaux", "Les deux bateaux"],
+                    ["Des bateaux", "Les bateaux"],
+                ],
+            },
+        ),
+    ],
 )
-def test_update_json_translation(existing_translation, translation_data, expected_result):
-    assert _update_json_translations(existing_translation, translation_data) == expected_result
+def test_update_json_translation(
+    existing_translation, translation_data, expected_result
+):
+    assert (
+        _update_json_translations(existing_translation, translation_data)
+        == expected_result
+    )
 
 
 @pytest.mark.parametrize(
     "module, domain, translation_data, valid, expected_result, exception, msg_error",
     [
-        ("fsm_tools",
-         "usage",
-         {
-             "fr": {
-                 "10101": [[
-                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
-                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."]
-                 ],
-                 "10102": [
-                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
-                 ],
-                 "10103": [["Dois être supprimé"]],
-                 "10104": [[""]],
-                 "10106": [[""]],
-                 "10109": [[""]],
-             },
-             "en": {
-                 "10101": [
-                     ["The automaton could not read the symbol because the alphabet is empty.",
-                      "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet."]
-                 ],
-                 "10102": [
-                     ["The automaton could not write the symbol '{symbol}' because it is already present."]
-                 ],
-                 "10103": [["Must be erased"]],
-                 "10104": [[""]],
-                 "10106": [[""]],
-                 "10109": [[""]],
-             }
-         },
-         True,
-         [
-             [
-                 ["fr", "10101"],
-                 [[
-                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
-                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."
-                 ]]
-             ],
-             [
-                 ["fr", "10102"],
-                 [
-                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
-                 ]
-             ],
-             [
-                 ["en", "10101"],
-                 [
-                     ["The automaton could not read the symbol because the alphabet is empty.",
-                      "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet."]
-                 ]
-             ],
-             [
-                 ["en", "10102"],
-                 [
-                     ["The automaton could not write the symbol '{symbol}' because it is already present."]
-                 ]
-             ]
-         ],
-         None,
-         None),
-        ("fsm_tools",
-         "usage",
-         {
-             "fr-BE": {
-                 "10101": [[
-                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
-                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."]
-                 ],
-                 "10102": [
-                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
-                 ],
-                 "10104": [[""]],
-                 "10106": [[""]],
-                 "10109": [[""]],
-             }
-
-         },
-         False,
-         [],
-         ValueError,
-         None),
-        ("fsm_tools",
-         "usages",
-         {},
-         False,
-         [],
-         IndexError,
-         "")
-    ]
+        (
+            "fsm_tools",
+            "usage",
+            {
+                "fr": {
+                    "10101": [
+                        [
+                            "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                            "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet.",
+                        ]
+                    ],
+                    "10102": [
+                        [
+                            "L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."
+                        ]
+                    ],
+                    "10103": [["Dois être supprimé"]],
+                    "10104": [[""]],
+                    "10106": [[""]],
+                    "10109": [[""]],
+                },
+                "en": {
+                    "10101": [
+                        [
+                            "The automaton could not read the symbol because the alphabet is empty.",
+                            "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet.",
+                        ]
+                    ],
+                    "10102": [
+                        [
+                            "The automaton could not write the symbol '{symbol}' because it is already present."
+                        ]
+                    ],
+                    "10103": [["Must be erased"]],
+                    "10104": [[""]],
+                    "10106": [[""]],
+                    "10109": [[""]],
+                },
+            },
+            True,
+            [
+                [
+                    ["fr", "10101"],
+                    [
+                        [
+                            "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                            "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet.",
+                        ]
+                    ],
+                ],
+                [
+                    ["fr", "10102"],
+                    [
+                        [
+                            "L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."
+                        ]
+                    ],
+                ],
+                [
+                    ["en", "10101"],
+                    [
+                        [
+                            "The automaton could not read the symbol because the alphabet is empty.",
+                            "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet.",
+                        ]
+                    ],
+                ],
+                [
+                    ["en", "10102"],
+                    [
+                        [
+                            "The automaton could not write the symbol '{symbol}' because it is already present."
+                        ]
+                    ],
+                ],
+            ],
+            None,
+            None,
+        ),
+        (
+            "fsm_tools",
+            "usage",
+            {
+                "fr-BE": {
+                    "10101": [
+                        [
+                            "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                            "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet.",
+                        ]
+                    ],
+                    "10102": [
+                        [
+                            "L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."
+                        ]
+                    ],
+                    "10104": [[""]],
+                    "10106": [[""]],
+                    "10109": [[""]],
+                }
+            },
+            False,
+            [],
+            ValueError,
+            None,
+        ),
+        ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+    ],
 )
-def tests_add_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
-                              exception, msg_error):
+def tests_add_translation_set(
+    tmp_module_repository,
+    module,
+    domain,
+    translation_data,
+    valid,
+    expected_result,
+    exception,
+    msg_error,
+):
     if valid:
-        add_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        add_translation_set(
+            tmp_module_repository[4].get_repository(), module, domain, translation_data
+        )
         for paths, data in expected_result:
-            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            dictionary = fetch_dictionary(
+                tmp_module_repository[4].get_repository(), module, paths[0], domain
+            )
             assert dictionary[paths[1]] == data
     else:
         with pytest.raises(exception):
-            add_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+            add_translation_set(
+                tmp_module_repository[4].get_repository(),
+                module,
+                domain,
+                translation_data,
+            )
 
 
 @pytest.mark.parametrize(
     "module, domain, translation_data, valid, expected_result, exception, msg_error",
     [
-        ("fsm_tools",
-         "usage",
-         {
-             "fr": {
-                 "10104": [
-                     ["Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ],
-                 "10106": [
-                     ["Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ],
-                 "10109": [
-                     ["Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ]
-             },
-             "en": {
-                 "10104": [
-                     ["Delete an element from the set of terminals of a recursively enumerable grammar"]
-                 ],
-                 "10106": [
-                     ["Modify an element of the set of terminals of a recursively enumerable grammar"]
-                 ],
-                 "10109": [
-                     ["Search for a symbol in the set of terminals of a recursively enumerable grammar"]
-                 ]}
-         },
-         True,
-         [
-             [
-                 ["fr", "10101"],
-                 [[
-                     "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
-                     "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet."
-                 ]]
-             ],
-             [
-                 ["fr", "10102"],
-                 [
-                     ["L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."]
-                 ]
-             ],
-             [
-                 ["fr", "10103"],
-                 [
-                     ["Dois être supprimé"]
-                 ]
-             ],
-             [
-                 ["fr", "10104"],
-                 [
-                     ["Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ]
-             ],
-             [
-                 ["fr", "10106"],
-                 [
-                     ["Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ]
-             ],
-             [
-                 ["fr", "10109"],
-                 [
-                     ["Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"]
-                 ]
-             ],
-             [
-                 ["en", "10101"],
-                 [
-                     ["The automaton could not read the symbol because the alphabet is empty.",
-                      "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet."]
-                 ]
-             ],
-             [
-                 ["en", "10102"],
-                 [
-                     ["The automaton could not write the symbol '{symbol}' because it is already present."]
-                 ]
-             ],
-             [
-                 ["en", "10103"],
-                 [
-                     ["Must be erased"]
-                 ]
-             ],
-
-         ],
-         None,
-         None),
-        ("fsm_tools",
-         "usages",
-         {},
-         False,
-         [],
-         IndexError,
-         ""),
-        ("fsm_tools",
-         "usage",
-         {"en": {
-             "10199": [
-                 ["Delete the entire set of terminals of a recursively enumerable grammar"]
-             ]
-         }
-         },
-         False,
-         [],
-         KeyError,
-         "")
-    ]
+        (
+            "fsm_tools",
+            "usage",
+            {
+                "fr": {
+                    "10104": [
+                        [
+                            "Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                    "10106": [
+                        [
+                            "Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                    "10109": [
+                        [
+                            "Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                },
+                "en": {
+                    "10104": [
+                        [
+                            "Delete an element from the set of terminals of a recursively enumerable grammar"
+                        ]
+                    ],
+                    "10106": [
+                        [
+                            "Modify an element of the set of terminals of a recursively enumerable grammar"
+                        ]
+                    ],
+                    "10109": [
+                        [
+                            "Search for a symbol in the set of terminals of a recursively enumerable grammar"
+                        ]
+                    ],
+                },
+            },
+            True,
+            [
+                [
+                    ["fr", "10101"],
+                    [
+                        [
+                            "L'automate n'a pas pu lire le symbole car l'alphabet est vide.",
+                            "L'automate n'a pas pu lire le symbole '{symbol}' car celui-ci est absent de l'alphabet.",
+                        ]
+                    ],
+                ],
+                [
+                    ["fr", "10102"],
+                    [
+                        [
+                            "L'automate n'a pas pu écrire le symbole '{symbol}' car il y est déjà présent."
+                        ]
+                    ],
+                ],
+                [["fr", "10103"], [["Dois être supprimé"]]],
+                [
+                    ["fr", "10104"],
+                    [
+                        [
+                            "Supprimer un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                ],
+                [
+                    ["fr", "10106"],
+                    [
+                        [
+                            "Modifier un élément de l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                ],
+                [
+                    ["fr", "10109"],
+                    [
+                        [
+                            "Rechercher un symbole dans l’ensemble des terminaux d’une grammaire récursivement énumérable"
+                        ]
+                    ],
+                ],
+                [
+                    ["en", "10101"],
+                    [
+                        [
+                            "The automaton could not read the symbol because the alphabet is empty.",
+                            "The automaton could not read the symbol '{symbol}' because it is missing from the alphabet.",
+                        ]
+                    ],
+                ],
+                [
+                    ["en", "10102"],
+                    [
+                        [
+                            "The automaton could not write the symbol '{symbol}' because it is already present."
+                        ]
+                    ],
+                ],
+                [["en", "10103"], [["Must be erased"]]],
+            ],
+            None,
+            None,
+        ),
+        ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+        (
+            "fsm_tools",
+            "usage",
+            {
+                "en": {
+                    "10199": [
+                        [
+                            "Delete the entire set of terminals of a recursively enumerable grammar"
+                        ]
+                    ]
+                }
+            },
+            False,
+            [],
+            KeyError,
+            "",
+        ),
+    ],
 )
-def tests_update_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
-                                 exception, msg_error):
+def tests_update_translation_set(
+    tmp_module_repository,
+    module,
+    domain,
+    translation_data,
+    valid,
+    expected_result,
+    exception,
+    msg_error,
+):
     if valid:
-        update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        update_translation_set(
+            tmp_module_repository[4].get_repository(), module, domain, translation_data
+        )
         for paths, data in expected_result:
-            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            dictionary = fetch_dictionary(
+                tmp_module_repository[4].get_repository(), module, paths[0], domain
+            )
             assert dictionary[paths[1]] == data
     else:
         with pytest.raises(exception):
-            update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+            update_translation_set(
+                tmp_module_repository[4].get_repository(),
+                module,
+                domain,
+                translation_data,
+            )
 
 
 @pytest.mark.parametrize(
     "module, domain, translation_data, valid, expected_result, exception, msg_error",
     [
-        ("fsm_tools",
-         "usage",
-         {
-             "fr": {
-                 "10103": [
-                     ["Dois être supprimé"]
-                 ],
-             },
-             "en": {
-                 "10103": [
-                     ["Must be erased"]
-                 ],
-             }
-         },
-         True,
-         [
-             [
-                 ["fr", "10103"],
-                 [["Dois être supprimé"]]
-             ],
-             [
-                 ["en", "10103"],
-                 [
-                     ["Must be erased"]
-                 ]
-             ],
-
-         ],
-         None,
-         None),
-        ("fsm_tools",
-         "usages",
-         {},
-         False,
-         [],
-         IndexError,
-         ""),
-    ]
+        (
+            "fsm_tools",
+            "usage",
+            {
+                "fr": {
+                    "10103": [["Dois être supprimé"]],
+                },
+                "en": {
+                    "10103": [["Must be erased"]],
+                },
+            },
+            True,
+            [
+                [["fr", "10103"], [["Dois être supprimé"]]],
+                [["en", "10103"], [["Must be erased"]]],
+            ],
+            None,
+            None,
+        ),
+        ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+    ],
 )
-def tests_remove_translation_set(tmp_module_repository, module, domain, translation_data, valid, expected_result,
-                                 exception, msg_error):
+def tests_remove_translation_set(
+    tmp_module_repository,
+    module,
+    domain,
+    translation_data,
+    valid,
+    expected_result,
+    exception,
+    msg_error,
+):
     if valid:
-        remove_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+        remove_translation_set(
+            tmp_module_repository[4].get_repository(), module, domain, translation_data
+        )
         for paths, data in expected_result:
-            dictionary = fetch_dictionary(tmp_module_repository[4].get_repository(), module, paths[0], domain)
+            dictionary = fetch_dictionary(
+                tmp_module_repository[4].get_repository(), module, paths[0], domain
+            )
             assert paths[1] not in dictionary.keys()
     else:
         with pytest.raises(exception):
-            update_translation_set(tmp_module_repository[4].get_repository(), module, domain, translation_data)
+            update_translation_set(
+                tmp_module_repository[4].get_repository(),
+                module,
+                domain,
+                translation_data,
+            )

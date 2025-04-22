@@ -100,12 +100,22 @@ def test_exist_paths(tmp_function_repository, conf_tests, path, expected):
     temp_file = tmp_function_repository[2][0] + "/" + path
     assert _exist_path(temp_file) == expected
 
-@pytest.mark.parametrize("path, expected", [
-    ("fsm_tools/locales/_i18n_tools/backup/test.txt", True),
-    ("../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml", True),
-    ("../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml", False),
-    ("fsm_tools/locales/_i18n_tools/backup/test.txt", False),
-])
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("fsm_tools/locales/_i18n_tools/backup/test.txt", True),
+        (
+            "../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml",
+            True,
+        ),
+        (
+            "../package-configuration/i18n-tools/locales/_i18n_tools/i18n-tools.yaml",
+            False,
+        ),
+        ("fsm_tools/locales/_i18n_tools/backup/test.txt", False),
+    ],
+)
 def test_is_absolute_path(tmp_function_repository, conf_tests, path, expected):
     if expected:
         temp_file = tmp_function_repository[2][0] + "/" + path
