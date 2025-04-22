@@ -21,7 +21,7 @@ from .handler import (
     create_directory,
     create_template,
     fetch_dictionary,
-    file_exists, update_dictionary, update_catalog,
+    file_exists, update_dictionary, update_catalog, dump_dictionary, dump_catalog
 )
 from .utils import _exist_path, _is_absolute_path, _non_traversal_path, _check_module, _check_domains, _save_json, _create_gzip
 
@@ -487,7 +487,7 @@ def update_translation_set(
         )
 
         # Load existing translations
-        existing_translations = fetch_dictionary(json_file_path) if file_exists(json_file_path) else {}
+        existing_translations = fetch_dictionary(repository, module, lang, domain) if file_exists(json_file_path) else {}
 
         # Update existing translations
         for msgid, new_translations in translation_data.items():
@@ -534,12 +534,14 @@ def remove_translation_set(
         )
 
         # Load existing translations
-        existing_translations = fetch_dictionary(json_file_path) if file_exists(json_file_path) else {}
+        existing_translations = fetch_dictionary(repository, module, lang, domain) if file_exists(json_file_path) else {}
 
         # Remove specified translations
         for msgid, options in msgids.items():
             if msgid in existing_translations:
+                print(f"Removing translation for msgid '{msgid}' in language '{lang}'")
                 del existing_translations[msgid]
 
-        update_dictionary(repository, module, lang, domain, existing_translations)
+        print(f"Existing translations: {existing_translations}")
+        dump_dictionary(repository, module, lang, domain, existing_translations)
         # update_catalog(repository, module, lang, domain, existing_translations)

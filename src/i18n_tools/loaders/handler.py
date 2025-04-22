@@ -169,7 +169,7 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
         catalog.mime_headers = [
             (
                 "Project-Id-Version",
-                f"{repository[['details','name']]} {repository[['details','version']]}",
+                f"{repository[['details', 'name']]} {repository[['details', 'version']]}",
             ),
             ("Report-Msgid-Bugs-To", repository[["details", "report-bugs-to"]]),
             ("POT-Creation-Date", repository[["details", "creation_date"]]),
@@ -180,7 +180,7 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
             ("MIME-Version", "1.0"),
             (
                 "Content-Type",
-                f"{repository[['details','content_type']]}; charset=utf-8",
+                f"{repository[['details', 'content_type']]}; charset=utf-8",
             ),
             ("Content-Transfer-Encoding", "8bit"),
             (
@@ -202,7 +202,7 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
 
 
 def create_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Creates an empty translation catalog for a given language and domain in the specified module.
@@ -245,7 +245,7 @@ def create_catalog(
 
 
 def create_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -322,7 +322,7 @@ def fetch_template(repository: NestedDictionary, module: str, domain: str) -> Ca
 
 
 def fetch_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> Catalog:
     """
     Fetches the translation catalog for a given language and domain.
@@ -360,7 +360,7 @@ def fetch_catalog(
 
 
 def fetch_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> Dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
@@ -400,11 +400,11 @@ def fetch_dictionary(
 
 
 def update_catalog(
-    repository: NestedDictionary,
-    module: str,
-    language: str,
-    domain: str,
-    data: Dict[any, Dict[str, str]],
+        repository: NestedDictionary,
+        module: str,
+        language: str,
+        domain: str,
+        data: Dict[any, Dict[str, str]],
 ) -> None:
     """
     Updates the translation catalog for a given language and domain.
@@ -424,7 +424,7 @@ def update_catalog(
     :type data: Dict[str, Dict[str, str]]
     """
 
-    #TODO: Must update template file as well
+    # TODO: Must update template file as well
 
     try:
         _check_domains(repository, module, [domain])
@@ -446,7 +446,7 @@ def update_catalog(
                 # If the key is a tuple/list (pluralizable) and the string is not,
                 # convert the string to a tuple with appropriate number of elements
                 if isinstance(key, (tuple, list)) and not isinstance(
-                    string_value, (tuple, list)
+                        string_value, (tuple, list)
                 ):
                     # For pluralizable messages, string should be a tuple/list
                     # with the same number of elements as the key
@@ -477,11 +477,11 @@ def update_catalog(
 
 
 def update_dictionary(
-    repository: NestedDictionary,
-    module: str,
-    language: str,
-    domain: str,
-    data: Dict[str, Any],
+        repository: NestedDictionary,
+        module: str,
+        language: str,
+        domain: str,
+        data: Dict[str, Any],
 ) -> None:
     """
     Updates the translation dictionary for a given language and domain.
@@ -526,6 +526,78 @@ def update_dictionary(
         raise e
 
 
+def dump_catalog(
+        repository: NestedDictionary,
+        module: str,
+        language: str,
+        domain: str,
+        data: Dict[any, Dict[str, str]],
+) -> None:
+    """
+    Dump the translation catalog for a given language and domain.
+
+    This function saves the provided translation catalog to the specified .po file
+    and updates the corresponding .mo file.
+
+    :param repository: The data structure representing the translation repository.
+    :type repository: NestedDictionary
+    :param module: The module path.
+    :type module: str
+    :param language: The language code.
+    :type language: str
+    :param domain: The domain name.
+    :type domain: str
+    :param data: An adapted translation dictionary.
+    :type data: Dict[str, Dict[str, str]]
+    """
+    pass
+
+def dump_dictionary(
+        repository: NestedDictionary,
+        module: str,
+        language: str,
+        domain: str,
+        data: Dict[str, Any],
+) -> None:
+    """
+    Dump the translation dictionary for a given language and domain.
+
+    This function saves the provided translation dictionary to the specified .json file.
+
+    :param repository: The data structure representing the translation repository.
+    :type repository: NestedDictionary
+    :param module: The module path.
+    :type module: str
+    :param language: The language code.
+    :type language: str
+    :param domain: The domain name.
+    :type domain: str
+    :param data: The new translation dictionary.
+    :type data: Dict[str, Any]
+    """
+
+    try:
+        _check_domains(repository, module, [domain])
+        path = build_path(
+            repository[["paths", "repository"]],
+            module,
+            I18N_TOOLS_LOCALE,
+            language,
+            I18N_TOOLS_MESSAGES,
+        )
+        dictionary_path = path + f"/{domain}.json"
+
+        if not check_json_integrity(data):
+            raise ValueError(
+                f"The dictionary {data} is not compatible with i18n-tools translations"
+            )
+
+        _save_json(dictionary_path, data)
+
+    except Exception as e:
+        raise e
+
+
 # Delete operations
 
 
@@ -559,7 +631,7 @@ def remove_template(repository: NestedDictionary, module: str, domain: str) -> N
 
 
 def remove_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Removes a translation catalog and its corresponding machine file for a given language and domain in the specified module.
@@ -594,7 +666,7 @@ def remove_catalog(
 
 
 def remove_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+        repository: NestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
