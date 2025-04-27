@@ -1,6 +1,6 @@
 """
-File and repository handling module
-===================================
+Module description and specifications
+=====================================
 
 The `loaders` module provides essential file handling operations for the
 i18n-tools package. It is designed to manage the loading, saving, and
@@ -100,10 +100,37 @@ from .handler import (
 )
 from .repository import (
     add_translation_set,
+    aggregate_dictionaries,
+    build_repository,
     create_module_archive,
     remove_translation_set,
     restore_module_from_archive,
     update_translation_set,
+    verify_repository,
 )
 
-__ALL__ = [build_path, file_exists, create_directory, load_config, save_config]
+__ALL__ = [
+    build_path,
+    create_catalog,
+    create_dictionary,
+    create_directory,
+    create_template,
+    dump_catalog,
+    dump_dictionary,
+    fetch_catalog,
+    fetch_dictionary,
+    fetch_template,
+    file_exists,
+    load_config,
+    save_config,
+    update_catalog,
+    update_dictionary,
+    add_translation_set,
+    update_translation_set,
+    remove_translation_set,
+    create_module_archive,
+    restore_module_from_archive,
+    build_repository,
+    verify_repository,
+    aggregate_dictionaries,
+]
