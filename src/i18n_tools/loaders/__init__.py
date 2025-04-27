@@ -1,6 +1,6 @@
 """
-loaders
-=======
+File and repository handling module
+===================================
 
 The `loaders` module provides essential file handling operations for the
 i18n-tools package. It is designed to manage the loading, saving, and
@@ -77,22 +77,33 @@ The `templates` directory within the repository contains these translation files
     - `<domain>.pot`
 
 This structure ensures that translations are organized by language and domain, making it easier to manage and update translations for different parts of the application.
-
-**License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
-
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
 """
 
 from __future__ import annotations
 
-from .handler import build_path, create_directory, file_exists, load_config, save_config
+from .handler import (
+    build_path,
+    create_catalog,
+    create_dictionary,
+    create_directory,
+    create_template,
+    dump_catalog,
+    dump_dictionary,
+    fetch_catalog,
+    fetch_dictionary,
+    fetch_template,
+    file_exists,
+    load_config,
+    save_config,
+    update_catalog,
+    update_dictionary,
+)
 from .repository import (
+    add_translation_set,
     create_module_archive,
+    remove_translation_set,
     restore_module_from_archive,
+    update_translation_set,
 )
 
-__all__ = [build_path, file_exists, create_directory, load_config, save_config]
+__ALL__ = [build_path, file_exists, create_directory, load_config, save_config]

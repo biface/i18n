@@ -1,3 +1,9 @@
+"""
+File handling functions for i18n-tools.
+=======================================
+
+"""
+
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -705,7 +711,7 @@ def load_config(config_path: str = None) -> dict:
     Load the configuration file (YAML, TOML, or JSON) from the application directories
     (not from the package i18n-tools) and return its contents as a dictionary.
 
-    :param config_path: Optional path to the configuration file. If None, it searches
+    :param config_path: Optional path to the configuration file. If None, it searches \
     for it in the root of the application.
     :raises FileNotFoundError: If no configuration file is found in the application directories.
     :raises ValueError: If the file format is unsupported.

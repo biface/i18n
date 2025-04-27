@@ -1,3 +1,12 @@
+"""
+Network and API Module
+======================
+
+This file is dedicated to the implementation of the Application Program Interfaces (APIs)
+used in the i18n-tools project.
+
+"""
+
 import requests
 import validators
 

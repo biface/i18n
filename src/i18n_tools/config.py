@@ -1,6 +1,6 @@
 """
-config.py
-=========
+Translation Configuration Module
+================================
 
 This module defines the `Config` class, a singleton that centralizes and manages
 the global configuration for the i18n-tools package.
@@ -10,14 +10,6 @@ the global configuration for the i18n-tools package.
 - Manage paths for translations, applications, and package-specific locales.
 - Configure language settings, translation domains, and translator API details.
 - Facilitate author and module metadata management.
-
-**License:**
-This file is distributed under the terms of the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using, modifying, or
-redistributing this file, you agree to comply with the terms of this license.
-
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
 """
 
 from __future__ import annotations
@@ -166,46 +158,6 @@ class Config(metaclass=Singleton):
         else:
             self.application = _setup_configuration()
 
-        """
-        self.setup = NestedDictionary(indent=2, strict=True)
-        self.setup.update(
-            {
-                "paths": {
-                    "config": config_file if config_file else None,
-                    "package": {
-                        "locale": build_path(I18N_TOOLS_ROOT, "locales"),
-                        "base": I18N_TOOLS_ROOT_NAME,
-                        "modules": [I18N_TOOLS_MODULE_NAME],
-                    },  # Use the loader's build_path function
-                    "application": {"base": "", "locale": "", "modules": []},
-                },
-                "domains": {
-                    # Originally, domains were simply managed by a list of lists, but this format is not very compatible
-                    # with toml. It was therefore changed to a dictionary format, with modules as keys and domains
-                    # contained in lists. This applies to the i18n_tools package and to application modules.
-                    "package": {},
-                    "application": {},
-                },
-                "languages": {
-                    "source": "",
-                    "hierarchy": {},  # Language hierarchy for fallbacks
-                    "fallback": "",  # Default fallback language
-                },
-                "translators": {},  # Translators API keys or endpoints
-            }
-        )
-
-        self.details = NestedDictionary(
-            {
-                "name": "",  # Configuration name
-                "description": "",  # Configuration description
-            },
-            indent=2,
-            strict=True,
-        )
-
-        self.authors = NestedDictionary({}, indent=2, strict=True)  # Author details
-        """
         self._email_index = NestedDictionary({}, indent=2, strict=True)
         self._current_config = "application"
 

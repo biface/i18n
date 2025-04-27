@@ -1,3 +1,9 @@
+"""
+Repository loader for i18n tools.
+=================================
+
+"""
+
 from __future__ import annotations
 
 import tarfile

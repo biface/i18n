@@ -1,3 +1,12 @@
+"""
+Files management module
+=======================
+
+This module contains private utility functions to manage files. These functions are not meant to be used directly.
+They are intended to be used by other functions in this module.
+
+"""
+
 import gzip
 import json
 import os
@@ -39,6 +48,7 @@ def _is_absolute_path(path: Union[Path, str]) -> bool:
 def _create_empty_file(file_path: Union[Path, str]) -> None:
     """
     Create an empty file.
+
     :param file_path: a path to a file.
     :type file_path: str
     :return: Nothing
@@ -58,6 +68,7 @@ def _create_empty_file(file_path: Union[Path, str]) -> None:
 def _create_directory(file_path: Union[Path, str]) -> None:
     """
     Create a directory.
+
     :param file_path:
     :type file_path: str
     :return: nothing
@@ -78,6 +89,7 @@ def _create_directory(file_path: Union[Path, str]) -> None:
 def _create_empty_json(file_path: Union[Path, str]) -> None:
     """
     Create an empty JSON file without managing data structure and integrity and returns its content.
+
     :param file_path: JSON file path.
     :type file_path: str
     :return: Nothing
@@ -97,6 +109,7 @@ def _create_empty_json(file_path: Union[Path, str]) -> None:
 def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
+
     :param file_path: Path to the JSON file.
     :type file_path: str
     :return: JSON Translation data content.
@@ -116,6 +129,7 @@ def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
 def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     """
     Save a JSON file without managing data structure and integrity and returns its content.
+
     :param file_path: Path to the JSON file.
     :type file_path: str
     :param data: JSON Translation data content.
