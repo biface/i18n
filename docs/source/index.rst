@@ -1,17 +1,12 @@
 Overview
 ========
 
-Explanation
------------
-
-qsdjqsgd
-
-Install
--------
-
-sfsfhsd
+This package is dedicated to manage translation file using a specfific model of translation and transformation fucntions
+to be compatible with i18n and i18next format.
 
 .. toctree::
+    install
+    org
     api
     :numbered: 3
     :maxdepth: 2

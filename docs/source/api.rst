@@ -9,6 +9,7 @@ modifying, or redistributing this package, you agree to comply with the terms of
 **Author(s)** : These modules, classes and functions are authored and maintained as part of the ``i18n-tools`` package.
 
 .. toctree::
-    api/global
+    api/constant
+    api/internal
     api/loader
     api/config
