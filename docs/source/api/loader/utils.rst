@@ -1,0 +1,24 @@
+.. automodule:: i18n_tools.loaders.utils
+    :private-members: __check_path, __check_config_extension
+
+    .. autofunction:: _create_empty_file
+    .. autofunction:: _create_directory
+    .. autofunction:: _create_empty_json
+    .. autofunction:: _load_json
+    .. autofunction:: _save_json
+    .. autofunction:: _load_yaml
+    .. autofunction:: _save_yaml
+    .. autofunction:: _load_toml
+    .. autofunction:: _save_toml
+    .. autofunction:: _load_text
+    .. autofunction:: _save_text
+    .. autofunction:: _load_machine
+    .. autofunction:: _save_machine
+    .. autofunction:: _convert_catalog
+    .. autofunction:: _build_path
+    .. autofunction:: _create_tar_gz
+    .. autofunction:: _create_gzip
+    .. autofunction:: _non_traversal_path
+    .. autofunction:: _remove_file
+    .. autofunction:: _check_module
+    .. autofunction:: _check_domains
