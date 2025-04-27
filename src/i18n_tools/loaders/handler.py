@@ -2,6 +2,9 @@
 File handling functions for i18n-tools.
 =======================================
 
+This module contains functions for handling file operations related to i18n-tools. It uses low-level functions defined
+in the `utils` module. To simplify path and file handling, this public module uses only string as path and file
+name and exchanges Path objects only internally with the `utils` module.
 """
 
 from pathlib import Path

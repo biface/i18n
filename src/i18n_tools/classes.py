@@ -16,7 +16,10 @@ from threading import Lock
 
 class Singleton(type):
     """
-    Metaclass for menu singleton class
+    Metaclass for singleton class
+
+    This metaclass ensures that only one instance of a class is created. It used in i18n-tools to ensure that only one
+    instance of the `Config` class is created.
     """
 
     _instances = {}

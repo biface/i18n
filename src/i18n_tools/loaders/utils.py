@@ -1,10 +1,11 @@
 """
-Files management module
-=======================
+File management module
+======================
 
-This module contains private utility functions to manage files. These functions are not meant to be used directly.
-They are intended to be used by other functions in this module.
+This module contains private utility functions to manage files. These functions are not meant to be used directly, but
+they are intended to be used by other functions in this loader module.
 
+These functions are mainly called by the `handler` and `repository` modules.
 """
 
 import gzip
