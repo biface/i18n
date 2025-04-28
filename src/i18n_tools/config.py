@@ -1,16 +1,53 @@
 """
-Translation Configuration Module
-================================
+Configuration Module
+=====================
 
-This module defines the `Config` class, a singleton that centralizes and manages
-the global configuration for the i18n-tools package.
+This module is responsible for managing the configuration parameters for both the i18n-tools package and the application utilizing it. It ensures that the structure of localized messages is maintained and that all configuration details are accurate and easily accessible.
 
-**Key Features:**
-- Load and save configuration settings to/from files.
-- Manage paths for translations, applications, and package-specific locales.
-- Configure language settings, translation domains, and translator API details.
-- Facilitate author and module metadata management.
+Key Responsibilities:
+    - Manage configuration parameters for the module and application.
+    - Maintain the structure of localized messages.
+    - Ensure configuration details are accurate and accessible.
+
+Main Data Structure:
+
+The configuration is structured as a nested dictionary with the following format:
+
+"details":
+    - "name": Configuration name
+    - "summary": str,                  # Brief summary of the configuration
+    - "description": str,              # Detailed description of the configuration
+    - "version": "",                  # Version of the configuration
+    - "content_type": "text/plain",   # Type of content
+    - "copyright_holder": "",         # Holder of the copyright
+    - "creation_date":                # Creation date and time
+    - "language": "",                 # Language of the configuration
+    - "language_team": "",            # Team responsible for the language
+    - "flags":
+        - "fuzzy": True,              # Flag indicating if the translation is fuzzy
+        - "python-format": True,      # Flag indicating if Python formatting is used
+    - "report-bugs-to": "",           # Contact for reporting bugs
+
+"paths":
+    - "root": "",                     # Root path
+    - "repository": "",               # Repository path
+    - "config": ""                    # Configuration directory if given else "" as default
+    - "backup": "",                   # Backup path
+    - "settings: "",                  # Settings file if given else "i18n-tools.yaml" as default
+    - "modules": [],                  # List of modules
+
+"domains": {},                      # Domains related to the configuration
+
+"languages":
+    - "source": "",                   # Source language
+    - "hierarchy": {},                # Hierarchy of languages
+    - "fallback": "",                 # Fallback language
+
+"translators": {},                  # Translators information
+
+"authors": {},                      # Authors information
 """
+
 
 from __future__ import annotations
 
@@ -29,9 +66,9 @@ from .__static__ import (
     I18N_TOOLS_LOCALE,
 )
 from .api import validate_api_url
-from .classes import Singleton
 from .loaders import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
+from .patterns import Singleton
 
 
 class Config(metaclass=Singleton):
@@ -43,36 +80,14 @@ class Config(metaclass=Singleton):
     settings related to translations, translators, authors, and modules.
 
     Attributes:
-        setup (NestedDictionary):
-            Contains the main configuration settings:
-            - `paths`:
-                - `config`: Path to the configuration file (if provided).
-                - `package`: Default path for package locales.
-                - `application`: Includes:
-                    - `base`: Base path for the application.
-                    - `modules`: List of module paths.
-            - `domains`:
-                - `package`: dictionary where i18n-tools' modules are keys, and value is a list of associated domains.
-                - `application`: dictionary where app's modules are keys, and value is a list of associated domains.
-            - `languages`:
-                - `source`: Source language of translations.
-                - `hierarchy`: Language fallback hierarchy.
-                - `fallback`: Default fallback language.
-            - `translators`: Translator details like API keys or endpoints.
+        package (NestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
 
-        details (NestedDictionary):
-            Metadata about the configuration:
-            - `name`: Name of the configuration.
-            - `description`: Description of the configuration.
-
-        authors (NestedDictionary):
-            Contains author metadata. Each key corresponds to an author and contains:
-            - `email`: Author's email.
-            - `languages`: List of languages the author is associated with.
-            - Additional optional details.
+        application (NestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
 
         _email_index (NestedDictionary):
             An internal index for tracking authors by email address.
+
+        _current_config (str): store the current configuration to manage.
     """
 
     def __init__(self, config_file: Optional[str] = None):
@@ -88,7 +103,7 @@ class Config(metaclass=Singleton):
         """
 
         def _setup_configuration(
-            config_dir: Optional[str] = "", settings_file: Optional[str] = ""
+                config_dir: Optional[str] = "", settings_file: Optional[str] = ""
         ) -> NestedDictionary:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
@@ -167,9 +182,9 @@ class Config(metaclass=Singleton):
         """
         current_config = self.__getattribute__(self._current_config)
         config_file = (
-            current_config[["paths", "config"]]
-            + "/"
-            + current_config[["paths", "settings"]]
+                current_config[["paths", "config"]]
+                + "/"
+                + current_config[["paths", "settings"]]
         )
         config = load_config(config_file)
 
@@ -191,8 +206,8 @@ class Config(metaclass=Singleton):
             {
                 author_data["email"]: author_id
                 for author_id, author_data in self.__getattribute__(
-                    self._current_config
-                )["authors"].items()
+                self._current_config
+            )["authors"].items()
             }
         )
 
@@ -313,11 +328,11 @@ class Config(metaclass=Singleton):
         return self.__getattribute__(self._current_config)
 
     def set_repository(
-        self,
-        repository_path: str,
-        setting_file_ext: str,
-        main_module: str,
-        additional_modules: Optional[List[str]] = None,
+            self,
+            repository_path: str,
+            setting_file_ext: str,
+            main_module: str,
+            additional_modules: Optional[List[str]] = None,
     ) -> None:
         """
         Set the application repository paths and modules with validation.
@@ -356,11 +371,11 @@ class Config(metaclass=Singleton):
         )
 
     def update_repository(
-        self,
-        root_path: Optional[str] = None,
-        setting_file_ext: Optional[str] = None,
-        main_module: str = None,
-        modules: Optional[List[str]] = None,
+            self,
+            root_path: Optional[str] = None,
+            setting_file_ext: Optional[str] = None,
+            main_module: str = None,
+            modules: Optional[List[str]] = None,
     ) -> None:
         """
         Update the application repository paths and modules with validation.
@@ -400,13 +415,13 @@ class Config(metaclass=Singleton):
                 current_repository[["paths", "modules"]] = [main_module] + modules
 
     def add_details(
-        self,
-        name: Optional[str] = None,
-        summary: Optional[str] = None,
-        description: Optional[str] = None,
-        version: Optional[str] = None,
-        content_type: Optional[str] = None,
-        copyright_holder: Optional[str] = None,
+            self,
+            name: Optional[str] = None,
+            summary: Optional[str] = None,
+            description: Optional[str] = None,
+            version: Optional[str] = None,
+            content_type: Optional[str] = None,
+            copyright_holder: Optional[str] = None,
     ) -> None:
         """
         This function adds the details of the application to the configuration.
@@ -451,7 +466,7 @@ class Config(metaclass=Singleton):
             raise KeyError(f"The key {d_key} is not in the details of the repository.")
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+            self, first_name: str, last_name: str, email: str, url: str, languages: list
     ) -> None:
         """
         Add a new author to the authors dictionary.
@@ -473,8 +488,8 @@ class Config(metaclass=Singleton):
         if email in self._email_index:
             existing_uuid = self._email_index[email]
             if (
-                existing_uuid
-                in self.__getattribute__(self._current_config)["authors"].keys()
+                    existing_uuid
+                    in self.__getattribute__(self._current_config)["authors"].keys()
             ):
                 raise KeyError(
                     f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
@@ -586,20 +601,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: Optional[str] = None,
+            cost_per_translation: Optional[float] = None,
+            request_limit: Optional[int] = None,
+            key_expiration: Optional[str] = None,
+            priority: Optional[int] = None,
+            success_rate: Optional[float] = None,
+            max_text_size: Optional[int] = None,
+            payment_plan: Optional[str] = None,
     ) -> None:
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.

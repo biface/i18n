@@ -2,67 +2,11 @@
 Converter Module
 ================
 
-This module provides functions to manipulate and convert internationalization
-(i18n) data between different formats. It includes utilities for generating
-headers for `.pot` files, converting data between various i18n formats
-(i18n_tools, i18n, i18next, and Babel), and creating deterministic message IDs.
+This module is responsible for converting data between internal i18n-tools formats, i18n (using Babel), and i18next formats. It ensures that messages are accurately transcribed and formatted for publication in applications.
 
-**Key Features:**
-
-    - Convert between PO/POT files (Babel format) and i18next JSON format.
-    - Convert between i18n_tools dictionary format and other formats.
-    - Provide a unified format that works across different i18n libraries.
-    - Generate deterministic message IDs using weights and base values.
-    - Create metadata headers for `.pot` files, including author and team
-      information.
-
-**Usage Examples:**
-
-1. Convert a PO file to i18next JSON format:
-
-   ```python
-   from i18n_tools.converter import load_and_convert_po_to_i18next
-
-   i18next_data = load_and_convert_po_to_i18next('path/to/messages.po')
-   ```
-
-2. Convert i18next JSON to Babel Catalog format:
-
-   ```python
-   from i18n_tools.converter import convert_i18next_to_catalog
-
-   catalog = convert_i18next_to_catalog(i18next_data, locale='en', domain='messages')
-   ```
-
-3. Convert between formats using the command-line interface:
-
-   ```bash
-   python -m i18n_tools.converter input.po output.json --input-format po --output-format json
-   ```
-
-**Format Descriptions:**
-
-1. **Babel Catalog Format**: Used by the Babel library for PO/POT files. Stores translations
-   with metadata, plural forms, and context information.
-
-2. **i18next JSON Format**: Used by the i18next library. Typically a flat or nested JSON structure
-   with keys as message IDs and values as translations. Supports plural forms with `_plural` suffix.
-
-3. **i18n_tools Format**: A specialized JSON format used by i18n_tools. Stores translations as
-   arrays of arrays, with the first array containing singular forms and subsequent arrays
-   containing plural forms.
-
-4. **Unified Format**: An intermediate format used internally by this module to facilitate
-   conversion between other formats. Preserves all metadata, plural forms, and context information.
-
-**License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
-
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
-
+Key Responsibilities:
+    - Transcribe JSON dictionaries to Catalog/Messages (Babel) or JSON for i18next.
+    - Search and publish messages in applications using formatter functions.
 """
 
 from datetime import datetime

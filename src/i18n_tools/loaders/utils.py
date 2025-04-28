@@ -1,11 +1,12 @@
 """
-File management module
-======================
+Utils Module
+============
 
-This module contains private utility functions to manage files. These functions are not meant to be used directly, but
-they are intended to be used by other functions in this loader module.
+This module provides low-level, private, and internal functions for loading and saving files (JSON and i18n). It ensures that file operations are handled efficiently and accurately.
 
-These functions are mainly called by the `handler` and `repository` modules.
+Key Responsibilities:
+    - Provide low-level functions for loading and saving files.
+    - Ensure efficient and accurate file operations.
 """
 
 import gzip
@@ -409,7 +410,8 @@ def _create_tar_gz(
     directory_to_archive: Union[Path, str],
 ) -> None:
     """
-    Create an archive of a directory using tar.gz fonctions.
+    Create an archive of a directory using tar.gz functions.
+
     :param base_path: directory to locate the archive.
     :type base_path: str
     :param archive_name: archive name
@@ -429,7 +431,8 @@ def _create_tar_gz(
 
 def _create_gzip(file_path: Union[Path, str]) -> None:
     """
-    Create a compressed file using gzip fonctions.
+    Create a compressed file using gzip functions.
+
     :param file_path: a path to a file.
     :type file_path: str
     :return: Nothing
@@ -487,6 +490,7 @@ def _non_traversal_path(
 
 def _remove_file(file_path: Union[Path, str]) -> None:
     """
+    Remove a file from directory if it existe
 
     :param file_path:
     :return:
@@ -504,7 +508,8 @@ def _remove_file(file_path: Union[Path, str]) -> None:
 
 def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
     """
-    This function verify that a module or a list of modules are defined in the repository.
+    This function verifies that a module or a list of modules are defined in the repository.
+
     :param repository: data representing the translation repository.
     :type repository: NestedDictionary
     :param module_list: The list of modules to verify.
@@ -526,7 +531,8 @@ def _check_domains(
     repository: NestedDictionary, module: str, domain_list: List[str]
 ) -> bool:
     """
-    This function verify that a domain or a list of domains are defined in the repository.
+    This function verifies that a domain or a list of domains are defined in the repository.
+
     :param repository: data representing the translation repository.
     :type repository: NestedDictionary
     :param module: The module containing domains.

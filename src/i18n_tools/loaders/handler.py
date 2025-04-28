@@ -1,10 +1,13 @@
 """
-File handling functions for i18n-tools.
-=======================================
+Handler Module
+==============
 
-This module contains functions for handling file operations related to i18n-tools. It uses low-level functions defined
-in the `utils` module. To simplify path and file handling, this public module uses only string as path and file
-name and exchanges Path objects only internally with the `utils` module.
+This module handles the manipulation of files within the repository using utils.py. It calculates paths, controls file names and access, and retrieves data contained in translation files.
+
+Key Responsibilities:
+    - Manipulate files within the repository.
+    - Calculate paths, control file names and access.
+    - Retrieve data from translation files.
 """
 
 from pathlib import Path

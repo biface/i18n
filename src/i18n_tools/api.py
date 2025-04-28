@@ -1,10 +1,13 @@
 """
-Network and API Module
-======================
+API Module
+===========
 
-This file is dedicated to the implementation of the Application Program Interfaces (APIs)
-used in the i18n-tools project.
+This module handles interactions with online translation services and provides functions to facilitate the retrieval of translations. It is responsible for communicating with various translation APIs, managing authentication, and ensuring that translations are accurately fetched and stored. Additionally, it records the translators used in the authors' section of the configuration.
 
+Key Responsibilities:
+    - Dialogue with online translators.
+    - Record translators used in the authors' section.
+    - Provide functions for a command-line interface (CLI) to utilize package functionalities.
 """
 
 import requests

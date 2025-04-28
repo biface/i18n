@@ -1,14 +1,12 @@
 """
-Design Pattern module
-=====================
+Design Patterns Module
+======================
 
-This module provides utility classes for the i18n-tools package, including
-the `Singleton` metaclass.
+This module contains essential design patterns such as Singleton, which are necessary for the architecture of the i18n-tools package. These patterns ensure that the system is robust, scalable, and maintains a clean and efficient structure.
 
-**Key Features:**
-    - Define the `Singleton` metaclass to ensure single-instance objects.
-    - Provide reusable structures for core package functionality.
-
+Key Responsibilities:
+    - Implement and manage design patterns like Singleton.
+    - Ensure the architectural integrity of the i18n-tools package.
 """
 
 from threading import Lock

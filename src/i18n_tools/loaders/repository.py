@@ -1,7 +1,12 @@
 """
-Repository loader for i18n tools.
-=================================
+Repository Module
+=================
 
+This module handles the manipulation of the repository and the management of translations to be kept or deleted. It ensures that the repository is maintained and that translations are accurately managed.
+
+Key Responsibilities:
+    - Manipulate the repository and manage translations.
+    - Ensure accurate management of translations within the repository.
 """
 
 from __future__ import annotations
@@ -50,7 +55,7 @@ def _translation_lang_files(
     """
     Build from repository TLD, path for translation files
 
-    :param repository: The data structure containing the repository information.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :param module: Module name
     :type module: str
@@ -81,7 +86,8 @@ def _verify_paths_and_modules(repository: NestedDictionary) -> None:
 
     This function checks if the base path is absolute and if all specified modules
     and their corresponding paths exist in the repository.
-    :param repository: The data structure containing the repository information.
+
+    :param repository: The data structure which represents the repository information.
     :raises ValueError: If the base path is not an absolute path.
     :raises FileNotFoundError: If any module path does not exist.
     """
@@ -103,8 +109,9 @@ def _verify_available_languages(
     repository: NestedDictionary, languages: list[str]
 ) -> None:
     """
-    Verify that languages in translation set are registered in the repository
-    :param repository: Dictionary containing the base path and list of modules.
+    Verify that languages in translation sets are registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
     :type repository: Dict[str, Any].
     :param languages: languages in translation set.
     :type languages: list[str].
@@ -121,8 +128,9 @@ def _verify_available_languages(
 
 def _verify_target_module(repository: NestedDictionary, target_module: str) -> None:
     """
-    Verify that target module is registered in the repository
-    :param repository: Dictionary containing the base path and list of modules.
+    Verify that a target module is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
     :type repository: Dict[str, Any].
     :param target_module: module where translation should be located.
     :type target_module: str.
@@ -140,8 +148,9 @@ def _verify_target_domain(
     repository: NestedDictionary, target_module: str, target_domain: str
 ) -> None:
     """
-    Verify that target domain is registered in the repository
-    :param repository: Dictionary containing the base path and list of modules.
+    Verify that a target domain is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
     :type repository: Dict[str, Any].
     :param target_module: module where translation should be located.
     :type target_module: str.
@@ -188,13 +197,13 @@ def create_module_archive(
     Create a tar.gz archive of a module's contents, including all subdirectories and files,
     by identifying the top-level module from the given module/package path.
 
-    :param repository: The data representing the repository..
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :param module: The module or module/package path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
     :type archive_name: str
-    :return: None
+    :return: Nothing
     :rtype: None
     """
 
@@ -234,9 +243,9 @@ def restore_module_from_archive(
     """
     Restore a module's contents from a tar.gz archive.
 
-    :param repository: The data representing the repository.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
-    :param module: The module or sub-module path (e.g., "mod-1/pkg-1").
+    :param module: The module or submodule path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
     :type archive_name: str
@@ -279,10 +288,10 @@ def restore_module_from_archive(
 def build_repository(repository: NestedDictionary) -> None:
     """
     This function builds the repository from the modulee and populates files in the repository directory respectively
-    to domains and language registered in the repository. It checks existence of already existing files and only creates
+    to domains and language registered in the repository. It checks the existence of already existing files and only creates
     the necessary files and directories.
 
-    :param repository: The data representing the repository.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :return: Nothing
     :type: None
@@ -346,7 +355,7 @@ def verify_repository(repository: NestedDictionary) -> bool:
     Verifies that the translation repository is properly constructed.
     Checks the existence of required directories and files for each module, domain, and language.
 
-    :param repository: The data representing the repository.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :return: True if the repository is properly constructed, False otherwise.
     :rtype: bool
@@ -425,10 +434,16 @@ def aggregate_dictionaries(
 ) -> None:
     """
     This function aggregates all dictionaries for a given module and domain into a single JSON file.
-    :param repository:
-    :param module:
-    :param domain:
-    :return:
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: NestedDictionary
+    :param module: module where translation should be located.
+    :type module: str
+    :param domain: domain of translation.
+    :type domain: str
+    :return: Nothing
+    :rtype: None
+    :raises Exception: If any error occurs during the aggregation.
     """
 
     languages = get_all_languages(repository[["languages", "hierarchy"]])
@@ -459,7 +474,7 @@ def add_translation_set(
     for each module, domain, and language, and ensures that the translations conform
     to the languages defined in the repository.
 
-    :param repository: The data structure containing the repository information.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :param module: Module where should be located domain of translations.
     :type module: str
@@ -505,7 +520,7 @@ def update_translation_set(
     for each module, domain, and language, and ensures that the translations conform
     to the languages defined in the repository.
 
-    :param repository: The data structure containing the repository information.
+    :param repository: The data structure which represents the repository information.
     :type repository: NestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
@@ -557,8 +572,8 @@ def remove_translation_set(
     from the translation files for each module, domain, and language, and ensures that
     the translations conform to the languages defined in the repository.
 
-    :param repository: Dictionary containing the base path, modules, domains, and languages.
-    :type repository: Dict[str, Any]
+    :param repository: The data structure which represents the repository information.
+    :type repository: NestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.

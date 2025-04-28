@@ -1,21 +1,12 @@
 """
-locale.py
-=========
+Locale Module
+=============
 
-This module manages locale settings for the i18n-tools package. It ensures
-correct handling of language-specific formats and regional preferences.
+This module manages the locale of the environment and handles locale changes to adapt to user requests or parameters. It ensures that the locale settings are verified and normalized to the ISO IETF Tag standard.
 
-**Key Features:**
-- Handle locale-specific formats for dates, numbers, and currencies.
-- Manage active locale settings for translations.
-
-**License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
-
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
+Key Responsibilities:
+    - Manage environment locale and handle locale changes.
+    - Verify and normalize locale settings to ISO IETF Tag standard.
 """
 
 from typing import Dict, List, Set

@@ -8,10 +8,16 @@ to be compatible with i18n and i18next format.
     install
     org
     api
-    :numbered: 3
+    :numbered:
     :maxdepth: 2
     :caption: Module content:
     :name: maintoc
+
+Install
+=======
+
+Working with translations
+=========================
 
 Indices and references
 ======================
