@@ -28,6 +28,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinx_rtd_theme',
+    # contributions
 ]
 
 templates_path = ['_templates']

@@ -10,6 +10,8 @@ modifying, or redistributing this package, you agree to comply with the terms of
 
 .. toctree::
     api/constant
-    api/internal
+    api/patterns
+    api/api
     api/loader
     api/config
+    api/converter
