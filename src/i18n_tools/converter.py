@@ -2,15 +2,148 @@
 Converter Module
 ================
 
-This module is responsible for converting data between internal i18n-tools formats, i18n (using Babel), and i18next formats. It ensures that messages are accurately transcribed and formatted for publication in applications.
+This module is responsible for converting data between different internationalization (i18n) formats.
+It serves as a bridge between various translation systems, allowing seamless conversion and interoperability.
+
+Supported Translation Formats
+-----------------------------
+
+1. **Babel Catalog Format**
+
+   - Used by the Babel library, a standard Python internationalization framework.
+   - Stores translations in ``.po`` (Portable Object) and ``.pot`` (Template) files.
+   - Supports rich metadata including source locations, comments, and plural forms.
+   - Provides programmatic access through the ``Catalog`` and ``Message`` classes.
+   - **Strengths:** Comprehensive metadata, industry standard, good for developer workflows.
+
+2. **i18next Format**
+
+   - Used by the popular JavaScript i18n library i18next.
+   - Typically stored in JSON files with a simple key-value structure.
+   - Supports nested keys using dot notation (e.g., ``"app.title"``).
+   - Handles plural forms with a special ``"_plural"`` suffix.
+   - **Strengths:** Simplicity, frontend-friendly, easy to integrate with JavaScript applications.
+
+3. **i18n_tools Format**
+
+   - Internal format for this project.
+   - Stored in JSON files with a specialized structure for handling translations.
+   - Uses arrays to store multiple translations and plural forms.
+   - Includes metadata under the ``".i18n_tools"`` key.
+   - **Strengths:** Optimized for this project's specific needs, balances simplicity and features.
+
+The Pivotal Role of the Unified Format
+--------------------------------------
+
+The unified format serves as a central hub in the conversion process, acting as an intermediate
+representation that bridges all supported formats. This hub-and-spoke architecture provides several
+key advantages:
+
+1. **Simplified Conversion Logic**
+
+   - Instead of needing direct conversion between each pair of formats (which would require
+     ``n*(n-1)`` converters), we only need ``2*n`` converters (``n`` formats to/from unified format).
+   - Adding a new format requires implementing only 2 new converters instead of ``2*n``.
+
+2. **Consistent Data Representation**
+
+   - The unified format captures all the essential elements from each format.
+   - Ensures no data loss during conversion between different formats.
+   - Provides a common language for all conversion operations.
+
+3. **Standardized Metadata Handling**
+
+   - Preserves important context information like comments, source locations, and flags.
+   - Maintains plural forms across different systems with varying plural handling approaches.
+   - Keeps translation context which is crucial for accurate translations.
+
+Format Structure
+----------------
+
+Native ``i18n_tools`` Format Structure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``i18n_tools`` format is a ``NestedDictionary`` object with the following structure:
+
+.. code-block:: python
+
+    {
+        "msgid_001": [
+            ["msgstr_001_000", "msgstr_001_001"],
+            ["msgplr_001_1_000", "msgplr_001_1_001"],
+            ["msgplr_001_2_000", "msgplr_001_2_001"]
+            ],
+        "msgid_002": [
+            ["msgstr_002_000"],
+            ["msgplr_002_1_000"],
+            ["msgplr_002_2_000"]
+            ]
+    }
+
+``i18next`` Format Structure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``i18next`` format is typically a JSON object with the following structure:
+
+.. code-block:: json
+
+    {
+        "key1": "value1",
+        "key2": "value2",
+        "key3_plural": "plural value",
+        "key3": "singular value",
+        "nested": {
+            "key": "nested value"
+        }
+    }
+
+Unified Format Structure
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The unified format is a dictionary with the following structure:
+
+.. code-block:: python
+
+    {
+        "message_id": {  # The unique identifier for the message (string)
+            "translation": "The translated text for the message",  # (string)
+            "plural_forms": {  # A dictionary containing plural forms of the translation
+                "0": "The singular form of the translation",  # (string)
+                "1": "The first plural form of the translation",  # (string)
+                "2": "The second plural form of the translation",  # (string)
+                # Additional plural forms as needed
+            },
+            "context": "Optional context information for the translation",  # (string)
+            "metadata": {  # A dictionary containing metadata about the translation
+                "locations": ["A list of source code locations where the message is used"],  # (list of strings)
+                "flags": ["A list of flags providing additional information about the message"],  # (list of strings)
+                "comments": ["Translator comments associated with the message"],  # (list of strings)
+                "auto_comments": ["Developer comments extracted from the source code"],  # (list of strings)
+                # Additional metadata as needed
+            }
+        }
+    }
+
+Conversion Process
+------------------
+
+The conversion process follows these general steps:
+
+1. **Source format → Unified format:** Extract all translation data and metadata from the source format.
+2. **Unified format → Target format:** Transform the unified representation into the target format.
+3. **Handle format-specific features:** Address special cases like nested keys in ``i18next`` or plural forms.
+
+This module provides both low-level conversion functions (to/from unified format) and high-level
+direct conversion functions between formats, as well as utilities for loading and saving translations
+in different file formats.
 
 Key Responsibilities:
-    - Transcribe JSON dictionaries to Catalog/Messages (Babel) or JSON for i18next.
-    - Search and publish messages in applications using formatter functions.
+    - Convert between Babel Catalog, i18next, and i18n_tools formats.
+    - Provide a unified format as an intermediate representation.
+    - Support loading and saving translations in different formats.
+    - Preserve translation metadata across format conversions.
 """
 
-from datetime import datetime
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from babel.messages.catalog import Catalog, Message
@@ -19,121 +152,21 @@ from ndict_tools import NestedDictionary
 from i18n_tools.loaders import (
     fetch_catalog,
     fetch_dictionary,
+    dump_catalog,
+    dump_dictionary,
 )
-from i18n_tools.loaders.loader import (
-    load_locale_json,
-    load_locale_po,
-    save_locale_json,
-    save_locale_pot,
-)
+from i18n_tools.loaders.utils import _load_json, _load_text, _save_json, _save_text
 from i18n_tools.locale import get_all_languages
 
-
-def _initialize_pot_file(file_path: str, domain: str, authors: Dict, language: str):
-    """
-    Initializes a .pot file with necessary metadata and entries for relevant authors.
-
-    :param file_path: Path to the .pot file.
-    :param domain: Domain of translation.
-    :param authors: Dictionary of authors.
-    :param language: Language code for the current .pot file.
-    """
-    # TODO To be removed
-
-    pot_catalog = Catalog()
-    now = datetime.now().strftime("%Y-%m-%d %H:%M%z")
-
-    pot_catalog.project = "i18n-tools"
-    pot_catalog.version = "1.0"
-    pot_catalog.msgid_bugs_addr = ""
-    pot_catalog.creation_date = now
-    pot_catalog.revision_date = now
-    pot_catalog.last_translator = f"FULL NAME <EMAIL@ADDRESS>"
-    pot_catalog.language_team = f"{language} <LL@li.org>"
-    pot_catalog.mime_version = "1.0"
-    pot_catalog.content_type = "text/plain; charset=UTF-8"
-    pot_catalog.content_transfer_encoding = "8bit"
-    pot_catalog.fuzzy = False
-
-    # Add entries for authors who can translate the specified language
-    for author_id, author_info in authors.items():
-        if language in author_info["languages"]:
-            pot_catalog.add(
-                id=f"Translation by {author_info['first_name']} {author_info['last_name']}",
-                string="",
-                locations=[(domain, 0)],
-            )
-
-    save_locale_pot(file_path, pot_catalog)
-
-
-def populate_pot_files(config: Dict, domains: Dict, languages: Dict, authors: Dict):
-    """
-    Populates .pot files in the translation repository.
-
-    :param config: Dictionary containing configuration with 'repository_path' and 'modules'.
-    :param domains: Dictionary of translation domains.
-    :param languages: Dictionary of translation languages.
-    :param authors: Dictionary of authors.
-    :raises ValueError: If repository_path is not an absolute path.
-    """
-
-    # TODO To be removed
-
-    repository_path = Path(config["base"])
-
-    # Verify that repository_path is an absolute path
-    if not repository_path.is_absolute():
-        raise ValueError(
-            f"The repository_path must be an absolute path: {repository_path}"
-        )
-
-    # Flatten the language hierarchy to get a complete list of languages
-    all_languages = get_all_languages(languages["hierarchy"])
-
-    for module in config["modules"]:
-        # Ensure the module exists in the domains dictionary
-        if module in domains:
-            module_path = repository_path / module
-            locales_path = module_path / "locales"
-            locales_path.mkdir(parents=True, exist_ok=True)
-
-            for domain in domains[module]:
-                for lang in all_languages:
-                    lang_path = locales_path / lang / "LC_MESSAGES"
-                    lang_path.mkdir(parents=True, exist_ok=True)
-
-                    pot_file_path = lang_path / f"{domain}.pot"
-                    _initialize_pot_file(str(pot_file_path), domain, authors, lang)
-
-
+# -----------------------------------------------------------------------------
 # Unified Format Conversion Functions
+# -----------------------------------------------------------------------------
+#
 
 
 def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
     """
     Convert a Babel Catalog to a unified format dictionary.
-
-    The unified format is a dictionary with the following structure:
-    {
-        "message_id": {
-            "translation": "translated text",
-            "plural_forms": {
-                "0": "singular form",
-                "1": "plural form 1",
-                "2": "plural form 2",
-                ...
-            },
-            "context": "context information",
-            "metadata": {
-                "locations": [...],
-                "flags": [...],
-                "comments": [...],
-                ...
-            }
-        },
-        ...
-    }
 
     :param catalog: Babel Catalog object
     :type catalog: Catalog
@@ -265,17 +298,6 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Convert i18next JSON format to unified format.
 
-    i18next format is typically:
-    {
-        "key1": "value1",
-        "key2": "value2",
-        "key3_plural": "plural value",
-        "key3": "singular value",
-        "nested": {
-            "key": "nested value"
-        }
-    }
-
     :param i18next_data: Dictionary in i18next format
     :type i18next_data: Dict[str, Any]
     :return: Dictionary in unified format
@@ -381,20 +403,6 @@ def i18n_tools_to_unified_format(
     """
     Convert i18n_tools JSON format to unified format.
 
-    i18n_tools format is:
-    {
-        "msgid_001": [
-            ["msgstr_001_000", "msgstr_001_001"],
-            ["msgplr_001_1_000", "msgplr_001_1_001"],
-            ["msgplr_001_2_000", "msgplr_001_2_001"]
-        ],
-        "msgid_002": [
-            ["msgstr_002_000"],
-            ["msgplr_002_1_000"],
-            ["msgplr_002_2_000"]
-        ]
-    }
-
     :param i18n_tools_data: Dictionary in i18n_tools format
     :type i18n_tools_data: Dict[str, List[List[str]]]
     :return: Dictionary in unified format
@@ -453,8 +461,11 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, List[List
     return i18n_tools
 
 
+# -----------------------------------------------------------------------------
 # High-level conversion functions
-
+# -----------------------------------------------------------------------------
+# These functions provide direct conversion between formats without going
+# through the unified format explicitly.
 
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
@@ -556,6 +567,12 @@ def convert_i18n_tools_to_i18next(
     return unified_format_to_i18next(unified, flatten)
 
 
+# -----------------------------------------------------------------------------
+# File loading and conversion functions
+# -----------------------------------------------------------------------------
+# These functions provide utilities for loading files in one format and
+# converting them to another format.
+
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
 ) -> Dict[str, Any]:
@@ -569,7 +586,7 @@ def load_and_convert_po_to_i18next(
     :return: Dictionary in i18next format
     :rtype: Dict[str, Any]
     """
-    catalog = load_locale_po(po_file_path)
+    catalog = _load_text(po_file_path)
     return convert_catalog_to_i18next(catalog, flatten)
 
 
@@ -588,9 +605,15 @@ def load_and_convert_json_to_catalog(
     :return: Babel Catalog object
     :rtype: Catalog
     """
-    i18next_data = load_locale_json(json_file_path)
+    i18next_data = _load_json(json_file_path)
     return convert_i18next_to_catalog(i18next_data, locale, domain)
 
+
+# -----------------------------------------------------------------------------
+# Repository interaction functions
+# -----------------------------------------------------------------------------
+# These functions interact with the translation repository to find and
+# manipulate translations.
 
 def seek_translation(
     repository: NestedDictionary,
@@ -601,21 +624,23 @@ def seek_translation(
     alternative: int = 0,
 ) -> NestedDictionary:
     """
-    This function seeks a translation in the repository.
-    :param repository:
+    Seek a translation in the repository.
+
+    :param repository: Repository containing translations
     :type repository: NestedDictionary
-    :param module:
+    :param module: Module name
     :type module: str
-    :param domain:
+    :param domain: Domain name
     :type domain: str
-    :param lang:
+    :param lang: Language code
     :type lang: str
-    :param message_id:
+    :param message_id: Message ID to find
     :type message_id: str
-    :param alternative:
+    :param alternative: Alternative index (for plural forms)
     :type alternative: int
-    :return:
+    :return: Translation data
     :rtype: NestedDictionary
+    :raises KeyError: If the message ID is not found
     """
     translation = NestedDictionary(
         {"msg_id": "", "msgstr": "", "msgstr_plural": {}}, indent=2, strict=True
@@ -624,9 +649,18 @@ def seek_translation(
     try:
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():
-            translation["mgs_id"] = message_id
+            translation["msg_id"] = message_id
             messages = translations[message_id]
 
+            # Add the translation string
+            if messages and len(messages) > 0 and len(messages[0]) > alternative:
+                translation["msgstr"] = messages[0][alternative]
+
+            # Add plural forms if available
+            if messages and len(messages) > 1:
+                for i, plural_form in enumerate(messages[1:], 1):
+                    if plural_form and len(plural_form) > alternative:
+                        translation["msgstr_plural"][str(i)] = plural_form[alternative]
         else:
             raise KeyError(f"{message_id} not found in {module}/{domain} in {lang}")
     except Exception as e:

@@ -419,7 +419,7 @@ def _create_tar_gz(
     :param directory_to_archive: directory to be archived.
     :type directory_to_archive: str
     :return: None
-    ;rtype: None
+    :rtype: None
     """
     base_path = __check_path(base_path)
     directory_to_archive = __check_path(directory_to_archive)

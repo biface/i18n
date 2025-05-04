@@ -9,44 +9,105 @@ Key Responsibilities:
     - Maintain the structure of localized messages.
     - Ensure configuration details are accurate and accessible.
 
-Main Data Structure:
+Main Data Structure
+-------------------
 
 The configuration is structured as a nested dictionary with the following format:
 
-"details":
-    - "name": Configuration name
-    - "summary": str,                  # Brief summary of the configuration
-    - "description": str,              # Detailed description of the configuration
-    - "version": "",                  # Version of the configuration
-    - "content_type": "text/plain",   # Type of content
-    - "copyright_holder": "",         # Holder of the copyright
-    - "creation_date":                # Creation date and time
-    - "language": "",                 # Language of the configuration
-    - "language_team": "",            # Team responsible for the language
-    - "flags":
-        - "fuzzy": True,              # Flag indicating if the translation is fuzzy
-        - "python-format": True,      # Flag indicating if Python formatting is used
-    - "report-bugs-to": "",           # Contact for reporting bugs
+.. code-block:: python
 
-"paths":
-    - "root": "",                     # Root path
-    - "repository": "",               # Repository path
-    - "config": ""                    # Configuration directory if given else "" as default
-    - "backup": "",                   # Backup path
-    - "settings: "",                  # Settings file if given else "i18n-tools.yaml" as default
-    - "modules": [],                  # List of modules
+    {
+        "details": {
+            "name": "Configuration name (*String*)",
+            "summary": "Brief summary of the configuration (*String*)",
+            "description": "Detailed description of the configuration (*String*)",
+            "version": "Version of the configuration (*String*)",
+            "content_type": "Type of content (default is *'text/plain'*)",
+            "copyright_holder": "Holder of the copyright (*String*)",
+            "creation_date": "Creation date and time (a *datetime* with hour and minute precision)",
+            "language": "Language of the configuration (*String*)",
+            "language_team": "Team responsible for the language (an email address)",
+            "flags": {
+                "fuzzy": "Flag indicating if the translation is fuzzy (default is ``True``)",
+                "python-format": "Flag indicating if Python formatting is used (default is ``True``)",
+            },
+            "report-bugs-to": "Contact for reporting bugs (an email address)",
+        },
+        "paths": {
+            "root": "Root path (a *String* which represents an absolute path)",
+            "repository": "Repository path (a *String* which represents an absolute path)",
+            "config": "Configuration directory if given (a *String* which represents an absolute path, '' as default)",
+            "backup": "Backup path (a *String* which represents an absolute path, '' as default)",
+            "settings": "Settings file if given (a *String*, 'i18n-tools.yaml' as default)",
+            "modules": "List of modules (a *List* of *Strings* which represent relative paths)",
+        },
+        "domains": {
+            # A dictionary where modules are keys and a list of domains as values.
+            # Each domain represents a translation container related to the domain in the translation repository.
+        },
+        "languages": {
+            "source": "Source language (a *String* as language tag)",
+            "hierarchy": "Hierarchy of languages where each key is a language tag as a fallback of a list of language tags available in each domain of translations.",
+            "fallback": "Fallback language (a *String* as language tag)",
+        },
+        "translators": {
+            "details": {
+                "name": "Name of the translator (a *String* as name)",
+                "summary": "Summary of the translator (a *String* as summary)",
+                "description": "Description of the translator (a *String* as description)",
+                "version": "Version of the translator (a *String* as version)",
+                "content_type": "Content type of the translator (a *String* as content type)",
+            },
+            "modules": [
+                # A list of modules (a *List* of *Strings* as list of modules)
+                {
+                    "name": "name",
+                    "url": "url",
+                    "status": "status",
+                    "translation_type": "translation_type if translation_type is not None else ''",
+                }
+            ],
+            "technical": {
+                "api": {
+                    "key": "api_key if api_key else ''",
+                    "key_expiration": "key_expiration if key_expiration else ''",
+                    "request_limit": "request_limit if request_limit is not None else 0",
+                    "supported_languages": "supported_languages if supported_languages else []",
+                },
+                "performance": {
+                    "max_text_size": "max_text_size if max_text_size is not None else 0",
+                    "priority": "priority if priority is not None else 0",
+                    "success_rate": "success_rate if success_rate is not None else 0.0",
+                },
+            },
+            "pricing": {
+                "cost_per_translation": "cost_per_translation if cost_per_translation is not None else 0.0",
+                "payment_plan": "payment_plan if payment_plan else ''",
+            },
+        },
+        "authors": {
+            # A dictionary where each key is a UUID4 and the value is a dictionary with the following structure:
+            # {
+            #     "first_name": first_name,
+            #     "last_name": last_name,
+            #     "email": email,
+            #     "url": url,  # Link to the profile on a translation site (e.g., https://hosted.weblate.org/user/biface/)
+            #     "languages": normalized_languages,  # List of IETF language tags for which the person has translated or can translate
+            #
+        }
+    }
 
-"domains": {},                      # Domains related to the configuration
+Multiple Data Structures
+------------------------
 
-"languages":
-    - "source": "",                   # Source language
-    - "hierarchy": {},                # Hierarchy of languages
-    - "fallback": "",                 # Fallback language
+Currently, the configuration handles only two translation configurations:
 
-"translators": {},                  # Translators information
+1. **i18n-tools Package Configuration**: This is managed through the ``package`` attribute of the ``Config`` class.
+2. **Application Configuration**: This is managed through the ``application`` attribute of the ``Config`` class.
 
-"authors": {},                      # Authors information
+Only one configuration is managed at a given time.
 """
+
 
 
 from __future__ import annotations
