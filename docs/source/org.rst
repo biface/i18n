@@ -1,10 +1,11 @@
 Translation Repository Organization
 ===================================
 
+**Introduction**
+
 This document outlines the organization of a translation repository following a structured format for directories and files. This structure ensures that translation files are managed efficiently and consistently across different languages, modules, and packages. It is intended for developers, translators, and project managers to understand and follow the established conventions.
 
-Repository Structure
---------------------
+**Repository Structure**
 
 The translation repository is organized into the following directory structure:
 
@@ -25,8 +26,6 @@ The translation repository is organized into the following directory structure:
     │   │   │   │       └── domain-alpha_name.json
     │   │   │   └── ...
     │   │   └── _i18n_tools/
-    │   │       ├── metadata/
-    │   │       │   └── domain-alpha_name.json
     │   │       └── backup/
     │   │           └── domain-alpha_name.json.gzip
     │   ├── <module_2>/
@@ -48,9 +47,6 @@ The translation repository is organized into the following directory structure:
     │   │   │   │       └── domain-iota_name.json
     │   │   │   └── ...
     │   │   └── _i18n_tools/
-    │   │       ├── metadata/
-    │   │       │   ├── domain-beta_name.json
-    │   │       │   └── domain-iota_name.json
     │   │       └── backup/
     │   │           ├── domain-beta_name.json.gzip
     │   │           └── domain-iota_name.json.gzip
@@ -67,8 +63,6 @@ The translation repository is organized into the following directory structure:
     │   │   │   │       └── domain-gamma_name.json
     │   │   │   └── ...
     │   │   ├── _i18n_tools/
-    │   │   │   ├── metadata/
-    │   │   │   │   └── domain-gamma_name.json
     │   │   │   └── backup/
     │   │   │       └── domain-gamma_name.json.gzip
     │   │   ├── package_1/
@@ -90,9 +84,6 @@ The translation repository is organized into the following directory structure:
     │   │   │   │   │       └── domain-iota_name.json
     │   │   │   │   └── ...
     │   │   │   └── _i18n_tools/
-    │   │   │       ├── metadata/
-    │   │   │       │   ├── domain-delta_name.json
-    │   │   │       │   └── domain-iota_name.json
     │   │   │       └── backup/
     │   │   │           ├── domain-delta_name.json.gzip
     │   │   │           └── domain-iota_name.json.gzip
@@ -109,23 +100,17 @@ The translation repository is organized into the following directory structure:
     │   │   │   │   │       └── domain-epsilon_name.json
     │   │   │   │   └── ...
     │   │   │   └── _i18n_tools/
-    │   │   │       ├── metadata/
-    │   │   │       │   └── domain-epsilon_name.json
     │   │   │       └── backup/
     │   │   │           └── domain-epsilon_name.json.gzip
     │   ├── _i18n_tools/
-    │   │   ├── I18N_TOOLS_CONFIG_FILE
-    │   │   ├── I18N_TOOLS_BACKUP/
+    │   │   ├── <settings file>
+    │   │   ├── backup/
     │   │   │   └── repository_backup.tar.gzip
     │   │   └── ...
     │   └── ...
     └── ...
 
-Key Directories and Files
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Repository directories
-""""""""""""""""""""""
+**Key Directories and Files**
 
 1. **<root>/**: The root directory for the translation repository, specified by the ``root`` path in the configuration. It serves as the base directory for all translation-related files.
 
@@ -137,36 +122,25 @@ Repository directories
 
 5. **locales/**: This directory, within each module or package directory, contains the ``templates`` directory and language-specific subdirectories.
 
-6. **templates/**: This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
+6. **domain..._name_aggregated.json**: A JSON file at the base of each ``locales`` directory that aggregates metadata for the domain across all language codes. The "_aggregated" suffix helps differentiate it from other metadata files.
 
-7. **<language_code>/**: A directory for each language supported by the application within the ``locales`` directory. The language code follows the `IETF language tag <https://en.wikipedia.org/wiki/IETF_language_tag>`_ format (e.g., ``fr`` for French, ``de`` for German).
+7. **templates/**: This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
 
-8. **LC_MESSAGES/**: A subdirectory within each language directory that contains the actual translation files. This directory name is a convention used by gettext.
+8. **<language_code>/**: A directory for each language supported by the application within the ``locales`` directory. The language code follows the `IETF language tag <https://en.wikipedia.org/wiki/IETF_language_tag>`_ format (e.g., ``fr`` for French, ``de`` for German).
 
-9. **_i18n_tools/**: This directory, at the same level as ``locales``, contains metadata related to the translation dictionaries. It includes a ``metadata`` subdirectory containing metadata files and a ``backup`` directory for storing backup copies of metadata files.
+9. **LC_MESSAGES/**: A subdirectory within each language directory that contains the actual translation files. This directory name is a convention used by gettext.
 
-10. **metadata/**: A subdirectory within ``_i18n_tools`` that contains metadata files related to the translation dictionaries. Each domain has its own JSON metadata file named ``<domain-name>.json``, which includes metadata for each language under separate keys.
+10. **<domain-name>.po, <domain-name>.mo, <domain-name>.json**: The Portable Object (PO) files, Machine Object (MO) files, and JSON metadata files contain the translations for a specific domain in a particular language. These files are named after the domain they correspond to (e.g., ``<domain-name>.po`` for the PO file).
 
-11. **backup/**: The backup directory, located within the ``_i18n_tools`` directory. It is used to store backup copies of metadata files in a compressed format (e.g., ``<domain-name>.json.gzip``).
+11. **_i18n_tools/**: This directory, at the same level as ``locales``, contains metadata related to the translation dictionaries. It includes a ``backup`` directory for storing backup copies of metadata files.
 
-Repository files
-""""""""""""""""
+12. **backup/**: The backup directory, located within the ``_i18n_tools`` directory. It is used to store backup copies of metadata files in a compressed format (e.g., ``<domain-name>.json.gzip``).
 
-1. **<domain-name>.po, <domain-name>.mo, <domain-name>.json**: The Portable Object (PO) files, Machine Object (MO) files, and JSON metadata files contain the translations for a specific domain in a particular language. These files are named after the domain they correspond to (e.g., ``<domain-name>.po`` for the PO file).
+13. **<settings file>**: The settings file, specified by the ``settings`` path (default is ``i18n_tools.yaml``). It contains configuration details for the translation process.
 
-2. **domain..._name_aggregated.json**: A JSON file at the base of each ``locales`` directory that aggregates metadata for the domain across all language codes. The "_aggregated" suffix helps differentiate it from other metadata files.
+14. **backup/**: The backup directory, located within the ``I18N_TOOLS_CONFIG`` directory. It contains an archive (``repository_backup.tar.gzip``) of the repository data, serving as a backup in case of data loss.
 
-i18n-tools directories and files
-""""""""""""""""""""""""""""""""
-
-1. **I18N_TOOLS_CONFIG/** (under repository): The configuration directory, specified by the ``config`` path. It contains the settings file and the backup directory for the translation repository.
-
-2. **I18N_TOOLS_CONFIG_FILE**: The settings file, specified by the ``settings`` path (default is ``i18n_tools.yaml``). It contains configuration details for the translation process.
-
-3. **I18N_TOOLS_BACKUP/**: The backup directory, located within the ``I18N_TOOLS_CONFIG`` directory. It contains an archive (``repository_backup.tar.gzip``) of the repository data, serving as a backup in case of data loss.
-
-Benefits
-^^^^^^^^
+**Benefits**
 
 - **Consistency**: Ensures a consistent structure across different languages, modules, and packages.
 - **Scalability**: Facilitates the addition of new languages, modules, and packages.
@@ -174,8 +148,7 @@ Benefits
 
 This structure adheres to the GNU gettext standards, promoting a streamlined and efficient translation process.
 
-Proprietary Translation Format
-------------------------------
+**Proprietary Translation Format**
 
 The proprietary translation format used by `i18n-tools` is designed to handle translations efficiently across multiple languages. Key characteristics include:
 
@@ -183,8 +156,7 @@ The proprietary translation format used by `i18n-tools` is designed to handle tr
 - **Consistent Identifiers**: The translation identifier is not tied to any specific language but must remain consistent across all translations.
 - **Message Alternatives**: The base structure supports multiple message alternatives, including dynamic elements that can be interpreted using f-strings.
 
-Atomic cell entity
-^^^^^^^^^^^^^^^^^^
+**Atomic Cell Entity**
 
 The base structure is a JSON dictionary with the following format:
 
@@ -192,6 +164,91 @@ The base structure is a JSON dictionary with the following format:
 
     {
         "id": {
+            "messages": [
+                ["main_msg", "alt_1_msg", "alt_2_msg_with'{variable}'_inside"],
+                ["plural_1_of_main_msg", "plural_1_of_alt_1_msg", "plural_1_of_alt_2_msg_with'{variable}'_inside"],
+                ["plural_2_of_main_msg", "plural_2_of_alt_1_msg", "plural_2_of_alt_2_msg_with'{variable}'_inside"],
+                ["plural_3_of_main_msg", "plural_3_of_alt_1_msg", "plural_3_of_alt_2_msg_without_variable_inside"]
+            ],
+            "metadata": {
+                "singular_count": 3,
+                "plural_counts": [3, 3, 3],
+                "locations": [
+                    ["path/to/source/file1.py", 123],
+                    ["path/to/source/file2.py", 456]
+                ],
+                "flags": [
+                    "fuzzy",
+                    "python-format"
+                ],
+                "comments": "Translator comments or notes about the message"
+            }
+        }
+    }
+
+**Message Strings**
+
+The data structure is a list of lists organized as follows:
+
+- The first list contains the singular forms, where the first item (index 0) is the singular form found in the ``msg_str`` of i18n, and the other indices represent alternative messages.
+
+- Subsequent lists contain plural forms, as many as needed to express the nuances required for the information.
+
+Constraints apply to the dimensions of the lists:
+
+- Plural lists must have the same number of items as the singular list, even if the item within the plurals is an empty string.
+
+- For each list of plurals, the above constraint applies.
+
+**Cell Attached Metadata**
+
+The metadata for each message follows the structure used by the Babel library in Python, which includes:
+
+- **locations**: A list of source code locations where the message is used. Each location is represented as a list containing the file path and the line number.
+- **flags**: A list of flags providing additional information about the message, such as whether it is "fuzzy" or uses "python-format".
+- **comments**: Translator comments or notes about the message, providing context or special instructions.
+
+Additionally, specific metadata for message strings can be included:
+
+- **singular_count**: The number of singular message alternatives, including the main message.
+- **plural_counts**: A list indicating the number of plural forms for each plural list.
+
+**Example of Specific Metadata**:
+
+.. code-block:: json
+
+    {
+        "metadata": {
+            "singular_count": 3,
+            "plural_counts": [3, 3, 3],
+            "locations": [
+                    ["path/to/source/file1.py", 123],
+                    ["path/to/source/file2.py", 456]
+                ],
+            "flags": [
+                    "fuzzy",
+                    "python-format"
+                ],
+            "comments": "Translator comments or notes about the message"
+        }
+    }
+
+**Translation Dictionary Structure**
+
+In the context of the organization, a dictionary represents a translation domain in a specific language. It consists of:
+
+- **Message Entries**: Each entry is identified by a unique ID (e.g., ``id_1``, ``id_2``) and contains message strings along with their associated metadata. This includes singular and plural forms, as well as specific metadata like locations, flags, and comments.
+
+- **Global Metadata**: Metadata that applies to the entire translation domain, providing contextual information and global declarations from translators, ensuring consistency and clarity.
+
+**Example of Translation Dictionary**
+
+Here is an example of how a translation dictionary is structured:
+
+.. code-block:: json
+
+    {
+        "id_1": {
             "messages": [
                 ["main_msg", "alt_1_msg", "alt_2_msg_with'{variable}'_inside"],
                 ["plural_1_of_main_msg", "plural_1_of_alt_1_msg", "plural_1_of_alt_2_msg_with'{variable}'_inside"],
@@ -207,27 +264,49 @@ The base structure is a JSON dictionary with the following format:
                     "fuzzy",
                     "python-format"
                 ],
-                "comments": "Translator comments or notes about the message"
+                "comments": "Translator comments or notes about the message",
+                "singular_count": 3,
+                "plural_counts": [3, 3, 3],
             }
+        },
+        "id_2": {
+            "messages": [
+                ["another_main_msg", "another_alt_1_msg"],
+                ["another_plural_1_of_main_msg", "another_plural_1_of_alt_1_msg"],
+                ["another_plural_2_of_main_msg", "another_plural_2_of_alt_1_msg"]
+            ],
+            "metadata": {
+                "locations": [
+                    ["path/to/source/file3.py", 789]
+                ],
+                "flags": [
+                    "python-format"
+                ],
+                "comments": "Additional translator comments or notes about the message",
+                "singular_count": 2,
+                "plural_counts": [2, 2],
+            }
+        },
+        "metadata": {
+            "project_id_version": "i18n-tools 1.0",
+            "report_msgid_bugs_to": "bugs@example.com",
+            "pot_creation_date": "2023-10-01 12:00+0100",
+            "language_team": "French Team <french-team@example.com>",
+            "statistics": {
+                "total_words": 5678,
+                "total_messages": 1234
+            },
+            "header_comment": "Global declarations or notes from translators about the translation domain"
         }
     }
 
-- **Translation Domain**: A translation domain contains multiple entries of this structure, with the filename and domain name being the same.
+In this example:
 
-Metadata Structure
-^^^^^^^^^^^^^^^^^^
+- **Message IDs**: Each message ID (e.g., ``id_1``, ``id_2``) contains message strings and their associated metadata, including singular and plural forms, as well as specific metadata like locations, flags, and comments.
 
-Cell attached metadata
-""""""""""""""""""""""
+- **Global Metadata**: The dictionary includes global metadata that applies to the entire translation domain, providing contextual information and global declarations from translators.
 
-The metadata for each message follows the structure used by the Babel library in Python, which includes:
-
-- **locations**: A list of source code locations where the message is used. Each location is represented as a list containing the file path and the line number.
-- **flags**: A list of flags providing additional information about the message, such as whether it is "fuzzy" or uses "python-format".
-- **comments**: Translator comments or notes about the message, providing context or special instructions.
-
-Global Metadata for Translation Domains
-"""""""""""""""""""""""""""""""""""""""
+**Global Metadata for Translation Domains**
 
 In addition to message-specific metadata, each translation domain includes global metadata that applies to the entire domain. This metadata provides contextual information and global declarations from translators, ensuring consistency and clarity.
 
@@ -252,35 +331,11 @@ The global metadata for a translation domain includes the following key elements
 6. **Global Declarations**:
    - **header_comment**: Global declarations or notes from translators about the translation domain. This field is used to provide contextual information, general instructions, or important remarks that apply to the entire domain.
 
-**Example of Global Metadata**
-
-Here is an example of how the global metadata can be structured in JSON format:
-
-.. code-block:: json
-
-    {
-      "metadata": {
-        "project_id_version": "i18n-tools 1.0",
-        "report_msgid_bugs_to": "bugs@example.com",
-        "pot_creation_date": "2023-10-01 12:00+0100",
-        "language_team": "French Team <french-team@example.com>",
-        "statistics": {
-          "total_words": 5678,
-          "total_messages": 1234
-        },
-        "header_comment": "Global declarations or notes from translators about the translation domain"
-      }
-    }
-
-This structure ensures that translators have all the necessary context and information to accurately translate messages, while also providing a centralized location for important global declarations and instructions.
-
-Conversion of Alternative Messages
-----------------------------------
+**Conversion of Alternative Messages**
 
 To integrate alternative messages from the proprietary `i18n-tools` format into classic translation formats like Babel and i18next, an extended ID convention can be used. This approach ensures clarity and compatibility with existing tools.
 
-Extended ID Convention in GNU i18n Standard
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Extended ID Convention in GNU i18n Standard**
 
 The extended ID convention involves appending a numerical suffix to the base message ID to represent alternative messages and their plural forms. Here's how it works:
 
@@ -317,12 +372,11 @@ The extended ID convention involves appending a numerical suffix to the base mes
          msgstr[1] "plural_3_of_main_msg"
 
          msgid "id_001_plural"
-         msgid_plural "plural_1_of_main_msg_001"
+         msgid_plural "plural_1_of_alt_1_msg"
          msgstr[0] "plural_2_of_alt_1_msg"
          msgstr[1] "plural_3_of_alt_1_msg"
 
-Extended ID Convention for i18next Format
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**Extended ID Convention for i18next Format**
 
 The extended ID convention involves appending a numerical suffix to the base message ID to represent alternative messages and their plural forms. Here's how it works:
 
@@ -364,8 +418,7 @@ The extended ID convention involves appending a numerical suffix to the base mes
            }
          }
 
-Benefits
-^^^^^^^^
+**Benefits**
 
 - **Clarity**: This convention clearly distinguishes between main messages, alternatives, and their plural forms.
 - **Compatibility**: It is compatible with the ``.po`` format used by Babel and the i18next format, allowing seamless integration with existing i18next setups.

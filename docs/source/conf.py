@@ -22,7 +22,7 @@ sys.path.append(os.path.abspath('../..'))
 sys.path.append(os.path.abspath('../../src'))
 
 extensions = [
-'sphinx.ext.duration',
+    'sphinx.ext.duration',
     'sphinx.ext.napoleon',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
