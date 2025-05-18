@@ -2,8 +2,9 @@
 Converter Module
 ================
 
-This module is responsible for converting data between different internationalization (i18n) formats.
-It serves as a bridge between various translation systems, allowing seamless conversion and interoperability.
+This module is responsible for converting data between different internationalization (i18n) formats as described in
+package documentation. It serves as a bridge between various translation systems, allowing seamless conversion and
+interoperability.
 
 Supported Translation Formats
 -----------------------------
@@ -33,31 +34,6 @@ Supported Translation Formats
    - Supports global metadata for translation domains (project info, team info, statistics).
    - **Strengths:** Rich support for alternative messages, detailed metadata, optimized for this project's specific needs.
 
-Repository Organization
------------------------
-
-The translation repository follows a structured format for directories and files, ensuring efficient and consistent management of translations across different languages, modules, and packages:
-
-1. **Directory Structure**
-
-   - **<root>/<repository>/<module>/locales/**: Contains translation files for a specific module.
-   - **templates/**: Contains template files (`.pot`, `.json`) for translations.
-   - **<language_code>/LC_MESSAGES/**: Contains language-specific translation files (`.po`, `.mo`, `.json`).
-   - **_i18n_tools/**: Contains metadata and backup files for the module.
-
-2. **Key Files**
-
-   - **<domain-name>.po**: Portable Object file containing translations for a specific domain and language.
-   - **<domain-name>.mo**: Machine Object file compiled from the PO file for runtime use.
-   - **<domain-name>.json**: JSON file containing translations in i18next or i18n_tools format.
-   - **<domain-name>_aggregated.json**: Aggregated JSON file containing translations for all languages.
-
-3. **Metadata**
-
-   - Stored in the `_i18n_tools/metadata/` directory.
-   - Includes information about the translation process, such as creation date, translator team, etc.
-   - Global metadata applies to the entire domain, while message-specific metadata applies to individual messages.
-
 The Pivotal Role of the Unified Format
 --------------------------------------
 
@@ -83,85 +59,6 @@ key advantages:
    - Maintains plural forms across different systems with varying plural handling approaches.
    - Keeps translation context which is crucial for accurate translations.
 
-Format Structure
-----------------
-
-Native ``i18n_tools`` Format Structure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``i18n_tools`` format is a ``NestedDictionary`` object with the following structure:
-
-.. code-block:: python
-
-     {
-        "msgid_001": {
-            "messages": [
-                ["main_msg", "alt_1_msg", "alt_2_msg_with'{variable}'_inside"],
-                ["plural_1_of_main_msg", "plural_1_of_alt_1_msg", "plural_1_of_alt_2_msg_with'{variable}'_inside"],
-                ["plural_2_of_main_msg", "plural_2_of_alt_1_msg", "plural_2_of_alt_2_msg_with'{variable}'_inside"],
-                ["plural_3_of_main_msg", "plural_3_of_alt_1_msg", "plural_3_of_alt_2_msg_without_variable_inside"]
-            ],
-            "metadata": {
-                "locations": [
-                    ["path/to/source/file1.py", 123],
-                    ["path/to/source/file2.py", 456]
-                ],
-                "flags": [
-                    "fuzzy",
-                    "python-format"
-                ],
-                "comments": "Translator comments or notes about the message",
-                "singular_count": 3,
-                "plural_counts": [3, 3, 3],
-            }
-        },
-        "msgid_002": {
-            "messages": [
-                ["another_main_msg", "another_alt_1_msg"],
-                ["another_plural_1_of_main_msg", "another_plural_1_of_alt_1_msg"],
-                ["another_plural_2_of_main_msg", "another_plural_2_of_alt_1_msg"]
-            ],
-            "metadata": {
-                "locations": [
-                    ["path/to/source/file3.py", 789]
-                ],
-                "flags": [
-                    "python-format"
-                ],
-                "comments": "Additional translator comments or notes about the message",
-                "singular_count": 2,
-                "plural_counts": [2, 2],
-            }
-        },
-        "metadata": {
-            "project_id_version": "i18n-tools 1.0",
-            "report_msgid_bugs_to": "bugs@example.com",
-            "pot_creation_date": "2023-10-01 12:00+0100",
-            "language_team": "French Team <french-team@example.com>",
-            "statistics": {
-                "total_words": 5678,
-                "total_messages": 1234
-            },
-            "header_comment": "Global declarations or notes from translators about the translation domain"
-        }
-    }
-
-``i18next`` Format Structure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``i18next`` format is typically a JSON object with the following structure:
-
-.. code-block:: json
-
-    {
-        "key1": "value1",
-        "key2": "value2",
-        "key3_plural": "plural value",
-        "key3": "singular value",
-        "nested": {
-            "key": "nested value"
-        }
-    }
 
 Unified Format Structure
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -174,9 +71,9 @@ The unified format is a dictionary with the following structure:
         "message_id": {  # The unique identifier for the message (string)
             "translation": "The translated text for the message",  # (string)
             "plural_forms": {  # A dictionary containing plural forms of the translation
-                "0": "The singular form of the translation",  # (string)
-                "1": "The first plural form of the translation",  # (string)
-                "2": "The second plural form of the translation",  # (string)
+                0: "The singular form of the translation",  # (string)
+                1: "The first plural form of the translation",  # (string)
+                2: "The second plural form of the translation",  # (string)
                 # Additional plural forms as needed
             },
             "context": "Optional context information for the translation",  # (string)
@@ -187,16 +84,32 @@ The unified format is a dictionary with the following structure:
                 "auto_comments": ["Developer comments extracted from the source code"],  # (list of strings)
                 # Additional metadata as needed
             },
-            "alternatives": ["Alternative message 1", "Alternative message 2"],  # (list of strings)
-            "alternative_plural_forms": {  # A dictionary containing plural forms for alternative messages
-                "0": {  # Index of the alternative message (corresponds to index in alternatives list)
-                    "1": "First plural form of alternative message 1",  # (string)
-                    "2": "Second plural form of alternative message 1",  # (string)
+            "alternatives": { # A dictionary containing alternative messages for the message
+                0: "Alternative message 1"
+                1: "Alternative message 2"
                 },
-                "1": {  # Index of the alternative message (corresponds to index in alternatives list)
-                    "1": "First plural form of alternative message 2",  # (string)
-                    "2": "Second plural form of alternative message 2",  # (string)
+            "alternative_plural_forms": {  # A dictionary containing plural forms for alternative messages
+                0: {  # Index of the alternative message (corresponds to index in alternatives list)
+                    1: "First plural form of alternative message 1",  # (string)
+                    2: "Second plural form of alternative message 1",  # (string)
+                },
+                1: {  # Index of the alternative message (corresponds to index in alternatives list)
+                    1: "First plural form of alternative message 2",  # (string)
+                    2: "Second plural form of alternative message 2",  # (string)
                 }
+            }
+        },
+        "metadata": {  # Global metadata for the translation domain
+            "project_id_version": "Project name and version",  # (string)
+            "report_msgid_bugs_to": "Email address for reporting message ID bugs",  # (string)
+            "pot_creation_date": "Date when the POT file was created",  # (string)
+            "language_team": "Name and email of the language team",  # (string)
+            "domain": "Translation domain name",  # (string)
+            "header_comment": "Comment in the header of the catalog",  # (string)
+            "copyright_holder": "Copyright holder information",  # (string)
+            "statistics": {  # Statistics about the translations
+                "total_messages": 1234,  # (integer)
+                "total_words": 5678  # (integer)
             }
         }
     }
@@ -289,6 +202,7 @@ from i18n_tools.locale import get_all_languages
 # -----------------------------------------------------------------------------
 #
 
+#FIXME : Conversion to or from i18next and Catalog does not work well...
 
 def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
     """
@@ -302,6 +216,25 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
     unified = {}
     alternative_messages = {}
     alternative_plurals = {}
+
+    # Extract domain metadata from the catalog
+    unified["metadata"] = {
+        "project_id_version": f"{getattr(catalog, 'project', '')} {getattr(catalog, 'version', '')}".strip(),
+        "report_msgid_bugs_to": getattr(catalog, 'msgid_bugs_address', ''),
+        "pot_creation_date": "",
+        "language_team": "",
+        "domain": getattr(catalog, 'domain', ''),
+        "header_comment": getattr(catalog, 'header_comment', ''),
+        "copyright_holder": getattr(catalog, 'copyright_holder', '')
+    }
+
+    # Extract additional metadata from mime_headers if available
+    mime_headers = getattr(catalog, 'mime_headers', [])
+    for name, value in mime_headers:
+        if name == "POT-Creation-Date":
+            unified["metadata"]["pot_creation_date"] = value
+        elif name == "Language-Team":
+            unified["metadata"]["language_team"] = value
 
     # First pass: collect all messages and identify alternatives
     for message in catalog:
@@ -360,7 +293,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                     "comments": message.user_comments,
                     "auto_comments": message.auto_comments,
                 },
-                "alternatives": [],
+                "alternatives": {},
                 "alternative_plural_forms": {}
             }
 
@@ -382,7 +315,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                     "comments": message.user_comments,
                     "auto_comments": message.auto_comments,
                 },
-                "alternatives": [],
+                "alternatives": {},
                 "alternative_plural_forms": {}
             }
 
@@ -395,7 +328,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                 "plural_forms": {},
                 "context": "",
                 "metadata": {},
-                "alternatives": [],
+                "alternatives": {},
                 "alternative_plural_forms": {}
             }
 
@@ -405,19 +338,22 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
         # Add alternatives to the base message
         for idx in sorted_indices:
             alt_message = alternatives[idx]
-            unified[base_id]["alternatives"].append(alt_message.string)
+            alt_idx = len(unified[base_id]["alternatives"]) if "alternatives" in unified[base_id] else 0
+            unified[base_id]["alternatives"][str(alt_idx)] = alt_message.string
 
             # Initialize alternative_plural_forms for this alternative
-            alt_idx = len(unified[base_id]["alternatives"]) - 1
             unified[base_id]["alternative_plural_forms"][str(alt_idx)] = {}
 
             # Add plural forms for this alternative if they exist
             if base_id in alternative_plurals and idx in alternative_plurals[base_id]:
                 plural_message = alternative_plurals[base_id][idx]
-                if isinstance(plural_message.string, (tuple, list)):
+                if isinstance(plural_message.string, (tuple, list)) and len(plural_message.string) > 1:
                     # Start from index 1 for plural forms (index 0 is already stored as translation)
                     for i, form in enumerate(plural_message.string[1:], 1):
                         unified[base_id]["alternative_plural_forms"][str(alt_idx)][str(i)] = form
+                elif isinstance(plural_message.string, str):
+                    # If the string is a single string, use it as the first plural form
+                    unified[base_id]["alternative_plural_forms"][str(alt_idx)]["1"] = plural_message.string
 
     return unified
 
@@ -437,7 +373,41 @@ def unified_format_to_catalog(
     :return: Babel Catalog object
     :rtype: Catalog
     """
-    catalog = Catalog(locale=locale, domain=domain)
+    # Extract metadata from unified format
+    metadata = unified.get("metadata", {})
+
+    # Parse project_id_version to get project and version
+    project_id_version = metadata.get("project_id_version", "")
+    project = project_id_version.split(" ")[0] if project_id_version else ""
+    version = " ".join(project_id_version.split(" ")[1:]) if len(project_id_version.split(" ")) > 1 else ""
+
+    # Create catalog with metadata
+    catalog = Catalog(
+        locale=locale, 
+        domain=domain or metadata.get("domain", None),
+        project=project,
+        version=version,
+        copyright_holder=metadata.get("copyright_holder", ""),
+        msgid_bugs_address=metadata.get("report_msgid_bugs_to", "")
+    )
+
+    # Set additional metadata
+    if "header_comment" in metadata:
+        catalog.header_comment = metadata["header_comment"]
+
+    # Set mime headers
+    mime_headers = []
+    if "project_id_version" in metadata:
+        mime_headers.append(("Project-Id-Version", metadata["project_id_version"]))
+    if "report_msgid_bugs_to" in metadata:
+        mime_headers.append(("Report-Msgid-Bugs-To", metadata["report_msgid_bugs_to"]))
+    if "pot_creation_date" in metadata:
+        mime_headers.append(("POT-Creation-Date", metadata["pot_creation_date"]))
+    if "language_team" in metadata:
+        mime_headers.append(("Language-Team", metadata["language_team"]))
+
+    if mime_headers:
+        catalog.mime_headers = mime_headers
 
     for message_id, entry in unified.items():
         # Skip global metadata
@@ -499,17 +469,19 @@ def unified_format_to_catalog(
             )
 
         # Handle alternative messages
-        alternatives = entry.get("alternatives", [])
+        alternatives = entry.get("alternatives", {})
         alternative_plural_forms = entry.get("alternative_plural_forms", {})
 
-        for alt_idx, alt_translation in enumerate(alternatives, 1):
+        for alt_idx_str, alt_translation in alternatives.items():
+            # Convert string index to integer for formatting
+            alt_idx = int(alt_idx_str) + 1
             # Create alternative message ID using the extended ID convention (e.g., id_001)
             alt_message_id = f"{message_id}_{alt_idx:03d}"
 
             # Check if this alternative has plural forms
-            if str(alt_idx - 1) in alternative_plural_forms:
+            if alt_idx_str in alternative_plural_forms:
                 # Get plural forms for this alternative
-                alt_plural_forms = alternative_plural_forms[str(alt_idx - 1)]
+                alt_plural_forms = alternative_plural_forms[alt_idx_str]
 
                 if alt_plural_forms:
                     # Create a tuple of strings for plural forms, starting with the singular form at index 0
@@ -572,6 +544,8 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # First pass: collect all messages and identify alternatives
     for key, value in i18next_data.items():
+        if key == "metadata":  # Skip metadata at root level
+            continue
         if isinstance(value, dict):
             # Skip nested objects for now
             continue
@@ -618,7 +592,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                     "plural_forms": {"1": value},
                     "context": "",
                     "metadata": {},
-                    "alternatives": [],
+                    "alternatives": {},
                     "alternative_plural_forms": {}
                 }
             else:
@@ -633,7 +607,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                         "plural_forms": {"0": value, "1": i18next_data[plural_key]},
                         "context": "",
                         "metadata": {},
-                        "alternatives": [],
+                        "alternatives": {},
                         "alternative_plural_forms": {}
                     }
                 else:
@@ -646,7 +620,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                     "plural_forms": {},
                     "context": "",
                     "metadata": {},
-                    "alternatives": [],
+                    "alternatives": {},
                     "alternative_plural_forms": {}
                 }
 
@@ -659,7 +633,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                 "plural_forms": {},
                 "context": "",
                 "metadata": {},
-                "alternatives": [],
+                "alternatives": {},
                 "alternative_plural_forms": {}
             }
 
@@ -669,10 +643,10 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
         # Add alternatives to the base message
         for idx in sorted_indices:
             alt_value = alternatives[idx]
-            unified[base_key]["alternatives"].append(alt_value)
+            alt_idx = len(unified[base_key]["alternatives"]) if unified[base_key]["alternatives"] else 0
+            unified[base_key]["alternatives"][str(alt_idx)] = alt_value
 
             # Initialize alternative_plural_forms for this alternative
-            alt_idx = len(unified[base_key]["alternatives"]) - 1
             unified[base_key]["alternative_plural_forms"][str(alt_idx)] = {}
 
             # Add plural forms for this alternative if they exist
@@ -682,7 +656,9 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
 
     # Process nested objects
     for key, value in i18next_data.items():
-        if isinstance(value, dict):
+        if key == "metadata":  # Handle global metadata
+            unified["metadata"] = value
+        elif isinstance(value, dict):
             nested_unified = i18next_to_unified_format(value)
             for nested_key, nested_value in nested_unified.items():
                 full_key = f"{key}.{nested_key}"
@@ -706,7 +682,14 @@ def unified_format_to_i18next(
     """
     i18next = {}
 
+    # Add metadata if it exists in the unified format
+    if "metadata" in unified:
+        i18next["metadata"] = unified["metadata"]
+
     for key, entry in unified.items():
+        # Skip global metadata
+        if key == "metadata":
+            continue
         # Handle nested keys if not flattening
         if not flatten and "." in key:
             parts = key.split(".")
@@ -724,17 +707,19 @@ def unified_format_to_i18next(
                 current[f"{parts[-1]}_plural"] = entry["plural_forms"]["1"]
 
             # Add alternative messages
-            alternatives = entry.get("alternatives", [])
+            alternatives = entry.get("alternatives", {})
             alternative_plural_forms = entry.get("alternative_plural_forms", {})
 
-            for alt_idx, alt_translation in enumerate(alternatives, 1):
+            for alt_idx_str, alt_translation in alternatives.items():
+                # Convert string index to integer for formatting
+                alt_idx = int(alt_idx_str) + 1
                 # Create alternative key using the extended ID convention (e.g., id_001)
                 alt_key = f"{parts[-1]}_{alt_idx:03d}"
                 current[alt_key] = alt_translation
 
                 # Add plural form for this alternative if available
-                if str(alt_idx - 1) in alternative_plural_forms and "1" in alternative_plural_forms[str(alt_idx - 1)]:
-                    current[f"{alt_key}_plural"] = alternative_plural_forms[str(alt_idx - 1)]["1"]
+                if alt_idx_str in alternative_plural_forms and "1" in alternative_plural_forms[alt_idx_str]:
+                    current[f"{alt_key}_plural"] = alternative_plural_forms[alt_idx_str]["1"]
         else:
             # Add main translation
             i18next[key] = entry.get("translation", "")
@@ -744,17 +729,19 @@ def unified_format_to_i18next(
                 i18next[f"{key}_plural"] = entry["plural_forms"]["1"]
 
             # Add alternative messages
-            alternatives = entry.get("alternatives", [])
+            alternatives = entry.get("alternatives", {})
             alternative_plural_forms = entry.get("alternative_plural_forms", {})
 
-            for alt_idx, alt_translation in enumerate(alternatives, 1):
+            for alt_idx_str, alt_translation in alternatives.items():
+                # Convert string index to integer for formatting
+                alt_idx = int(alt_idx_str) + 1
                 # Create alternative key using the extended ID convention (e.g., id_001)
                 alt_key = f"{key}_{alt_idx:03d}"
                 i18next[alt_key] = alt_translation
 
                 # Add plural form for this alternative if available
-                if str(alt_idx - 1) in alternative_plural_forms and "1" in alternative_plural_forms[str(alt_idx - 1)]:
-                    i18next[f"{alt_key}_plural"] = alternative_plural_forms[str(alt_idx - 1)]["1"]
+                if alt_idx_str in alternative_plural_forms and "1" in alternative_plural_forms[alt_idx_str]:
+                    i18next[f"{alt_key}_plural"] = alternative_plural_forms[alt_idx_str]["1"]
 
     return i18next
 
@@ -787,17 +774,18 @@ def i18n_tools_to_unified_format(
                 "plural_forms": {},
                 "context": "",
                 "metadata": {
-                    "locations": metadata.get("locations", []),
+                    "locations": [f"{loc[0]}:{loc[1]}" if isinstance(loc, list) and len(loc) >= 2 else loc for loc in metadata.get("locations", [])],
                     "flags": metadata.get("flags", []),
                     "comments": metadata.get("comments", ""),
                     "auto_comments": [],
                 },
-                "alternatives": []
+                "alternatives": {}
             }
 
             # Add all alternatives from the first list (except the first one which is already the main translation)
             if messages and len(messages[0]) > 1:
-                entry["alternatives"] = messages[0][1:]
+                for i, alt in enumerate(messages[0][1:]):
+                    entry["alternatives"][str(i)] = alt
 
             # Add plural forms for the main message
             for i, plural_list in enumerate(messages[1:], 1):
@@ -822,12 +810,13 @@ def i18n_tools_to_unified_format(
                 "plural_forms": {},
                 "context": "",
                 "metadata": {},
-                "alternatives": []
+                "alternatives": {}
             }
 
             # Add all alternatives from the first list (except the first one which is already the main translation)
             if value_lists and len(value_lists[0]) > 1:
-                entry["alternatives"] = value_lists[0][1:]
+                for i, alt in enumerate(value_lists[0][1:]):
+                    entry["alternatives"][str(i)] = alt
 
             # Add plural forms for the main message
             for i, plural_list in enumerate(value_lists[1:], 1):
@@ -869,10 +858,13 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
 
         # Start with the singular form and alternatives
         main_translation = entry.get("translation", "")
-        alternatives = entry.get("alternatives", [])
+        alternatives = entry.get("alternatives", {})
 
         # Create the first list with main translation and alternatives
-        first_list = [main_translation] + alternatives
+        first_list = [main_translation]
+        # Add alternatives in order of their keys
+        for idx in sorted([int(k) for k in alternatives.keys()]):
+            first_list.append(alternatives[str(idx)])
         value_lists = [first_list]
 
         # Add plural forms for main message
@@ -887,10 +879,10 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
             plural_list = [plural_forms.get(str(i), "")]
 
             # Add plural forms for each alternative
-            for alt_idx in range(len(alternatives)):
+            for alt_idx_str in sorted([str(k) for k in alternatives.keys()]):
                 alt_plural = ""
-                if str(alt_idx) in alternative_plural_forms and str(i) in alternative_plural_forms[str(alt_idx)]:
-                    alt_plural = alternative_plural_forms[str(alt_idx)][str(i)]
+                if alt_idx_str in alternative_plural_forms and str(i) in alternative_plural_forms[alt_idx_str]:
+                    alt_plural = alternative_plural_forms[alt_idx_str][str(i)]
                 plural_list.append(alt_plural)
 
             value_lists.append(plural_list)
@@ -993,8 +985,12 @@ def convert_i18n_tools_to_catalog(
     :return: Babel Catalog object
     :rtype: Catalog
     """
+    print("i18n_tools_data keys:", list(i18n_tools_data.keys()))
     unified = i18n_tools_to_unified_format(i18n_tools_data)
-    return unified_format_to_catalog(unified, locale, domain)
+    print("unified keys:", list(unified.keys()))
+    catalog = unified_format_to_catalog(unified, locale, domain)
+    print("catalog keys:", [msg.id for msg in catalog if msg.id])
+    return catalog
 
 
 def convert_i18next_to_i18n_tools(
