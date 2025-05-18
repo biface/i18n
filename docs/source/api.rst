@@ -15,3 +15,4 @@ modifying, or redistributing this package, you agree to comply with the terms of
     api/loader
     api/config
     api/converter
+    api/formatter

@@ -5,7 +5,8 @@ Translation Repository Organization
 
 This document outlines the organization of a translation repository following a structured format for directories and files. This structure ensures that translation files are managed efficiently and consistently across different languages, modules, and packages. It is intended for developers, translators, and project managers to understand and follow the established conventions.
 
-**Repository Structure**
+Repository Structure
+--------------------
 
 The translation repository is organized into the following directory structure:
 
@@ -110,7 +111,8 @@ The translation repository is organized into the following directory structure:
     │   └── ...
     └── ...
 
-**Key Directories and Files**
+Key Directories and Files
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. **<root>/**: The root directory for the translation repository, specified by the ``root`` path in the configuration. It serves as the base directory for all translation-related files.
 
@@ -120,11 +122,11 @@ The translation repository is organized into the following directory structure:
 
 4. **<module_3>/package_1, <module_3>/package_2, .../**: Subdirectories within a module that represent different packages. Each package directory contains its own ``locales`` directory and an ``_i18n_tools`` directory for metadata.
 
-5. **locales/**: This directory, within each module or package directory, contains the ``templates`` directory and language-specific subdirectories.
+5. **locales/** (:doc:`I18N_TOOLS_LOCALE <api/constant>`) : This directory, within each module or package directory, contains the ``templates`` directory and language-specific subdirectories.
 
 6. **domain..._name_aggregated.json**: A JSON file at the base of each ``locales`` directory that aggregates metadata for the domain across all language codes. The "_aggregated" suffix helps differentiate it from other metadata files.
 
-7. **templates/**: This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
+7. **templates/** (:doc:`I18N_TOOLS_TEMPLATE <api/constant>`): This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
 
 8. **<language_code>/**: A directory for each language supported by the application within the ``locales`` directory. The language code follows the `IETF language tag <https://en.wikipedia.org/wiki/IETF_language_tag>`_ format (e.g., ``fr`` for French, ``de`` for German).
 
@@ -140,7 +142,8 @@ The translation repository is organized into the following directory structure:
 
 14. **backup/**: The backup directory, located within the ``I18N_TOOLS_CONFIG`` directory. It contains an archive (``repository_backup.tar.gzip``) of the repository data, serving as a backup in case of data loss.
 
-**Benefits**
+Benefits
+^^^^^^^^
 
 - **Consistency**: Ensures a consistent structure across different languages, modules, and packages.
 - **Scalability**: Facilitates the addition of new languages, modules, and packages.
@@ -148,7 +151,8 @@ The translation repository is organized into the following directory structure:
 
 This structure adheres to the GNU gettext standards, promoting a streamlined and efficient translation process.
 
-**Proprietary Translation Format**
+Proprietary Translation Format
+------------------------------
 
 The proprietary translation format used by `i18n-tools` is designed to handle translations efficiently across multiple languages. Key characteristics include:
 
@@ -156,7 +160,8 @@ The proprietary translation format used by `i18n-tools` is designed to handle tr
 - **Consistent Identifiers**: The translation identifier is not tied to any specific language but must remain consistent across all translations.
 - **Message Alternatives**: The base structure supports multiple message alternatives, including dynamic elements that can be interpreted using f-strings.
 
-**Atomic Cell Entity**
+Atomic Cell Entity
+^^^^^^^^^^^^^^^^^^
 
 The base structure is a JSON dictionary with the following format:
 
@@ -186,7 +191,8 @@ The base structure is a JSON dictionary with the following format:
         }
     }
 
-**Message Strings**
+Message Strings
+"""""""""""""""
 
 The data structure is a list of lists organized as follows:
 
@@ -200,7 +206,8 @@ Constraints apply to the dimensions of the lists:
 
 - For each list of plurals, the above constraint applies.
 
-**Cell Attached Metadata**
+Cell Attached Metadata
+""""""""""""""""""""""
 
 The metadata for each message follows the structure used by the Babel library in Python, which includes:
 
@@ -213,7 +220,8 @@ Additionally, specific metadata for message strings can be included:
 - **singular_count**: The number of singular message alternatives, including the main message.
 - **plural_counts**: A list indicating the number of plural forms for each plural list.
 
-**Example of Specific Metadata**:
+Example of Specific Metadata
+""""""""""""""""""""""""""""
 
 .. code-block:: json
 
@@ -233,7 +241,8 @@ Additionally, specific metadata for message strings can be included:
         }
     }
 
-**Translation Dictionary Structure**
+Translation Dictionary Structure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the context of the organization, a dictionary represents a translation domain in a specific language. It consists of:
 
@@ -306,7 +315,8 @@ In this example:
 
 - **Global Metadata**: The dictionary includes global metadata that applies to the entire translation domain, providing contextual information and global declarations from translators.
 
-**Global Metadata for Translation Domains**
+Global Metadata for Translation Domains
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In addition to message-specific metadata, each translation domain includes global metadata that applies to the entire domain. This metadata provides contextual information and global declarations from translators, ensuring consistency and clarity.
 
@@ -331,11 +341,13 @@ The global metadata for a translation domain includes the following key elements
 6. **Global Declarations**:
    - **header_comment**: Global declarations or notes from translators about the translation domain. This field is used to provide contextual information, general instructions, or important remarks that apply to the entire domain.
 
-**Conversion of Alternative Messages**
+Conversion of Alternative Messages
+----------------------------------
 
 To integrate alternative messages from the proprietary `i18n-tools` format into classic translation formats like Babel and i18next, an extended ID convention can be used. This approach ensures clarity and compatibility with existing tools.
 
-**Extended ID Convention in GNU i18n Standard**
+Extended ID Convention in GNU i18n Standard
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The extended ID convention involves appending a numerical suffix to the base message ID to represent alternative messages and their plural forms. Here's how it works:
 
@@ -376,7 +388,8 @@ The extended ID convention involves appending a numerical suffix to the base mes
          msgstr[0] "plural_2_of_alt_1_msg"
          msgstr[1] "plural_3_of_alt_1_msg"
 
-**Extended ID Convention for i18next Format**
+Extended ID Convention for i18next Format
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The extended ID convention involves appending a numerical suffix to the base message ID to represent alternative messages and their plural forms. Here's how it works:
 
@@ -386,9 +399,15 @@ The extended ID convention involves appending a numerical suffix to the base mes
 
      .. code-block:: json
 
-         {
-           "id": "main_msg"
-         }
+        {
+            "key1": "value1",
+            "key2": "value2",
+            "key3_plural": "plural value",
+            "key3": "singular value",
+            "nested": {
+                "key": "nested value"
+            }
+        }
 
 2. **Alternative Messages**:
    - Use extended IDs (e.g., ``id_001``, ``id_002``) for alternative messages.
@@ -418,7 +437,8 @@ The extended ID convention involves appending a numerical suffix to the base mes
            }
          }
 
-**Benefits**
+Benefits
+^^^^^^^^
 
 - **Clarity**: This convention clearly distinguishes between main messages, alternatives, and their plural forms.
 - **Compatibility**: It is compatible with the ``.po`` format used by Babel and the i18next format, allowing seamless integration with existing i18next setups.
