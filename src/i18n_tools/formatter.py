@@ -13,7 +13,8 @@ Main responsibilities:
 
 """
 
-from .models import Message, Corpus
+from .models import Corpus, Message
+
 
 def publish(message: Message) -> str:
     """

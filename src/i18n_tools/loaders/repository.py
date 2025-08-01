@@ -79,6 +79,7 @@ def _translation_lang_files(
 
     return json_file_path, po_file_path, pot_file
 
+
 def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
     """
     Verify that the repository paths and modules exist.
@@ -125,7 +126,9 @@ def _verify_available_languages(
             )
 
 
-def _verify_target_module(repository: StrictNestedDictionary, target_module: str) -> None:
+def _verify_target_module(
+    repository: StrictNestedDictionary, target_module: str
+) -> None:
     """
     Verify that a target module is registered in the repository.
 

@@ -182,17 +182,17 @@ Key Responsibilities:
     - Interact with translation repositories to find and manipulate translations.
 """
 
-from typing import Any, Dict, List, Optional, Union
 import re
+from typing import Any, Dict, List, Optional, Union
 
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.loaders import (
-    fetch_catalog,
-    fetch_dictionary,
     dump_catalog,
     dump_dictionary,
+    fetch_catalog,
+    fetch_dictionary,
 )
 from i18n_tools.loaders.utils import _load_json, _load_text, _save_json, _save_text
 from i18n_tools.locale import get_all_languages
@@ -202,7 +202,8 @@ from i18n_tools.locale import get_all_languages
 # -----------------------------------------------------------------------------
 #
 
-#FIXME : Conversion to or from i18next and Catalog does not work well...
+# FIXME : Conversion to or from i18next and Catalog does not work well...
+
 
 def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
     """
@@ -220,16 +221,16 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
     # Extract domain metadata from the catalog
     unified["metadata"] = {
         "project_id_version": f"{getattr(catalog, 'project', '')} {getattr(catalog, 'version', '')}".strip(),
-        "report_msgid_bugs_to": getattr(catalog, 'msgid_bugs_address', ''),
+        "report_msgid_bugs_to": getattr(catalog, "msgid_bugs_address", ""),
         "pot_creation_date": "",
         "language_team": "",
-        "domain": getattr(catalog, 'domain', ''),
-        "header_comment": getattr(catalog, 'header_comment', ''),
-        "copyright_holder": getattr(catalog, 'copyright_holder', '')
+        "domain": getattr(catalog, "domain", ""),
+        "header_comment": getattr(catalog, "header_comment", ""),
+        "copyright_holder": getattr(catalog, "copyright_holder", ""),
     }
 
     # Extract additional metadata from mime_headers if available
-    mime_headers = getattr(catalog, 'mime_headers', [])
+    mime_headers = getattr(catalog, "mime_headers", [])
     for name, value in mime_headers:
         if name == "POT-Creation-Date":
             unified["metadata"]["pot_creation_date"] = value
@@ -248,9 +249,9 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
         base_id = message_id
         alt_index = None
 
-        if isinstance(message_id, str) and re.search(r'_\d{3}$', message_id):
+        if isinstance(message_id, str) and re.search(r"_\d{3}$", message_id):
             # This is an alternative message (e.g., id_001)
-            match = re.search(r'(.+)_(\d{3})$', message_id)
+            match = re.search(r"(.+)_(\d{3})$", message_id)
             if match:
                 base_id = match.group(1)
                 alt_index = int(match.group(2))
@@ -263,8 +264,8 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                 continue
 
         # Check if this is a plural form of an alternative message
-        elif isinstance(message_id, tuple) and re.search(r'_\d{3}$', message_id[0]):
-            match = re.search(r'(.+)_(\d{3})$', message_id[0])
+        elif isinstance(message_id, tuple) and re.search(r"_\d{3}$", message_id[0]):
+            match = re.search(r"(.+)_(\d{3})$", message_id[0])
             if match:
                 base_id = match.group(1)
                 alt_index = int(match.group(2))
@@ -294,7 +295,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                     "auto_comments": message.auto_comments,
                 },
                 "alternatives": {},
-                "alternative_plural_forms": {}
+                "alternative_plural_forms": {},
             }
 
             # Add plural forms
@@ -316,7 +317,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                     "auto_comments": message.auto_comments,
                 },
                 "alternatives": {},
-                "alternative_plural_forms": {}
+                "alternative_plural_forms": {},
             }
 
     # Second pass: add alternative messages to their base messages
@@ -329,7 +330,7 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
                 "context": "",
                 "metadata": {},
                 "alternatives": {},
-                "alternative_plural_forms": {}
+                "alternative_plural_forms": {},
             }
 
         # Sort alternatives by index
@@ -338,7 +339,11 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
         # Add alternatives to the base message
         for idx in sorted_indices:
             alt_message = alternatives[idx]
-            alt_idx = len(unified[base_id]["alternatives"]) if "alternatives" in unified[base_id] else 0
+            alt_idx = (
+                len(unified[base_id]["alternatives"])
+                if "alternatives" in unified[base_id]
+                else 0
+            )
             unified[base_id]["alternatives"][str(alt_idx)] = alt_message.string
 
             # Initialize alternative_plural_forms for this alternative
@@ -347,13 +352,20 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
             # Add plural forms for this alternative if they exist
             if base_id in alternative_plurals and idx in alternative_plurals[base_id]:
                 plural_message = alternative_plurals[base_id][idx]
-                if isinstance(plural_message.string, (tuple, list)) and len(plural_message.string) > 1:
+                if (
+                    isinstance(plural_message.string, (tuple, list))
+                    and len(plural_message.string) > 1
+                ):
                     # Start from index 1 for plural forms (index 0 is already stored as translation)
                     for i, form in enumerate(plural_message.string[1:], 1):
-                        unified[base_id]["alternative_plural_forms"][str(alt_idx)][str(i)] = form
+                        unified[base_id]["alternative_plural_forms"][str(alt_idx)][
+                            str(i)
+                        ] = form
                 elif isinstance(plural_message.string, str):
                     # If the string is a single string, use it as the first plural form
-                    unified[base_id]["alternative_plural_forms"][str(alt_idx)]["1"] = plural_message.string
+                    unified[base_id]["alternative_plural_forms"][str(alt_idx)][
+                        "1"
+                    ] = plural_message.string
 
     return unified
 
@@ -379,16 +391,20 @@ def unified_format_to_catalog(
     # Parse project_id_version to get project and version
     project_id_version = metadata.get("project_id_version", "")
     project = project_id_version.split(" ")[0] if project_id_version else ""
-    version = " ".join(project_id_version.split(" ")[1:]) if len(project_id_version.split(" ")) > 1 else ""
+    version = (
+        " ".join(project_id_version.split(" ")[1:])
+        if len(project_id_version.split(" ")) > 1
+        else ""
+    )
 
     # Create catalog with metadata
     catalog = Catalog(
-        locale=locale, 
+        locale=locale,
         domain=domain or metadata.get("domain", None),
         project=project,
         version=version,
         copyright_holder=metadata.get("copyright_holder", ""),
-        msgid_bugs_address=metadata.get("report_msgid_bugs_to", "")
+        msgid_bugs_address=metadata.get("report_msgid_bugs_to", ""),
     )
 
     # Set additional metadata
@@ -437,7 +453,9 @@ def unified_format_to_catalog(
             # Create a tuple of strings for plural forms, starting with the singular form at index 0
             translation = entry.get("translation", "")
             plural_strings = [translation]  # Start with the singular form at index 0
-            max_plural = max([int(k) for k in plural_forms.keys()]) if plural_forms else 0
+            max_plural = (
+                max([int(k) for k in plural_forms.keys()]) if plural_forms else 0
+            )
             for i in range(1, max_plural + 1):
                 plural_strings.append(plural_forms.get(str(i), ""))
 
@@ -485,8 +503,14 @@ def unified_format_to_catalog(
 
                 if alt_plural_forms:
                     # Create a tuple of strings for plural forms, starting with the singular form at index 0
-                    alt_plural_strings = [alt_translation]  # Start with the alternative singular form at index 0
-                    max_plural = max([int(k) for k in alt_plural_forms.keys()]) if alt_plural_forms else 0
+                    alt_plural_strings = [
+                        alt_translation
+                    ]  # Start with the alternative singular form at index 0
+                    max_plural = (
+                        max([int(k) for k in alt_plural_forms.keys()])
+                        if alt_plural_forms
+                        else 0
+                    )
 
                     for i in range(1, max_plural + 1):
                         alt_plural_strings.append(alt_plural_forms.get(str(i), ""))
@@ -555,9 +579,9 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
         base_key = key
         alt_index = None
 
-        if re.search(r'_\d{3}$', key) and not key.endswith("_plural"):
+        if re.search(r"_\d{3}$", key) and not key.endswith("_plural"):
             # This is an alternative message (e.g., id_001)
-            match = re.search(r'(.+)_(\d{3})$', key)
+            match = re.search(r"(.+)_(\d{3})$", key)
             if match:
                 base_key = match.group(1)
                 alt_index = int(match.group(2))
@@ -570,8 +594,8 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                 continue
 
         # Check if this is a plural form of an alternative message
-        elif key.endswith("_plural") and re.search(r'_\d{3}_plural$', key):
-            match = re.search(r'(.+)_(\d{3})_plural$', key)
+        elif key.endswith("_plural") and re.search(r"_\d{3}_plural$", key):
+            match = re.search(r"(.+)_(\d{3})_plural$", key)
             if match:
                 base_key = match.group(1)
                 alt_index = int(match.group(2))
@@ -593,7 +617,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                     "context": "",
                     "metadata": {},
                     "alternatives": {},
-                    "alternative_plural_forms": {}
+                    "alternative_plural_forms": {},
                 }
             else:
                 unified[singular_key]["plural_forms"]["1"] = value
@@ -608,7 +632,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                         "context": "",
                         "metadata": {},
                         "alternatives": {},
-                        "alternative_plural_forms": {}
+                        "alternative_plural_forms": {},
                     }
                 else:
                     unified[key]["translation"] = value
@@ -621,7 +645,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                     "context": "",
                     "metadata": {},
                     "alternatives": {},
-                    "alternative_plural_forms": {}
+                    "alternative_plural_forms": {},
                 }
 
     # Second pass: add alternative messages to their base messages
@@ -634,7 +658,7 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
                 "context": "",
                 "metadata": {},
                 "alternatives": {},
-                "alternative_plural_forms": {}
+                "alternative_plural_forms": {},
             }
 
         # Sort alternatives by index
@@ -643,7 +667,11 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
         # Add alternatives to the base message
         for idx in sorted_indices:
             alt_value = alternatives[idx]
-            alt_idx = len(unified[base_key]["alternatives"]) if unified[base_key]["alternatives"] else 0
+            alt_idx = (
+                len(unified[base_key]["alternatives"])
+                if unified[base_key]["alternatives"]
+                else 0
+            )
             unified[base_key]["alternatives"][str(alt_idx)] = alt_value
 
             # Initialize alternative_plural_forms for this alternative
@@ -652,7 +680,9 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
             # Add plural forms for this alternative if they exist
             if base_key in alternative_plurals and idx in alternative_plurals[base_key]:
                 plural_value = alternative_plurals[base_key][idx]
-                unified[base_key]["alternative_plural_forms"][str(alt_idx)]["1"] = plural_value
+                unified[base_key]["alternative_plural_forms"][str(alt_idx)][
+                    "1"
+                ] = plural_value
 
     # Process nested objects
     for key, value in i18next_data.items():
@@ -718,8 +748,13 @@ def unified_format_to_i18next(
                 current[alt_key] = alt_translation
 
                 # Add plural form for this alternative if available
-                if alt_idx_str in alternative_plural_forms and "1" in alternative_plural_forms[alt_idx_str]:
-                    current[f"{alt_key}_plural"] = alternative_plural_forms[alt_idx_str]["1"]
+                if (
+                    alt_idx_str in alternative_plural_forms
+                    and "1" in alternative_plural_forms[alt_idx_str]
+                ):
+                    current[f"{alt_key}_plural"] = alternative_plural_forms[
+                        alt_idx_str
+                    ]["1"]
         else:
             # Add main translation
             i18next[key] = entry.get("translation", "")
@@ -740,8 +775,13 @@ def unified_format_to_i18next(
                 i18next[alt_key] = alt_translation
 
                 # Add plural form for this alternative if available
-                if alt_idx_str in alternative_plural_forms and "1" in alternative_plural_forms[alt_idx_str]:
-                    i18next[f"{alt_key}_plural"] = alternative_plural_forms[alt_idx_str]["1"]
+                if (
+                    alt_idx_str in alternative_plural_forms
+                    and "1" in alternative_plural_forms[alt_idx_str]
+                ):
+                    i18next[f"{alt_key}_plural"] = alternative_plural_forms[
+                        alt_idx_str
+                    ]["1"]
 
     return i18next
 
@@ -774,12 +814,19 @@ def i18n_tools_to_unified_format(
                 "plural_forms": {},
                 "context": "",
                 "metadata": {
-                    "locations": [f"{loc[0]}:{loc[1]}" if isinstance(loc, list) and len(loc) >= 2 else loc for loc in metadata.get("locations", [])],
+                    "locations": [
+                        (
+                            f"{loc[0]}:{loc[1]}"
+                            if isinstance(loc, list) and len(loc) >= 2
+                            else loc
+                        )
+                        for loc in metadata.get("locations", [])
+                    ],
                     "flags": metadata.get("flags", []),
                     "comments": metadata.get("comments", ""),
                     "auto_comments": [],
                 },
-                "alternatives": {}
+                "alternatives": {},
             }
 
             # Add all alternatives from the first list (except the first one which is already the main translation)
@@ -798,19 +845,27 @@ def i18n_tools_to_unified_format(
                 for alt_idx, _ in enumerate(messages[0][1:], 0):
                     entry["alternative_plural_forms"][str(alt_idx)] = {}
                     for plural_idx, plural_list in enumerate(messages[1:], 1):
-                        if plural_list and len(plural_list) > alt_idx + 1 and plural_list[alt_idx + 1]:
-                            entry["alternative_plural_forms"][str(alt_idx)][str(plural_idx)] = plural_list[alt_idx + 1]
+                        if (
+                            plural_list
+                            and len(plural_list) > alt_idx + 1
+                            and plural_list[alt_idx + 1]
+                        ):
+                            entry["alternative_plural_forms"][str(alt_idx)][
+                                str(plural_idx)
+                            ] = plural_list[alt_idx + 1]
         else:
             # Handle the old format where value is a list of lists
             value_lists = value
 
             # Initialize entry with the main message (first alternative)
             entry = {
-                "translation": value_lists[0][0] if value_lists and value_lists[0] else "",
+                "translation": (
+                    value_lists[0][0] if value_lists and value_lists[0] else ""
+                ),
                 "plural_forms": {},
                 "context": "",
                 "metadata": {},
-                "alternatives": {}
+                "alternatives": {},
             }
 
             # Add all alternatives from the first list (except the first one which is already the main translation)
@@ -829,8 +884,14 @@ def i18n_tools_to_unified_format(
                 for alt_idx, _ in enumerate(value_lists[0][1:], 0):
                     entry["alternative_plural_forms"][str(alt_idx)] = {}
                     for plural_idx, plural_list in enumerate(value_lists[1:], 1):
-                        if plural_list and len(plural_list) > alt_idx + 1 and plural_list[alt_idx + 1]:
-                            entry["alternative_plural_forms"][str(alt_idx)][str(plural_idx)] = plural_list[alt_idx + 1]
+                        if (
+                            plural_list
+                            and len(plural_list) > alt_idx + 1
+                            and plural_list[alt_idx + 1]
+                        ):
+                            entry["alternative_plural_forms"][str(alt_idx)][
+                                str(plural_idx)
+                            ] = plural_list[alt_idx + 1]
 
         unified[key] = entry
 
@@ -881,7 +942,10 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
             # Add plural forms for each alternative
             for alt_idx_str in sorted([str(k) for k in alternatives.keys()]):
                 alt_plural = ""
-                if alt_idx_str in alternative_plural_forms and str(i) in alternative_plural_forms[alt_idx_str]:
+                if (
+                    alt_idx_str in alternative_plural_forms
+                    and str(i) in alternative_plural_forms[alt_idx_str]
+                ):
                     alt_plural = alternative_plural_forms[alt_idx_str][str(i)]
                 plural_list.append(alt_plural)
 
@@ -897,8 +961,12 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
                 "flags": entry_metadata.get("flags", []),
                 "comments": entry_metadata.get("comments", ""),
                 "singular_count": len(first_list),
-                "plural_counts": [len(plural_list) for plural_list in value_lists[1:]] if len(value_lists) > 1 else [],
-            }
+                "plural_counts": (
+                    [len(plural_list) for plural_list in value_lists[1:]]
+                    if len(value_lists) > 1
+                    else []
+                ),
+            },
         }
 
     # Add global metadata
@@ -907,9 +975,7 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
     else:
         i18n_tools["metadata"] = {
             "project_id_version": "i18n-tools 1.0",
-            "statistics": {
-                "total_messages": len(i18n_tools)
-            }
+            "statistics": {"total_messages": len(i18n_tools)},
         }
 
     return i18n_tools
@@ -920,6 +986,7 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
 # -----------------------------------------------------------------------------
 # These functions provide direct conversion between formats without going
 # through the unified format explicitly.
+
 
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
@@ -1031,6 +1098,7 @@ def convert_i18n_tools_to_i18next(
 # These functions provide utilities for loading files in one format and
 # converting them to another format.
 
+
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
 ) -> Dict[str, Any]:
@@ -1072,6 +1140,7 @@ def load_and_convert_json_to_catalog(
 # -----------------------------------------------------------------------------
 # These functions interact with the translation repository to find and
 # manipulate translations.
+
 
 def seek_translation(
     repository: StrictNestedDictionary,

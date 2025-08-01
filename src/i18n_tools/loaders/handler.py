@@ -132,7 +132,9 @@ def create_directory(path: str) -> None:
 # Create operations
 
 
-def create_template(repository: StrictNestedDictionary, module: str, domain: str) -> None:
+def create_template(
+    repository: StrictNestedDictionary, module: str, domain: str
+) -> None:
     """
     Creates an empty template file for a given domain in the specified module.
 
@@ -297,7 +299,9 @@ def create_dictionary(
 # Read operations
 
 
-def fetch_template(repository: StrictNestedDictionary, module: str, domain: str) -> Catalog:
+def fetch_template(
+    repository: StrictNestedDictionary, module: str, domain: str
+) -> Catalog:
     """
     Fetches the content of a template file.
 
@@ -612,7 +616,9 @@ def dump_dictionary(
 # Delete operations
 
 
-def remove_template(repository: StrictNestedDictionary, module: str, domain: str) -> None:
+def remove_template(
+    repository: StrictNestedDictionary, module: str, domain: str
+) -> None:
     """
     Removes a template file for a given domain in the specified module.
 

@@ -4,13 +4,18 @@ Corpus module
 
 
 """
+
 import re
+from typing import Any, Dict, List, Optional, Union
 
 from ndict_tools import StrictNestedDictionary
-from typing import List, Optional, Dict, Any, Union
 
-from i18n_tools.converter import i18n_tools_to_unified_format, unified_format_to_i18n_tools
-from i18n_tools.loaders import fetch_dictionary, dump_dictionary
+from i18n_tools.converter import (
+    i18n_tools_to_unified_format,
+    unified_format_to_i18n_tools,
+)
+from i18n_tools.loaders import dump_dictionary, fetch_dictionary
+
 
 class Message:
     """
@@ -38,7 +43,7 @@ class Message:
         plural_forms: Optional[Dict[int, str]] = None,
         alternative_plural_forms: Optional[Dict[int, Dict[int, str]]] = None,
         context: str = "",
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a new Message instance.
@@ -99,7 +104,9 @@ class Message:
             raise KeyError(f"Alternative translation at index {loc} not found")
 
     @classmethod
-    def from_unified_format(cls, message_id: str, unified_entry: Dict[str, Any]) -> 'Message':
+    def from_unified_format(
+        cls, message_id: str, unified_entry: Dict[str, Any]
+    ) -> "Message":
         """
         Create a Message instance from a unified format entry.
 
@@ -120,7 +127,9 @@ class Message:
             plural_forms[int(k)] = v
 
         alternative_plural_forms = {}
-        for alt_idx_str, alt_plural_dict in unified_entry.get("alternative_plural_forms", {}).items():
+        for alt_idx_str, alt_plural_dict in unified_entry.get(
+            "alternative_plural_forms", {}
+        ).items():
             alt_idx = int(alt_idx_str)
             alternative_plural_forms[alt_idx] = {}
             for plural_idx_str, plural_form in alt_plural_dict.items():
@@ -133,11 +142,13 @@ class Message:
             plural_forms=plural_forms,
             alternative_plural_forms=alternative_plural_forms,
             context=unified_entry.get("context", ""),
-            metadata=unified_entry.get("metadata", {})
+            metadata=unified_entry.get("metadata", {}),
         )
 
     @classmethod
-    def from_i18n_tools_format(cls, message_id: str, i18n_tools_entry: Dict[str, Any]) -> 'Message':
+    def from_i18n_tools_format(
+        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+    ) -> "Message":
         """
         Create a Message instance from an i18n_tools format entry.
 
@@ -161,8 +172,8 @@ class Message:
         module: str,
         domain: str,
         lang: str,
-        message_id: str
-    ) -> 'Message':
+        message_id: str,
+    ) -> "Message":
         """
         Create a Message instance from a repository.
 
@@ -215,7 +226,7 @@ class Message:
             "plural_forms": plural_forms,
             "alternative_plural_forms": alternative_plural_forms,
             "context": self.context,
-            "metadata": self.metadata
+            "metadata": self.metadata,
         }
 
     def to_i18n_tools_format(self) -> Dict[str, Any]:
@@ -227,14 +238,14 @@ class Message:
         """
         unified_data = {self.message_id: self.to_unified_format()}
         i18n_tools_data = unified_format_to_i18n_tools(unified_data)
-        return i18n_tools_data[self.message_id] if self.message_id in i18n_tools_data else {}
+        return (
+            i18n_tools_data[self.message_id]
+            if self.message_id in i18n_tools_data
+            else {}
+        )
 
     def save_to_repository(
-        self,
-        repository: Dict[str, Any],
-        module: str,
-        domain: str,
-        lang: str
+        self, repository: Dict[str, Any], module: str, domain: str, lang: str
     ) -> None:
         """
         Save the message to a repository.
@@ -263,7 +274,7 @@ class Message:
             List[str]: List of variable names.
         """
         # Find all {variable} patterns in the string
-        pattern = r'\{([^{}]+)\}'
+        pattern = r"\{([^{}]+)\}"
         return re.findall(pattern, text)
 
     def format(self, alternative: int = 0, plural_index: int = 0, **kwargs) -> str:
@@ -280,7 +291,11 @@ class Message:
         """
         # Determine which text to format based on alternative and plural_index
         if alternative > 0 and alternative in self.alternatives:
-            if plural_index > 0 and alternative in self.alternative_plural_forms and plural_index in self.alternative_plural_forms[alternative]:
+            if (
+                plural_index > 0
+                and alternative in self.alternative_plural_forms
+                and plural_index in self.alternative_plural_forms[alternative]
+            ):
                 text = self.alternative_plural_forms[alternative][plural_index]
             else:
                 text = self.alternatives[alternative]
@@ -294,7 +309,9 @@ class Message:
             return text.format(**kwargs)
         except KeyError as e:
             missing_var = str(e).strip("'")
-            raise KeyError(f"Missing variable '{missing_var}' for message '{self.message_id}'")
+            raise KeyError(
+                f"Missing variable '{missing_var}' for message '{self.message_id}'"
+            )
         except Exception as e:
             raise ValueError(f"Error formatting message '{self.message_id}': {str(e)}")
 
@@ -337,7 +354,9 @@ class Message:
             raise ValueError("Alternative index must be greater than 0")
         self.alternatives[index] = translation
 
-    def add_alternative_plural_form(self, alt_index: int, plural_index: int, translation: str) -> None:
+    def add_alternative_plural_form(
+        self, alt_index: int, plural_index: int, translation: str
+    ) -> None:
         """
         Add a plural form to an alternative translation.
 
@@ -368,7 +387,7 @@ class Message:
         Get metadata from the message.
 
         Args:
-            key (Optional[str], optional): The specific metadata key to retrieve. 
+            key (Optional[str], optional): The specific metadata key to retrieve.
                 If None, returns all metadata. Defaults to None.
 
         Returns:
@@ -386,12 +405,14 @@ class Message:
 
         raise KeyError(f"Metadata key '{key}' not found")
 
-    def set_metadata(self, key_or_dict: Union[str, Dict[str, Any]], value: Any = None) -> None:
+    def set_metadata(
+        self, key_or_dict: Union[str, Dict[str, Any]], value: Any = None
+    ) -> None:
         """
         Set metadata for the message.
 
         Args:
-            key_or_dict (Union[str, Dict[str, Any]]): Either a specific key to set or a dictionary 
+            key_or_dict (Union[str, Dict[str, Any]]): Either a specific key to set or a dictionary
                 of metadata to replace the current metadata.
             value (Any, optional): The value to set for the key. Required if key_or_dict is a string.
                 Ignored if key_or_dict is a dictionary. Defaults to None.
@@ -403,7 +424,9 @@ class Message:
             self.metadata = key_or_dict
         else:
             if value is None:
-                raise ValueError("Value cannot be None when setting a specific metadata key")
+                raise ValueError(
+                    "Value cannot be None when setting a specific metadata key"
+                )
             self.metadata[key_or_dict] = value
 
     def update_metadata(self, metadata: Dict[str, Any]) -> None:
@@ -442,21 +465,29 @@ class Message:
         """
         return f"Message(id='{self.message_id}', translation='{self.translation}')"
 
+
 class Book:
     """
     A class for handling book of internationalization messages using the i18n_tools format in a single domain and language.
     """
+
     messages = StrictNestedDictionary()
     pass
+
 
 class Corpus:
     """
     A class for handling corpora as a collection of books in a single domain.
     """
 
-
-    def __init__(self, repository: Optional[StrictNestedDictionary] = None, messages: Optional[List[Message]] = None):
-        self.repository = repository if repository is not None else StrictNestedDictionary()
+    def __init__(
+        self,
+        repository: Optional[StrictNestedDictionary] = None,
+        messages: Optional[List[Message]] = None,
+    ):
+        self.repository = (
+            repository if repository is not None else StrictNestedDictionary()
+        )
         if messages is not None:
             for message in messages:
                 self.messages[message.message_id] = message
@@ -478,4 +509,5 @@ class Encyclopaedia:
     """
     A class for handling libraries as a collection of Corpus.
     """
+
     pass

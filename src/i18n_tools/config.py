@@ -108,8 +108,6 @@ Currently, the configuration handles only two translation configurations:
 Only one configuration is managed at a given time.
 """
 
-
-
 from __future__ import annotations
 
 import os
@@ -164,7 +162,7 @@ class Config(metaclass=Singleton):
         """
 
         def _setup_configuration(
-                config_dir: Optional[str] = "", settings_file: Optional[str] = ""
+            config_dir: Optional[str] = "", settings_file: Optional[str] = ""
         ) -> StrictNestedDictionary:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
@@ -241,9 +239,9 @@ class Config(metaclass=Singleton):
         """
         current_config = self.__getattribute__(self._current_config)
         config_file = (
-                current_config[["paths", "config"]]
-                + "/"
-                + current_config[["paths", "settings"]]
+            current_config[["paths", "config"]]
+            + "/"
+            + current_config[["paths", "settings"]]
         )
         config = load_config(config_file)
 
@@ -265,8 +263,8 @@ class Config(metaclass=Singleton):
             {
                 author_data["email"]: author_id
                 for author_id, author_data in self.__getattribute__(
-                self._current_config
-            )["authors"].items()
+                    self._current_config
+                )["authors"].items()
             }
         )
 
@@ -387,11 +385,11 @@ class Config(metaclass=Singleton):
         return self.__getattribute__(self._current_config)
 
     def set_repository(
-            self,
-            repository_path: str,
-            setting_file_ext: str,
-            main_module: str,
-            additional_modules: Optional[List[str]] = None,
+        self,
+        repository_path: str,
+        setting_file_ext: str,
+        main_module: str,
+        additional_modules: Optional[List[str]] = None,
     ) -> None:
         """
         Set the application repository paths and modules with validation.
@@ -430,11 +428,11 @@ class Config(metaclass=Singleton):
         )
 
     def update_repository(
-            self,
-            root_path: Optional[str] = None,
-            setting_file_ext: Optional[str] = None,
-            main_module: str = None,
-            modules: Optional[List[str]] = None,
+        self,
+        root_path: Optional[str] = None,
+        setting_file_ext: Optional[str] = None,
+        main_module: str = None,
+        modules: Optional[List[str]] = None,
     ) -> None:
         """
         Update the application repository paths and modules with validation.
@@ -474,13 +472,13 @@ class Config(metaclass=Singleton):
                 current_repository[["paths", "modules"]] = [main_module] + modules
 
     def add_details(
-            self,
-            name: Optional[str] = None,
-            summary: Optional[str] = None,
-            description: Optional[str] = None,
-            version: Optional[str] = None,
-            content_type: Optional[str] = None,
-            copyright_holder: Optional[str] = None,
+        self,
+        name: Optional[str] = None,
+        summary: Optional[str] = None,
+        description: Optional[str] = None,
+        version: Optional[str] = None,
+        content_type: Optional[str] = None,
+        copyright_holder: Optional[str] = None,
     ) -> None:
         """
         This function adds the details of the application to the configuration.
@@ -525,7 +523,7 @@ class Config(metaclass=Singleton):
             raise KeyError(f"The key {d_key} is not in the details of the repository.")
 
     def add_author(
-            self, first_name: str, last_name: str, email: str, url: str, languages: list
+        self, first_name: str, last_name: str, email: str, url: str, languages: list
     ) -> None:
         """
         Add a new author to the authors dictionary.
@@ -547,8 +545,8 @@ class Config(metaclass=Singleton):
         if email in self._email_index:
             existing_uuid = self._email_index[email]
             if (
-                    existing_uuid
-                    in self.__getattribute__(self._current_config)["authors"].keys()
+                existing_uuid
+                in self.__getattribute__(self._current_config)["authors"].keys()
             ):
                 raise KeyError(
                     f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
@@ -658,20 +656,20 @@ class Config(metaclass=Singleton):
         return False
 
     def add_translator(
-            self,
-            name: str,
-            url: str,
-            status: str,
-            api_key: str,
-            supported_languages: list,
-            translation_type: Optional[str] = None,
-            cost_per_translation: Optional[float] = None,
-            request_limit: Optional[int] = None,
-            key_expiration: Optional[str] = None,
-            priority: Optional[int] = None,
-            success_rate: Optional[float] = None,
-            max_text_size: Optional[int] = None,
-            payment_plan: Optional[str] = None,
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: Optional[str] = None,
+        cost_per_translation: Optional[float] = None,
+        request_limit: Optional[int] = None,
+        key_expiration: Optional[str] = None,
+        priority: Optional[int] = None,
+        success_rate: Optional[float] = None,
+        max_text_size: Optional[int] = None,
+        payment_plan: Optional[str] = None,
     ) -> None:
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
