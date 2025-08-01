@@ -14,7 +14,7 @@ from __future__ import annotations
 import tarfile
 from typing import Dict, Tuple
 
-from ndict_tools import NestedDictionary
+from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.__static__ import (
     I18N_TOOLS_BACKUP,
@@ -50,13 +50,13 @@ from .utils import (
 
 
 def _translation_lang_files(
-    repository: NestedDictionary, module: str, domain: str, lang: str
+    repository: StrictNestedDictionary, module: str, domain: str, lang: str
 ) -> Tuple[str, str, str]:
     """
     Build from repository TLD, path for translation files
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: Module name
     :type module: str
     :param domain: Domain name
@@ -79,8 +79,7 @@ def _translation_lang_files(
 
     return json_file_path, po_file_path, pot_file
 
-
-def _verify_paths_and_modules(repository: NestedDictionary) -> None:
+def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
     """
     Verify that the repository paths and modules exist.
 
@@ -106,7 +105,7 @@ def _verify_paths_and_modules(repository: NestedDictionary) -> None:
 
 
 def _verify_available_languages(
-    repository: NestedDictionary, languages: list[str]
+    repository: StrictNestedDictionary, languages: list[str]
 ) -> None:
     """
     Verify that languages in translation sets are registered in the repository.
@@ -126,7 +125,7 @@ def _verify_available_languages(
             )
 
 
-def _verify_target_module(repository: NestedDictionary, target_module: str) -> None:
+def _verify_target_module(repository: StrictNestedDictionary, target_module: str) -> None:
     """
     Verify that a target module is registered in the repository.
 
@@ -145,7 +144,7 @@ def _verify_target_module(repository: NestedDictionary, target_module: str) -> N
 
 
 def _verify_target_domain(
-    repository: NestedDictionary, target_module: str, target_domain: str
+    repository: StrictNestedDictionary, target_module: str, target_domain: str
 ) -> None:
     """
     Verify that a target domain is registered in the repository.
@@ -191,14 +190,14 @@ def _update_json_translations(existing_translations: Dict, translation_data: Dic
 
 
 def create_module_archive(
-    repository: NestedDictionary, module: str, archive_name: str
+    repository: StrictNestedDictionary, module: str, archive_name: str
 ) -> None:
     """
     Create a tar.gz archive of a module's contents, including all subdirectories and files,
     by identifying the top-level module from the given module/package path.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module or module/package path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -238,13 +237,13 @@ def create_module_archive(
 
 
 def restore_module_from_archive(
-    repository: NestedDictionary, module: str, archive_name: str
+    repository: StrictNestedDictionary, module: str, archive_name: str
 ) -> None:
     """
     Restore a module's contents from a tar.gz archive.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module or submodule path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -285,14 +284,14 @@ def restore_module_from_archive(
         raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
 
 
-def build_repository(repository: NestedDictionary) -> None:
+def build_repository(repository: StrictNestedDictionary) -> None:
     """
     This function builds the repository from the modulee and populates files in the repository directory respectively
     to domains and language registered in the repository. It checks the existence of already existing files and only creates
     the necessary files and directories.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :return: Nothing
     :type: None
     """
@@ -350,13 +349,13 @@ def build_repository(repository: NestedDictionary) -> None:
                     pass
 
 
-def verify_repository(repository: NestedDictionary) -> bool:
+def verify_repository(repository: StrictNestedDictionary) -> bool:
     """
     Verifies that the translation repository is properly constructed.
     Checks the existence of required directories and files for each module, domain, and language.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :return: True if the repository is properly constructed, False otherwise.
     :rtype: bool
     """
@@ -430,13 +429,13 @@ def verify_repository(repository: NestedDictionary) -> bool:
 
 
 def aggregate_dictionaries(
-    repository: NestedDictionary, module: str, domain: str
+    repository: StrictNestedDictionary, module: str, domain: str
 ) -> None:
     """
     This function aggregates all dictionaries for a given module and domain into a single JSON file.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: module where translation should be located.
     :type module: str
     :param domain: domain of translation.
@@ -465,7 +464,7 @@ def aggregate_dictionaries(
 
 
 def add_translation_set(
-    repository: NestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
 ):
     """
     Adds a translation set to the translation repository using JSON and PO files.
@@ -475,7 +474,7 @@ def add_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: Module where should be located domain of translations.
     :type module: str
     :param domain: The domain of the translation set.
@@ -511,7 +510,7 @@ def add_translation_set(
 
 
 def update_translation_set(
-    repository: NestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
 ):
     """
     Updates existing translations in the translation repository using JSON and PO files.
@@ -521,7 +520,7 @@ def update_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.
@@ -563,7 +562,7 @@ def update_translation_set(
 
 
 def remove_translation_set(
-    repository: NestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
 ):
     """
     Removes specified translations from the translation repository using JSON and PO files.
@@ -573,7 +572,7 @@ def remove_translation_set(
     the translations conform to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.

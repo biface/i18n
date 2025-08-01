@@ -22,7 +22,7 @@ import yaml
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
-from ndict_tools import NestedDictionary
+from ndict_tools import StrictNestedDictionary
 
 # Generic empty files
 
@@ -506,12 +506,12 @@ def _remove_file(file_path: Union[Path, str]) -> None:
 # Other module specific and private tools
 
 
-def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
+def _check_module(repository: StrictNestedDictionary, module_list: List[str]) -> bool:
     """
     This function verifies that a module or a list of modules are defined in the repository.
 
     :param repository: data representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module_list: The list of modules to verify.
     :type module_list: List[str]
     :return: True (if not raised)
@@ -528,13 +528,13 @@ def _check_module(repository: NestedDictionary, module_list: List[str]) -> bool:
 
 
 def _check_domains(
-    repository: NestedDictionary, module: str, domain_list: List[str]
+    repository: StrictNestedDictionary, module: str, domain_list: List[str]
 ) -> bool:
     """
     This function verifies that a domain or a list of domains are defined in the repository.
 
     :param repository: data representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module containing domains.
     :type module: str
     :param domain_list: The list of domains to verify.

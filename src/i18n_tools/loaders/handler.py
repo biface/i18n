@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Union
 from babel import __version__ as babel_version
 from babel.core import Locale
 from babel.messages.catalog import Catalog, Message
-from ndict_tools import NestedDictionary
+from ndict_tools import StrictNestedDictionary
 
 import i18n_tools
 from i18n_tools.__static__ import (
@@ -132,7 +132,7 @@ def create_directory(path: str) -> None:
 # Create operations
 
 
-def create_template(repository: NestedDictionary, module: str, domain: str) -> None:
+def create_template(repository: StrictNestedDictionary, module: str, domain: str) -> None:
     """
     Creates an empty template file for a given domain in the specified module.
 
@@ -140,7 +140,7 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
     directory structure for the specified module and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -214,7 +214,7 @@ def create_template(repository: NestedDictionary, module: str, domain: str) -> N
 
 
 def create_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Creates an empty translation catalog for a given language and domain in the specified module.
@@ -223,7 +223,7 @@ def create_catalog(
     directory structure for the specified module, language, and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -257,7 +257,7 @@ def create_catalog(
 
 
 def create_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -266,7 +266,7 @@ def create_dictionary(
     directory structure for the specified module, language, and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -297,14 +297,14 @@ def create_dictionary(
 # Read operations
 
 
-def fetch_template(repository: NestedDictionary, module: str, domain: str) -> Catalog:
+def fetch_template(repository: StrictNestedDictionary, module: str, domain: str) -> Catalog:
     """
     Fetches the content of a template file.
 
     This function reads and returns the content of the specified template file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -332,7 +332,7 @@ def fetch_template(repository: NestedDictionary, module: str, domain: str) -> Ca
 
 
 def fetch_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> Catalog:
     """
     Fetches the translation catalog for a given language and domain.
@@ -340,7 +340,7 @@ def fetch_catalog(
     This function reads and returns the translation catalog from the specified .po file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -370,7 +370,7 @@ def fetch_catalog(
 
 
 def fetch_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> Dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
@@ -378,7 +378,7 @@ def fetch_dictionary(
     This function reads and returns the translation dictionary from the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -410,7 +410,7 @@ def fetch_dictionary(
 
 
 def update_catalog(
-    repository: NestedDictionary,
+    repository: StrictNestedDictionary,
     module: str,
     language: str,
     domain: str,
@@ -423,7 +423,7 @@ def update_catalog(
     and updates the corresponding .mo file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -487,7 +487,7 @@ def update_catalog(
 
 
 def update_dictionary(
-    repository: NestedDictionary,
+    repository: StrictNestedDictionary,
     module: str,
     language: str,
     domain: str,
@@ -499,7 +499,7 @@ def update_dictionary(
     This function saves the provided translation dictionary to the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -537,7 +537,7 @@ def update_dictionary(
 
 
 def dump_catalog(
-    repository: NestedDictionary,
+    repository: StrictNestedDictionary,
     module: str,
     language: str,
     domain: str,
@@ -550,7 +550,7 @@ def dump_catalog(
     and updates the corresponding .mo file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -564,7 +564,7 @@ def dump_catalog(
 
 
 def dump_dictionary(
-    repository: NestedDictionary,
+    repository: StrictNestedDictionary,
     module: str,
     language: str,
     domain: str,
@@ -576,7 +576,7 @@ def dump_dictionary(
     This function saves the provided translation dictionary to the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -612,14 +612,14 @@ def dump_dictionary(
 # Delete operations
 
 
-def remove_template(repository: NestedDictionary, module: str, domain: str) -> None:
+def remove_template(repository: StrictNestedDictionary, module: str, domain: str) -> None:
     """
     Removes a template file for a given domain in the specified module.
 
     This function deletes the specified template file if it exists.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -642,7 +642,7 @@ def remove_template(repository: NestedDictionary, module: str, domain: str) -> N
 
 
 def remove_catalog(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Removes a translation catalog and its corresponding machine file for a given language and domain in the specified module.
@@ -650,7 +650,7 @@ def remove_catalog(
     This function deletes the specified .po and .mo files if they exist.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionaryNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -677,7 +677,7 @@ def remove_catalog(
 
 
 def remove_dictionary(
-    repository: NestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -685,7 +685,7 @@ def remove_dictionary(
     This function deletes the specified .json file if it exists.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.

@@ -186,7 +186,7 @@ from typing import Any, Dict, List, Optional, Union
 import re
 
 from babel.messages.catalog import Catalog, Message
-from ndict_tools import NestedDictionary
+from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.loaders import (
     fetch_catalog,
@@ -1074,18 +1074,18 @@ def load_and_convert_json_to_catalog(
 # manipulate translations.
 
 def seek_translation(
-    repository: NestedDictionary,
+    repository: StrictNestedDictionary,
     module: str,
     domain: str,
     lang: str,
     message_id: str,
     alternative: int = 0,
-) -> NestedDictionary:
+) -> StrictNestedDictionary:
     """
     Seek a translation in the repository.
 
     :param repository: Repository containing translations
-    :type repository: NestedDictionary
+    :type repository: StrictNestedDictionary
     :param module: Module name
     :type module: str
     :param domain: Domain name
@@ -1097,11 +1097,11 @@ def seek_translation(
     :param alternative: Alternative index (for plural forms)
     :type alternative: int
     :return: Translation data
-    :rtype: NestedDictionary
+    :rtype: StrictNestedDictionary
     :raises KeyError: If the message ID is not found
     """
-    translation = NestedDictionary(
-        {"msg_id": "", "msgstr": "", "msgstr_plural": {}}, indent=2, strict=True
+    translation = StrictNestedDictionary(
+        {"msg_id": "", "msgstr": "", "msgstr_plural": {}}
     )
 
     try:

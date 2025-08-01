@@ -118,7 +118,7 @@ from typing import Any, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from email_validator import EmailNotValidError, validate_email
-from ndict_tools import NestedDictionary
+from ndict_tools import StrictNestedDictionary
 
 from .__static__ import (
     I18N_TOOLS_CONFIG,
@@ -141,11 +141,11 @@ class Config(metaclass=Singleton):
     settings related to translations, translators, authors, and modules.
 
     Attributes:
-        package (NestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
+        package (StrictNestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
 
-        application (NestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
+        application (StrictNestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
 
-        _email_index (NestedDictionary):
+        _email_index (StrictNestedDictionary):
             An internal index for tracking authors by email address.
 
         _current_config (str): store the current configuration to manage.
@@ -165,7 +165,7 @@ class Config(metaclass=Singleton):
 
         def _setup_configuration(
                 config_dir: Optional[str] = "", settings_file: Optional[str] = ""
-        ) -> NestedDictionary:
+        ) -> StrictNestedDictionary:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
             nested dictionary with spécific keys which will be used as to verify while loading the configuration.
@@ -175,9 +175,9 @@ class Config(metaclass=Singleton):
             :param settings_file: file part of configuration file
             :type settings_file: str
             :return: an initialized nested dictionary with used keys
-            :rtype: NestedDictionary
+            :rtype: StrictNestedDictionary
             """
-            return NestedDictionary(
+            return StrictNestedDictionary(
                 {
                     "details": {
                         "name": "",  # Configuration name
@@ -214,9 +214,7 @@ class Config(metaclass=Singleton):
                     },
                     "translators": {},
                     "authors": {},
-                },
-                indent=2,
-                strict=True,
+                }
             )
 
         self.package = _setup_configuration(
@@ -234,7 +232,7 @@ class Config(metaclass=Singleton):
         else:
             self.application = _setup_configuration()
 
-        self._email_index = NestedDictionary({}, indent=2, strict=True)
+        self._email_index = StrictNestedDictionary({})
         self._current_config = "application"
 
     def load(self):
@@ -337,17 +335,17 @@ class Config(metaclass=Singleton):
 
         # Case 1: Direct attribute update (string path or list of size 1)
         if len(path) == 1:
-            if isinstance(attr, NestedDictionary):
+            if isinstance(attr, StrictNestedDictionary):
                 if not isinstance(value, dict):
                     raise TypeError(
-                        f"Cannot assign non-dict value to NestedDictionary attribute '{attr_name}'."
+                        f"Cannot assign non-dict value to StrictNestedDictionary attribute '{attr_name}'."
                     )
                 # Verify keys in the value dictionary
                 if check:
                     for key in value.keys():
                         if not attr.is_key(key):
                             raise KeyError(
-                                f"Key '{key}' is not valid for NestedDictionary attribute '{attr_name}'."
+                                f"Key '{key}' is not valid for StrictNestedDictionary attribute '{attr_name}'."
                             )
                     # Update using NestedDictionary's update
                 attr.update(value)
@@ -362,15 +360,15 @@ class Config(metaclass=Singleton):
 
         # Case 2: Nested key update in NestedDictionary (path length > 1)
         else:
-            if not isinstance(attr, NestedDictionary):
+            if not isinstance(attr, StrictNestedDictionary):
                 raise TypeError(
-                    f"Cannot update a sub-key of attribute '{attr_name}' because it is not a NestedDictionary."
+                    f"Cannot update a sub-key of attribute '{attr_name}' because it is not a StrictNestedDictionary."
                 )
             # Verify nested keys
             nested_path = path[1:]
             if not all(attr.is_key(k) for k in nested_path):
                 raise KeyError(
-                    f"Path '{nested_path}' is not valid for NestedDictionary attribute '{attr_name}'."
+                    f"Path '{nested_path}' is not valid for StrictNestedDictionary attribute '{attr_name}'."
                 )
             # Update the nested key
             try:
@@ -379,12 +377,12 @@ class Config(metaclass=Singleton):
                 # Re-raise any ndict-tools specific exception directly
                 raise e
 
-    def get_repository(self) -> NestedDictionary:
+    def get_repository(self) -> StrictNestedDictionary:
         """
         Build the repository dictionary from configuration.
 
         :return: a configured repository
-        :rtype: NestedDictionary
+        :rtype: StrictNestedDictionary
         """
         return self.__getattribute__(self._current_config)
 
@@ -563,16 +561,14 @@ class Config(metaclass=Singleton):
                     author = self.application[["authors", existing_uuid]]
         else:
             author_id = str(uuid4())
-            author = NestedDictionary(
+            author = StrictNestedDictionary(
                 {
                     "first_name": first_name,
                     "last_name": last_name,
                     "email": email,
                     "url": url,
                     "languages": normalized_languages,
-                },
-                indent=2,
-                strict=True,
+                }
             )
             self._email_index[email] = author_id
 
@@ -751,11 +747,11 @@ class Config(metaclass=Singleton):
             raise KeyError(f"Translator '{name}' already exists.")
 
         # 4. Add the translator to the dictionary
-        current_repository["translators"][name] = NestedDictionary(
-            translator_data, indent=2, strict=True
+        current_repository["translators"][name] = StrictNestedDictionary(
+            translator_data
         )
 
-    def get_translator(self, name: str) -> NestedDictionary:
+    def get_translator(self, name: str) -> StrictNestedDictionary:
         """
         Retrieve the details of a translator by name.
 
@@ -847,7 +843,7 @@ class Config(metaclass=Singleton):
             # Ensure the translators dictionary remains a valid empty dictionary if no translators remain
             if not translators:
                 self.__getattribute__(self._current_config)["translators"] = (
-                    NestedDictionary({}, indent=2, strict=True)
+                    StrictNestedDictionary({})
                 )
 
             return True
