@@ -3,7 +3,7 @@ Test module for the Message class in the formatter module.
 """
 
 import pytest
-from i18n_tools.formatter import Message
+from i18n_tools.models import Message
 
 
 def test_message_creation():
