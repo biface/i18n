@@ -814,6 +814,7 @@ def i18n_tools_to_unified_format(
                 "plural_forms": {},
                 "context": "",
                 "metadata": {
+                    "version": metadata.get("version", "0.0.0"),
                     "locations": [
                         (
                             f"{loc[0]}:{loc[1]}"
@@ -897,6 +898,7 @@ def i18n_tools_to_unified_format(
 
     # Add global metadata if available
     if "metadata" in i18n_tools_data:
+        print("metadata", i18n_tools_data["metadata"])
         unified["metadata"] = i18n_tools_data["metadata"]
 
     return unified
@@ -979,6 +981,140 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     return i18n_tools
+
+
+def message_to_i18n_tools_format(message) -> Dict[str, Any]:
+    """
+    Convert a Message object directly to i18n_tools format without using unified format.
+
+    :param message: A Message object
+    :return: Dictionary in i18n_tools format
+    :rtype: Dict[str, Any]
+    """
+    # Start with the singular form and alternatives
+    main_translation = message.translation
+    alternatives = message.alternatives
+
+    # Create the first list with main translation and alternatives
+    first_list = [main_translation]
+    # Add alternatives in order of their keys
+    for idx in sorted(alternatives.keys()):
+        first_list.append(alternatives[idx])
+    value_lists = [first_list]
+
+    # Add plural forms for main message
+    plural_forms = message.plural_forms
+    max_plural = max(plural_forms.keys()) if plural_forms else 0
+
+    # Add plural forms for alternatives
+    alternative_plural_forms = message.alternative_plural_forms
+
+    # Determine the maximum number of plural forms needed
+    for i in range(1, max_plural + 1):
+        plural_list = [plural_forms.get(i, "")]
+
+        # Add plural forms for each alternative
+        for alt_idx in sorted(alternatives.keys()):
+            alt_plural = ""
+            if (
+                alt_idx in alternative_plural_forms
+                and i in alternative_plural_forms[alt_idx]
+            ):
+                alt_plural = alternative_plural_forms[alt_idx][i]
+            plural_list.append(alt_plural)
+
+        value_lists.append(plural_list)
+
+    # Create entry with new structure (messages and metadata)
+    return {
+        "messages": value_lists,
+        "metadata": {
+            "version": message.metadata.get("version", "0.0.0"),
+            "locations": message.metadata.get("locations", []),
+            "flags": message.metadata.get("flags", []),
+            "comments": message.metadata.get("comments", ""),
+            "singular_count": len(first_list),
+            "plural_counts": (
+                [len(plural_list) for plural_list in value_lists[1:]]
+                if len(value_lists) > 1
+                else []
+            ),
+        },
+    }
+
+
+def i18n_tools_format_to_message_dict(
+    i18n_tools_entry: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Convert an i18n_tools format entry to a dictionary suitable for Message instantiation
+    without using unified format.
+
+    :param i18n_tools_entry: Dictionary in i18n_tools format
+    :type i18n_tools_entry: Dict[str, Any]
+    :return: Dictionary with Message constructor parameters
+    :rtype: Dict[str, Any]
+    """
+    result = {
+        "translation": "",
+        "alternatives": {},
+        "plural_forms": {},
+        "alternative_plural_forms": {},
+        "context": "",
+        "metadata": {},
+    }
+
+    # Extract messages and metadata
+    messages = i18n_tools_entry.get("messages", [])
+    metadata = i18n_tools_entry.get("metadata", {})
+
+    # Process main translation and alternatives
+    if messages and len(messages) > 0 and len(messages[0]) > 0:
+        # Main translation is the first item in the first list
+        result["translation"] = messages[0][0]
+
+        # Process alternatives (remaining items in the first list)
+        # Use 1-based indices for alternatives to match Message class expectations
+        for i, alt in enumerate(messages[0][1:], 1):
+            if alt:  # Only add non-empty alternatives
+                result["alternatives"][i] = alt
+
+    # Process plural forms for main translation
+    for i, plural_list in enumerate(messages[1:], 1):
+        if plural_list and plural_list[0]:
+            result["plural_forms"][i] = plural_list[0]
+
+    # Process plural forms for alternatives
+    if messages and len(messages[0]) > 1:
+        # Use 1-based indices for alternative_plural_forms to match Message class expectations
+        for alt_idx, _ in enumerate(messages[0][1:], 1):
+            for plural_idx, plural_list in enumerate(messages[1:], 1):
+                if (
+                    plural_list
+                    and len(plural_list) > alt_idx  # Adjust index for 1-based
+                    and plural_list[alt_idx]
+                ):
+                    if alt_idx not in result["alternative_plural_forms"]:
+                        result["alternative_plural_forms"][alt_idx] = {}
+                    result["alternative_plural_forms"][alt_idx][plural_idx] = (
+                        plural_list[alt_idx]
+                    )
+
+    # Process metadata
+    if metadata:
+        result["metadata"] = {
+            "location": metadata.get("locations", []),
+            "flags": metadata.get("flags", []),
+            "comments": metadata.get("comments", ""),
+            "count": {
+                "singular": metadata.get("singular_count", 1),
+                "plurals": metadata.get("plural_counts", []),
+            },
+            "language": metadata.get("language", ""),
+            "version": metadata.get("version", "0.0.0"),
+        }
+
+    return result
 
 
 # -----------------------------------------------------------------------------

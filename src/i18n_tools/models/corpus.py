@@ -14,9 +14,12 @@ from i18n_tools import __version__
 from i18n_tools.converter import (
     i18n_tools_to_unified_format,
     unified_format_to_i18n_tools,
+    message_to_i18n_tools_format,
+    i18n_tools_format_to_message_dict,
 )
-from i18n_tools.loaders import dump_dictionary, fetch_dictionary
+
 from i18n_tools.locale import normalize_language_tag
+
 
 def _check_index_dict(dictionary: Dict[int, str]) -> bool:
     """
@@ -34,21 +37,38 @@ def _check_index_dict(dictionary: Dict[int, str]) -> bool:
             return False
     return True
 
+
 def _build_empty_metadata() -> StrictNestedDictionary:
     return StrictNestedDictionary(
-            {
-                "version": __version__,
-                "language": "",
-                "location": [],
-                "flags": [],
-                "comments": "",
-                "count": {
-                    "singular": 0,
-                    "plurals": [],
-                },
+        {
+            "version": __version__,
+            "language": "",
+            "location": [],
+            "flags": ["python-format"],
+            "comments": "",
+            "count": {
+                "singular": 0,
+                "plurals": [],
             },
-            default_setup={'indent': 2}
-        )
+        },
+        default_setup={"indent": 2},
+    )
+
+
+def extract_variables(text: str) -> List[str]:
+    """
+    Extract variable names from a formatted string.
+
+    Args:
+        text (str): The formatted string.
+
+    Returns:
+        List[str]: List of variable names.
+    """
+    # Find all {variable} patterns in the string
+    pattern = r"\{([^{}]+)\}"
+    return re.findall(pattern, text)
+
 
 class Message:
     """
@@ -211,9 +231,7 @@ class Message:
         self.translation = translation
         self.alternatives = {}
         self.plural_forms = {}
-        self.alternative_plural_forms = (
-            alternative_plural_forms or StrictNestedDictionary()
-        )
+        self.alternative_plural_forms = {}
         self.context = context
         self.metadata = _build_empty_metadata()
 
@@ -223,7 +241,12 @@ class Message:
             ("plural_forms", plural_forms, self.__check_plural_forms__),
             (
                 "alternative_plural_forms",
-                alternative_plural_forms,
+                (
+                    StrictNestedDictionary(alternative_plural_forms)
+                    if alternative_plural_forms is not None
+                    and len(alternative_plural_forms) > 0
+                    else None
+                ),
                 self.__check_alternative_plural_forms__,
             ),
         ]:
@@ -237,7 +260,7 @@ class Message:
         if metadata is not None:
             if metadata.keys() != self.metadata.keys():
                 raise KeyError(
-                    f"The metadata dictionary is malformed : {metadata.keys()}are not standard."
+                    f"The metadata dictionary is malformed : {metadata.keys()} are not standard."
                 )
             elif metadata["count"].keys() != self.metadata["count"].keys():
                 raise KeyError(
@@ -276,31 +299,25 @@ class Message:
             translations.extend(self.plural_forms.values())
         return translations
 
-    def get_alternative(self, loc: int) -> List[str]:
+    def get_message(self) -> str:
         """
-        Get the alternative translation and its plural forms for a specific location index.
-
-        Args:
-            loc (int): The location index of the alternative translation.
+        Get the message string from the message.
 
         Returns:
-            List[str]: A list containing the alternative translation and all its plural forms.
-
-        Raises:
-            KeyError: If the specified location index doesn't exist.
+            str: The content of the message.
         """
-        alternatives = []
-        try:
-            # Add the main alternative translation
-            alternatives.append(self.alternatives[loc])
+        return self.get_translation()[0]
 
-            # Add plural forms if they exist
-            if loc in self.alternative_plural_forms:
-                alternatives.extend(self.alternative_plural_forms[loc].values())
-
-            return alternatives
-        except KeyError:
-            raise KeyError(f"Alternative translation at index {loc} not found")
+    def get_plural(self) -> List[str]:
+        """
+        Get the main translation's plural forms.
+        :return: The list of plural forms.
+        :rtype: List[int]
+        """
+        plurals = []
+        if self.plural_forms:
+            plurals.extend(self.plural_forms.values())
+        return plurals
 
     def get_plural_form(self, loc: int) -> str:
         """
@@ -315,10 +332,36 @@ class Message:
         Raises:
             IndexError: If the location index doesn't exist.
         """
-        if loc > len(self.plural_forms) or loc < 0:
+        if loc > len(self.plural_forms) or loc <= 0:
             raise IndexError(f"The location {loc} index is out of range")
         else:
             return self.plural_forms[loc]
+
+    def get_alternative(self, loc: int) -> List[str]:
+        """
+        Get the alternative translation and its plural forms for a specific location index.
+
+        Args:
+            loc (int): The location index of the alternative translation.
+
+        Returns:
+            List[str]: A list containing the alternative translation and all its plural forms.
+
+        Raises:
+            IndexError: If the specified location index doesn't exist.
+        """
+        alternatives = []
+        try:
+            # Add the main alternative translation
+            alternatives.append(self.alternatives[loc])
+
+            # Add plural forms if they exist
+            if loc in self.alternative_plural_forms:
+                alternatives.extend(self.alternative_plural_forms[loc].values())
+
+            return alternatives
+        except KeyError:
+            raise IndexError(f"Alternative translation at index {loc} not found")
 
     def get_alternative_plural_form(self, loc: int, index: int) -> str:
         """
@@ -334,19 +377,23 @@ class Message:
         Raises:
             IndexError: If the location index or alternative index is out of range.
         """
-        if loc > len(self.alternative_plural_forms) or loc < 0:
-            raise IndexError(f"The location {loc} index is out of range")
-        elif index >= len(self.alternative_plural_forms[loc]) or index < 0:
-            raise IndexError(f"The index {index} is out of range")
+        if loc > len(self.alternative_plural_forms) or loc <= 0:
+            raise IndexError(f"The alternative message index ({loc}) is out of range")
+        elif index > len(self.alternative_plural_forms[loc]) or index <= 0:
+            raise IndexError(
+                f"The plural index ({index}) of alternative message ({loc}) is out of range"
+            )
         else:
             return self.alternative_plural_forms[loc][index]
 
-    def get_metadata(self, key: Optional[str] = None) -> Union[Dict[str, Any], Any]:
+    def get_metadata(
+        self, key: Optional[Union[List[str], str]] = None
+    ) -> Union[Dict[str, Any], Any]:
         """
         Get metadata from the message.
 
         Args:
-            key (Optional[str], optional): The specific metadata key to retrieve.
+            key (List[str] or str, optional): The specific metadata key to retrieve.
                 If None, returns all metadata. Defaults to None.
 
         Returns:
@@ -359,19 +406,12 @@ class Message:
         if key is None:
             return self.metadata
 
-        if key in self.metadata:
+        if (isinstance(key, str) and key in self.metadata) or (
+            isinstance(key, list) and key in self.metadata.dict_paths()
+        ):
             return self.metadata[key]
 
-        raise KeyError(f"Metadata key '{key}' not found")
-
-    def get_message(self) -> str:
-        """
-        Get the message string from the message.
-
-        Returns:
-            str: The content of the message.
-        """
-        return self.get_translation()[0]
+        raise KeyError(f"Metadata '{key}' is not a key or path")
 
     def get_alternative_message(self, loc: int) -> str:
         """
@@ -384,42 +424,9 @@ class Message:
             str: The content of the alternative message at the specified location.
 
         Raises:
-            KeyError: If the specified location doesn't exist.
+            IndexError: If the specified location doesn't exist.
         """
-        return self.get_alternative(loc + 1)[0]
-
-    def get_plural(self, option: int = 0) -> str:
-        """
-        Get the optional (index + 1) plural form registered in messages.
-
-        By default the first plural form is delivered.
-
-        Args:
-            option (int, optional): The location of the optional plural form. Defaults to 0.
-
-        Returns:
-            str: The content of the plural form.
-
-        Raises:
-            KeyError: If the specified option doesn't exist.
-        """
-        return self.get_translation()[option + 1]
-
-    def get_alternative_plural_message(self, loc: int, option: int = 0) -> str:
-        """
-        Get the alternative plural message from the message.
-
-        Args:
-            loc (int): The location of the alternative message.
-            option (int, optional): The plural option to be selected. Defaults to 0.
-
-        Returns:
-            str: The plural form of the alternative message at the specified location.
-
-        Raises:
-            KeyError: If the specified option doesn't exist.
-        """
-        return self.get_plural_form(loc)[option]
+        return self.get_alternative(loc)[0]
 
     def add_translation(self, **kwargs) -> None:
         """
@@ -443,7 +450,7 @@ class Message:
             raise ValueError("At least one translation is required")
         else:
             self.translation = __translation
-            
+
             # Process attributes with a parameterized loop using validation methods
             for attr_name, check_method in [
                 ("alternatives", self.__check_alternatives__),
@@ -468,8 +475,8 @@ class Message:
         Raises:
             ValueError: If the index is less than or equal to 0.
         """
-        if index <= 0:
-            raise ValueError("Plural form index must be greater than 0")
+        if index <= 0 or index > len(self.plural_forms) + 1:
+            raise ValueError(f"Plural form index ({index}) is not in a valid range")
         self.plural_forms[index] = translation
 
     def add_alternative(self, index: int, translation: str) -> None:
@@ -483,8 +490,8 @@ class Message:
         Raises:
             ValueError: If the index is less than or equal to 0.
         """
-        if index <= 0:
-            raise ValueError("Alternative index must be greater than 0")
+        if index <= 0 or index > len(self.alternatives) + 1:
+            raise ValueError(f"Alternative index ({index}) is not in a valid range")
         self.alternatives[index] = translation
 
     def add_alternative_plural_form(
@@ -502,13 +509,15 @@ class Message:
             ValueError: If alt_index or plural_index is less than or equal to 0.
             KeyError: If the alternative translation at alt_index doesn't exist.
         """
-        if alt_index <= 0:
-            raise ValueError("Alternative index must be greater than 0")
-        if plural_index <= 0:
-            raise ValueError("Plural form index must be greater than 0")
+        if alt_index <= 0 or alt_index > len(self.alternatives) + 1:
+            raise ValueError(f"Alternative index ({alt_index}) in not in a valid range")
+        if plural_index <= 0 or plural_index > len(self.plural_forms) + 1:
+            raise ValueError(
+                f"Plural form index ({plural_index}) is not in a valid range"
+            )
 
         if alt_index not in self.alternatives:
-            raise KeyError(f"Alternative translation at index {alt_index} not found")
+            raise KeyError(f"Alternative translation at index ({alt_index}) not found")
 
         if alt_index not in self.alternative_plural_forms:
             self.alternative_plural_forms[alt_index] = {}
@@ -524,7 +533,7 @@ class Message:
         """
         self.metadata["location"].append((file, index))
 
-    def add_language(self, lang:str) ->None:
+    def add_language(self, lang: str) -> None:
         """
         Add a language to the message.
         :param lang: an IETF language code.
@@ -595,7 +604,7 @@ class Message:
         else:
             self.plural_forms[index] = translation
 
-    def update_alternative(self, index:int, alternative: str) -> None:
+    def update_alternative(self, index: int, alternative: str) -> None:
         """
         Update the alternative translation.
         :param index: the index of the alternative translation.
@@ -605,9 +614,11 @@ class Message:
         if index not in self.alternatives.keys():
             raise KeyError(f"Alternative translation at index {index} not found")
         else:
-          self.alternatives[index] = alternative
+            self.alternatives[index] = alternative
 
-    def update_alternative_plural_form(self, alt_index: int, plural_index: int, translation: str) -> None:
+    def update_alternative_plural_form(
+        self, alt_index: int, plural_index: int, translation: str
+    ) -> None:
         """
         Update the alternative plural form.
         :param alt_index: the index of the alternative translation.
@@ -646,7 +657,7 @@ class Message:
         """
         self.alternatives = {}
 
-    def del_plural_form(self, index:int = None) -> None:
+    def del_plural_form(self, index: int = None) -> None:
         """
         Delete the plural form translation from the message.
         :param index: if not None, the index of the plural form to delete.
@@ -659,7 +670,7 @@ class Message:
         else:
             raise KeyError(f"Alternative translation at index {index} is out of range")
 
-    def del_alternative_plural_form(self, index:int = None) -> None:
+    def del_alternative_plural_form(self, index: int = None) -> None:
         """
         Delete the plural form translation from the message.
         :param index: if not None, the index of the plural form to delete.
@@ -690,132 +701,6 @@ class Message:
         else:
             raise KeyError(f"Metadata key '{key}' not found")
 
-    @classmethod
-    def from_unified_format(
-        cls, message_id: str, unified_entry: Dict[str, Any]
-    ) -> "Message":
-        """
-        Create a Message instance from a unified format entry.
-
-        Args:
-            message_id (str): The message ID.
-            unified_entry (Dict[str, Any]): The unified format entry.
-
-        Returns:
-            Message: A new Message instance.
-        """
-        # Convert string keys to integer keys for alternatives and plural forms
-        alternatives = {}
-        for k, v in unified_entry.get("alternatives", {}).items():
-            alternatives[int(k)] = v
-
-        plural_forms = {}
-        for k, v in unified_entry.get("plural_forms", {}).items():
-            plural_forms[int(k)] = v
-
-        alternative_plural_forms = {}
-        for alt_idx_str, alt_plural_dict in unified_entry.get(
-            "alternative_plural_forms", {}
-        ).items():
-            alt_idx = int(alt_idx_str)
-            alternative_plural_forms[alt_idx] = {}
-            for plural_idx_str, plural_form in alt_plural_dict.items():
-                alternative_plural_forms[alt_idx][int(plural_idx_str)] = plural_form
-
-        return cls(
-            message_id=message_id,
-            translation=unified_entry.get("translation", ""),
-            alternatives=alternatives,
-            plural_forms=plural_forms,
-            alternative_plural_forms=alternative_plural_forms,
-            context=unified_entry.get("context", ""),
-            metadata=unified_entry.get("metadata", {}),
-        )
-
-    @classmethod
-    def from_i18n_tools_format(
-        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
-    ) -> "Message":
-        """
-        Create a Message instance from an i18n_tools format entry.
-
-        Args:
-            message_id (str): The message ID.
-            i18n_tools_entry (Dict[str, Any]): The i18n_tools format entry.
-
-        Returns:
-            Message: A new Message instance.
-        """
-        # Convert i18n_tools format to unified format
-        unified_data = i18n_tools_to_unified_format({message_id: i18n_tools_entry})
-        if message_id in unified_data:
-            return cls.from_unified_format(message_id, unified_data[message_id])
-        return cls(message_id=message_id)
-
-    @classmethod
-    def from_repository(
-        cls,
-        repository: Dict[str, Any],
-        module: str,
-        domain: str,
-        lang: str,
-        message_id: str,
-    ) -> "Message":
-        """
-        Create a Message instance from a repository.
-
-        Args:
-            repository (Dict[str, Any]): The repository containing translations.
-            module (str): The module name.
-            domain (str): The domain name.
-            lang (str): The language code.
-            message_id (str): The message ID to find.
-
-        Returns:
-            Message: A new Message instance.
-
-        Raises:
-            KeyError: If the message ID is not found.
-        """
-        try:
-            translations = fetch_dictionary(repository, module, domain, lang)
-            if message_id in translations:
-                return cls.from_i18n_tools_format(message_id, translations[message_id])
-            raise KeyError(f"{message_id} not found in {module}/{domain} in {lang}")
-        except Exception as e:
-            raise e
-
-    def to_unified_format(self) -> Dict[str, Any]:
-        """
-        Convert the Message to unified format.
-
-        Returns:
-            Dict[str, Any]: The message in unified format.
-        """
-        # Convert integer keys to string keys for alternatives and plural forms
-        alternatives = {}
-        for k, v in self.alternatives.items():
-            alternatives[str(k)] = v
-
-        plural_forms = {}
-        for k, v in self.plural_forms.items():
-            plural_forms[str(k)] = v
-
-        alternative_plural_forms = {}
-        for alt_idx, alt_plural_dict in self.alternative_plural_forms.items():
-            alternative_plural_forms[str(alt_idx)] = {}
-            for plural_idx, plural_form in alt_plural_dict.items():
-                alternative_plural_forms[str(alt_idx)][str(plural_idx)] = plural_form
-
-        return {
-            "translation": self.translation,
-            "alternatives": alternatives,
-            "plural_forms": plural_forms,
-            "alternative_plural_forms": alternative_plural_forms,
-            "context": self.context,
-            "metadata": self.metadata,
-        }
-
     def to_i18n_tools_format(self) -> Dict[str, Any]:
         """
         Convert the Message to i18n_tools format.
@@ -823,27 +708,7 @@ class Message:
         Returns:
             Dict[str, Any]: The message in i18n_tools format.
         """
-        unified_data = {self.message_id: self.to_unified_format()}
-        i18n_tools_data = unified_format_to_i18n_tools(unified_data)
-        return (
-            i18n_tools_data[self.message_id]
-            if self.message_id in i18n_tools_data
-            else {}
-        )
-
-    def _extract_variables(self, text: str) -> List[str]:
-        """
-        Extract variable names from a formatted string.
-
-        Args:
-            text (str): The formatted string.
-
-        Returns:
-            List[str]: List of variable names.
-        """
-        # Find all {variable} patterns in the string
-        pattern = r"\{([^{}]+)\}"
-        return re.findall(pattern, text)
+        return message_to_i18n_tools_format(self)
 
     def format(self, alternative: int = 0, plural_index: int = 0, **kwargs) -> str:
         """
@@ -883,6 +748,33 @@ class Message:
         except Exception as e:
             raise ValueError(f"Error formatting message '{self.message_id}': {str(e)}")
 
+    @classmethod
+    def from_i18n_tools(
+        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+    ) -> "Message":
+        """
+        Create a Message instance from an i18n_tools format entry.
+
+        Args:
+            message_id (str): The message ID.
+            i18n_tools_entry (Dict[str, Any]): The i18n_tools format entry.
+
+        Returns:
+            Message: A new Message instance.
+        """
+        # Convert i18n_tools format to unified format
+        entry = i18n_tools_format_to_message_dict(i18n_tools_entry)
+
+        return cls(
+            message_id=message_id,
+            translation=entry.get("translation", ""),
+            plural_forms=entry.get("plural_forms", None),
+            alternatives=entry.get("alternatives", None),
+            alternative_plural_forms=entry.get("alternative_plural_forms", None),
+            context=entry.get("context", ""),
+            metadata=entry.get("metadata", None),
+        )
+
     def __str__(self) -> str:
         """
         Return the string representation of the message.
@@ -912,8 +804,8 @@ class Book:
         messages (StrictNestedDictionary): A dictionary of messages in this book.
     """
 
-    messages = StrictNestedDictionary()
-    pass
+    def __init__(self):
+        pass
 
 
 class Corpus:
@@ -963,7 +855,6 @@ class Corpus:
             message (Message): The message to add to the corpus.
         """
         self.messages[message.message_id] = message
-
 
 
 class Encyclopaedia:
