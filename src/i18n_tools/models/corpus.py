@@ -78,6 +78,15 @@ class Message:
     internationalization purposes. It uses the native i18n_tools format for storing
     messages and supports formatting using f-strings with variables.
 
+    Terminology:
+
+        * message is the content of a translation and its alternatives
+        * translation is the list of singular message and its plurals, each element of the list is a _token_
+        * alternative is a different _option_ of the translation in the message
+        * component  is a token inside a translation or an alternative
+        * option is an alternative translation
+
+
     Attributes:
         message_id (str): A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.
         translation (str): The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.
@@ -287,6 +296,8 @@ class Message:
         """
         return self.message_id
 
+    # managing translations
+
     def get_translation(self) -> List[str]:
         """
         Get the main translation and its plural forms.
@@ -299,50 +310,12 @@ class Message:
             translations.extend(self.plural_forms.values())
         return translations
 
-    def get_message(self) -> str:
-        """
-        Get the message string from the message.
-
-        Returns:
-            str: The content of the message.
-        """
-        return self.get_translation()[0]
-
-    def get_plural(self) -> List[str]:
-        """
-        Get the main translation's plural forms.
-        :return: The list of plural forms.
-        :rtype: List[int]
-        """
-        plurals = []
-        if self.plural_forms:
-            plurals.extend(self.plural_forms.values())
-        return plurals
-
-    def get_plural_form(self, loc: int) -> str:
-        """
-        Get the requested plural form registered in messages.
-
-        Args:
-            loc (int): The index of the requested plural.
-
-        Returns:
-            str: The requested plural form.
-
-        Raises:
-            IndexError: If the location index doesn't exist.
-        """
-        if loc > len(self.plural_forms) or loc <= 0:
-            raise IndexError(f"The location {loc} index is out of range")
-        else:
-            return self.plural_forms[loc]
-
-    def get_alternative(self, loc: int) -> List[str]:
+    def get_alternative_translation(self, option: int) -> List[str]:
         """
         Get the alternative translation and its plural forms for a specific location index.
 
         Args:
-            loc (int): The location index of the alternative translation.
+            option (int): The location index of the alternative translation.
 
         Returns:
             List[str]: A list containing the alternative translation and all its plural forms.
@@ -353,23 +326,90 @@ class Message:
         alternatives = []
         try:
             # Add the main alternative translation
-            alternatives.append(self.alternatives[loc])
+            alternatives.append(self.alternatives[option])
 
             # Add plural forms if they exist
-            if loc in self.alternative_plural_forms:
-                alternatives.extend(self.alternative_plural_forms[loc].values())
+            if option in self.alternative_plural_forms:
+                alternatives.extend(self.alternative_plural_forms[option].values())
 
             return alternatives
         except KeyError:
-            raise IndexError(f"Alternative translation at index {loc} not found")
+            raise IndexError(f"Alternative translation at index {option} not found")
 
-    def get_alternative_plural_form(self, loc: int, index: int) -> str:
+
+    def get_plural_translation(self) -> List[str]:
+        """
+        Get the main translation's plural forms.
+        :return: The list of plural forms.
+        :rtype: List[int]
+        """
+        plurals = []
+        if self.plural_forms:
+            plurals.extend(self.plural_forms.values())
+        return plurals
+
+    # managing components as token unit of translations
+
+    def get_component(self, token:int =0) -> str:
+        """
+        Get the message string from the message.
+
+        Args:
+            token (int): The token index of the message.
+
+        Returns:
+            str: The content of the message.
+        """
+        if token < 0:
+            raise IndexError(f"Token index ({token}) must be positive")
+
+        try:
+            return self.get_translation()[token]
+        except IndexError:
+            raise IndexError(f"Message token ({token}) is out of range")
+
+    def get_plural_component(self, token: int) -> str:
+        """
+        Get the requested plural form registered in messages.
+
+        Args:
+            token (int): The index of the requested plural.
+
+        Returns:
+            str: The requested plural form.
+
+        Raises:
+            IndexError: If the location index doesn't exist.
+        """
+        if token > len(self.plural_forms) or token <= 0:
+            raise IndexError(f"The location {token} index is out of range")
+        else:
+            return self.plural_forms[token]
+
+    def get_alternative_component(self, option: int, token:int = 0) -> str:
+        """
+        Get the alternative message from the message.
+
+        Args:
+            option (int): The location (index plus one) of the alternative translation.
+            token (int): The token index of the alternative translation.
+
+        Returns:
+            str: The content of the alternative message at the specified location.
+
+        Raises:
+            IndexError: If the specified location doesn't exist.
+        """
+        return self.get_alternative_translation(option)[0]
+
+
+    def get_alternative_plural_component(self, token: int, option: int) -> str:
         """
         Get the requested alternative plural form registered in messages.
 
         Args:
-            loc (int): The index of the requested plural.
-            index (int): The index of the alternative plural form.
+            token (int): The index of the requested plural.
+            option (int): The index of the alternative plural form.
 
         Returns:
             str: The requested plural form.
@@ -377,14 +417,76 @@ class Message:
         Raises:
             IndexError: If the location index or alternative index is out of range.
         """
-        if loc > len(self.alternative_plural_forms) or loc <= 0:
-            raise IndexError(f"The alternative message index ({loc}) is out of range")
-        elif index > len(self.alternative_plural_forms[loc]) or index <= 0:
+        if token > len(self.alternative_plural_forms) or token <= 0:
+            raise IndexError(f"The alternative message index ({token}) is out of range")
+        elif option > len(self.alternative_plural_forms[token]) or option <= 0:
             raise IndexError(
-                f"The plural index ({index}) of alternative message ({loc}) is out of range"
+                f"The plural index ({option}) of alternative message ({token}) is out of range"
             )
         else:
-            return self.alternative_plural_forms[loc][index]
+            return self.alternative_plural_forms[token][option]
+
+    def add_plural_component(self, token: int, sentence: str) -> None:
+        """
+        Add a plural form to the message.
+
+        Args:
+            token (int): The index of the plural form.
+            sentence (str): The text for the plural form.
+
+        Raises:
+            ValueError: If the index is less than or equal to 0.
+        """
+        if token <= 0 or token > len(self.plural_forms) + 1:
+            raise ValueError(f"Plural form index ({token}) is not in a valid range")
+        self.plural_forms[token] = sentence
+
+    def add_alternative_component(self, token: int, sentence: str) -> None:
+        """
+        Add an alternative translation to the message.
+
+        Args:
+            token (int): The index of the alternative translation.
+            sentence (str): The alternative translation text.
+
+        Raises:
+            ValueError: If the index is less than or equal to 0.
+        """
+        if token <= 0 or token > len(self.alternatives) + 1:
+            raise ValueError(f"Alternative index ({token}) is not in a valid range")
+        self.alternatives[token] = sentence
+
+    def add_alternative_plural_component(
+        self, option: int, token: int, sentence: str
+    ) -> None:
+        """
+        Add a plural form to an alternative translation.
+
+        Args:
+            option (int): The index of the alternative translation.
+            token (int): The index of the plural form.
+            sentence (str): The translation text for the plural form.
+
+        Raises:
+            ValueError: If alt_index or plural_index is less than or equal to 0.
+            KeyError: If the alternative translation at alt_index doesn't exist.
+        """
+        if option <= 0 or option > len(self.alternatives) + 1:
+            raise ValueError(f"Alternative index ({option}) in not in a valid range")
+        if token <= 0 or token > len(self.plural_forms) + 1:
+            raise ValueError(
+                f"Plural form index ({token}) is not in a valid range"
+            )
+
+        if option not in self.alternatives:
+            raise KeyError(f"Alternative translation at index ({option}) not found")
+
+        if option not in self.alternative_plural_forms:
+            self.alternative_plural_forms[option] = {}
+
+        self.alternative_plural_forms[option][token] = sentence
+
+    # Managing metadata
 
     def get_metadata(
         self, key: Optional[Union[List[str], str]] = None
@@ -413,125 +515,14 @@ class Message:
 
         raise KeyError(f"Metadata '{key}' is not a key or path")
 
-    def get_alternative_message(self, loc: int) -> str:
-        """
-        Get the alternative message from the message.
-
-        Args:
-            loc (int): The location (index plus one) of the alternative translation.
-
-        Returns:
-            str: The content of the alternative message at the specified location.
-
-        Raises:
-            IndexError: If the specified location doesn't exist.
-        """
-        return self.get_alternative(loc)[0]
-
-    def add_translation(self, **kwargs) -> None:
-        """
-        Add a translation to the message.
-
-        Args:
-            kwargs (dict): Keyword arguments related to instance attribute to be added to the message.
-
-        Returns:
-
-            None: instance is updated with parameters
-
-        Raises:
-            ValueError: If the keyword "translation" is missing, or translation is empty
-            TypeError: If the keyword for dict attributes are evaluated with a different type
-            KeyError: If the index of dict value are not compatible with target expectations
-        """
-        __translation = kwargs.pop("translation", None)
-
-        if __translation is None:
-            raise ValueError("At least one translation is required")
-        else:
-            self.translation = __translation
-
-            # Process attributes with a parameterized loop using validation methods
-            for attr_name, check_method in [
-                ("alternatives", self.__check_alternatives__),
-                ("plural_forms", self.__check_plural_forms__),
-                ("alternative_plural_forms", self.__check_alternative_plural_forms__),
-            ]:
-                value = kwargs.pop(attr_name, None)
-                if value is not None:
-                    if check_method(value):
-                        setattr(self, attr_name, value)
-                    else:
-                        raise ValueError(f"The {attr_name} value is malformed")
-
-    def add_plural_form(self, index: int, translation: str) -> None:
-        """
-        Add a plural form to the message.
-
-        Args:
-            index (int): The index of the plural form.
-            translation (str): The translation text for the plural form.
-
-        Raises:
-            ValueError: If the index is less than or equal to 0.
-        """
-        if index <= 0 or index > len(self.plural_forms) + 1:
-            raise ValueError(f"Plural form index ({index}) is not in a valid range")
-        self.plural_forms[index] = translation
-
-    def add_alternative(self, index: int, translation: str) -> None:
-        """
-        Add an alternative translation to the message.
-
-        Args:
-            index (int): The index of the alternative translation.
-            translation (str): The alternative translation text.
-
-        Raises:
-            ValueError: If the index is less than or equal to 0.
-        """
-        if index <= 0 or index > len(self.alternatives) + 1:
-            raise ValueError(f"Alternative index ({index}) is not in a valid range")
-        self.alternatives[index] = translation
-
-    def add_alternative_plural_form(
-        self, alt_index: int, plural_index: int, translation: str
-    ) -> None:
-        """
-        Add a plural form to an alternative translation.
-
-        Args:
-            alt_index (int): The index of the alternative translation.
-            plural_index (int): The index of the plural form.
-            translation (str): The translation text for the plural form.
-
-        Raises:
-            ValueError: If alt_index or plural_index is less than or equal to 0.
-            KeyError: If the alternative translation at alt_index doesn't exist.
-        """
-        if alt_index <= 0 or alt_index > len(self.alternatives) + 1:
-            raise ValueError(f"Alternative index ({alt_index}) in not in a valid range")
-        if plural_index <= 0 or plural_index > len(self.plural_forms) + 1:
-            raise ValueError(
-                f"Plural form index ({plural_index}) is not in a valid range"
-            )
-
-        if alt_index not in self.alternatives:
-            raise KeyError(f"Alternative translation at index ({alt_index}) not found")
-
-        if alt_index not in self.alternative_plural_forms:
-            self.alternative_plural_forms[alt_index] = {}
-
-        self.alternative_plural_forms[alt_index][plural_index] = translation
-
-    def add_location(self, index: int, file: str) -> None:
+    def add_location(self, line: int, file: str) -> None:
         """
         Add a location to the message.
-        :param index: line in the file where the translation should be written.
+        :param line: line in the file where the translation should be written.
         :param file: file where the translation should be written.
         :return:
         """
-        self.metadata["location"].append((file, index))
+        self.metadata["location"].append((file, line))
 
     def add_language(self, lang: str) -> None:
         """
@@ -571,18 +562,67 @@ class Message:
 
         if isinstance(key_or_dict, dict):
             __dict = StrictNestedDictionary(key_or_dict)
-            for key in self.metadata.dict_paths():
-                if key not in __dict.dict_paths():
+            for path in self.metadata.dict_paths():
+                if path not in __dict.dict_paths():
                     raise ValueError(
-                        f"The key {key} is not a present key in the metadata dictionary"
+                        f"The path {path} is not a present key in the metadata dictionary"
                     )
             self.metadata.update(__dict)
+        elif value is None:
+            raise ValueError(
+                    f"Value of '{key_or_dict}' cannot be None when setting a specific metadata key"
+            )
+        elif isinstance(key_or_dict, list) and key_or_dict not in self.metadata.dict_paths():
+            raise ValueError(
+                f"The path {key_or_dict} is not a present key in the metadata dictionary"
+            )
+        elif isinstance(key_or_dict, str) and not self.metadata.is_key(key_or_dict):
+            raise ValueError(
+                f"The key '{key_or_dict}' is not a present key in the metadata dictionary"
+            )
         else:
-            if value is None:
-                raise ValueError(
-                    "Value cannot be None when setting a specific metadata key"
-                )
             self.metadata[key_or_dict] = value
+
+
+    # Managing messages
+
+    def add_message(self, **kwargs) -> None:
+        """
+        Add a translation to the message.
+
+        Args:
+            kwargs (dict): Keyword arguments related to instance attribute to be added to the message.
+
+        Returns:
+
+            None: instance is updated with parameters
+
+        Raises:
+            ValueError: If the keyword "translation" is missing, or translation is empty
+            TypeError: If the keyword for dict attributes are evaluated with a different type
+            KeyError: If the index of dict value are not compatible with target expectations
+        """
+        __translation = kwargs.pop("translation", None)
+
+        if __translation is None:
+            raise ValueError("At least one translation is required")
+        else:
+            self.translation = __translation
+
+            # Process attributes with a parameterized loop using validation methods
+            for attr_name, check_method in [
+                ("alternatives", self.__check_alternatives__),
+                ("plural_forms", self.__check_plural_forms__),
+                ("alternative_plural_forms", self.__check_alternative_plural_forms__),
+            ]:
+                value = kwargs.pop(attr_name, None)
+                if value is not None:
+                    if check_method(value):
+                        setattr(self, attr_name, value)
+                    else:
+                        raise ValueError(f"The {attr_name} value is malformed")
+
+
 
     def update_translation(self, translation: str) -> None:
         """

@@ -6,6 +6,7 @@ import pytest
 import re
 
 from i18n_tools.models import Message
+from ndict_tools import StrictNestedDictionary
 
 
 @pytest.fixture
@@ -62,6 +63,15 @@ def en_message():
 def empty_message():
     return Message(message_id="1000", translation="")
 
+
+@pytest.fixture(scope="module")
+def empty_module_message():
+    return Message(
+        message_id="1000", translation="",
+    )
+
+
+# 1. Testing attributes
 
 class TestMessageCreation:
 
@@ -159,6 +169,11 @@ class TestMessageCreation:
         assert message.metadata["count"][key] == expect
 
 
+# 2. Test access to data
+
+# 2.1 Testing messages
+
+
 @pytest.mark.parametrize(
     "fixture_name, expected_language",
     [("fr_message", "fr-FR"), ("en_message", "en"), ("empty_message", "")],
@@ -171,6 +186,8 @@ def test_message_get_id(fixture_name, expected_language, request) -> None:
     assert message.get_id() == "1000"
     assert message.metadata["language"] == expected_language
 
+
+# 2.2 Testing translations
 
 @pytest.mark.parametrize(
     "fixture_name, expect",
@@ -188,12 +205,34 @@ def test_message_get_translation(fixture_name, expect, request) -> None:
 
 
 @pytest.mark.parametrize(
-    "fixture_name, expect",
-    [("fr_message", "Bonjour"), ("en_message", "Hello"), ("empty_message", "")],
+    "fixture_name, location, expect",
+    [
+        ("fr_message", 1, ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"]),
+        ("fr_message", 2, ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"]),
+        ("en_message", 1, ["Hello {name}", "Hi everybody", "Ladies"]),
+        ("en_message", 2, ["Hello {name}", "Hi everyone", "Gentlemen"]),
+    ],
 )
-def test_message_get_message(fixture_name, expect, request) -> None:
+def test_message_get_alternative_translation(fixture_name, location, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_message() == expect
+    assert message.get_alternative_translation(location) == expect
+
+
+@pytest.mark.parametrize(
+    "fixture_name, location, expect",
+    [
+        ("fr_message", 5, "Alternative translation at index 5 not found"),
+        ("en_message", 6, "Alternative translation at index 6 not found"),
+        ("en_message", 3, "Alternative translation at index 3 not found"),
+        ("fr_message", 4, "Alternative translation at index 4 not found"),
+    ],
+)
+def test_message_get_alternative_translation_failed(
+        fixture_name, location, expect, request
+) -> None:
+    message = request.getfixturevalue(fixture_name)
+    with pytest.raises(IndexError, match=re.escape(expect)):
+        assert message.get_alternative_translation(location) == ""
 
 
 @pytest.mark.parametrize(
@@ -204,9 +243,75 @@ def test_message_get_message(fixture_name, expect, request) -> None:
         ("empty_message", []),
     ],
 )
-def test_message_get_plural(fixture_name, expect, request) -> None:
+def test_message_get_plural_translation(fixture_name, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_plural() == expect
+    assert message.get_plural_translation() == expect
+
+
+# 2.3 Testing components
+
+@pytest.mark.parametrize(
+    "fixture_name, expect",
+    [("fr_message", "Bonjour"), ("en_message", "Hello"), ("empty_message", "")],
+)
+def test_message_get_component(fixture_name, expect, request) -> None:
+    message = request.getfixturevalue(fixture_name)
+    assert message.get_component() == expect
+
+
+@pytest.mark.parametrize(
+    "fixture_name, token, expect",
+    [("fr_message", 0, "Bonjour"), ("en_message", 0, "Hello"), ("empty_message", 0, ""),
+     ("fr_message", 1, "Bonjour à tous"), ("en_message", 1, "Hi everybody"),
+     ("fr_message", 2, "Bonjour tout le monde"), ("en_message", 2, "Hi everyone"), ],
+)
+def test_message_get_component_token(fixture_name, token, expect, request) -> None:
+    message = request.getfixturevalue(fixture_name)
+    assert message.get_component(token) == expect
+
+
+@pytest.mark.parametrize(
+    "fixture_name, token, expect",
+    [("fr_message", 4, "Message token (4) is out of range"),
+     ("en_message", -1, "Token index (-1) must be positive"),
+     ("empty_message", 1, "Message token (1) is out of range"), ],
+)
+def test_message_get_component_token_failed(fixture_name, token, expect, request) -> None:
+    message = request.getfixturevalue(fixture_name)
+    with pytest.raises(IndexError, match=re.escape(expect)):
+        message.get_component(token)
+
+
+@pytest.mark.parametrize(
+    "fixture_name, option, expected",
+    [
+        ("fr_message", 1, "Bonjour Mme {name}"),
+        ("fr_message", 2, "Bonjour M. {name}"),
+        ("en_message", 1, "Hello {name}"),
+        ("en_message", 2, "Hello {name}"),
+    ],
+)
+def test_message_get_alternative_component(
+        fixture_name, option, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_name)
+    assert message.get_alternative_component(option) == expected
+
+
+@pytest.mark.parametrize(
+    "fixture_name, option, expected",
+    [
+        ("empty_message", 1, "Alternative translation at index 1 not found"),
+        ("fr_message", 3, "Alternative translation at index 3 not found"),
+        ("en_message", 0, "Alternative translation at index 0 not found"),
+    ],
+)
+def test_message_get_alternative_component_failed(
+        fixture_name, option, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_name)
+    with pytest.raises(IndexError, match=re.escape(expected)):
+        message.get_alternative_component(option)
 
 
 @pytest.mark.parametrize(
@@ -218,9 +323,9 @@ def test_message_get_plural(fixture_name, expect, request) -> None:
         ("en_message", 2, "Hi everyone"),
     ],
 )
-def test_message_get_plural_form(fixture_name, location, expect, request) -> None:
+def test_message_get_plural_component(fixture_name, location, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_plural_form(location) == expect
+    assert message.get_plural_component(location) == expect
 
 
 @pytest.mark.parametrize(
@@ -233,43 +338,12 @@ def test_message_get_plural_form(fixture_name, location, expect, request) -> Non
         ("empty_message", 1, "The location 1 index is out of range"),
     ],
 )
-def test_message_get_plural_form_failed(
-    fixture_name, location, expect, request
+def test_message_get_plural_component_failed(
+        fixture_name, location, expect, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(IndexError, match=re.escape(expect)):
-        assert message.get_plural_form(location) == ""
-
-
-@pytest.mark.parametrize(
-    "fixture_name, location, expect",
-    [
-        ("fr_message", 1, ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"]),
-        ("fr_message", 2, ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"]),
-        ("en_message", 1, ["Hello {name}", "Hi everybody", "Ladies"]),
-        ("en_message", 2, ["Hello {name}", "Hi everyone", "Gentlemen"]),
-    ],
-)
-def test_message_get_alternative(fixture_name, location, expect, request) -> None:
-    message = request.getfixturevalue(fixture_name)
-    assert message.get_alternative(location) == expect
-
-
-@pytest.mark.parametrize(
-    "fixture_name, location, expect",
-    [
-        ("fr_message", 5, "Alternative translation at index 5 not found"),
-        ("en_message", 6, "Alternative translation at index 6 not found"),
-        ("en_message", 3, "Alternative translation at index 3 not found"),
-        ("fr_message", 4, "Alternative translation at index 4 not found"),
-    ],
-)
-def test_message_get_alternative_failed(
-    fixture_name, location, expect, request
-) -> None:
-    message = request.getfixturevalue(fixture_name)
-    with pytest.raises(IndexError, match=re.escape(expect)):
-        assert message.get_alternative(location) == ""
+        assert message.get_plural_component(location) == ""
 
 
 @pytest.mark.parametrize(
@@ -281,11 +355,11 @@ def test_message_get_alternative_failed(
         ("en_message", 1, 1, "Hi everybody"),
     ],
 )
-def test_message_get_alternative_plural_form(
-    fixture_name, loc, index, expected, request
+def test_message_get_alternative_plural_component(
+        fixture_name, loc, index, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_alternative_plural_form(loc, index) == expected
+    assert message.get_alternative_plural_component(loc, index) == expected
 
 
 @pytest.mark.parametrize(
@@ -293,64 +367,66 @@ def test_message_get_alternative_plural_form(
     [
         ("fr_message", 0, 1, "The alternative message index (0) is out of range"),
         (
-            "en_message",
-            1,
-            3,
-            "The plural index (3) of alternative message (1) is out of range",
+                "en_message",
+                1,
+                3,
+                "The plural index (3) of alternative message (1) is out of range",
         ),
         ("en_message", 4, 1, "The alternative message index (4) is out of range"),
         (
-            "fr_message",
-            1,
-            0,
-            "The plural index (0) of alternative message (1) is out of range",
+                "fr_message",
+                1,
+                0,
+                "The plural index (0) of alternative message (1) is out of range",
         ),
         ("empty_message", 1, 1, "The alternative message index (1) is out of range"),
     ],
 )
-def test_message_get_alternative_plural_form_failed(
-    fixture_name, location, option, expect, request
+def test_message_get_alternative_plural_component_failed(
+        fixture_name, location, option, expect, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(IndexError, match=re.escape(expect)):
-        assert message.get_alternative_plural_form(location, option) == ""
+        assert message.get_alternative_plural_component(location, option) == ""
 
+
+# 2.4 Testing metadata
 
 @pytest.mark.parametrize(
     "fixture_name, dict",
     [
         (
-            "fr_message",
-            {
-                "version": "0.1.0",
-                "language": "fr-FR",
-                "location": [],
-                "flags": ["python-format"],
-                "comments": "In French, Greeting message to one or more...",
-                "count": {"singular": 3, "plurals": [2, 2, 2]},
-            },
+                "fr_message",
+                {
+                    "version": "0.1.0",
+                    "language": "fr-FR",
+                    "location": [],
+                    "flags": ["python-format"],
+                    "comments": "In French, Greeting message to one or more...",
+                    "count": {"singular": 3, "plurals": [2, 2, 2]},
+                },
         ),
         (
-            "empty_message",
-            {
-                "version": "0.1.0",
-                "language": "",
-                "location": [],
-                "flags": ["python-format"],
-                "comments": "",
-                "count": {"singular": 0, "plurals": [0]},
-            },
+                "empty_message",
+                {
+                    "version": "0.1.0",
+                    "language": "",
+                    "location": [],
+                    "flags": ["python-format"],
+                    "comments": "",
+                    "count": {"singular": 0, "plurals": [0]},
+                },
         ),
         (
-            "en_message",
-            {
-                "version": "0.1.0",
-                "language": "en",
-                "location": [],
-                "flags": ["python-format"],
-                "comments": "Greeting message to one or more...",
-                "count": {"singular": 3, "plurals": [2, 2, 2]},
-            },
+                "en_message",
+                {
+                    "version": "0.1.0",
+                    "language": "en",
+                    "location": [],
+                    "flags": ["python-format"],
+                    "comments": "Greeting message to one or more...",
+                    "count": {"singular": 3, "plurals": [2, 2, 2]},
+                },
         ),
     ],
 )
@@ -390,162 +466,134 @@ def test_message_get_metadata(fixture_name, path, expected, request) -> None:
 
 def test_message_get_metadata_failed(fr_message):
     with pytest.raises(
-        KeyError,
-        match=re.escape("Metadata '['counts', 'singular']' is not a key or path"),
+            KeyError,
+            match=re.escape("Metadata '['counts', 'singular']' is not a key or path"),
     ):
         fr_message.get_metadata(["counts", "singular"])
 
 
-@pytest.mark.parametrize(
-    "fixture_name, option, expected",
-    [
-        ("fr_message", 1, "Bonjour Mme {name}"),
-        ("fr_message", 2, "Bonjour M. {name}"),
-        ("en_message", 1, "Hello {name}"),
-        ("en_message", 2, "Hello {name}"),
-    ],
-)
-def test_message_get_alternative_message(
-    fixture_name, option, expected, request
-) -> None:
-    message = request.getfixturevalue(fixture_name)
-    assert message.get_alternative_message(option) == expected
+# 3 Testing adding function
 
-
-@pytest.mark.parametrize(
-    "fixture_name, option, expected",
-    [
-        ("empty_message", 1, "Alternative translation at index 1 not found"),
-        ("fr_message", 3, "Alternative translation at index 3 not found"),
-        ("en_message", 0, "Alternative translation at index 0 not found"),
-    ],
-)
-def test_message_get_alternative_message_failed(
-    fixture_name, option, expected, request
-) -> None:
-    message = request.getfixturevalue(fixture_name)
-    with pytest.raises(IndexError, match=re.escape(expected)):
-        message.get_alternative_message(option)
-
+# 3.1 Testing Messages
 
 @pytest.mark.parametrize(
     "fixture_name, options, expected",
     [
         ("empty_message", {"translation": "Hello"}, [("translation", "Hello")]),
         (
-            "empty_message",
-            {"translation": "Hello", "alternatives": {1: "Bonjour Mme {name}"}},
-            [("translation", "Hello"), ("alternatives", {1: "Bonjour Mme {name}"})],
+                "empty_message",
+                {"translation": "Hello", "alternatives": {1: "Bonjour Mme {name}"}},
+                [("translation", "Hello"), ("alternatives", {1: "Bonjour Mme {name}"})],
         ),
         (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-            ],
-        ),
-        (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde"},
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ("plural_forms", {1: "Bonjour tout le monde"}),
-            ],
-        ),
-        (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
-            ],
-        ),
-        (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
                 },
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
-                (
-                    "alternative_plural_forms",
-                    {
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                ],
+        ),
+        (
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde"},
+                },
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                    ("plural_forms", {1: "Bonjour tout le monde"}),
+                ],
+        ),
+        (
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                },
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                    ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
+                ],
+        ),
+        (
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
                         1: {1: "Bonjour Mesdames"},
                     },
-                ),
-            ],
+                },
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                    ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
+                    (
+                            "alternative_plural_forms",
+                            {
+                                1: {1: "Bonjour Mesdames"},
+                            },
+                    ),
+                ],
         ),
         (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
-                    2: {1: "Bonjour Messieurs"},
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames"},
+                        2: {1: "Bonjour Messieurs"},
+                    },
                 },
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
-                (
-                    "alternative_plural_forms",
-                    {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
-                ),
-            ],
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                    ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
+                    (
+                            "alternative_plural_forms",
+                            {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
+                    ),
+                ],
         ),
         (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                    2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                },
-            },
-            [
-                ("translation", "Hello"),
-                ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
-                (
-                    "alternative_plural_forms",
-                    {
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
                         1: {1: "Bonjour Mesdames", 2: "Mesdames"},
                         2: {1: "Bonjour Messieurs", 2: "Messieurs"},
                     },
-                ),
-            ],
+                },
+                [
+                    ("translation", "Hello"),
+                    ("alternatives", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
+                    ("plural_forms", {1: "Bonjour tout le monde", 2: "Bonjour à tous"}),
+                    (
+                            "alternative_plural_forms",
+                            {
+                                1: {1: "Bonjour Mesdames", 2: "Mesdames"},
+                                2: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                            },
+                    ),
+                ],
         ),
     ],
 )
-def test_message_add_translation(fixture_name, options, expected, request) -> None:
+def test_message_add_message(fixture_name, options, expected, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    message.add_translation(**options)
+    message.add_message(**options)
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -554,70 +602,75 @@ def test_message_add_translation(fixture_name, options, expected, request) -> No
     "fixture_name, options, expected",
     [
         (
-            "fr_message",
-            {"translations": "Hello"},
-            "At least one translation is required",
+                "fr_message",
+                {"translations": "Hello"},
+                "At least one translation is required",
         ),
         (
-            "fr_message",
-            {"alternatives": {1: "Bonjour Mme {name}"}},
-            "At least one translation is required",
+                "fr_message",
+                {"alternatives": {1: "Bonjour Mme {name}"}},
+                "At least one translation is required",
         ),
         (
-            "empty_message",
-            {"translation": "Hello", "alternatives": {2: "Bonjour Mme {name}"}},
-            "The alternatives value is malformed",
+                "empty_message",
+                {"translation": "Hello", "alternatives": {2: "Bonjour Mme {name}"}},
+                "The alternatives value is malformed",
         ),
         (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {2: "Bonjour tout le monde"},
-            },
-            "The plural_forms value is malformed",
-        ),
-        (
-            "empty_message",
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                    3: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {2: "Bonjour tout le monde"},
                 },
-            },
-            "The alternative_plural_forms value is malformed",
+                "The plural_forms value is malformed",
+        ),
+        (
+                "empty_message",
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
+                        3: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                    },
+                },
+                "The alternative_plural_forms value is malformed",
         ),
     ],
 )
-def test_message_add_translation_failed(
-    fixture_name, options, expected, request
+def test_message_add_message_failed(
+        fixture_name, options, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_translation(**options)
+        message.add_message(**options)
 
+
+# 3.2 Testing translations
+
+
+# 3.3 Testing components
 
 @pytest.mark.parametrize(
     "fixture_name, additional, expected",
     [
         (
-            "fr_message",
-            (3, "Salut à tous"),
-            {1: "Bonjour à tous", 2: "Bonjour tout le monde", 3: "Salut à tous"},
+                "fr_message",
+                (3, "Salut à tous"),
+                {1: "Bonjour à tous", 2: "Bonjour tout le monde", 3: "Salut à tous"},
         ),
         (
-            "en_message",
-            (3, "Hello everyone"),
-            {1: "Hi everybody", 2: "Hi everyone", 3: "Hello everyone"},
+                "en_message",
+                (3, "Hello everyone"),
+                {1: "Hi everybody", 2: "Hi everyone", 3: "Hello everyone"},
         ),
     ],
 )
-def test_message_add_plural_form(fixture_name, additional, expected, request) -> None:
+def test_message_add_plural_component(fixture_name, additional, expected, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    message.add_plural_form(additional[0], additional[1])
+    message.add_plural_component(additional[0], additional[1])
     assert message.plural_forms == expected
 
 
@@ -625,33 +678,33 @@ def test_message_add_plural_form(fixture_name, additional, expected, request) ->
     "fixture_name, additional, expected",
     [
         (
-            "fr_message",
-            (4, "Salut à tous"),
-            "Plural form index (4) is not in a valid range",
+                "fr_message",
+                (4, "Salut à tous"),
+                "Plural form index (4) is not in a valid range",
         ),
         (
-            "en_message",
-            (6, "Hello everyone"),
-            "Plural form index (6) is not in a valid range",
+                "en_message",
+                (6, "Hello everyone"),
+                "Plural form index (6) is not in a valid range",
         ),
         (
-            "fr_message",
-            (0, "Salut à tous"),
-            "Plural form index (0) is not in a valid range",
+                "fr_message",
+                (0, "Salut à tous"),
+                "Plural form index (0) is not in a valid range",
         ),
         (
-            "en_message",
-            (-1, "Hello everyone"),
-            "Plural form index (-1) is not in a valid range",
+                "en_message",
+                (-1, "Hello everyone"),
+                "Plural form index (-1) is not in a valid range",
         ),
     ],
 )
-def test_message_add_plural_form_failed(
-    fixture_name, additional, expected, request
+def test_message_add_plural_component_failed(
+        fixture_name, additional, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_plural_form(additional[0], additional[1])
+        message.add_plural_component(additional[0], additional[1])
 
 
 @pytest.mark.parametrize(
@@ -659,27 +712,27 @@ def test_message_add_plural_form_failed(
     [
         ("Bonjour", None, 1, "Bonjour, {name}", {1: "Bonjour, {name}"}),
         (
-            "Bonjour",
-            {1: "Bonjour, {name}"},
-            2,
-            "Bonjour M. {name}",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
+                "Bonjour",
+                {1: "Bonjour, {name}"},
+                2,
+                "Bonjour M. {name}",
+                {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
         ),
         (
-            "Bonjour",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
-            3,
-            "Bonjour, Mme {name}",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}", 3: "Bonjour, Mme {name}"},
+                "Bonjour",
+                {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
+                3,
+                "Bonjour, Mme {name}",
+                {1: "Bonjour, {name}", 2: "Bonjour M. {name}", 3: "Bonjour, Mme {name}"},
         ),
     ],
 )
-def test_message_add_alternative(
-    empty_message, translation, index, alternatives, additional, expected
+def test_message_add_alternative_component(
+        empty_message, translation, index, alternatives, additional, expected
 ) -> None:
     message = empty_message
-    message.add_translation(translation=translation, alternatives=alternatives)
-    message.add_alternative(index, additional)
+    message.add_message(translation=translation, alternatives=alternatives)
+    message.add_alternative_component(index, additional)
     assert message.alternatives == expected
 
 
@@ -687,91 +740,91 @@ def test_message_add_alternative(
     "translation, alternatives, index, additional, expected",
     [
         (
-            "Bonjour",
-            None,
-            2,
-            "Bonjour, {name}",
-            "Alternative index (2) is not in a valid range",
+                "Bonjour",
+                None,
+                2,
+                "Bonjour, {name}",
+                "Alternative index (2) is not in a valid range",
         ),
         (
-            "Bonjour",
-            {1: "Bonjour, {name}"},
-            0,
-            "Bonjour M. {name}",
-            "Alternative index (0) is not in a valid range",
+                "Bonjour",
+                {1: "Bonjour, {name}"},
+                0,
+                "Bonjour M. {name}",
+                "Alternative index (0) is not in a valid range",
         ),
         (
-            "Bonjour",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
-            -1,
-            "Bonjour, Mme {name}",
-            "Alternative index (-1) is not in a valid range",
+                "Bonjour",
+                {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
+                -1,
+                "Bonjour, Mme {name}",
+                "Alternative index (-1) is not in a valid range",
         ),
     ],
 )
-def test_message_add_alternative_failed(
-    empty_message, translation, index, alternatives, additional, expected
+def test_message_add_alternative_component_failed(
+        empty_message, translation, index, alternatives, additional, expected
 ) -> None:
     message = empty_message
-    message.add_translation(translation=translation, alternatives=alternatives)
+    message.add_message(translation=translation, alternatives=alternatives)
     with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_alternative(index, additional)
+        message.add_alternative_component(index, additional)
 
 
 @pytest.mark.parametrize(
     "options, alt_index, plural_index, additional,expected",
     [
         (
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-            },
-            1,
-            1,
-            "Bonjour Mesdames",
-            {1: {1: "Bonjour Mesdames"}},
-        ),
-        (
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
                 },
-            },
-            2,
-            1,
-            "Bonjour Messieurs",
-            {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
+                1,
+                1,
+                "Bonjour Mesdames",
+                {1: {1: "Bonjour Mesdames"}},
         ),
         (
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames"},
+                    },
+                },
+                2,
+                1,
+                "Bonjour Messieurs",
+                {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
+        ),
+        (
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames"},
+                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                    },
+                },
+                1,
+                2,
+                "Mesdames",
+                {
+                    1: {1: "Bonjour Mesdames", 2: "Mesdames"},
                     2: {1: "Bonjour Messieurs", 2: "Messieurs"},
                 },
-            },
-            1,
-            2,
-            "Mesdames",
-            {
-                1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-            },
         ),
     ],
 )
-def test_message_add_plural_forms(
-    empty_message, options, alt_index, plural_index, additional, expected
+def test_message_add_alternative_plural_component(
+        empty_message, options, alt_index, plural_index, additional, expected
 ) -> None:
     message = empty_message
-    message.add_translation(**options)
-    message.add_alternative_plural_form(alt_index, plural_index, additional)
+    message.add_message(**options)
+    message.add_alternative_plural_component(alt_index, plural_index, additional)
     assert message.alternative_plural_forms == expected
 
 
@@ -779,61 +832,211 @@ def test_message_add_plural_forms(
     "options, alt_index, plural_index, additional, error, expected",
     [
         (
-            {
-                "translation": "Hello",
-                "alternatives": {},
-                "plural_forms": {},
-            },
-            1,
-            1,
-            "Bonjour Mesdames",
-            KeyError,
-            "Alternative translation at index (1) not found",
+                {
+                    "translation": "Hello",
+                    "alternatives": {},
+                    "plural_forms": {},
+                },
+                1,
+                1,
+                "Bonjour Mesdames",
+                KeyError,
+                "Alternative translation at index (1) not found",
         ),
         (
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames"},
+                    },
                 },
-            },
-            4,
-            1,
-            "Bonjour Messieurs",
-            ValueError,
-            "Alternative index (4) in not in a valid range",
+                4,
+                1,
+                "Bonjour Messieurs",
+                ValueError,
+                "Alternative index (4) in not in a valid range",
         ),
         (
-            {
-                "translation": "Hello",
-                "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "alternative_plural_forms": {
-                    1: {1: "Bonjour Mesdames"},
-                    2: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                {
+                    "translation": "Hello",
+                    "alternatives": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
+                    "plural_forms": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
+                    "alternative_plural_forms": {
+                        1: {1: "Bonjour Mesdames"},
+                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
+                    },
                 },
-            },
-            1,
-            6,
-            "Mesdames",
-            ValueError,
-            "Plural form index (6) is not in a valid range",
+                1,
+                6,
+                "Mesdames",
+                ValueError,
+                "Plural form index (6) is not in a valid range",
         ),
     ],
 )
-def test_message_add_plural_forms_failed(
-    empty_message, options, alt_index, plural_index, additional, error, expected
+def test_message_add_alternative_plural_component_failed(
+        empty_message, options, alt_index, plural_index, additional, error, expected
 ) -> None:
     message = empty_message
-    message.add_translation(**options)
+    message.add_message(**options)
     with pytest.raises(error, match=re.escape(expected)):
-        message.add_alternative_plural_form(alt_index, plural_index, additional)
+        message.add_alternative_plural_component(alt_index, plural_index, additional)
 
 
-# TODO add_location
+# 3.4 Testing metadata
 
+@pytest.mark.parametrize("line, file, expected", [
+    (126, "files.text", [("files.text", 126)]),
+    (67, "explain.txt", [("files.text", 126), ("explain.txt", 67)]),
+    (67, "files.txt", [("files.text", 126), ("explain.txt", 67), ("files.txt", 67)])
+])
+def test_message_add_metadata_location(empty_module_message, line, file, expected) -> None:
+    message = empty_module_message
+    message.add_location(line, file)
+    assert message.metadata['location'] == expected
+
+
+def test_message_add_metadata_language(empty_module_message) -> None:
+    message = empty_module_message
+    message.add_language("en-IE")
+    assert message.metadata['language'] == 'en-IE'
+
+
+def test_message_add_metadata_language_failed(empty_module_message) -> None:
+    message = empty_module_message
+    with pytest.raises(ValueError, match="Invalid language tag: ja.Latn/hepburn@heploc"):
+        message.add_language("ja.Latn/hepburn@heploc")
+
+
+@pytest.mark.parametrize("comment, expected", [
+    ("A first comment", "A first comment"),
+    ("Another comment", "Another comment")
+])
+def test_message_add_comment(empty_module_message, comment, expected) -> None:
+    message = empty_module_message
+    message.add_comment(comment)
+    assert message.metadata['comment'] == expected
+
+
+@pytest.mark.parametrize("dictionary, expected", [
+    ({
+         "version": "0.2.0",
+         "language": "fr-FR",
+         "location": [("file.py", 132)],
+         "flags": ["python-format"],
+         "comments": "A test for metadata",
+         "count": {
+             "singular": 0,
+             "plurals": [0],
+         }}, {
+         "version": "0.2.0",
+         "language": "fr-FR",
+         "location": [("file.py", 132)],
+         "flags": ["python-format"],
+         "comments": "A test for metadata",
+         "count": {
+             "singular": 0,
+             "plurals": [0],
+         }}),
+    (StrictNestedDictionary({
+        "version": "0.2.0",
+        "language": "fr-FR",
+        "location": [("file.py", 132)],
+        "flags": ["python-format"],
+        "comments": "A test for metadata",
+        "count": {
+            "singular": 0,
+            "plurals": [0],
+        }}), {
+         "version": "0.2.0",
+         "language": "fr-FR",
+         "location": [("file.py", 132)],
+         "flags": ["python-format"],
+         "comments": "A test for metadata",
+         "count": {
+             "singular": 0,
+             "plurals": [0],
+         }})
+])
+def test_message_add_metadata(dictionary, expected) -> None:
+    message = Message("1001", "A test for metadata")
+    message.add_metadata(dictionary)
+    control = message.metadata.to_dict()
+    assert control == expected
+
+@pytest.mark.parametrize("dictionary, expected", [
+    ({
+         "version": "0.2.0",
+         "location": [("file.py", 132)],
+         "flags": ["python-format"],
+         "comments": "A test for metadata",
+         "count": {
+             "singular": 0,
+             "plurals": [0],
+         }}, "The path ['language'] is not a present key in the metadata dictionary"),
+    ({
+         "version": "0.2.0",
+         "language": "fr-FR",
+         "location": [("file.py", 132)],
+         "flags": ["python-format"],
+         "comments": "A test for metadata",
+         "count": {
+             "plurals": [0],
+         }}, "The path ['count', 'singular'] is not a present key in the metadata dictionary"),
+])
+def test_message_add_metadata_failed(dictionary, expected) -> None:
+    message = Message("1001", "A test for metadata")
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        message.add_metadata(dictionary)
+
+@pytest.mark.parametrize("key_or_path, value, key, expected", [
+    ("version", "0.2.0", "version", "0.2.0"),
+    (["location"], [("file.py", 132)], "location", [("file.py", 132)]),
+    ("count", {"singular": 0, "plurals": [0]}, ["count", "singular"], 0),
+    (["count", "singular"], 1, "count", StrictNestedDictionary({"singular" :1, "plurals": []}))
+])
+def test_message_add_metadata_key(key_or_path, value, key, expected) -> None:
+    message = Message("1001", "A test for metadata")
+    message.add_metadata(key_or_path, value)
+    assert message.metadata[key] == expected
+
+@pytest.mark.parametrize("key_or_path, value, expected", [
+    ("version", None, "Value of 'version' cannot be None when setting a specific metadata key"),
+    (["count", "plurals"], None, "Value of '['count', 'plurals']' cannot be None when setting a specific metadata key"),
+    ("versions", 0, "The key 'versions' is not a present key in the metadata dictionary"),
+    (["versions"], 0, "The path ['versions'] is not a present key in the metadata dictionary"),
+    (["count", "plural"], 1, "The path ['count', 'plural'] is not a present key in the metadata dictionary")
+])
+def test_message_add_metadata_key_failed(key_or_path, value, expected) -> None:
+    message = Message("1001", "A test for metadata")
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        message.add_metadata(key_or_path, value)
+
+# 4 Testing updates
+
+# 4.1 Testing messages
+
+# 4.2 Testing translations
+
+# 4.3 Testing components
+
+# 4.4 Testing metadata
+
+# 5 Testing delete
+
+# 5 Testing updates
+
+# 5.1 Testing messages
+
+# 5.2 Testing translations
+
+# 5.3 Testing components
+
+# 5.4 Testing metadata
+
+# 6 Testing components formats
 
 def test_message_format():
     """Test formatting a message with variables."""
@@ -856,10 +1059,12 @@ def test_message_format():
 
     # Test formatting an alternative plural form
     assert (
-        message.format(alternative=1, plural_index=1, name="user", count=3)
-        == "Hi, 3 users!"
+            message.format(alternative=1, plural_index=1, name="user", count=3)
+            == "Hi, 3 users!"
     )
 
     # Test missing variable
     with pytest.raises(KeyError):
         message.format()
+
+    # 7 Testing conversions
