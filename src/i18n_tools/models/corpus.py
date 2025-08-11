@@ -8,18 +8,15 @@ Corpus module
 import re
 from typing import Any, Dict, List, Optional, Union
 
-from mypyc.irbuild.specialize import translate_all_call
 from ndict_tools import StrictNestedDictionary
-from sphinx.ext.autosummary import limited_join
 
 from i18n_tools import __version__
 from i18n_tools.converter import (
-    i18n_tools_to_unified_format,
-    unified_format_to_i18n_tools,
-    message_to_i18n_tools_format,
     i18n_tools_format_to_message_dict,
+    i18n_tools_to_unified_format,
+    message_to_i18n_tools_format,
+    unified_format_to_i18n_tools,
 )
-
 from i18n_tools.locale import normalize_language_tag
 
 
@@ -144,7 +141,7 @@ class Message:
         return _check_index_dict(data_to_check)
 
     def __check_alternative_plural_forms__(
-            self, value: Optional[Dict[int, Dict[int, str]]] = None
+        self, value: Optional[Dict[int, Dict[int, str]]] = None
     ) -> bool:
         """
         Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
@@ -220,14 +217,14 @@ class Message:
         return counts
 
     def __init__(
-            self,
-            id: str,
-            default: str = "",
-            options: Optional[Dict[int, str]] = None,
-            default_plurals: Optional[Dict[int, str]] = None,
-            options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
-            context: str = "",
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        id: str,
+        default: str = "",
+        options: Optional[Dict[int, str]] = None,
+        default_plurals: Optional[Dict[int, str]] = None,
+        options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
+        context: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a new Message instance.
@@ -255,14 +252,13 @@ class Message:
             ("options", options, self.__check_alternatives__),
             ("default_plurals", default_plurals, self.__check_plural_forms__),
             (
-                    "options_plurals",
-                    (
-                            StrictNestedDictionary(options_plurals)
-                            if options_plurals is not None
-                               and len(options_plurals) > 0
-                            else None
-                    ),
-                    self.__check_alternative_plural_forms__,
+                "options_plurals",
+                (
+                    StrictNestedDictionary(options_plurals)
+                    if options_plurals is not None and len(options_plurals) > 0
+                    else None
+                ),
+                self.__check_alternative_plural_forms__,
             ),
         ]:
             if attr_value is not None:
@@ -280,7 +276,6 @@ class Message:
         self.metadata[["count", "plurals"]] = self.__count_plurals__()
 
         # End of __init__
-
 
     # Managing messages
 
@@ -354,10 +349,10 @@ class Message:
                 else:
                     raise ValueError(f"The '{attr_name}' value is malformed")
 
-    #TODO delete message
+    # TODO delete message
 
     # Managing main
-    
+
     def get_main(self) -> List[str]:
         """
         Get the main translation and its plural forms.
@@ -369,7 +364,7 @@ class Message:
         if self.default_plurals:
             translations.extend(self.default_plurals.values())
         return translations
-    
+
     def get_main_plurals(self) -> List[str]:
         """
         Get the main translation's plural forms.
@@ -396,31 +391,33 @@ class Message:
             translation = args[0]
             if translation[0] != "":
                 self.default = translation[0]
-                self.metadata[['count', 'singular']] = self.__count_singular__()
+                self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'")
+                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'"
+                )
             if len(translation) > 1:
                 for index, token in enumerate(translation[1:]):
                     self.default_plurals[index + 1] = token
-            self.metadata[['count', 'plurals']] = self.__count_plurals__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
         elif kwargs:
             singular_token = kwargs.pop("default", None)
             if singular_token is not None and singular_token != "":
                 self.default = singular_token
-                self.metadata[['count', 'singular']] = self.__count_singular__()
+                self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
-                raise ValueError(f"Singular of translation is required and cannot be None or empty : '{singular_token}'")
+                raise ValueError(
+                    f"Singular of translation is required and cannot be None or empty : '{singular_token}'"
+                )
             plural = kwargs.pop("default_plurals", None)
             if plural is not None:
                 if isinstance(plural, dict) and self.__check_plural_forms__(plural):
                     self.default_plurals = plural
                 else:
                     raise (ValueError(f"Plural forms is malformed : {plural}"))
-            self.metadata[['count', 'plurals']] = self.__count_plurals__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
             raise (ValueError("No translation specified"))
-
 
     def update_main(self, *args, **kwargs) -> None:
         """
@@ -445,7 +442,9 @@ class Message:
 
             pop_plurals = kwargs.pop("default_plurals", None)
             if pop_plurals is not None:
-                if isinstance(pop_plurals, dict) and self.__check_plural_forms__(pop_plurals):
+                if isinstance(pop_plurals, dict) and self.__check_plural_forms__(
+                    pop_plurals
+                ):
                     self.default_plurals = pop_plurals
                 elif isinstance(pop_plurals, list):
                     d_pop_plural = {}
@@ -453,11 +452,15 @@ class Message:
                         d_pop_plural[index + 1] = token
                     self.default_plurals = d_pop_plural
                 else:
-                    raise(ValueError(f"plural translation context is malformed : {pop_plurals}"))
+                    raise (
+                        ValueError(
+                            f"plural translation context is malformed : {pop_plurals}"
+                        )
+                    )
         else:
             raise (ValueError("No updates specified"))
 
-    #TODO delete main translation
+    # TODO delete main translation
 
     # Managing variant
 
@@ -487,7 +490,6 @@ class Message:
         except KeyError:
             raise IndexError(f"Alternative translation at index {option} not found")
 
-    
     def get_variant_plurals(self, option: int = 0) -> List[str]:
         """
         Get the alternative translation's plural forms.
@@ -496,11 +498,12 @@ class Message:
         :rtype: List[str]
         """
         if option > len(self.options_plurals) or option <= 0:
-            raise IndexError(f"Alternative translation at index {option} is out of range")
+            raise IndexError(
+                f"Alternative translation at index {option} is out of range"
+            )
 
         return list(self.options_plurals[option].values())
 
-    
     def add_variant(self, *args, **kwargs) -> None:
         """
         Add an optional (alternative) translation and its plural forms and update the metadata counters.
@@ -509,10 +512,12 @@ class Message:
         :param kwargs:
         :return:
         """
-        option = self.metadata[['count', 'singular']] + 1
+        option = self.metadata[["count", "singular"]] + 1
 
         if option == 1:
-            raise ValueError("Cannot add an alternative translation, there presently is no translation")
+            raise ValueError(
+                "Cannot add an alternative translation, there presently is no translation"
+            )
 
         # Settings option index correctly and extracting
         option -= 1
@@ -522,10 +527,11 @@ class Message:
             translation = args[0]
             if translation[0] is not None and translation[0] != "":
                 self.options[option] = translation[0]
-                self.metadata[['count', 'singular']] = self.__count_singular__()
+                self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'")
+                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'"
+                )
             # Managing alternate plurals in args
             if len(translation) > 1:
                 for index, token in enumerate(translation[1:]):
@@ -533,15 +539,17 @@ class Message:
             else:
                 self.options_plurals.update({option: {}})
 
-            self.metadata[['count', 'plurals']] = self.__count_plurals__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
         elif kwargs:
             # Managing alternate translation in kwargs (obliviate if args is not None)
             singular_token = kwargs.pop("alternative_translation", None)
             if singular_token is not None and singular_token != "":
                 self.options[option] = singular_token
-                self.metadata[['count', 'singular']] = self.__count_singular__()
+                self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
-                raise ValueError(f"Singular of translation is required and cannot be None or empty : '{singular_token}'")
+                raise ValueError(
+                    f"Singular of translation is required and cannot be None or empty : '{singular_token}'"
+                )
             # Managing alternate plurals
             alt_plural = kwargs.pop("options_plurals", None)
             if alt_plural is not None:
@@ -553,16 +561,18 @@ class Message:
                         d_alt_plural[index + 1] = token
                     self.options_plurals.update({option: d_alt_plural})
                 else:
-                    raise (ValueError(f"Alternative plural forms is malformed : {alt_plural}"))
+                    raise (
+                        ValueError(
+                            f"Alternative plural forms is malformed : {alt_plural}"
+                        )
+                    )
             else:
                 self.options_plurals.update({option: {}})
-            self.metadata[['count', 'plurals']] = self.__count_plurals__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
             raise (ValueError("No alternative translation specified"))
 
-
-    
-    def update_variant(self, option:int =0, *args, **kwargs) -> None:
+    def update_variant(self, option: int = 0, *args, **kwargs) -> None:
         """
         Update alternative translation
         :param option: index of alternative translation
@@ -576,7 +586,7 @@ class Message:
         if option == 0:
             self.update_main(*args, **kwargs)
         elif option > len(self.options) or option <= 0:
-            raise(IndexError(f"Option '{option}' out of range"))
+            raise (IndexError(f"Option '{option}' out of range"))
         elif args and len(args) == 1 and isinstance(args[0], list):
             translation = args[0]
             if translation[0] is not None and translation[0] != "":
@@ -589,7 +599,7 @@ class Message:
         elif kwargs:
             print("kwargs :", kwargs)
             pop_text = kwargs.pop("options", None)
-            if pop_text is not None and  pop_text != "":
+            if pop_text is not None and pop_text != "":
                 self.options[option] = pop_text
 
             pop_plurals = kwargs.pop("options_plurals", None)
@@ -603,11 +613,15 @@ class Message:
                         d_pop_plural[index + 1] = token
                     self.options_plurals.update({option: d_pop_plural})
                 else:
-                    raise(ValueError(f"Plural translation context is malformed : {pop_plurals}"))
+                    raise (
+                        ValueError(
+                            f"Plural translation context is malformed : {pop_plurals}"
+                        )
+                    )
         else:
             raise (ValueError("No updates specified"))
 
-    #TODO delete variant
+    # TODO delete variant
 
     # managing components as token unit of translations
 
@@ -720,7 +734,7 @@ class Message:
         self.options[token] = sentence
 
     def add_alternative_plural_component(
-            self, option: int, token: int, sentence: str
+        self, option: int, token: int, sentence: str
     ) -> None:
         """
         Add a plural form to an alternative translation.
@@ -747,20 +761,20 @@ class Message:
 
         self.options_plurals[option][token] = sentence
 
-    #TODO update_component
-    #TODO update_plural_component
-    #TODO update_alternative_component
-    #TODO update_alternative_plural_component
+    # TODO update_component
+    # TODO update_plural_component
+    # TODO update_alternative_component
+    # TODO update_alternative_plural_component
 
-    #TODO delete_component
-    #TODO delete_plural_component
-    #TODO delete_alternative_component
-    #TODO delete_alternative_plural_component
+    # TODO delete_component
+    # TODO delete_plural_component
+    # TODO delete_alternative_component
+    # TODO delete_alternative_plural_component
 
     # Managing metadata
 
     def get_metadata(
-            self, key: Optional[Union[List[str], str]] = None
+        self, key: Optional[Union[List[str], str]] = None
     ) -> Union[Dict[str, Any], Any]:
         """
         Get metadata from the message.
@@ -780,7 +794,7 @@ class Message:
             return self.metadata
 
         if (isinstance(key, str) and key in self.metadata) or (
-                isinstance(key, list) and key in self.metadata.dict_paths()
+            isinstance(key, list) and key in self.metadata.dict_paths()
         ):
             return self.metadata[key]
 
@@ -815,7 +829,7 @@ class Message:
         self.metadata["comment"] = comment
 
     def add_metadata(
-            self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
+        self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
     ) -> None:
         """
         Set metadata for the message.
@@ -845,8 +859,8 @@ class Message:
                 f"Value of '{key_or_dict}' cannot be None when setting a specific metadata key"
             )
         elif (
-                isinstance(key_or_dict, list)
-                and key_or_dict not in self.metadata.dict_paths()
+            isinstance(key_or_dict, list)
+            and key_or_dict not in self.metadata.dict_paths()
         ):
             raise ValueError(
                 f"The path {key_or_dict} is not a present key in the metadata dictionary"
@@ -875,7 +889,7 @@ class Message:
             self.default_plurals[index] = translation
 
     def update_alternative_plural_form(
-            self, alt_index: int, plural_index: int, translation: str
+        self, alt_index: int, plural_index: int, translation: str
     ) -> None:
         """
         Update a plural form for a specific alternative translation.
@@ -993,9 +1007,9 @@ class Message:
         # Determine which text to format based on alternative and plural_index
         if option > 0 and option in self.options:
             if (
-                    token > 0
-                    and option in self.options_plurals
-                    and token in self.options_plurals[option]
+                token > 0
+                and option in self.options_plurals
+                and token in self.options_plurals[option]
             ):
                 text = self.options_plurals[option][token]
             else:
@@ -1010,15 +1024,13 @@ class Message:
             return text.format(**kwargs)
         except KeyError as e:
             missing_var = str(e).strip("'")
-            raise KeyError(
-                f"Missing variable '{missing_var}' for message '{self.id}'"
-            )
+            raise KeyError(f"Missing variable '{missing_var}' for message '{self.id}'")
         except Exception as e:
             raise ValueError(f"Error formatting message '{self.id}': {str(e)}")
 
     @classmethod
     def from_i18n_tools(
-            cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
     ) -> "Message":
         """
         Create a Message instance from an i18n_tools format entry.
@@ -1088,9 +1100,9 @@ class Corpus:
     """
 
     def __init__(
-            self,
-            repository: Optional[StrictNestedDictionary] = None,
-            messages: Optional[List[Message]] = None,
+        self,
+        repository: Optional[StrictNestedDictionary] = None,
+        messages: Optional[List[Message]] = None,
     ):
         """
         Initialize a new Corpus instance.
