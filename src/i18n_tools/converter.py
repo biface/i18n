@@ -992,8 +992,8 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
     :rtype: Dict[str, Any]
     """
     # Start with the singular form and alternatives
-    main_translation = message.translation
-    alternatives = message.alternatives
+    main_translation = message.default
+    alternatives = message.options
 
     # Create the first list with main translation and alternatives
     first_list = [main_translation]
@@ -1003,11 +1003,11 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
     value_lists = [first_list]
 
     # Add plural forms for main message
-    plural_forms = message.plural_forms
+    plural_forms = message.default_plurals
     max_plural = max(plural_forms.keys()) if plural_forms else 0
 
     # Add plural forms for alternatives
-    alternative_plural_forms = message.alternative_plural_forms
+    alternative_plural_forms = message.options_plurals
 
     # Determine the maximum number of plural forms needed
     for i in range(1, max_plural + 1):
