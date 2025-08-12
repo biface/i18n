@@ -6,6 +6,7 @@ Corpus module
 """
 
 import re
+from gettext import translation
 from typing import Any, Dict, List, Optional, Union
 
 from ndict_tools import StrictNestedDictionary
@@ -316,7 +317,10 @@ class Message:
                 value = kwargs.pop(attr_name, None)
                 if value is not None:
                     if check_method(value):
-                        setattr(self, attr_name, value)
+                        if attr_name == "options_plurals":
+                            setattr(self, attr_name, StrictNestedDictionary(value))
+                        else:
+                            setattr(self, attr_name, value)
                     else:
                         raise ValueError(f"The {attr_name} value is malformed")
 
@@ -350,6 +354,9 @@ class Message:
                     raise ValueError(f"The '{attr_name}' value is malformed")
 
     # TODO delete message
+
+    def remove_message(self) -> None:
+        pass
 
     # Managing main
 
@@ -462,6 +469,9 @@ class Message:
 
     # TODO delete main translation
 
+    def remove_main(self):
+        pass
+
     # Managing variant
 
     def get_variant(self, option: int) -> List[str]:
@@ -530,7 +540,7 @@ class Message:
                 self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'"
+                    f"Singular of a variant is required and cannot be None or empty : '{translation[0]}'"
                 )
             # Managing alternate plurals in args
             if len(translation) > 1:
@@ -542,13 +552,13 @@ class Message:
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         elif kwargs:
             # Managing alternate translation in kwargs (obliviate if args is not None)
-            singular_token = kwargs.pop("alternative_translation", None)
+            singular_token = kwargs.pop("options", None)
             if singular_token is not None and singular_token != "":
                 self.options[option] = singular_token
                 self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{singular_token}'"
+                    f"Singular of a variant is required and cannot be None or empty : '{singular_token}'"
                 )
             # Managing alternate plurals
             alt_plural = kwargs.pop("options_plurals", None)
@@ -563,14 +573,14 @@ class Message:
                 else:
                     raise (
                         ValueError(
-                            f"Alternative plural forms is malformed : {alt_plural}"
+                            f"Plural of this variant is malformed : {alt_plural}"
                         )
                     )
             else:
                 self.options_plurals.update({option: {}})
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
-            raise (ValueError("No alternative translation specified"))
+            raise (ValueError("No variant translation is specified"))
 
     def update_variant(self, option: int = 0, *args, **kwargs) -> None:
         """
@@ -623,153 +633,311 @@ class Message:
 
     # TODO delete variant
 
-    # managing components as token unit of translations
+    def remove_variant(self):
+        pass
 
-    def get_component(self, token: int = 0) -> str:
+    # managing segments in translations
+
+    def get_main_segment(self, token: int = 0) -> str:
+        """
+        Private function to get token in the main translation
+        :param token: segment's location in the main translation
+        :type token: int
+        :return: the corresponding segment located at the token location
+        :rtype: str
+        """
+        __translation = self.get_main()
+        print(len(__translation), "/", token)
+        if len(__translation) > token >= 0:
+            return __translation[token]
+        else:
+            raise (IndexError(f"Segment location '{token}' is out of range"))
+
+    def get_variant_segment(self, option: int = 1, token: int = 0) -> str:
+        """
+        Private function to get token in the variant translation
+        :param option: segment's option in the variant translation
+        :type option: int
+        :param token: segment's location in the variant option
+        :type token: int
+        :return: the corresponding segment located at the token location of the variant option
+        """
+        try:
+            __translation = self.get_variant(option)
+
+            if len(__translation) > token >= 0:
+                return __translation[token]
+            else:
+                raise (
+                    IndexError(
+                        f"Segment location '{token}' of variant option '{option}' is out of range"
+                    )
+                )
+        except IndexError as e:
+            raise (e)
+
+    def get_segment(self, **kwargs) -> str:
         """
         Get the message string from the message.
 
         Args:
-            token (int): The token index of the message.
-
+            kwargs (dict): contains mandatory keys to access each kind of segment in main and variant translation.
+                these keys are such as target (default, variant, plurals) and positions (option and token)
         Returns:
             str: The content of the message.
-        """
-        if token < 0:
-            raise IndexError(f"Token index ({token}) must be positive")
-
-        try:
-            return self.get_main()[token]
-        except IndexError:
-            raise IndexError(f"Message token ({token}) is out of range")
-
-    def get_plural_component(self, token: int) -> str:
-        """
-        Get the requested plural form registered in messages.
-
-        Args:
-            token (int): The index of the requested plural.
-
-        Returns:
-            str: The requested plural form.
 
         Raises:
-            IndexError: If the location index doesn't exist.
+            KeyError: If a mandatory key is missing
+            IndexError: If a mandatory key is out of range
         """
-        if token > len(self.default_plurals) or token <= 0:
-            raise IndexError(f"The location {token} index is out of range")
-        else:
-            return self.default_plurals[token]
 
-    def get_alternative_component(self, option: int, token: int = 0) -> str:
-        """
-        Get the alternative message from the message.
+        # parameter processing
+        source = kwargs.pop("source", None)
+        token = kwargs.pop("token", 0)
+        option = kwargs.pop("option", 1)
 
-        Args:
-            option (int): The location (index plus one) of the alternative translation.
-            token (int): The token index of the alternative translation.
-
-        Returns:
-            str: The content of the alternative message at the specified location.
-
-        Raises:
-            IndexError: If the specified location doesn't exist.
-        """
-        if token > len(self.get_variant(option)) or token < 0:
-            raise IndexError(f"The token ({token}) of alternative is out of range")
-        else:
-            return self.get_variant(option)[token]
-
-    def get_alternative_plural_component(self, token: int, option: int) -> str:
-        """
-        Get the requested alternative plural form registered in messages.
-
-        Args:
-            token (int): The index of the requested plural.
-            option (int): The index of the alternative plural form.
-
-        Returns:
-            str: The requested plural form.
-
-        Raises:
-            IndexError: If the location index or alternative index is out of range.
-        """
-        if token > len(self.options_plurals) or token <= 0:
-            raise IndexError(f"The alternative message index ({token}) is out of range")
-        elif option > len(self.options_plurals[token]) or option <= 0:
-            raise IndexError(
-                f"The plural index ({option}) of alternative message ({token}) is out of range"
+        if source not in ["main", "variant"]:
+            raise KeyError(
+                f"The source '{source}' is not defined : ['main', 'variant']"
             )
-        else:
-            return self.options_plurals[token][option]
 
-    def add_plural_component(self, token: int, sentence: str) -> None:
+        if source == "main":
+            return self.get_main_segment(token)
+        else:
+            return self.get_variant_segment(option=option, token=token)
+
+    def add_main_segment(self, segment: str, token: int = 0) -> None:
         """
         Add a plural form to the message.
 
         Args:
-            token (int): The index of the plural form.
-            sentence (str): The text for the plural form.
+            token (int): location of segment in the main translation, if token = 0 change self.default is is None
+            segment (str): The text for the plural form.
 
         Raises:
             ValueError: If the index is less than or equal to 0.
         """
-        if token <= 0 or token > len(self.default_plurals) + 1:
+        if token == 0:
+            if segment != "":
+                self.default = segment
+            else:
+                raise ValueError(
+                    f"Singular of translation is required and cannot be None or empty : '{segment}'"
+                )
+        elif 0 < token <= len(self.default_plurals) + 1:
+            self.default_plurals[token] = segment
+        else:
             raise ValueError(f"Plural form index ({token}) is not in a valid range")
-        self.default_plurals[token] = sentence
 
-    def add_alternative_component(self, token: int, sentence: str) -> None:
+    def _add_default_plurals_segment(self, segment: str) -> None:
+        """
+        Protected method to add an item in the default plural form to the message.
+        :param segment:
+        :return:
+        """
+        if segment != "":
+            self.default_plurals[len(self.default_plurals) +1] = segment
+        else:
+            raise ValueError("Empty plural cannot be added")
+
+    def add_variant_segment(
+        self, segment: str, option: int = 1, token: int = 0
+    ) -> None:
         """
         Add an alternative translation to the message.
 
         Args:
             token (int): The index of the alternative translation.
-            sentence (str): The alternative translation text.
+            segment (str): The alternative translation text.
+            option (int): The option of the alternative translation.
 
         Raises:
             ValueError: If the index is less than or equal to 0.
         """
-        if token <= 0 or token > len(self.options) + 1:
-            raise ValueError(f"Alternative index ({token}) is not in a valid range")
-        self.options[token] = sentence
+        if 0 < option <= len(self.options) + 1:
+            if token == 0:
+                self.options[option] = segment
+            elif 0 < token <= len(self.options_plurals) + 1:
+                self.options_plurals[[option, token]] = segment
+            else:
+                raise IndexError(
+                    f"Segment index ({token}) in options ({option}) is not in a valid range"
+                )
+        else:
+            raise IndexError(f"Option index ({option}) is not in a valid range")
 
-    def add_alternative_plural_component(
-        self, option: int, token: int, sentence: str
-    ) -> None:
+    def _add_options_segment(self, segment: str) -> None:
+        """
+        Protected function to add an alternative translation corresponding of the next option index of the message .
+
+        :param segment: The alternative translation text.
+        :return:
+        """
+        if segment != "":
+            self.options[len(self.options) + 1] = segment
+        else:
+            raise ValueError("Option segment to be added cannot be empty")
+
+    def _add_options_plurals_segment(self, segment: str, option: int) -> None:
         """
         Add a plural form to an alternative translation.
 
         Args:
+            segment (str): The alternative translation text.
             option (int): The index of the alternative translation.
-            token (int): The index of the plural form.
-            sentence (str): The translation text for the plural form.
-
         Raises:
             ValueError: If alt_index or plural_index is less than or equal to 0.
             KeyError: If the alternative translation at alt_index doesn't exist.
         """
-        if option <= 0 or option > len(self.options) + 1:
-            raise ValueError(f"Alternative index ({option}) in not in a valid range")
-        if token <= 0 or token > len(self.default_plurals) + 1:
-            raise ValueError(f"Plural form index ({token}) is not in a valid range")
 
-        if option not in self.options:
-            raise KeyError(f"Alternative translation at index ({option}) not found")
-
-        if option not in self.options_plurals:
-            self.options_plurals[option] = {}
-
-        self.options_plurals[option][token] = sentence
+        if 0 < option <= len(self.options) + 1:
+            if option == len(self.options) + 1:
+                # Adding a new range of option, token is 1
+                __token = 1
+            else:
+                # Adding a new segment in an existing option
+                if self.options_plurals.get(option) is None:
+                    # Plurals does not exist
+                    __token = 1
+                else:
+                    __token = len(self.options_plurals[option]) + 1
+            self.options_plurals[[option, __token]] = segment
+        else:
+            raise IndexError(f"Option index ({option}) is not in a valid range")
 
     # TODO update_component
+
+    def update_main_segment(self):
+        pass
+
     # TODO update_plural_component
+
+    def _update_default_plurals(self):
+        pass
+
+    def update_variant_segment(self):
+        pass
+
     # TODO update_alternative_component
+
+    def _update_options_segment(self, segment: str) -> None:
+        pass
+
     # TODO update_alternative_plural_component
 
+    def _update_options_plurals_segment(self, segment: str, option: int) -> None:
+        pass
+
+
+    def update_plural_form(self, index: int, translation: str) -> None:
+        """
+        Update a plural form translation.
+
+        Args:
+            index (int): The plural form index.
+            translation (str): The updated translation text for the plural form.
+
+        Raises:
+            KeyError: If the plural form index does not exist.
+        """
+        if index not in self.default_plurals.keys():
+            raise KeyError(f"Plural form index {index} not found")
+        else:
+            self.default_plurals[index] = translation
+
+    def update_alternative_plural_form(
+        self, alt_index: int, plural_index: int, translation: str
+    ) -> None:
+        """
+        Update a plural form for a specific alternative translation.
+
+        Args:
+            alt_index (int): The alternative translation index.
+            plural_index (int): The plural form index.
+            translation (str): The updated translation text for the plural form.
+
+        Raises:
+            KeyError: If the alternative or plural form index does not exist.
+        """
+        if alt_index not in self.options_plurals[plural_index].keys():
+            raise KeyError(f"Alternative translation at index {alt_index} not found")
+        elif plural_index not in self.options_plurals[alt_index].keys():
+            raise KeyError(f"Alternative translation at index {plural_index} not found")
+        else:
+            self.options_plurals[plural_index][plural_index] = translation
+
     # TODO delete_component
+
+    def remove_main_segment(self):
+        pass
+
     # TODO delete_plural_component
+
+    def _remove_default_plurals_segment(self):
+        pass
+
     # TODO delete_alternative_component
+
+    def remove_variant_segment(self):
+        pass
+
+    def _remove_options_segment(self):
+        pass
+
     # TODO delete_alternative_plural_component
+
+    def _remove_options_plurals_segment(self):
+        pass
+
+
+    def del_translation(self) -> None:
+        """
+        Delete the base translation from the message.
+        """
+        self.default = ""
+
+    def del_alternatives(self) -> None:
+        """
+        Delete all alternative translations from the message.
+        """
+        self.options = {}
+
+    def del_plural_form(self, index: int = None) -> None:
+        """
+        Delete plural form translations.
+
+        Args:
+            index (int, optional): If provided, deletes only the specified plural form; otherwise deletes all.
+
+        Raises:
+            KeyError: If the specified index is out of range.
+        """
+        if index is None:
+            self.default_plurals = {}
+        elif index > 0 or index <= len(self.default_plurals):
+            self.default_plurals[index] = ""
+        else:
+            raise KeyError(f"Alternative translation at index {index} is out of range")
+
+    def del_alternative_plural_form(self, index: int = None) -> None:
+        """
+        Delete plural forms associated with alternative translations.
+
+        Args:
+            index (int, optional): If provided, deletes only the plural forms for the specified alternative; otherwise deletes all.
+
+        Raises:
+            KeyError: If the specified index is out of range.
+        """
+        if index is None:
+            self.options_plurals = {}
+        elif index > 0 or index <= len(self.options_plurals):
+            self.options_plurals[index] = {}
+        else:
+            raise KeyError(f"Alternative translation at index {index} is out of range")
+
+    # Switching and toggling translations
+
 
     # Managing metadata
 
@@ -872,43 +1040,6 @@ class Message:
         else:
             self.metadata[key_or_dict] = value
 
-    def update_plural_form(self, index: int, translation: str) -> None:
-        """
-        Update a plural form translation.
-
-        Args:
-            index (int): The plural form index.
-            translation (str): The updated translation text for the plural form.
-
-        Raises:
-            KeyError: If the plural form index does not exist.
-        """
-        if index not in self.default_plurals.keys():
-            raise KeyError(f"Plural form index {index} not found")
-        else:
-            self.default_plurals[index] = translation
-
-    def update_alternative_plural_form(
-        self, alt_index: int, plural_index: int, translation: str
-    ) -> None:
-        """
-        Update a plural form for a specific alternative translation.
-
-        Args:
-            alt_index (int): The alternative translation index.
-            plural_index (int): The plural form index.
-            translation (str): The updated translation text for the plural form.
-
-        Raises:
-            KeyError: If the alternative or plural form index does not exist.
-        """
-        if alt_index not in self.options_plurals[plural_index].keys():
-            raise KeyError(f"Alternative translation at index {alt_index} not found")
-        elif plural_index not in self.options_plurals[alt_index].keys():
-            raise KeyError(f"Alternative translation at index {plural_index} not found")
-        else:
-            self.options_plurals[plural_index][plural_index] = translation
-
     def update_metadata(self, metadata: Dict[str, Any]) -> None:
         """
         Update the message's metadata with new values.
@@ -918,52 +1049,6 @@ class Message:
         """
         if self.__check_metadata__(metadata):
             self.metadata.update(metadata)
-
-    def del_translation(self) -> None:
-        """
-        Delete the base translation from the message.
-        """
-        self.default = ""
-
-    def del_alternatives(self) -> None:
-        """
-        Delete all alternative translations from the message.
-        """
-        self.options = {}
-
-    def del_plural_form(self, index: int = None) -> None:
-        """
-        Delete plural form translations.
-
-        Args:
-            index (int, optional): If provided, deletes only the specified plural form; otherwise deletes all.
-
-        Raises:
-            KeyError: If the specified index is out of range.
-        """
-        if index is None:
-            self.default_plurals = {}
-        elif index > 0 or index <= len(self.default_plurals):
-            self.default_plurals[index] = ""
-        else:
-            raise KeyError(f"Alternative translation at index {index} is out of range")
-
-    def del_alternative_plural_form(self, index: int = None) -> None:
-        """
-        Delete plural forms associated with alternative translations.
-
-        Args:
-            index (int, optional): If provided, deletes only the plural forms for the specified alternative; otherwise deletes all.
-
-        Raises:
-            KeyError: If the specified index is out of range.
-        """
-        if index is None:
-            self.options_plurals = {}
-        elif index > 0 or index <= len(self.options_plurals):
-            self.options_plurals[index] = {}
-        else:
-            raise KeyError(f"Alternative translation at index {index} is out of range")
 
     def del_metadata(self, key: Optional[str] = None) -> None:
         """

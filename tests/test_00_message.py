@@ -293,9 +293,9 @@ def test_message_get_variant_plurals_failed(
     "fixture_name, expect",
     [("fr_message", "Bonjour"), ("en_message", "Hello"), ("empty_message", "")],
 )
-def test_message_get_component(fixture_name, expect, request) -> None:
+def test_message_get_main_segment(fixture_name, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_component() == expect
+    assert message.get_main_segment() == expect
 
 
 @pytest.mark.parametrize(
@@ -310,41 +310,61 @@ def test_message_get_component(fixture_name, expect, request) -> None:
         ("en_message", 2, "Hi everyone"),
     ],
 )
-def test_message_get_component_token(fixture_name, token, expect, request) -> None:
+def test_message_get_main_segment_token(fixture_name, token, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_component(token) == expect
+    assert message.get_main_segment(token) == expect
 
 
 @pytest.mark.parametrize(
     "fixture_name, token, expect",
     [
-        ("fr_message", 4, "Message token (4) is out of range"),
-        ("en_message", -1, "Token index (-1) must be positive"),
-        ("empty_message", 1, "Message token (1) is out of range"),
+        ("fr_message", 4, "Segment location '4' is out of range"),
+        ("en_message", -1, "Segment location '-1' is out of range"),
+        ("empty_message", 1, "Segment location '1' is out of range"),
     ],
 )
-def test_message_get_component_token_failed(
+def test_message_get_main_segment_token_failed(
     fixture_name, token, expect, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(IndexError, match=re.escape(expect)):
-        message.get_component(token)
+        message.get_main_segment(token)
 
 
 @pytest.mark.parametrize(
-    "fixture_name, option, expected",
+    "fixture_name, expected",
     [
-        ("fr_message", 1, "Bonjour Mme {name}"),
-        ("fr_message", 2, "Bonjour M. {name}"),
-        ("en_message", 1, "Hello {name}"),
-        ("en_message", 2, "Hello {name}"),
+        ("fr_message", "Bonjour Mme {name}"),
+        ("en_message", "Hello {name}"),
     ],
 )
-def test_message_get_alternative_component(
-    fixture_name, option, expected, request
+def test_message__get_variant_segment(fixture_name, expected, request) -> None:
+    message = request.getfixturevalue(fixture_name)
+    assert message.get_variant_segment() == expected
+
+
+@pytest.mark.parametrize(
+    "fixture_name, option, token, expected",
+    [
+        ("fr_message", 1, 0, "Bonjour Mme {name}"),
+        ("fr_message", 2, 0, "Bonjour M. {name}"),
+        ("en_message", 1, 0, "Hello {name}"),
+        ("en_message", 2, 0, "Hello {name}"),
+        ("fr_message", 1, 1, "Bonjour Mesdames"),
+        ("fr_message", 2, 1, "Bonjour Messieurs"),
+        ("en_message", 1, 1, "Hi everybody"),
+        ("en_message", 2, 1, "Hi everyone"),
+        ("fr_message", 1, 2, "Mesdames"),
+        ("fr_message", 2, 2, "Messieurs"),
+        ("en_message", 1, 2, "Ladies"),
+        ("en_message", 2, 2, "Gentlemen"),
+    ],
+)
+def test_message_get_variant_segment_token(
+    fixture_name, option, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_alternative_component(option) == expected
+    assert message.get_variant_segment(option, token) == expected
 
 
 @pytest.mark.parametrize(
@@ -353,92 +373,149 @@ def test_message_get_alternative_component(
         ("empty_message", 1, 0, "Alternative translation at index 1 not found"),
         ("fr_message", 3, 0, "Alternative translation at index 3 not found"),
         ("en_message", 0, 0, "Alternative translation at index 0 not found"),
-        ("fr_message", 1, -1, "The token (-1) of alternative is out of range"),
-        ("en_message", 1, 4, "The token (4) of alternative is out of range"),
+        (
+            "fr_message",
+            1,
+            -1,
+            "Segment location '-1' of variant option '1' is out of range",
+        ),
+        (
+            "en_message",
+            1,
+            4,
+            "Segment location '4' of variant option '1' is out of range",
+        ),
     ],
 )
-def test_message_get_alternative_component_failed(
+def test_message_get_options_segment_failed(
     fixture_name, option, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(IndexError, match=re.escape(expected)):
-        message.get_alternative_component(option, token)
+        message.get_variant_segment(option, token)
 
 
 @pytest.mark.parametrize(
-    "fixture_name, location, expect",
+    "fixture_name, source, parameters, expected",
     [
-        ("fr_message", 1, "Bonjour à tous"),
-        ("en_message", 1, "Hi everybody"),
-        ("fr_message", 2, "Bonjour tout le monde"),
-        ("en_message", 2, "Hi everyone"),
-    ],
-)
-def test_message_get_plural_component(fixture_name, location, expect, request) -> None:
-    message = request.getfixturevalue(fixture_name)
-    assert message.get_plural_component(location) == expect
-
-
-@pytest.mark.parametrize(
-    "fixture_name, location, expect",
-    [
-        ("fr_message", 0, "The location 0 index is out of range"),
-        ("en_message", 5, "The location 5 index is out of range"),
-        ("fr_message", 10, "The location 10 index is out of range"),
-        ("en_message", 3, "The location 3 index is out of range"),
-        ("empty_message", 1, "The location 1 index is out of range"),
-    ],
-)
-def test_message_get_plural_component_failed(
-    fixture_name, location, expect, request
-) -> None:
-    message = request.getfixturevalue(fixture_name)
-    with pytest.raises(IndexError, match=re.escape(expect)):
-        assert message.get_plural_component(location) == ""
-
-
-@pytest.mark.parametrize(
-    "fixture_name, loc, index, expected",
-    [
-        ("fr_message", 1, 1, "Bonjour Mesdames"),
-        ("fr_message", 1, 2, "Mesdames"),
-        ("en_message", 1, 1, "Hi everybody"),
-        ("en_message", 1, 1, "Hi everybody"),
-    ],
-)
-def test_message_get_alternative_plural_component(
-    fixture_name, loc, index, expected, request
-) -> None:
-    message = request.getfixturevalue(fixture_name)
-    assert message.get_alternative_plural_component(loc, index) == expected
-
-
-@pytest.mark.parametrize(
-    "fixture_name, location, option, expect",
-    [
-        ("fr_message", 0, 1, "The alternative message index (0) is out of range"),
-        (
-            "en_message",
-            1,
-            3,
-            "The plural index (3) of alternative message (1) is out of range",
-        ),
-        ("en_message", 4, 1, "The alternative message index (4) is out of range"),
+        ("fr_message", "main", {}, "Bonjour"),
+        ("en_message", "main", {}, "Hello"),
+        ("empty_message", "main", {}, ""),
         (
             "fr_message",
-            1,
-            0,
-            "The plural index (0) of alternative message (1) is out of range",
+            "main",
+            {
+                "token": 0,
+            },
+            "Bonjour",
         ),
-        ("empty_message", 1, 1, "The alternative message index (1) is out of range"),
+        (
+            "en_message",
+            "main",
+            {
+                "token": 0,
+            },
+            "Hello",
+        ),
+        (
+            "empty_message",
+            "main",
+            {
+                "token": 0,
+            },
+            "",
+        ),
+        ("fr_message", "main", {"token": 1}, "Bonjour à tous"),
+        ("en_message", "main", {"token": 1}, "Hi everybody"),
+        ("fr_message", "main", {"token": 2}, "Bonjour tout le monde"),
+        ("en_message", "main", {"token": 2}, "Hi everyone"),
+        ("fr_message", "variant", {}, "Bonjour Mme {name}"),
+        ("en_message", "variant", {}, "Hello {name}"),
+        ("fr_message", "variant", {"option": 1, "token": 0}, "Bonjour Mme {name}"),
+        ("fr_message", "variant", {"option": 2, "token": 0}, "Bonjour M. {name}"),
+        ("en_message", "variant", {"option": 1, "token": 0}, "Hello {name}"),
+        ("en_message", "variant", {"option": 2, "token": 0}, "Hello {name}"),
+        ("fr_message", "variant", {"option": 1, "token": 1}, "Bonjour Mesdames"),
+        ("fr_message", "variant", {"option": 2, "token": 1}, "Bonjour Messieurs"),
+        ("en_message", "variant", {"option": 1, "token": 1}, "Hi everybody"),
+        ("en_message", "variant", {"option": 2, "token": 1}, "Hi everyone"),
+        ("fr_message", "variant", {"option": 1, "token": 2}, "Mesdames"),
+        ("fr_message", "variant", {"option": 2, "token": 2}, "Messieurs"),
+        ("en_message", "variant", {"option": 1, "token": 2}, "Ladies"),
+        ("en_message", "variant", {"option": 2, "token": 2}, "Gentlemen"),
+        # Default token = 0
+        ("fr_message", "variant", {"option": 1}, "Bonjour Mme {name}"),
+        ("fr_message", "variant", {"option": 2}, "Bonjour M. {name}"),
+        ("en_message", "variant", {"option": 1}, "Hello {name}"),
+        ("en_message", "variant", {"option": 2}, "Hello {name}"),
+        # Default option = 1
+        ("fr_message", "variant", {"token": 0}, "Bonjour Mme {name}"),
+        ("en_message", "variant", {"token": 0}, "Hello {name}"),
+        ("fr_message", "variant", {"token": 1}, "Bonjour Mesdames"),
+        ("en_message", "variant", {"token": 1}, "Hi everybody"),
+        ("fr_message", "variant", {"token": 2}, "Mesdames"),
+        ("en_message", "variant", {"token": 2}, "Ladies"),
     ],
 )
-def test_message_get_alternative_plural_component_failed(
-    fixture_name, location, option, expect, request
+def test_message_get_segment(
+    fixture_name, source, parameters, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
-    with pytest.raises(IndexError, match=re.escape(expect)):
-        assert message.get_alternative_plural_component(location, option) == ""
+    parameters["source"] = source
+    assert message.get_segment(**parameters) == expected
+
+
+@pytest.mark.parametrize(
+    "fixture_name, source, parameters, expected",
+    [
+        (
+            "empty_message",
+            "variant",
+            {"option": 1, "token": 0},
+            "Alternative translation at index 1 not found",
+        ),
+        (
+            "fr_message",
+            "variant",
+            {"option": 3, "token": 0},
+            "Alternative translation at index 3 not found",
+        ),
+        (
+            "en_message",
+            "variant",
+            {"option": 0, "token": 0},
+            "Alternative translation at index 0 not found",
+        ),
+        (
+            "fr_message",
+            "variant",
+            {"option": 1, "token": -1},
+            "Segment location '-1' of variant option '1' is out of range",
+        ),
+        (
+            "en_message",
+            "variant",
+            {"option": 1, "token": 4},
+            "Segment location '4' of variant option '1' is out of range",
+        ),
+        ("fr_message", "main", {"token": 4}, "Segment location '4' is out of range"),
+        ("en_message", "main", {"token": -1}, "Segment location '-1' is out of range"),
+        ("empty_message", "main", {"token": 1}, "Segment location '1' is out of range"),
+        (
+            "empty_message",
+            "alternative",
+            {},
+            "The source 'alternative' is not defined : ['main', 'variant']",
+        ),
+    ],
+)
+def test_message_get_segment_failed(
+    fixture_name, source, parameters, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_name)
+    parameters["source"] = source
+    with pytest.raises((KeyError, IndexError), match=re.escape(expected)):
+        message.get_segment(**parameters)
 
 
 # 2.5 Testing metadata
@@ -788,7 +865,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         ("empty_message", ["Hello {name}"], ({1: "Hello {name}"}, {1: {}}, 2, [2, 0])),
         (
             "empty_message",
-            {"alternative_translation": "Hello {name}"},
+            {"options": "Hello {name}"},
             ({1: "Hello {name}"}, {1: {}}, 2, [2, 0]),
         ),
         (
@@ -799,7 +876,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "empty_message",
             {
-                "alternative_translation": "Hello {name}",
+                "options": "Hello {name}",
                 "options_plurals": ["Hi everybody"],
             },
             ({1: "Hello {name}"}, {1: {1: "Hi everybody"}}, 2, [2, 1]),
@@ -807,7 +884,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "empty_message",
             {
-                "alternative_translation": "Hello {name}",
+                "options": "Hello {name}",
                 "options_plurals": {1: "Hi everybody"},
             },
             ({1: "Hello {name}"}, {1: {1: "Hi everybody"}}, 2, [2, 1]),
@@ -825,7 +902,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "empty_message",
             {
-                "alternative_translation": "Hello {name}",
+                "options": "Hello {name}",
                 "options_plurals": ["Hi everybody", "Hi everyone"],
             },
             (
@@ -838,7 +915,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "empty_message",
             {
-                "alternative_translation": "Hello {name}",
+                "options": "Hello {name}",
                 "options_plurals": {1: "Hi everybody", 2: "Hi everyone"},
             },
             (
@@ -865,7 +942,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": ["Chères et chers collègues", "Chers vous tous"],
             },
             (
@@ -882,7 +959,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": {
                     1: "Chères et chers collègues",
                     2: "Chers vous tous",
@@ -916,7 +993,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": ["Chères et chers collègues"],
             },
             (
@@ -933,7 +1010,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": {1: "Chères et chers collègues"},
             },
             (
@@ -966,7 +1043,7 @@ def test_message_add_variant(fixture_name, translation, expected, request) -> No
 @pytest.mark.parametrize(
     "fixture_name, translation, expected",
     [
-        ("en_message", None, "No alternative translation specified"),
+        ("en_message", None, "No variant translation is specified"),
         (
             "empty_message",
             ["Hello {name}"],
@@ -975,47 +1052,47 @@ def test_message_add_variant(fixture_name, translation, expected, request) -> No
         (
             "fr_message",
             [None, "Chères et chers collègues", "Chers vous tous"],
-            "Singular of translation is required and cannot be None or empty : 'None'",
+            "Singular of a variant is required and cannot be None or empty : 'None'",
         ),
         (
             "fr_message",
             ["", "Chères et chers collègues", "Chers vous tous"],
-            "Singular of translation is required and cannot be None or empty : ''",
+            "Singular of a variant is required and cannot be None or empty : ''",
         ),
         (
             "fr_message",
             {
-                "alternative_translation": None,
+                "options": None,
                 "options_plurals": ["Chères et chers collègues", "Chers vous tous"],
             },
-            "Singular of translation is required and cannot be None or empty : 'None'",
+            "Singular of a variant is required and cannot be None or empty : 'None'",
         ),
         (
             "fr_message",
             {
-                "alternative_translation": "",
+                "options": "",
                 "options_plurals": {
                     1: "Chères et chers collègues",
                     2: "Chers vous tous",
                 },
             },
-            "Singular of translation is required and cannot be None or empty : ''",
+            "Singular of a variant is required and cannot be None or empty : ''",
         ),
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": ("Chères et chers collègues", "Chers vous tous"),
             },
-            "Alternative plural forms is malformed : ('Chères et chers collègues', 'Chers vous tous')",
+            "Plural of this variant is malformed : ('Chères et chers collègues', 'Chers vous tous')",
         ),
         (
             "fr_message",
             {
-                "alternative_translation": "Cher {name}",
+                "options": "Cher {name}",
                 "options_plurals": {2: "Chères et chers collègues"},
             },
-            "Alternative plural forms is malformed : {2: 'Chères et chers collègues'}",
+            "Plural of this variant is malformed : {2: 'Chères et chers collègues'}",
         ),
     ],
 )
@@ -1034,135 +1111,171 @@ def test_message_add_variant_failed(
 
 
 @pytest.mark.parametrize(
-    "fixture_name, additional, expected",
+    "fixture_name, segment, token, expected",
     [
-        (
-            "fr_message",
-            (3, "Salut à tous"),
-            {1: "Bonjour à tous", 2: "Bonjour tout le monde", 3: "Salut à tous"},
-        ),
-        (
-            "en_message",
-            (3, "Hello everyone"),
-            {1: "Hi everybody", 2: "Hi everyone", 3: "Hello everyone"},
-        ),
+        ("empty_message", "Good morning", 0, "Good morning"),
+        ("en_message", "Good morning", 3, "Good morning"),
     ],
 )
-def test_message_add_plural_component(
-    fixture_name, additional, expected, request
+def test_message_add_main_segment(
+    fixture_name, segment, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
-    message.add_plural_component(additional[0], additional[1])
-    assert message.default_plurals == expected
+    message.add_main_segment(segment, token)
+    assert message.get_main()[token] == expected
 
 
 @pytest.mark.parametrize(
-    "fixture_name, additional, expected",
+    "fixture_name, segment, token, expected",
     [
         (
-            "fr_message",
-            (4, "Salut à tous"),
+            "empty_message",
+            "Good morning",
+            -1,
+            "Plural form index (-1) is not in a valid range",
+        ),
+        (
+            "en_message",
+            "Good morning",
+            4,
             "Plural form index (4) is not in a valid range",
         ),
         (
-            "en_message",
-            (6, "Hello everyone"),
-            "Plural form index (6) is not in a valid range",
-        ),
-        (
             "fr_message",
-            (0, "Salut à tous"),
-            "Plural form index (0) is not in a valid range",
-        ),
-        (
-            "en_message",
-            (-1, "Hello everyone"),
-            "Plural form index (-1) is not in a valid range",
+            "",
+            0,
+            "Singular of translation is required and cannot be None or empty : ''",
         ),
     ],
 )
-def test_message_add_plural_component_failed(
-    fixture_name, additional, expected, request
+def test_message_add_main_segment_failed(
+    fixture_name, segment, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_plural_component(additional[0], additional[1])
+        message.add_main_segment(segment, token)
+
+
+@pytest.mark.parametrize("plural, expected", [
+    ("Good morning everyone", {1:"Good morning everyone"}),
+    ("Good morning all", {1:"Good morning everyone", 2: "Good morning all"})
+])
+def test_message_protected_add_default_plural_segment(empty_module_message, plural, expected) -> None:
+    empty_module_message._add_default_plurals_segment(plural)
+    assert empty_module_message.default_plurals == expected
+
+def test_message_protected_add_default_plural_segment_failed(empty_module_message) -> None:
+    with pytest.raises(ValueError, match=re.escape("Empty plural cannot be added")):
+        empty_module_message._add_default_plurals_segment("")
 
 
 @pytest.mark.parametrize(
-    "translation, alternatives, index, additional, expected",
+    "fixture_name, segment, option, token, expected",
     [
-        ("Bonjour", None, 1, "Bonjour, {name}", {1: "Bonjour, {name}"}),
+        ("empty_module_message", "Good morning {name}", 1, 0, "Good morning {name}"),
         (
-            "Bonjour",
-            {1: "Bonjour, {name}"},
+            "empty_module_message",
+            "Good afternoon {name}",
             2,
-            "Bonjour M. {name}",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
-        ),
-        (
-            "Bonjour",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
-            3,
-            "Bonjour, Mme {name}",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}", 3: "Bonjour, Mme {name}"},
-        ),
-    ],
-)
-def test_message_add_alternative_component(
-    empty_message, translation, index, alternatives, additional, expected
-) -> None:
-    message = empty_message
-    message.add_message(default=translation, options=alternatives)
-    message.add_alternative_component(index, additional)
-    assert message.options == expected
-
-
-@pytest.mark.parametrize(
-    "translation, alternatives, index, additional, expected",
-    [
-        (
-            "Bonjour",
-            None,
-            2,
-            "Bonjour, {name}",
-            "Alternative index (2) is not in a valid range",
-        ),
-        (
-            "Bonjour",
-            {1: "Bonjour, {name}"},
             0,
-            "Bonjour M. {name}",
-            "Alternative index (0) is not in a valid range",
+            "Good afternoon {name}",
         ),
-        (
-            "Bonjour",
-            {1: "Bonjour, {name}", 2: "Bonjour M. {name}"},
-            -1,
-            "Bonjour, Mme {name}",
-            "Alternative index (-1) is not in a valid range",
-        ),
+        ("empty_module_message", "Good morning guys", 1, 1, "Good morning guys"),
+        ("empty_module_message", "Good morning all", 1, 2, "Good morning all"),
+        ("empty_module_message", "Good afternoon guys", 2, 1, "Good afternoon guys"),
+        ("empty_module_message", "Good afternoon all", 2, 2, "Good afternoon all"),
     ],
 )
-def test_message_add_alternative_component_failed(
-    empty_message, translation, index, alternatives, additional, expected
+def test_message_add_variant_segment(
+    fixture_name, segment, option, token, expected, request
 ) -> None:
-    message = empty_message
-    message.add_message(default=translation, options=alternatives)
-    with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_alternative_component(index, additional)
+    message = request.getfixturevalue(fixture_name)
+    message.add_variant_segment(segment, option, token)
+    assert message.get_variant(option)[token] == expected
 
 
 @pytest.mark.parametrize(
-    "options, alt_index, plural_index, additional,expected",
+    "fixture_name, segment, option, token, expected",
     [
+        (
+            "empty_message",
+            "Good morning {name}",
+            0,
+            0,
+            "Option index (0) is not in a valid range",
+        ),
+        (
+            "en_message",
+            "Good morning {name}",
+            1,
+            -1,
+            "Segment index (-1) in options (1) is not in a valid range",
+        ),
+        (
+            "en_message",
+            "Good afternoon {name}",
+            4,
+            1,
+            "Option index (4) is not in a valid range",
+        ),
+    ],
+)
+def test_message_add_variant_segment(
+    fixture_name, segment, option, token, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_name)
+    with pytest.raises(IndexError, match=re.escape(expected)):
+        message.add_variant_segment(segment, option, token)
+
+
+@pytest.mark.parametrize(
+    "segment, expected",
+    [
+        ("Good morning", [(1, "Good morning")]),
+        ("Good morning {name}", [(1, "Good morning"), (2, "Good morning {name}")]),
+    ],
+)
+def test_message_protected_add_options_segment(
+    empty_module_message, segment, expected
+) -> None:
+    empty_module_message._add_options_segment(segment)
+    for token, result in expected:
+        assert empty_module_message.options[token] == result
+
+
+@pytest.mark.parametrize(
+    "fixture_message, segment, expected",
+    [
+        ("empty_message", "", "Option segment to be added cannot be empty"),
+    ],
+)
+def test_message_protected_add_options_segment_failed(
+    fixture_message, segment, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_message)
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        message._add_options_segment(segment)
+
+
+@pytest.mark.parametrize(
+    "options, alt_index, additional, expected",
+    [
+        (
+            {
+                "default": "Good morning {name}",
+                "options": {1: "Good afternoon Mme {name}"},
+                "default_plurals": {1: "Good morning all", 2: "Good morning"},
+            },
+            2,
+            "Good afternoon all",
+            {2: {1: "Good afternoon all"}},
+        ),
         (
             {
                 "default": "Hello",
                 "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
                 "default_plurals": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
             },
-            1,
             1,
             "Bonjour Mesdames",
             {1: {1: "Bonjour Mesdames"}},
@@ -1177,7 +1290,6 @@ def test_message_add_alternative_component_failed(
                 },
             },
             2,
-            1,
             "Bonjour Messieurs",
             {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
         ),
@@ -1192,7 +1304,6 @@ def test_message_add_alternative_component_failed(
                 },
             },
             1,
-            2,
             "Mesdames",
             {
                 1: {1: "Bonjour Mesdames", 2: "Mesdames"},
@@ -1201,17 +1312,17 @@ def test_message_add_alternative_component_failed(
         ),
     ],
 )
-def test_message_add_alternative_plural_component(
-    empty_message, options, alt_index, plural_index, additional, expected
+def test_message_add_options_plurals_segment(
+    empty_message, options, alt_index, additional, expected
 ) -> None:
     message = empty_message
     message.add_message(**options)
-    message.add_alternative_plural_component(alt_index, plural_index, additional)
+    message._add_options_plurals_segment(additional, alt_index)
     assert message.options_plurals == expected
 
 
 @pytest.mark.parametrize(
-    "options, alt_index, plural_index, additional, error, expected",
+    "options, alt_index, additional, error, expected",
     [
         (
             {
@@ -1219,11 +1330,10 @@ def test_message_add_alternative_plural_component(
                 "options": {},
                 "default_plurals": {},
             },
-            1,
-            1,
+            0,
             "Bonjour Mesdames",
-            KeyError,
-            "Alternative translation at index (1) not found",
+            IndexError,
+            "Option index (0) is not in a valid range",
         ),
         (
             {
@@ -1235,36 +1345,19 @@ def test_message_add_alternative_plural_component(
                 },
             },
             4,
-            1,
             "Bonjour Messieurs",
-            ValueError,
-            "Alternative index (4) in not in a valid range",
-        ),
-        (
-            {
-                "default": "Hello",
-                "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                "default_plurals": {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                "options_plurals": {
-                    1: {1: "Bonjour Mesdames"},
-                    2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                },
-            },
-            1,
-            6,
-            "Mesdames",
-            ValueError,
-            "Plural form index (6) is not in a valid range",
+            IndexError,
+            "Option index (4) is not in a valid range",
         ),
     ],
 )
-def test_message_add_alternative_plural_component_failed(
-    empty_message, options, alt_index, plural_index, additional, error, expected
+def test_message_add_options_plurals_segment_failed(
+    empty_message, options, alt_index, additional, error, expected
 ) -> None:
     message = empty_message
     message.add_message(**options)
     with pytest.raises(error, match=re.escape(expected)):
-        message.add_alternative_plural_component(alt_index, plural_index, additional)
+        message._add_options_plurals_segment(additional, alt_index)
 
 
 # 3.5 Testing metadata
