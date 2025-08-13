@@ -142,7 +142,7 @@ class Message:
         return _check_index_dict(data_to_check)
 
     def __check_alternative_plural_forms__(
-        self, value: Optional[Dict[int, Dict[int, str]]] = None
+            self, value: Optional[Dict[int, Dict[int, str]]] = None
     ) -> bool:
         """
         Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
@@ -195,9 +195,8 @@ class Message:
         Returns:
             int: The count of presently stored singulars.
         """
-        count = 0
-        if len(self.default) > 0:
-            count += 1 + len(self.options)
+        count = 1 if len(self.default) > 0  else 0
+        count += len(self.options) if len(self.options) > 0 else 0
 
         return count
 
@@ -218,14 +217,14 @@ class Message:
         return counts
 
     def __init__(
-        self,
-        id: str,
-        default: str = "",
-        options: Optional[Dict[int, str]] = None,
-        default_plurals: Optional[Dict[int, str]] = None,
-        options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
-        context: str = "",
-        metadata: Optional[Dict[str, Any]] = None,
+            self,
+            id: str,
+            default: str = "",
+            options: Optional[Dict[int, str]] = None,
+            default_plurals: Optional[Dict[int, str]] = None,
+            options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
+            context: str = "",
+            metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a new Message instance.
@@ -253,13 +252,13 @@ class Message:
             ("options", options, self.__check_alternatives__),
             ("default_plurals", default_plurals, self.__check_plural_forms__),
             (
-                "options_plurals",
-                (
-                    StrictNestedDictionary(options_plurals)
-                    if options_plurals is not None and len(options_plurals) > 0
-                    else None
-                ),
-                self.__check_alternative_plural_forms__,
+                    "options_plurals",
+                    (
+                            StrictNestedDictionary(options_plurals)
+                            if options_plurals is not None and len(options_plurals) > 0
+                            else None
+                    ),
+                    self.__check_alternative_plural_forms__,
             ),
         ]:
             if attr_value is not None:
@@ -353,10 +352,19 @@ class Message:
                 else:
                     raise ValueError(f"The '{attr_name}' value is malformed")
 
-    # TODO delete message
 
     def remove_message(self) -> None:
-        pass
+        """
+        Removes all translations in Message instance and setup to default emtpy values including metadata.
+        :return:
+        """
+        self.id = ""
+        self.default = ""
+        self.options = {}
+        self.default_plurals = {}
+        self.options_plurals = StrictNestedDictionary()
+        self.context = ""
+        self.metadata = _build_empty_metadata()
 
     # Managing main
 
@@ -450,7 +458,7 @@ class Message:
             pop_plurals = kwargs.pop("default_plurals", None)
             if pop_plurals is not None:
                 if isinstance(pop_plurals, dict) and self.__check_plural_forms__(
-                    pop_plurals
+                        pop_plurals
                 ):
                     self.default_plurals = pop_plurals
                 elif isinstance(pop_plurals, list):
@@ -467,10 +475,42 @@ class Message:
         else:
             raise (ValueError("No updates specified"))
 
-    # TODO delete main translation
+    def remove_main(self) -> None:
+        """
+        Removes the main translation from message and update metadata
+        :return: nothing (void function)
+        :rtype: None
+        """
+        self.default = ""
+        self.default_plurals = {}
+        self.metadata[["count", "singular"]] = self.__count_singular__()
+        self.metadata[["count", "plurals"]] = self.__count_plurals__()
 
-    def remove_main(self):
-        pass
+    def _remove_default_segment(self):
+        """
+        Protected function to empties self.default.
+
+        :return: nothing (void function)
+        :rtype: None
+        """
+        self.default = ""
+        self.metadata[["count", "singular"]] = self.__count_singular__()
+
+    def _remove_default_plurals_segment(self, token: int) -> None:
+        """
+        Protected function to empties self.default_plurals.
+        :param token: the location index (token) of the plural to be removed
+        :type token: int
+        :return: nothing (void function)
+        :rtype: None
+        :raises IndexError: if the token is out of range
+        """
+        if 0 < token <= len(self.default_plurals):
+            del self.default_plurals[token]
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
+        else:
+            raise IndexError(f"The location ({token}) of the plural to be remove is out of range")
+
 
     # Managing variant
 
@@ -631,10 +671,6 @@ class Message:
         else:
             raise (ValueError("No updates specified"))
 
-    # TODO delete variant
-
-    def remove_variant(self):
-        pass
 
     # managing segments in translations
 
@@ -647,7 +683,6 @@ class Message:
         :rtype: str
         """
         __translation = self.get_main()
-        print(len(__translation), "/", token)
         if len(__translation) > token >= 0:
             return __translation[token]
         else:
@@ -708,7 +743,8 @@ class Message:
 
     def add_main_segment(self, segment: str, token: int = 0) -> None:
         """
-        Add a plural form to the message.
+        Add a plural form to the message. This function is securing text adding by not allowing emptied texts. If you
+        need to add en empty string use the _add_default_segement method.
 
         Args:
             token (int): location of segment in the main translation, if token = 0 change self.default is is None
@@ -729,19 +765,28 @@ class Message:
         else:
             raise ValueError(f"Plural form index ({token}) is not in a valid range")
 
+    def _add_default_segment(self, segment: str) -> None:
+        """
+        Protected method to add a default text to the message. This function is simply present for homogeneity since
+        self.default = segment will work.
+
+        :param segment: the text to add
+        :return: nothing (void function)
+        """
+        self.default = segment
+
     def _add_default_plurals_segment(self, segment: str) -> None:
         """
         Protected method to add an item in the default plural form to the message.
         :param segment:
         :return:
         """
-        if segment != "":
-            self.default_plurals[len(self.default_plurals) +1] = segment
-        else:
-            raise ValueError("Empty plural cannot be added")
+
+        self.default_plurals[len(self.default_plurals) + 1] = segment
+
 
     def add_variant_segment(
-        self, segment: str, option: int = 1, token: int = 0
+            self, segment: str, option: int = 1, token: int = 0
     ) -> None:
         """
         Add an alternative translation to the message.
@@ -773,10 +818,8 @@ class Message:
         :param segment: The alternative translation text.
         :return:
         """
-        if segment != "":
-            self.options[len(self.options) + 1] = segment
-        else:
-            raise ValueError("Option segment to be added cannot be empty")
+
+        self.options[len(self.options) + 1] = segment
 
     def _add_options_plurals_segment(self, segment: str, option: int) -> None:
         """
@@ -805,144 +848,177 @@ class Message:
         else:
             raise IndexError(f"Option index ({option}) is not in a valid range")
 
-    # TODO update_component
-
-    def update_main_segment(self):
-        pass
-
-    # TODO update_plural_component
-
-    def _update_default_plurals(self):
-        pass
-
-    def update_variant_segment(self):
-        pass
-
-    # TODO update_alternative_component
-
-    def _update_options_segment(self, segment: str) -> None:
-        pass
-
-    # TODO update_alternative_plural_component
-
-    def _update_options_plurals_segment(self, segment: str, option: int) -> None:
-        pass
-
-
-    def update_plural_form(self, index: int, translation: str) -> None:
+    def update_main_segment(self, segment: str, token: int = 0) -> None:
         """
-        Update a plural form translation.
+        Update an existing element (singular or one of the plurals) of the main translation of the message.
 
-        Args:
-            index (int): The plural form index.
-            translation (str): The updated translation text for the plural form.
-
-        Raises:
-            KeyError: If the plural form index does not exist.
+        :param segment: the text to add
+        :type segment: str
+        :param token: the location in the main translation list of the element to be updated.
+        :type token: int
+        :return: nothing (void method)
+        :raises IndexError: If token is out of range.
+        :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
         """
-        if index not in self.default_plurals.keys():
-            raise KeyError(f"Plural form index {index} not found")
+        if segment != "":
+            if 0 == token:
+                if self.default != segment:
+                    self.default = segment
+                else:
+                    raise ValueError(
+                        f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'")
+            elif 0 < token <= len(self.default_plurals):
+                if self.default_plurals.get(token) != segment:
+                    self.default_plurals[token] = segment
+                else:
+                    raise ValueError(
+                        f"The text value ('{segment}') is already stored as default plural index ({token}) : '{self.default_plurals[token]}'")
+            else:
+                raise IndexError(f"The token location ({token}) is out of range")
         else:
-            self.default_plurals[index] = translation
+            raise ValueError("Empty text cannot be added")
 
-    def update_alternative_plural_form(
-        self, alt_index: int, plural_index: int, translation: str
-    ) -> None:
+    def _update_default_segment(self, segment: str) -> None:
         """
-        Update a plural form for a specific alternative translation.
+        Protected method to update the default singular translation of the message. This function is simply present
+        for homogeneity since self.default = segment will work.
 
-        Args:
-            alt_index (int): The alternative translation index.
-            plural_index (int): The plural form index.
-            translation (str): The updated translation text for the plural form.
-
-        Raises:
-            KeyError: If the alternative or plural form index does not exist.
+        :param segment: the text to update
+        :return: nothing (void method)
         """
-        if alt_index not in self.options_plurals[plural_index].keys():
-            raise KeyError(f"Alternative translation at index {alt_index} not found")
-        elif plural_index not in self.options_plurals[alt_index].keys():
-            raise KeyError(f"Alternative translation at index {plural_index} not found")
+        self.default = segment
+
+    def _update_default_plurals_segment(self, segment: str, token: int) -> None:
+        """
+        Protected method to update the default plural translation of the message.
+
+        :param segment: the text to update
+        :param token: the location in the main translation list of the element to be updated.
+        :return: nothing (void method)
+        :raise IndexError: If token is out of range.
+        """
+        if 0 < token <= len(self.default_plurals):
+            self.default_plurals[token] = segment
         else:
-            self.options_plurals[plural_index][plural_index] = translation
+            raise IndexError(f"The token location ({token}) is out of range")
 
-    # TODO delete_component
+    def update_variant_segment(self, segment: str, option: int = 1, token: int = 0) -> None:
+        """
+        Update an existing element (singular or one of the plurals) of (option) the variant translation of the message.
+        :param segment: the text to update
+        :param option: the index of the variant translation to update.
+        :param token: the index of the element to be updated in the variant translation.
+        :return: nothing (void method)
+        :raises IndexError: If option or token is out of range.
+        :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
+        """
+        if segment != "":
+            if 0 < option <= len(self.options):
+                if token == 0:
+                    self.options[option] = segment
+                elif 0 < token <= len(self.options_plurals[option]):
+                    self.options_plurals[[option, token]] = segment
+                else:
+                    raise IndexError(f"The token location ({token}) of the variant option ({option}) is out of range")
+            else:
+                raise IndexError(f"The variant location ({option}) is out of range")
+        else:
+            raise ValueError("Empty text cannot be added")
 
-    def remove_main_segment(self):
-        pass
+    def _update_options_segment(self, segment: str, option: int) -> None:
+        """
+        Protected method to update one of the (option) variant translation singular of the message.
+        :param segment:
+        :param option:
+        :return: nothing (void method)
+        :raises IndexError: If option is out of range.
+        """
+        if 0 < option <= len(self.options):
+            self.options[option] = segment
+        else:
+            raise IndexError(f"The variant location ({option}) is out of range")
 
-    # TODO delete_plural_component
+    def _update_options_plurals_segment(self, segment: str, option: int, token: int) -> None:
+        """
+        Protected function to update one of the (option) variant plural (token) translation singular of the message.
+        :param segment: the text to update
+        :param option: the variant index
+        :param token: the index of the element to be updated in the variant plural.
+        :return: nothing (void method)
+        :raises IndexError: If option or toaken is out of range.
+        """
+        if 0 < option <= len(self.options):
+            if 0 < token <= len(self.options_plurals[option]):
+                self.options_plurals[[option, token]] = segment
+            else:
+                raise IndexError(f"The token location ({token}) of the variant location ({option}) is out of range")
+        else:
+            raise IndexError(f"The variant location ({option}) is out of range")
 
-    def _remove_default_plurals_segment(self):
-        pass
+    # TODO delete variant
+
+    def remove_variant(self, option: int) -> None:
+        """
+        Removes the option variant of translation
+
+        :param option: the index of the variant translation to remove.
+        :type option: int
+        :return: nothing (void method)
+        :rtype: None
+        :raises IndexError: If option is out of range.
+        """
+        if 0 < option <= len(self.options):
+            del self.options[option]
+            if option in self.options_plurals.keys():
+                del self.options_plurals[option]
+            self.metadata[["count", "singular"]] = self.__count_singular__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
+        else:
+            raise IndexError(f"The variant location ({option}) is out of range")
 
     # TODO delete_alternative_component
 
-    def remove_variant_segment(self):
-        pass
-
-    def _remove_options_segment(self):
-        pass
+    def _remove_options_segment(self, option: int) -> None:
+        """
+        Protected method to remove the option variant translation of the message.
+        :param option: the index of the variant translation to remove.
+        :type option: int
+        :return: nothing (void method)
+        :rtype: None
+        :raises IndexError: If option is out of range.
+        """
+        if 0 < option <= len(self.options):
+            del self.options[option]
+            self.metadata[["count", "singular"]] = self.__count_singular__()
+        else:
+            raise IndexError(f"The variant location ({option}) is out of range")
 
     # TODO delete_alternative_plural_component
 
-    def _remove_options_plurals_segment(self):
-        pass
-
-
-    def del_translation(self) -> None:
+    def _remove_options_plurals_segment(self, option: int, token: int) -> None:
         """
-        Delete the base translation from the message.
+        Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
+        :param option: the index of the variant translation to be reached.
+        :param token: the index of the plural translation to be removed.
+        :return: nothing (void method)
+        :rtype: None
+        :raises IndexError: If option or token is out of range.
         """
-        self.default = ""
-
-    def del_alternatives(self) -> None:
-        """
-        Delete all alternative translations from the message.
-        """
-        self.options = {}
-
-    def del_plural_form(self, index: int = None) -> None:
-        """
-        Delete plural form translations.
-
-        Args:
-            index (int, optional): If provided, deletes only the specified plural form; otherwise deletes all.
-
-        Raises:
-            KeyError: If the specified index is out of range.
-        """
-        if index is None:
-            self.default_plurals = {}
-        elif index > 0 or index <= len(self.default_plurals):
-            self.default_plurals[index] = ""
+        if 0 < option <= len(self.options):
+            if self.options_plurals.dict_paths().__contains__([option, token]):
+                del self.options_plurals[[option, token]]
+                self.metadata[["count", "plurals"]] = self.__count_plurals__()
+            else:
+                raise IndexError(f"The plural path [{option}, {token}] is out of range")
         else:
-            raise KeyError(f"Alternative translation at index {index} is out of range")
-
-    def del_alternative_plural_form(self, index: int = None) -> None:
-        """
-        Delete plural forms associated with alternative translations.
-
-        Args:
-            index (int, optional): If provided, deletes only the plural forms for the specified alternative; otherwise deletes all.
-
-        Raises:
-            KeyError: If the specified index is out of range.
-        """
-        if index is None:
-            self.options_plurals = {}
-        elif index > 0 or index <= len(self.options_plurals):
-            self.options_plurals[index] = {}
-        else:
-            raise KeyError(f"Alternative translation at index {index} is out of range")
+            raise IndexError(f"The variant location ({option}) is out of range")
 
     # Switching and toggling translations
-
 
     # Managing metadata
 
     def get_metadata(
-        self, key: Optional[Union[List[str], str]] = None
+            self, key: Optional[Union[List[str], str]] = None
     ) -> Union[Dict[str, Any], Any]:
         """
         Get metadata from the message.
@@ -962,7 +1038,7 @@ class Message:
             return self.metadata
 
         if (isinstance(key, str) and key in self.metadata) or (
-            isinstance(key, list) and key in self.metadata.dict_paths()
+                isinstance(key, list) and key in self.metadata.dict_paths()
         ):
             return self.metadata[key]
 
@@ -997,7 +1073,7 @@ class Message:
         self.metadata["comment"] = comment
 
     def add_metadata(
-        self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
+            self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
     ) -> None:
         """
         Set metadata for the message.
@@ -1027,8 +1103,8 @@ class Message:
                 f"Value of '{key_or_dict}' cannot be None when setting a specific metadata key"
             )
         elif (
-            isinstance(key_or_dict, list)
-            and key_or_dict not in self.metadata.dict_paths()
+                isinstance(key_or_dict, list)
+                and key_or_dict not in self.metadata.dict_paths()
         ):
             raise ValueError(
                 f"The path {key_or_dict} is not a present key in the metadata dictionary"
@@ -1050,7 +1126,7 @@ class Message:
         if self.__check_metadata__(metadata):
             self.metadata.update(metadata)
 
-    def del_metadata(self, key: Optional[str] = None) -> None:
+    def remove_metadata(self, key: Optional[Union[str, List[str]]] = None) -> None:
         """
         Delete metadata from the message.
 
@@ -1063,6 +1139,11 @@ class Message:
         """
         if key is None:
             self.metadata.clear()
+        elif isinstance(key, list) and key in self.metadata.dict_paths():
+            if isinstance(self.metadata[key], dict):
+                self.metadata[key].clear()
+            else:
+                pass
         elif key in self.metadata:
             del self.metadata[key]
         else:
@@ -1092,9 +1173,9 @@ class Message:
         # Determine which text to format based on alternative and plural_index
         if option > 0 and option in self.options:
             if (
-                token > 0
-                and option in self.options_plurals
-                and token in self.options_plurals[option]
+                    token > 0
+                    and option in self.options_plurals
+                    and token in self.options_plurals[option]
             ):
                 text = self.options_plurals[option][token]
             else:
@@ -1115,7 +1196,7 @@ class Message:
 
     @classmethod
     def from_i18n_tools(
-        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+            cls, message_id: str, i18n_tools_entry: Dict[str, Any]
     ) -> "Message":
         """
         Create a Message instance from an i18n_tools format entry.
@@ -1185,9 +1266,9 @@ class Corpus:
     """
 
     def __init__(
-        self,
-        repository: Optional[StrictNestedDictionary] = None,
-        messages: Optional[List[Message]] = None,
+            self,
+            repository: Optional[StrictNestedDictionary] = None,
+            messages: Optional[List[Message]] = None,
     ):
         """
         Initialize a new Corpus instance.
