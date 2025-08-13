@@ -142,7 +142,7 @@ class Message:
         return _check_index_dict(data_to_check)
 
     def __check_alternative_plural_forms__(
-            self, value: Optional[Dict[int, Dict[int, str]]] = None
+        self, value: Optional[Dict[int, Dict[int, str]]] = None
     ) -> bool:
         """
         Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
@@ -195,7 +195,7 @@ class Message:
         Returns:
             int: The count of presently stored singulars.
         """
-        count = 1 if len(self.default) > 0  else 0
+        count = 1 if len(self.default) > 0 else 0
         count += len(self.options) if len(self.options) > 0 else 0
 
         return count
@@ -217,14 +217,14 @@ class Message:
         return counts
 
     def __init__(
-            self,
-            id: str,
-            default: str = "",
-            options: Optional[Dict[int, str]] = None,
-            default_plurals: Optional[Dict[int, str]] = None,
-            options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
-            context: str = "",
-            metadata: Optional[Dict[str, Any]] = None,
+        self,
+        id: str,
+        default: str = "",
+        options: Optional[Dict[int, str]] = None,
+        default_plurals: Optional[Dict[int, str]] = None,
+        options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
+        context: str = "",
+        metadata: Optional[Dict[str, Any]] = None,
     ):
         """
         Initialize a new Message instance.
@@ -252,13 +252,13 @@ class Message:
             ("options", options, self.__check_alternatives__),
             ("default_plurals", default_plurals, self.__check_plural_forms__),
             (
-                    "options_plurals",
-                    (
-                            StrictNestedDictionary(options_plurals)
-                            if options_plurals is not None and len(options_plurals) > 0
-                            else None
-                    ),
-                    self.__check_alternative_plural_forms__,
+                "options_plurals",
+                (
+                    StrictNestedDictionary(options_plurals)
+                    if options_plurals is not None and len(options_plurals) > 0
+                    else None
+                ),
+                self.__check_alternative_plural_forms__,
             ),
         ]:
             if attr_value is not None:
@@ -351,7 +351,6 @@ class Message:
                     setattr(self, attr_name, value)
                 else:
                     raise ValueError(f"The '{attr_name}' value is malformed")
-
 
     def remove_message(self) -> None:
         """
@@ -458,7 +457,7 @@ class Message:
             pop_plurals = kwargs.pop("default_plurals", None)
             if pop_plurals is not None:
                 if isinstance(pop_plurals, dict) and self.__check_plural_forms__(
-                        pop_plurals
+                    pop_plurals
                 ):
                     self.default_plurals = pop_plurals
                 elif isinstance(pop_plurals, list):
@@ -509,8 +508,9 @@ class Message:
             del self.default_plurals[token]
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
-            raise IndexError(f"The location ({token}) of the plural to be remove is out of range")
-
+            raise IndexError(
+                f"The location ({token}) of the plural to be remove is out of range"
+            )
 
     # Managing variant
 
@@ -671,7 +671,6 @@ class Message:
         else:
             raise (ValueError("No updates specified"))
 
-
     # managing segments in translations
 
     def get_main_segment(self, token: int = 0) -> str:
@@ -784,9 +783,8 @@ class Message:
 
         self.default_plurals[len(self.default_plurals) + 1] = segment
 
-
     def add_variant_segment(
-            self, segment: str, option: int = 1, token: int = 0
+        self, segment: str, option: int = 1, token: int = 0
     ) -> None:
         """
         Add an alternative translation to the message.
@@ -866,13 +864,15 @@ class Message:
                     self.default = segment
                 else:
                     raise ValueError(
-                        f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'")
+                        f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'"
+                    )
             elif 0 < token <= len(self.default_plurals):
                 if self.default_plurals.get(token) != segment:
                     self.default_plurals[token] = segment
                 else:
                     raise ValueError(
-                        f"The text value ('{segment}') is already stored as default plural index ({token}) : '{self.default_plurals[token]}'")
+                        f"The text value ('{segment}') is already stored as default plural index ({token}) : '{self.default_plurals[token]}'"
+                    )
             else:
                 raise IndexError(f"The token location ({token}) is out of range")
         else:
@@ -902,7 +902,9 @@ class Message:
         else:
             raise IndexError(f"The token location ({token}) is out of range")
 
-    def update_variant_segment(self, segment: str, option: int = 1, token: int = 0) -> None:
+    def update_variant_segment(
+        self, segment: str, option: int = 1, token: int = 0
+    ) -> None:
         """
         Update an existing element (singular or one of the plurals) of (option) the variant translation of the message.
         :param segment: the text to update
@@ -919,7 +921,9 @@ class Message:
                 elif 0 < token <= len(self.options_plurals[option]):
                     self.options_plurals[[option, token]] = segment
                 else:
-                    raise IndexError(f"The token location ({token}) of the variant option ({option}) is out of range")
+                    raise IndexError(
+                        f"The token location ({token}) of the variant option ({option}) is out of range"
+                    )
             else:
                 raise IndexError(f"The variant location ({option}) is out of range")
         else:
@@ -938,7 +942,9 @@ class Message:
         else:
             raise IndexError(f"The variant location ({option}) is out of range")
 
-    def _update_options_plurals_segment(self, segment: str, option: int, token: int) -> None:
+    def _update_options_plurals_segment(
+        self, segment: str, option: int, token: int
+    ) -> None:
         """
         Protected function to update one of the (option) variant plural (token) translation singular of the message.
         :param segment: the text to update
@@ -951,11 +957,11 @@ class Message:
             if 0 < token <= len(self.options_plurals[option]):
                 self.options_plurals[[option, token]] = segment
             else:
-                raise IndexError(f"The token location ({token}) of the variant location ({option}) is out of range")
+                raise IndexError(
+                    f"The token location ({token}) of the variant location ({option}) is out of range"
+                )
         else:
             raise IndexError(f"The variant location ({option}) is out of range")
-
-    # TODO delete variant
 
     def remove_variant(self, option: int) -> None:
         """
@@ -1018,7 +1024,7 @@ class Message:
     # Managing metadata
 
     def get_metadata(
-            self, key: Optional[Union[List[str], str]] = None
+        self, key: Optional[Union[List[str], str]] = None
     ) -> Union[Dict[str, Any], Any]:
         """
         Get metadata from the message.
@@ -1038,7 +1044,7 @@ class Message:
             return self.metadata
 
         if (isinstance(key, str) and key in self.metadata) or (
-                isinstance(key, list) and key in self.metadata.dict_paths()
+            isinstance(key, list) and key in self.metadata.dict_paths()
         ):
             return self.metadata[key]
 
@@ -1073,7 +1079,7 @@ class Message:
         self.metadata["comment"] = comment
 
     def add_metadata(
-            self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
+        self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
     ) -> None:
         """
         Set metadata for the message.
@@ -1103,8 +1109,8 @@ class Message:
                 f"Value of '{key_or_dict}' cannot be None when setting a specific metadata key"
             )
         elif (
-                isinstance(key_or_dict, list)
-                and key_or_dict not in self.metadata.dict_paths()
+            isinstance(key_or_dict, list)
+            and key_or_dict not in self.metadata.dict_paths()
         ):
             raise ValueError(
                 f"The path {key_or_dict} is not a present key in the metadata dictionary"
@@ -1173,9 +1179,9 @@ class Message:
         # Determine which text to format based on alternative and plural_index
         if option > 0 and option in self.options:
             if (
-                    token > 0
-                    and option in self.options_plurals
-                    and token in self.options_plurals[option]
+                token > 0
+                and option in self.options_plurals
+                and token in self.options_plurals[option]
             ):
                 text = self.options_plurals[option][token]
             else:
@@ -1196,7 +1202,7 @@ class Message:
 
     @classmethod
     def from_i18n_tools(
-            cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
     ) -> "Message":
         """
         Create a Message instance from an i18n_tools format entry.
@@ -1266,9 +1272,9 @@ class Corpus:
     """
 
     def __init__(
-            self,
-            repository: Optional[StrictNestedDictionary] = None,
-            messages: Optional[List[Message]] = None,
+        self,
+        repository: Optional[StrictNestedDictionary] = None,
+        messages: Optional[List[Message]] = None,
     ):
         """
         Initialize a new Corpus instance.
