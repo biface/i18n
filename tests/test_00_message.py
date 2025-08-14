@@ -2115,14 +2115,14 @@ def test_message_update_variant_segment(
             "Good morning everybody",
             1,
             -1,
-            "The token location (-1) of the variant option (1) is out of range",
+            "The token location (-1) of the variant location (1) is out of range",
         ),
         (
             "en_message",
             "Good morning everybody",
             1,
             3,
-            "The token location (3) of the variant option (1) is out of range",
+            "The token location (3) of the variant location (1) is out of range",
         ),
     ],
 )

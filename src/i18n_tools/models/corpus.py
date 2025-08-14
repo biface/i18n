@@ -216,6 +216,45 @@ class Message:
 
         return counts
 
+    # --- Internal helpers for factorization ---
+    def _assert_valid_option(self, option: int) -> None:
+        """Ensure the given option index refers to an existing variant.
+
+        Raises IndexError with a consistent message if out of range.
+        """
+        if not (0 < option <= len(self.options)):
+            raise IndexError(f"The variant location ({option}) is out of range")
+
+    def _assert_valid_token_in_option(self, option: int, token: int) -> None:
+        """Ensure the given token index refers to an existing plural of an option.
+
+        Expects the option to exist. Raises IndexError if token is out of range.
+        """
+        if not (0 < token <= len(self.options_plurals[option])):
+            raise IndexError(
+                f"The token location ({token}) of the variant location ({option}) is out of range"
+            )
+
+    def _assert_valid_default_plural_token(self, token: int) -> None:
+        """Ensure the given token index refers to an existing default plural.
+        Raises IndexError if token is out of range.
+        """
+        if not (0 < token <= len(self.default_plurals)):
+            raise IndexError(f"The token location ({token}) is out of range")
+
+    def _refresh_counts(self, singular: bool = False, plurals: bool = False) -> None:
+        """Refresh metadata counts.
+        If both flags are False, refresh both counts; otherwise refresh selected ones.
+        """
+        if not singular and not plurals:
+            self.metadata[["count", "singular"]] = self.__count_singular__()
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
+            return
+        if singular:
+            self.metadata[["count", "singular"]] = self.__count_singular__()
+        if plurals:
+            self.metadata[["count", "plurals"]] = self.__count_plurals__()
+
     def __init__(
         self,
         id: str,
@@ -866,15 +905,14 @@ class Message:
                     raise ValueError(
                         f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'"
                     )
-            elif 0 < token <= len(self.default_plurals):
+            else:
+                self._assert_valid_default_plural_token(token)
                 if self.default_plurals.get(token) != segment:
                     self.default_plurals[token] = segment
                 else:
                     raise ValueError(
                         f"The text value ('{segment}') is already stored as default plural index ({token}) : '{self.default_plurals[token]}'"
                     )
-            else:
-                raise IndexError(f"The token location ({token}) is out of range")
         else:
             raise ValueError("Empty text cannot be added")
 
@@ -897,10 +935,8 @@ class Message:
         :return: nothing (void method)
         :raise IndexError: If token is out of range.
         """
-        if 0 < token <= len(self.default_plurals):
-            self.default_plurals[token] = segment
-        else:
-            raise IndexError(f"The token location ({token}) is out of range")
+        self._assert_valid_default_plural_token(token)
+        self.default_plurals[token] = segment
 
     def update_variant_segment(
         self, segment: str, option: int = 1, token: int = 0
@@ -915,17 +951,12 @@ class Message:
         :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
         """
         if segment != "":
-            if 0 < option <= len(self.options):
-                if token == 0:
-                    self.options[option] = segment
-                elif 0 < token <= len(self.options_plurals[option]):
-                    self.options_plurals[[option, token]] = segment
-                else:
-                    raise IndexError(
-                        f"The token location ({token}) of the variant option ({option}) is out of range"
-                    )
+            self._assert_valid_option(option)
+            if token == 0:
+                self.options[option] = segment
             else:
-                raise IndexError(f"The variant location ({option}) is out of range")
+                self._assert_valid_token_in_option(option, token)
+                self.options_plurals[[option, token]] = segment
         else:
             raise ValueError("Empty text cannot be added")
 
@@ -937,10 +968,8 @@ class Message:
         :return: nothing (void method)
         :raises IndexError: If option is out of range.
         """
-        if 0 < option <= len(self.options):
-            self.options[option] = segment
-        else:
-            raise IndexError(f"The variant location ({option}) is out of range")
+        self._assert_valid_option(option)
+        self.options[option] = segment
 
     def _update_options_plurals_segment(
         self, segment: str, option: int, token: int
@@ -953,15 +982,11 @@ class Message:
         :return: nothing (void method)
         :raises IndexError: If option or toaken is out of range.
         """
-        if 0 < option <= len(self.options):
-            if 0 < token <= len(self.options_plurals[option]):
-                self.options_plurals[[option, token]] = segment
-            else:
-                raise IndexError(
-                    f"The token location ({token}) of the variant location ({option}) is out of range"
-                )
-        else:
-            raise IndexError(f"The variant location ({option}) is out of range")
+        self._assert_valid_option(option)
+        self._assert_valid_token_in_option(option, token)
+        self.options_plurals[[option, token]] = segment
+        
+        #TODO improve remove variant methods to keep valid dictionaries 
 
     def remove_variant(self, option: int) -> None:
         """
@@ -973,16 +998,11 @@ class Message:
         :rtype: None
         :raises IndexError: If option is out of range.
         """
-        if 0 < option <= len(self.options):
-            del self.options[option]
-            if option in self.options_plurals.keys():
-                del self.options_plurals[option]
-            self.metadata[["count", "singular"]] = self.__count_singular__()
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        else:
-            raise IndexError(f"The variant location ({option}) is out of range")
-
-    # TODO delete_alternative_component
+        self._assert_valid_option(option)
+        del self.options[option]
+        if option in self.options_plurals.keys():
+            del self.options_plurals[option]
+        self._refresh_counts()
 
     def _remove_options_segment(self, option: int) -> None:
         """
@@ -993,11 +1013,9 @@ class Message:
         :rtype: None
         :raises IndexError: If option is out of range.
         """
-        if 0 < option <= len(self.options):
-            del self.options[option]
-            self.metadata[["count", "singular"]] = self.__count_singular__()
-        else:
-            raise IndexError(f"The variant location ({option}) is out of range")
+        self._assert_valid_option(option)
+        del self.options[option]
+        self._refresh_counts(singular=True)
 
     # TODO delete_alternative_plural_component
 
@@ -1010,16 +1028,14 @@ class Message:
         :rtype: None
         :raises IndexError: If option or token is out of range.
         """
-        if 0 < option <= len(self.options):
-            if self.options_plurals.dict_paths().__contains__([option, token]):
-                del self.options_plurals[[option, token]]
-                self.metadata[["count", "plurals"]] = self.__count_plurals__()
-            else:
-                raise IndexError(f"The plural path [{option}, {token}] is out of range")
+        self._assert_valid_option(option)
+        if self.options_plurals.dict_paths().__contains__([option, token]):
+            del self.options_plurals[[option, token]]
+            self._refresh_counts(plurals=True)
         else:
-            raise IndexError(f"The variant location ({option}) is out of range")
+            raise IndexError(f"The plural path [{option}, {token}] is out of range")
 
-    # Switching and toggling translations
+     # Switching and toggling translations
 
     # Managing metadata
 
