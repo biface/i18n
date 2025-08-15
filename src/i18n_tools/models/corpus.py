@@ -1279,17 +1279,23 @@ class Message:
         Raises:
             KeyError: If the specified key doesn't exist in the metadata.
         """
+
+        ref_meta = _build_empty_metadata()
+
         if key is None:
-            self.metadata.clear()
-        elif isinstance(key, list) and key in self.metadata.dict_paths():
-            if isinstance(self.metadata[key], dict):
-                self.metadata[key].clear()
-            else:
-                pass
-        elif key in self.metadata:
-            del self.metadata[key]
-        else:
+            self.metadata = ref_meta
+        elif isinstance(key, list) and key not in self.metadata.dict_paths():
+            raise KeyError(
+                f"path '{key}' is not a present key in the metadata dictionary"
+            )
+        elif isinstance(key, str) and key not in self.metadata.keys():
             raise KeyError(f"Metadata key '{key}' not found")
+        else:
+            self.metadata[key] = ref_meta[key]
+
+    #TODO : Switching message / Toggle messages
+
+    #TODO : Organize format and export methods
 
     def to_i18n_tools_format(self) -> Dict[str, Any]:
         """
