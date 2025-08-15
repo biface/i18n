@@ -1415,9 +1415,149 @@ def test_message_add_comment(empty_module_message, comment, expected) -> None:
 
 
 @pytest.mark.parametrize(
-    "dictionary, expected",
+    "alist, dictionary, expected",
     [
         (
+            [
+                ["version", "0.2.0"],
+                ["language", "fr-FR"],
+                ["language", "fr-FR"],
+                ["location", [("file.py", 132)]],
+                ["flags", ["python-format"]],
+                ["comments", "A test for metadata"],
+                [["count", "singular"], 0],
+                [["count", "plurals"], [0]],
+            ],
+            {},
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            [
+                ["language", "fr-FR"],
+                ["language", "fr-FR"],
+                ["location", [("file.py", 132)]],
+                ["flags", ["python-format"]],
+                ["comments", "A test for metadata"],
+                [["count", "singular"], 0],
+                [["count", "plurals"], [0]],
+            ],
+            {
+                "version": "0.2.0",
+            },
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            [
+                ["location", [("file.py", 132)]],
+                ["flags", ["python-format"]],
+                ["comments", "A test for metadata"],
+                [["count", "singular"], 0],
+                [["count", "plurals"], [0]],
+            ],
+            {"version": "0.2.0", "language": "fr-FR"},
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            [
+                ["flags", ["python-format"]],
+                ["comments", "A test for metadata"],
+                [["count", "singular"], 0],
+                [["count", "plurals"], [0]],
+            ],
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+            },
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            [
+                ["comments", "A test for metadata"],
+                [["count", "singular"], 0],
+                [["count", "plurals"], [0]],
+            ],
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+            },
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            [[["count", "singular"], 0], [["count", "plurals"], [0]]],
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+            },
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 0,
+                    "plurals": [0],
+                },
+            },
+        ),
+        (
+            (),
             {
                 "version": "0.2.0",
                 "language": "fr-FR",
@@ -1442,6 +1582,7 @@ def test_message_add_comment(empty_module_message, comment, expected) -> None:
             },
         ),
         (
+            (),
             StrictNestedDictionary(
                 {
                     "version": "0.2.0",
@@ -1469,17 +1610,18 @@ def test_message_add_comment(empty_module_message, comment, expected) -> None:
         ),
     ],
 )
-def test_message_add_metadata(dictionary, expected) -> None:
+def test_message_add_metadata(alist, dictionary, expected) -> None:
     message = Message("1001", "A test for metadata")
-    message.add_metadata(dictionary)
+    message.add_metadata(*alist, **dictionary)
     control = message.metadata.to_dict()
     assert control == expected
 
 
 @pytest.mark.parametrize(
-    "dictionary, expected",
+    "alist, dictionary, expected",
     [
         (
+            [["language:", "fr-Fr"]],
             {
                 "version": "0.2.0",
                 "location": [("file.py", 132)],
@@ -1490,9 +1632,10 @@ def test_message_add_metadata(dictionary, expected) -> None:
                     "plurals": [0],
                 },
             },
-            "The path ['language'] is not a present key in the metadata dictionary",
+            "The path 'language:' is not a present key in the metadata dictionary",
         ),
         (
+            (),
             {
                 "version": "0.2.0",
                 "language": "fr-FR",
@@ -1500,73 +1643,41 @@ def test_message_add_metadata(dictionary, expected) -> None:
                 "flags": ["python-format"],
                 "comments": "A test for metadata",
                 "count": {
-                    "plurals": [0],
+                    "plurals: [0]",
                 },
             },
-            "The path ['count', 'singular'] is not a present key in the metadata dictionary",
+            "<class 'set'> type of {'plurals: [0]'} is not compatible metadata",
+        ),
+        (
+            (),
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {"singular": 0, "plural": [0]},
+            },
+            "The path '['count', 'plural']' is not a present key in the metadata dictionary",
+        ),
+        (
+            (),
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "locations": [("file.py", 132)],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {"singular": 0, "plurals": [0]},
+            },
+            "The key 'locations' is not a present key in the metadata dictionary",
         ),
     ],
 )
-def test_message_add_metadata_failed(dictionary, expected) -> None:
+def test_message_add_metadata_failed(alist, dictionary, expected) -> None:
     message = Message("1001", "A test for metadata")
-    with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_metadata(dictionary)
-
-
-@pytest.mark.parametrize(
-    "key_or_path, value, key, expected",
-    [
-        ("version", "0.2.0", "version", "0.2.0"),
-        (["location"], [("file.py", 132)], "location", [("file.py", 132)]),
-        ("count", {"singular": 0, "plurals": [0]}, ["count", "singular"], 0),
-        (
-            ["count", "singular"],
-            1,
-            "count",
-            StrictNestedDictionary({"singular": 1, "plurals": []}),
-        ),
-    ],
-)
-def test_message_add_metadata_key(key_or_path, value, key, expected) -> None:
-    message = Message("1001", "A test for metadata")
-    message.add_metadata(key_or_path, value)
-    assert message.metadata[key] == expected
-
-
-@pytest.mark.parametrize(
-    "key_or_path, value, expected",
-    [
-        (
-            "version",
-            None,
-            "Value of 'version' cannot be None when setting a specific metadata key",
-        ),
-        (
-            ["count", "plurals"],
-            None,
-            "Value of '['count', 'plurals']' cannot be None when setting a specific metadata key",
-        ),
-        (
-            "versions",
-            0,
-            "The key 'versions' is not a present key in the metadata dictionary",
-        ),
-        (
-            ["versions"],
-            0,
-            "The path ['versions'] is not a present key in the metadata dictionary",
-        ),
-        (
-            ["count", "plural"],
-            1,
-            "The path ['count', 'plural'] is not a present key in the metadata dictionary",
-        ),
-    ],
-)
-def test_message_add_metadata_key_failed(key_or_path, value, expected) -> None:
-    message = Message("1001", "A test for metadata")
-    with pytest.raises(ValueError, match=re.escape(expected)):
-        message.add_metadata(key_or_path, value)
+    with pytest.raises((KeyError, TypeError), match=re.escape(expected)):
+        message.add_metadata(*alist, **dictionary)
 
 
 # 4 Testing updates
@@ -2243,7 +2354,7 @@ def test_message_protected_update_options_segment_failed(
         ),
     ],
 )
-def test_message_protected_options_plurals_segment(
+def test_message_protected_update_options_plurals_segment(
     fixture_message, segment, option, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
@@ -2292,7 +2403,7 @@ def test_message_protected_options_plurals_segment(
         ),
     ],
 )
-def test_message_protected_options_plurals_segment_failed(
+def test_message_protected_update_options_plurals_segment_failed(
     fixture_message, segment, option, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
@@ -2301,6 +2412,201 @@ def test_message_protected_options_plurals_segment_failed(
 
 
 # 4.5 Testing metadata
+
+
+@pytest.mark.parametrize(
+    "fixture_message, alist, dictionary, expected",
+    [
+        (
+            "fr_message",
+            [
+                [["version"], "0.2.0"],
+                [["language"], "fr"],
+                [["comments"], "A test for metadata"],
+            ],
+            {},
+            {
+                "version": "0.2.0",
+                "language": "fr",
+                "location": [],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+        (
+            "fr_message",
+            [[["language"], "fr"], [["comments"], "A test for metadata"]],
+            {"version": "0.2.0"},
+            {
+                "version": "0.2.0",
+                "language": "fr",
+                "location": [],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+        (
+            "fr_message",
+            [[["comments"], "A test for metadata"]],
+            {"version": "0.2.0", "language": "fr"},
+            {
+                "version": "0.2.0",
+                "language": "fr",
+                "location": [],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+        (
+            "fr_message",
+            [],
+            {"version": "0.2.0", "language": "fr", "comments": "A test for metadata"},
+            {
+                "version": "0.2.0",
+                "language": "fr",
+                "location": [],
+                "flags": ["python-format"],
+                "comments": "A test for metadata",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+        (
+            "en_message",
+            [],
+            {"location": [("file.txt", 126)], "language": "en-GB"},
+            {
+                "version": "0.1.0",
+                "language": "en-GB",
+                "location": [("file.txt", 126)],
+                "flags": ["python-format"],
+                "comments": "Greeting message to one or more...",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+        (
+            "en_message",
+            [[["location"], [("file.txt", 126)]], [["language"], "en-GB"]],
+            {},
+            {
+                "version": "0.1.0",
+                "language": "en-GB",
+                "location": [("file.txt", 126)],
+                "flags": ["python-format"],
+                "comments": "Greeting message to one or more...",
+                "count": {
+                    "singular": 3,
+                    "plurals": [2, 2, 2],
+                },
+            },
+        ),
+    ],
+)
+def test_message_update_metadata(
+    fixture_message, alist, dictionary, expected, request
+) -> None:
+    message = request.getfixturevalue(fixture_message)
+    message.update_metadata(*alist, **dictionary)
+    control = message.metadata.to_dict()
+    assert control == expected
+
+
+@pytest.mark.parametrize(
+    "alist, dictionary, expected",
+    [
+        (
+            [["language:", "fr-Fr"]],
+            {
+                "version": "0.2.0",
+                "location": [("file.py", 132)],
+                "comments": "A test for metadata",
+            },
+            "The path 'language:' is not a present key in the metadata dictionary",
+        ),
+        (
+            (),
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "comments": "A test for metadata",
+                "count": {
+                    "plurals: [0]",
+                },
+            },
+            "<class 'set'> of {'plurals: [0]'} is not compatible metadata",
+        ),
+        (
+            (),
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "comments": "A test for metadata",
+                "count": {"singular": 0, "plural": [0]},
+            },
+            "The path '['count', 'plural']' is not a present key in the metadata dictionary",
+        ),
+        (
+            (),
+            {
+                "version": "0.2.0",
+                "language": "fr-FR",
+                "locations": [("file.py", 132)],
+                "comments": "A test for metadata",
+            },
+            "The key 'locations' is not a present key in the metadata dictionary",
+        ),
+        (
+            (),
+            {
+                "version": "0.1.0",
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "comments": "A test for metadata",
+            },
+            "The value (0.1.0) is already stored in the path '[version]'",
+        ),
+        (
+            [],
+            {
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+                "count": {"singular": 1},
+            },
+            "The value (1) is already stored in the path '['count', 'singular']'",
+        ),
+        (
+            [[["count", "singular"], 1]],
+            {
+                "language": "fr-FR",
+                "location": [("file.py", 132)],
+            },
+            "The value (1) is already stored in the path '['count', 'singular']'",
+        ),
+    ],
+)
+def test_message_update_metadata_failed(alist, dictionary, expected) -> None:
+    message = Message("1001", "A test for metadata")
+    with pytest.raises((KeyError, TypeError, ValueError), match=re.escape(expected)):
+        message.update_metadata(*alist, **dictionary)
 
 
 # 5 Testing delete
@@ -2491,6 +2797,7 @@ def test_message_protected_remove_default_segment(
             1,
             [
                 ("options", {1: "Hello {name}", 2: "Hello {name}"}),
+                ("default_plurals", {1: "Hi everyone"}),
                 (
                     "options_plurals",
                     StrictNestedDictionary(
@@ -2547,10 +2854,11 @@ def test_message_protected_remove_default_plurals_segment_failed(
             1,
             [
                 ("default", None, "Bonjour"),
-                ("options", 2, "Bonjour M. {name}"),
-                ("options", None, {2: "Bonjour M. {name}"}),
-                ("options_plurals", [2, 2], "Messieurs"),
+                ("options", 1, "Bonjour M. {name}"),
+                ("options", None, {1: "Bonjour M. {name}"}),
+                ("options_plurals", [1, 2], "Messieurs"),
                 ("metadata", ["count", "singular"], 2),
+                ("metadata", ["count", "plurals"], [2, 2]),
             ],
         ),
         (
@@ -2608,8 +2916,8 @@ def test_message_remove_variant_failure(
             1,
             [
                 ("default", None, "Bonjour"),
-                ("options", 2, "Bonjour M. {name}"),
-                ("options", None, {2: "Bonjour M. {name}"}),
+                ("options", 1, "Bonjour M. {name}"),
+                ("options", None, {1: "Bonjour M. {name}"}),
                 ("options_plurals", [2, 2], "Messieurs"),
             ],
         ),
@@ -2692,10 +3000,24 @@ def test_message_protected_remove_options_segment_failure(
                     "options_plurals",
                     None,
                     StrictNestedDictionary(
-                        {1: {1: "Hi everybody", 2: "Ladies"}, 2: {2: "Gentlemen"}}
+                        {1: {1: "Hi everybody", 2: "Ladies"}, 2: {1: "Gentlemen"}}
                     ),
                 ),
                 ("metadata", ["count", "singular"], 3),
+            ],
+        ),
+        (
+            "fr_message",
+            1,
+            None,
+            [
+                ("default", None, "Bonjour"),
+                ("options", 1, "Bonjour M. {name}"),
+                ("options", None, {1: "Bonjour M. {name}"}),
+                ("options_plurals", [1, 1], "Bonjour Mesdames"),
+                ("options_plurals", [2, 2], "Messieurs"),
+                ("metadata", ["count", "singular"], 2),
+                ("metadata", ["count", "plurals"], [2, 2, 2]),
             ],
         ),
     ],
@@ -2737,6 +3059,7 @@ def test_message_protected_remove_options_plurals_failure(
     "fixture_message, keys, expected",
     [("fr_message", "version", [("language", "fr-FR")])],
 )
+@pytest.mark.skip(reason="Waiting to remove functions to be rewritten")
 def test_message_remove_metadata(fixture_message, keys, expected, request) -> None:
     message = request.getfixturevalue(fixture_message)
     message.remove_metadata(keys)

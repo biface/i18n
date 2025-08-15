@@ -7,7 +7,7 @@ Corpus module
 
 import re
 from gettext import translation
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ndict_tools import StrictNestedDictionary
 
@@ -307,7 +307,7 @@ class Message:
                     raise ValueError(f"The {attr_name} value is malformed")
 
         if metadata is not None:
-            self.add_metadata(metadata)
+            self.add_metadata(**metadata)
 
         # Update counters in metadata
 
@@ -545,6 +545,12 @@ class Message:
         """
         if 0 < token <= len(self.default_plurals):
             del self.default_plurals[token]
+
+            reshaped_dict: Dict[int, str] = {}
+            for idx, key in enumerate(sorted(self.default_plurals.keys()), start=1):
+                reshaped_dict[idx] = self.default_plurals[key]
+            self.default_plurals = reshaped_dict
+
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
             raise IndexError(
@@ -985,12 +991,16 @@ class Message:
         self._assert_valid_option(option)
         self._assert_valid_token_in_option(option, token)
         self.options_plurals[[option, token]] = segment
-        
-        #TODO improve remove variant methods to keep valid dictionaries 
 
     def remove_variant(self, option: int) -> None:
         """
-        Removes the option variant of translation
+        Removes the option variant of translation and keeps indices coherent.
+
+        This method ensures that after removal, both self.options and
+        self.options_plurals have contiguous indices starting from 1 so that
+        validation checks (__check_alternatives__ and __check_alternative_plural_forms__)
+        remain true. For example, if option 2 is removed and there were 4 options,
+        then former option 3 becomes 2 and former option 4 becomes 3.
 
         :param option: the index of the variant translation to remove.
         :type option: int
@@ -998,10 +1008,40 @@ class Message:
         :rtype: None
         :raises IndexError: If option is out of range.
         """
+        # Validate option exists
         self._assert_valid_option(option)
+        previous_length = len(self.options)
+
+        # 1) Remove the selected option and its plurals if present
         del self.options[option]
         if option in self.options_plurals.keys():
             del self.options_plurals[option]
+
+        # 2) Reindex self.options to keep keys contiguous starting from 1
+        if option < previous_length:
+            # Preserve insertion order by iterating values in key order
+            reshaped_dict: Dict[int, str] = {}
+            for idx, key in enumerate(sorted(self.options.keys()), start=1):
+                reshaped_dict[idx] = self.options[key]
+            self.options = reshaped_dict
+
+            old_plurals = self.options_plurals
+            new_plurals = StrictNestedDictionary()
+            for key in sorted(old_plurals.keys()):
+                # Shift down indices greater than removed option
+                new_key = key if key < option else key - 1
+                # Ensure we skip any potential non-positive key (defensive)
+                if new_key > 0:
+                    # Copy the inner dict as is (inner indices remain coherent)
+                    inner = (
+                        dict(old_plurals[key])
+                        if isinstance(old_plurals[key], dict)
+                        else old_plurals[key]
+                    )
+                    new_plurals.update({new_key: inner})
+            self.options_plurals = new_plurals
+
+        # 4) Refresh metadata counters
         self._refresh_counts()
 
     def _remove_options_segment(self, option: int) -> None:
@@ -1014,12 +1054,23 @@ class Message:
         :raises IndexError: If option is out of range.
         """
         self._assert_valid_option(option)
+        previous_length = len(self.options)
         del self.options[option]
+
+        if option < previous_length:
+            # Preserve insertion order by iterating values in key order
+            reshaped_dict: Dict[int, str] = {}
+            for idx, key in enumerate(sorted(self.options.keys()), start=1):
+                reshaped_dict[idx] = self.options[key]
+            self.options = reshaped_dict
+
         self._refresh_counts(singular=True)
 
     # TODO delete_alternative_plural_component
 
-    def _remove_options_plurals_segment(self, option: int, token: int) -> None:
+    def _remove_options_plurals_segment(
+        self, option: int, token: Optional[int] = None
+    ) -> None:
         """
         Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
         :param option: the index of the variant translation to be reached.
@@ -1029,13 +1080,22 @@ class Message:
         :raises IndexError: If option or token is out of range.
         """
         self._assert_valid_option(option)
-        if self.options_plurals.dict_paths().__contains__([option, token]):
+        if token is None:
+            self._remove_options_segment(option)
+        elif self.options_plurals.dict_paths().__contains__([option, token]):
+            print("option :", option, "token :", token)
             del self.options_plurals[[option, token]]
+            reshaped_dict: Dict[int, str] = {}
+            for idx, key in enumerate(
+                sorted(self.options_plurals[option].keys()), start=1
+            ):
+                reshaped_dict[idx] = self.options_plurals[[option, key]]
+            self.options_plurals.update({option: reshaped_dict})
             self._refresh_counts(plurals=True)
         else:
             raise IndexError(f"The plural path [{option}, {token}] is out of range")
 
-     # Switching and toggling translations
+    # Switching and toggling translations
 
     # Managing metadata
 
@@ -1094,59 +1154,119 @@ class Message:
         """
         self.metadata["comment"] = comment
 
-    def add_metadata(
-        self, key_or_dict: Union[str, List[str], Dict[str, Any]], value: Any = None
-    ) -> None:
+    def add_metadata(self, *args: Tuple[List[str], Any], **kwargs) -> None:
         """
         Set metadata for the message.
 
         Args:
-            key_or_dict (Union[str, Dict[str, Any]]): Either a specific key to set or a dictionary
-                of metadata to replace the current metadata.
-            value (Any, optional): The value to set for the key. Required if key_or_dict is a string.
-                Ignored if key_or_dict is a dictionary. Defaults to None.
+            args (Tuple[List[str], Any]): The list of keys and value to pass to the metadata.
+            kwargs (Dict[str, Any]): The kwargs parameters to pass to the metadata.
 
         Raises:
             ValueError: If key_or_dict is malformed and value is None.
         """
 
-        self.metadata = _build_empty_metadata()
+        if not self.__check_metadata__(self.metadata):
+            self.metadata = _build_empty_metadata()
 
-        if isinstance(key_or_dict, dict):
-            __dict = StrictNestedDictionary(key_or_dict)
-            for path in self.metadata.dict_paths():
-                if path not in __dict.dict_paths():
-                    raise ValueError(
-                        f"The path {path} is not a present key in the metadata dictionary"
+        if args:
+            for path, value in args:
+                if (
+                    isinstance(path, str)
+                    and self.metadata.dict_paths().__contains__([path])
+                ) or (
+                    isinstance(path, list)
+                    and self.metadata.dict_paths().__contains__(path)
+                ):
+                    self.metadata[path] = value
+                else:
+                    raise KeyError(
+                        f"The path '{path}' is not a present key in the metadata dictionary"
                     )
-            self.metadata.update(__dict)
-        elif value is None:
-            raise ValueError(
-                f"Value of '{key_or_dict}' cannot be None when setting a specific metadata key"
-            )
-        elif (
-            isinstance(key_or_dict, list)
-            and key_or_dict not in self.metadata.dict_paths()
-        ):
-            raise ValueError(
-                f"The path {key_or_dict} is not a present key in the metadata dictionary"
-            )
-        elif isinstance(key_or_dict, str) and not self.metadata.is_key(key_or_dict):
-            raise ValueError(
-                f"The key '{key_or_dict}' is not a present key in the metadata dictionary"
-            )
-        else:
-            self.metadata[key_or_dict] = value
+        if kwargs:
+            for key, value in kwargs.items():
 
-    def update_metadata(self, metadata: Dict[str, Any]) -> None:
+                if isinstance(value, set):
+                    raise TypeError(
+                        f"{type(value)} type of {value} is not compatible metadata"
+                    )
+
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        path = [key, sub_key]
+                        if not self.metadata.dict_paths().__contains__(path):
+                            raise KeyError(
+                                f"The path '{path}' is not a present key in the metadata dictionary"
+                            )
+                        else:
+                            self.metadata[path] = sub_value
+                elif isinstance(key, str) and self.metadata.is_key(key):
+                    self.metadata[key] = value
+                else:
+                    raise KeyError(
+                        f"The key '{key}' is not a present key in the metadata dictionary"
+                    )
+
+    def update_metadata(self, *args: Tuple[List[str], Any], **kwargs) -> None:
         """
         Update the message's metadata with new values.
 
         Args:
-            metadata (Dict[str, Any]): Dictionary of metadata to merge with the current metadata.
+            args (Tuple[List[str], Any): is a list of (paths, value) pairs is a StrictNestedDictionary
+            kwargs :
         """
-        if self.__check_metadata__(metadata):
-            self.metadata.update(metadata)
+
+        if args:
+            for path, value in args:
+                if (
+                    isinstance(path, str)
+                    and self.metadata.dict_paths().__contains__([path])
+                ) or (
+                    isinstance(path, list)
+                    and self.metadata.dict_paths().__contains__(path)
+                ):
+                    if self.metadata[path] == value:
+                        raise ValueError(
+                            f"The value ({value}) is already stored in the path '{path}'"
+                        )
+                    else:
+                        self.metadata[path] = value
+                else:
+                    raise KeyError(
+                        f"The path '{path}' is not a present key in the metadata dictionary"
+                    )
+        if kwargs:
+            for key, value in kwargs.items():
+                print((key, value))
+                if isinstance(value, set):
+                    raise TypeError(
+                        f"{type(value)} of {value} is not compatible metadata"
+                    )
+
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        path = [key, sub_key]
+                        if not self.metadata.dict_paths().__contains__(path):
+                            raise KeyError(
+                                f"The path '{path}' is not a present key in the metadata dictionary"
+                            )
+                        elif self.metadata[path] == sub_value:
+                            raise ValueError(
+                                f"The value ({sub_value}) is already stored in the path '{path}'"
+                            )
+                        else:
+                            self.metadata[path] = sub_value
+                elif isinstance(key, str) and self.metadata.is_key(key):
+                    if self.metadata[key] == value:
+                        raise ValueError(
+                            f"The value ({value}) is already stored in the path '[{key}]'"
+                        )
+                    else:
+                        self.metadata[key] = value
+                else:
+                    raise KeyError(
+                        f"The key '{key}' is not a present key in the metadata dictionary"
+                    )
 
     def remove_metadata(self, key: Optional[Union[str, List[str]]] = None) -> None:
         """
