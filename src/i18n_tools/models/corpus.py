@@ -6,7 +6,6 @@ Corpus module
 """
 
 import re
-from gettext import translation
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ndict_tools import StrictNestedDictionary
@@ -14,9 +13,7 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools import __version__
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
-    i18n_tools_to_unified_format,
     message_to_i18n_tools_format,
-    unified_format_to_i18n_tools,
 )
 from i18n_tools.locale import normalize_language_tag
 
@@ -1066,8 +1063,6 @@ class Message:
 
         self._refresh_counts(singular=True)
 
-    # TODO delete_alternative_plural_component
-
     def _remove_options_plurals_segment(
         self, option: int, token: Optional[int] = None
     ) -> None:
@@ -1293,18 +1288,131 @@ class Message:
         else:
             self.metadata[key] = ref_meta[key]
 
-    #TODO : Switching message / Toggle messages
-
-    #TODO : Organize format and export methods
-
-    def to_i18n_tools_format(self) -> Dict[str, Any]:
+    def switch(self, source: int, destination: int) -> None:
         """
-        Convert the Message to i18n_tools format.
+        Switch the position of two translations (singular and their plural forms).
 
-        Returns:
-            Dict[str, Any]: The message in i18n_tools format.
+        - Index 0 refers to the default translation.
+        - Positive indices (1..len(options)) refer to variant options.
+
+        This swaps both the singular text and the associated plural forms between
+        the two specified positions.
+
+        :param source: Index of the source translation (0 for default).
+        :param destination: Index of the destination translation (0 for default).
+        :raises IndexError: If indices are equal or out of range.
+        :return: None
         """
-        return message_to_i18n_tools_format(self)
+        # Disallow swapping the same index
+        if source == destination:
+            raise IndexError(
+                f"source ({source}) and destination ({destination}) must be different"
+            )
+
+        # Validate indices
+        if source != 0:
+            self._assert_valid_option(source)
+        if destination != 0:
+            self._assert_valid_option(destination)
+
+        # Helper to get singular and plurals for an index
+        def get_pair(index: int) -> Tuple[str, Dict[int, str]]:
+            if index == 0:
+                return self.default, dict(self.default_plurals)
+            # index > 0
+            singular = self.options[index]
+            plurals = (
+                dict(self.options_plurals[index])
+                if index in self.options_plurals.keys()
+                else {}
+            )
+            return singular, plurals
+
+        # Helper to set singular and plurals for an index
+        def set_pair(index: int, singular: str, plurals: Dict[int, str]) -> None:
+            if index == 0:
+                self.default = singular
+                self.default_plurals = dict(plurals)
+            else:
+                self.options[index] = singular
+                # Ensure we set the plural mapping (even if empty) for coherence
+                self.options_plurals.update({index: dict(plurals)})
+
+        # Fetch pairs
+        src_s, src_p = get_pair(source)
+        dst_s, dst_p = get_pair(destination)
+
+        # Swap them
+        set_pair(source, dst_s, dst_p)
+        set_pair(destination, src_s, src_p)
+
+        # Refresh counts metadata (singular count unchanged, plural list ordering may change)
+        self._refresh_counts()
+
+    def toggle(self, direction: str = "natural") -> None:
+        """
+        Rotate all translations (default and variants) together with their plural forms.
+
+        - "natural": 0 -> 1, 1 -> 2, ..., n -> 0
+        - "reverse": 0 -> n, 1 -> 0, 2 -> 1, ...
+
+        Index 0 refers to the default translation; indices 1..n are the variant options.
+        The rotation preserves option ordering integrity (contiguous indices starting at 1)
+        and moves corresponding plural forms along with each singular.
+
+        :param direction: Either "natural" (default) or "reverse".
+        :raises ValueError: If direction is invalid.
+        :return: None
+        """
+        if direction not in {"natural", "reverse"}:
+            raise ValueError("direction must be either 'natural' or 'reverse'")
+
+        n = len(self.options)
+        # Nothing to rotate if no variants exist
+        if n == 0:
+            return
+
+        # Helper to fetch a pair (singular, plurals) for index
+        def get_pair(index: int) -> Tuple[str, Dict[int, str]]:
+            if index == 0:
+                return self.default, dict(self.default_plurals)
+            singular = self.options[index]
+            plurals = (
+                dict(self.options_plurals[index])
+                if index in self.options_plurals.keys()
+                else {}
+            )
+            return singular, plurals
+
+        # Build the current ordered list of (singular, plurals)
+        pairs: List[Tuple[str, Dict[int, str]]] = [get_pair(0)] + [
+            get_pair(i) for i in range(1, n + 1)
+        ]
+
+        # Apply rotation
+        if direction == "reverse":
+            rotated = pairs[1:] + pairs[:1]
+        else:  # reverse
+            rotated = [pairs[-1]] + pairs[:-1]
+
+        # Assign back: new default and options
+        new_default_s, new_default_p = rotated[0]
+        self.default = new_default_s
+        self.default_plurals = dict(new_default_p)
+
+        new_options: Dict[int, str] = {}
+        new_plurals = StrictNestedDictionary()
+        for idx in range(1, n + 1):
+            s, p = rotated[idx]
+            new_options[idx] = s
+            # Ensure each option has a mapping (possibly empty) for coherence
+            new_plurals.update({idx: dict(p)})
+
+        self.options = new_options
+        self.options_plurals = new_plurals
+
+        # Refresh metadata counts (structure unchanged, indices may carry different texts)
+        self._refresh_counts()
 
     def format(self, option: int = 0, token: int = 0, **kwargs) -> str:
         """
@@ -1342,6 +1450,40 @@ class Message:
         except Exception as e:
             raise ValueError(f"Error formatting message '{self.id}': {str(e)}")
 
+    def get_format_variables(self, option: int = 0) -> List[List[str]]:
+        """
+        This function returns the list of named variables in singular and plurals text to format. By default if option is
+        equal to zero the default translation will be explored.
+
+        :param option: the  index of option text to explore
+        :type option: int
+        :return: a tuple of list of variables
+        :rtype: List[List[str]]
+        :raises IndexError: If option is out of range.
+        :raises ValueError: If no variables extracted is out of range.
+        """
+
+        if option != 0:
+            self._assert_valid_option(option)
+            translations = self.get_variant(option)
+        else:
+            translations = self.get_main()
+
+        extraction = []
+        for t in translations:
+            extraction.append(extract_variables(t))
+
+        return extraction
+
+    def to_i18n_tools_format(self) -> Dict[str, Any]:
+        """
+        Convert the Message to i18n_tools format.
+
+        Returns:
+            Dict[str, Any]: The message in i18n_tools format.
+        """
+        return message_to_i18n_tools_format(self)
+
     @classmethod
     def from_i18n_tools(
         cls, message_id: str, i18n_tools_entry: Dict[str, Any]
@@ -1366,7 +1508,7 @@ class Message:
             options=entry.get("options", None),
             options_plurals=entry.get("options_plurals", None),
             context=entry.get("context", ""),
-            metadata=entry.get("metadata", None),
+            metadata=StrictNestedDictionary(entry.get("metadata", None)),
         )
 
     def __str__(self) -> str:

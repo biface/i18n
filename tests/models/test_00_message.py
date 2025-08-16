@@ -3104,7 +3104,169 @@ def test_message_remove_metadata_failed(
         message.remove_metadata(keys)
 
 
-# 6 Testing components formats
+# 6 Testing switching and toggling
+
+
+@pytest.mark.parametrize(
+    "fixture_message, source, destination, expected",
+    [
+        (
+            "fr_message",
+            0,
+            2,
+            [
+                ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
+                ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+                ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
+            ],
+        ),
+        (
+            "en_message",
+            1,
+            2,
+            [
+                ["Hello", "Hi everybody", "Hi everyone"],
+                ["Hello {name}", "Hi everyone", "Gentlemen"],
+                ["Hello {name}", "Hi everybody", "Ladies"],
+            ],
+        ),
+        (
+            "fr_message",
+            2,
+            1,
+            [
+                ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
+                ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
+                ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+            ],
+        ),
+        (
+            "en_message",
+            2,
+            1,
+            [
+                ["Hello", "Hi everybody", "Hi everyone"],
+                ["Hello {name}", "Hi everyone", "Gentlemen"],
+                ["Hello {name}", "Hi everybody", "Ladies"],
+            ],
+        ),
+    ],
+)
+def test_message_switch(fixture_message, source, destination, expected, request):
+    message = request.getfixturevalue(fixture_message)
+    message.switch(source, destination)
+    assert message.get_main() == expected[0]
+    assert message.get_variant(1) == expected[1]
+    assert message.get_variant(2) == expected[2]
+
+
+@pytest.mark.parametrize(
+    "fixture_message, source, destination, expected",
+    [
+        ("fr_message", 0, 0, "source (0) and destination (0) must be different"),
+        ("en_message", 3, 2, "The variant location (3) is out of range"),
+        ("fr_message", 0, -1, "The variant location (-1) is out of range"),
+        ("en_message", 2, 4, "The variant location (4) is out of range"),
+    ],
+)
+def test_message_switch_failed(fixture_message, source, destination, expected, request):
+    message = request.getfixturevalue(fixture_message)
+    with pytest.raises(IndexError, match=re.escape(expected)):
+        message.switch(source, destination)
+
+
+@pytest.mark.parametrize(
+    "fixture_message, orientations, expected",
+    [
+        (
+            "fr_message",
+            ["natural"],
+            [
+                ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
+                ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
+                ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+            ],
+        ),
+        (
+            "en_message",
+            ["reverse"],
+            [
+                ["Hello {name}", "Hi everybody", "Ladies"],
+                ["Hello {name}", "Hi everyone", "Gentlemen"],
+                ["Hello", "Hi everybody", "Hi everyone"],
+            ],
+        ),
+        (
+            "fr_message",
+            ["natural", "natural"],
+            [
+                ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+                ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
+                ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
+            ],
+        ),
+        (
+            "en_message",
+            ["reverse", "reverse"],
+            [
+                ["Hello {name}", "Hi everyone", "Gentlemen"],
+                ["Hello", "Hi everybody", "Hi everyone"],
+                ["Hello {name}", "Hi everybody", "Ladies"],
+            ],
+        ),
+        (
+            "fr_message",
+            ["natural", "natural", "natural"],
+            [
+                ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
+                ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+                ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
+            ],
+        ),
+        (
+            "en_message",
+            ["reverse", "reverse", "reverse"],
+            [
+                ["Hello", "Hi everybody", "Hi everyone"],
+                ["Hello {name}", "Hi everybody", "Ladies"],
+                ["Hello {name}", "Hi everyone", "Gentlemen"],
+            ],
+        ),
+    ],
+)
+def test_message_toggle(fixture_message, orientations, expected, request):
+    message = request.getfixturevalue(fixture_message)
+    for orientation in orientations:
+        message.toggle(orientation)
+    assert message.get_main() == expected[0]
+    assert message.get_variant(1) == expected[1]
+    assert message.get_variant(2) == expected[2]
+
+
+@pytest.mark.parametrize(
+    "fixture_message, orientation, expected",
+    [
+        ("fr_message", "plus", "direction must be either 'natural' or 'reverse'"),
+        ("en_message", "minus", "direction must be either 'natural' or 'reverse'"),
+    ],
+)
+def test_message_toggle_failed(fixture_message, orientation, expected, request):
+    message = request.getfixturevalue(fixture_message)
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        message.toggle(orientation)
+
+
+def test_message_toggle_none_natural(empty_message):
+    empty_message.toggle("natural")
+    assert empty_message.default == ""
+
+
+def test_message_toggle_none_reverse(empty_message):
+    empty_message.toggle("reverse")
+    assert empty_message.default == ""
+
+
+# 7 Testing components formats
 
 
 @pytest.mark.parametrize(
@@ -3138,6 +3300,10 @@ def test_message_format(params, expected) -> None:
             {"option": 1, "nom": "John"},
             "Missing variable 'name' for message 'greeting'",
         ),
+        (
+            {"option": 1, "token": 1, "name": "John", "compte": 3},
+            "Missing variable 'count' for message 'greeting'",
+        ),
     ],
 )
 def test_message_format_failed(params, expected) -> None:
@@ -3157,3 +3323,184 @@ def test_message_format_failed(params, expected) -> None:
 
 
 # 7 Testing conversions
+
+
+@pytest.mark.parametrize(
+    "fixture_message, expected",
+    [
+        (
+            "fr_message",
+            {
+                "messages": [
+                    ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
+                    ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
+                    ["Bonjour tout le monde", "Mesdames", "Messieurs"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "language": "fr-FR",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "In French, Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+        ),
+        (
+            "en_message",
+            {
+                "messages": [
+                    ["Hello", "Hello {name}", "Hello {name}"],
+                    ["Hi everybody", "Hi everybody", "Hi everyone"],
+                    ["Hi everyone", "Ladies", "Gentlemen"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "language": "en",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+        ),
+    ],
+)
+def test_message_to_i18n_tools_format(fixture_message, expected, request):
+    message = request.getfixturevalue(fixture_message)
+    assert message.to_i18n_tools_format() == expected
+
+
+@pytest.mark.parametrize(
+    "fixture_message, source, params",
+    [
+        (
+            "fr_message",
+            {
+                "messages": [
+                    ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
+                    ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
+                    ["Bonjour tout le monde", "Mesdames", "Messieurs"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "In French, Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+            (["default", None], ["options", 1], ["options", 2]),
+        ),
+        (
+            "en_message",
+            {
+                "messages": [
+                    ["Hello", "Hello {name}", "Hello {name}"],
+                    ["Hi everybody", "Hi everybody", "Hi everyone"],
+                    ["Hi everyone", "Ladies", "Gentlemen"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+            (["default", None], ["options", 1], ["options", 2]),
+        ),
+        (
+            "fr_message",
+            {
+                "messages": [
+                    ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
+                    ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
+                    ["Bonjour tout le monde", "Mesdames", "Messieurs"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "language": "fr-FR",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "In French, Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+            (
+                ["default_plurals", 1],
+                ["options_plurals", [1, 2]],
+                ["metadata", "language"],
+            ),
+        ),
+        (
+            "en_message",
+            {
+                "messages": [
+                    ["Hello", "Hello {name}", "Hello {name}"],
+                    ["Hi everybody", "Hi everybody", "Hi everyone"],
+                    ["Hi everyone", "Ladies", "Gentlemen"],
+                ],
+                "metadata": {
+                    "version": "0.1.0",
+                    "language": "en",
+                    "locations": [],
+                    "flags": ["python-format"],
+                    "comments": "Greeting message to one or more...",
+                    "singular_count": 3,
+                    "plural_counts": [3, 3],
+                },
+            },
+            (
+                ["default_plurals", 1],
+                ["options_plurals", [1, 2]],
+                ["metadata", "language"],
+            ),
+        ),
+    ],
+)
+def test_message_class_from_i18n_tools(fixture_message, source, params, request):
+    verification = request.getfixturevalue(fixture_message)
+    message = Message.from_i18n_tools("1000", source)
+    for attr, path in params:
+        if path is None:
+            assert message.__getattribute__(attr) == verification.__getattribute__(attr)
+        else:
+            assert (
+                message.__getattribute__(attr)[path]
+                == verification.__getattribute__(attr)[path]
+            )
+
+
+@pytest.mark.parametrize(
+    "option, result",
+    [(1, [["name"], ["count", "name"]]), (0, [["name"], ["count", "name"]])],
+)
+def test_message_get_format_variables(option, result):
+    message = message = Message(
+        id="greeting",
+        default="Hello, {name}!",
+        options={1: "Hi, {name}!"},
+        default_plurals={1: "Hello, {count} {name}s!"},
+        options_plurals={1: {1: "Hi, {count} {name}s!"}},
+    )
+    assert message.get_format_variables(option) == result
+
+
+def test_message_get_format_variables_failed():
+    message = message = Message(
+        id="greeting",
+        default="Hello, {name}!",
+        options={1: "Hi, {name}!"},
+        default_plurals={1: "Hello, {count} {name}s!"},
+        options_plurals={1: {1: "Hi, {count} {name}s!"}},
+    )
+    with pytest.raises(
+        IndexError, match=re.escape("The variant location (2) is out of range")
+    ):
+        message.get_format_variables(2)

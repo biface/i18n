@@ -1030,6 +1030,7 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
         "messages": value_lists,
         "metadata": {
             "version": message.metadata.get("version", "0.0.0"),
+            "language": message.metadata.get("language", ""),
             "locations": message.metadata.get("locations", []),
             "flags": message.metadata.get("flags", []),
             "comments": message.metadata.get("comments", ""),
@@ -1056,10 +1057,10 @@ def i18n_tools_format_to_message_dict(
     :rtype: Dict[str, Any]
     """
     result = {
-        "translation": "",
-        "alternatives": {},
-        "plural_forms": {},
-        "alternative_plural_forms": {},
+        "default": "",
+        "options": {},
+        "default_plurals": {},
+        "options_plurals": {},
         "context": "",
         "metadata": {},
     }
@@ -1071,18 +1072,18 @@ def i18n_tools_format_to_message_dict(
     # Process main translation and alternatives
     if messages and len(messages) > 0 and len(messages[0]) > 0:
         # Main translation is the first item in the first list
-        result["translation"] = messages[0][0]
+        result["default"] = messages[0][0]
 
         # Process alternatives (remaining items in the first list)
         # Use 1-based indices for alternatives to match Message class expectations
         for i, alt in enumerate(messages[0][1:], 1):
             if alt:  # Only add non-empty alternatives
-                result["alternatives"][i] = alt
+                result["options"][i] = alt
 
     # Process plural forms for main translation
     for i, plural_list in enumerate(messages[1:], 1):
         if plural_list and plural_list[0]:
-            result["plural_forms"][i] = plural_list[0]
+            result["default_plurals"][i] = plural_list[0]
 
     # Process plural forms for alternatives
     if messages and len(messages[0]) > 1:
@@ -1094,11 +1095,11 @@ def i18n_tools_format_to_message_dict(
                     and len(plural_list) > alt_idx  # Adjust index for 1-based
                     and plural_list[alt_idx]
                 ):
-                    if alt_idx not in result["alternative_plural_forms"]:
-                        result["alternative_plural_forms"][alt_idx] = {}
-                    result["alternative_plural_forms"][alt_idx][plural_idx] = (
-                        plural_list[alt_idx]
-                    )
+                    if alt_idx not in result["options_plurals"]:
+                        result["options_plurals"][alt_idx] = {}
+                    result["options_plurals"][alt_idx][plural_idx] = plural_list[
+                        alt_idx
+                    ]
 
     # Process metadata
     if metadata:
