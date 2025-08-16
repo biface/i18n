@@ -1,0 +1,55 @@
+setup:
+  paths:
+    package:
+      base: ''
+      locale: ''
+      modules:
+        - "i18n_tools/"
+        - "i18n_tools/utils/"
+    application:
+      base: ''
+      locale: ''
+      modules:
+        - "fsm_tools/"
+  languages:
+    source: fr
+    hierarchy:
+      fr: [ "fr-FR" ]
+      en: [ "en-US", "en-GB" ]
+      de: [ "de-DE" ]
+      es: [ "es-ES"]
+      eo: [ "eo"]
+      ga: [ "ga-IE"]
+      it: [ "it-IT"]
+      sv: [ "sv-SE"]
+    fallback: us
+  domains:
+    package:
+      "i18n_tools/":
+        - "api"
+        - "converter"
+        - "fallback"
+        - "formatter"
+        - "manager"
+        - "synchronization"
+      "i18n_tools/loaders/":
+        - "utils"
+        - "handler"
+        - "repository"
+    application:
+      "fsm_tools/":
+        - "django"
+        - "error"
+        - "information"
+details:
+  name: "Configuration test file"
+  description: "This is a temporary configuration test file"
+authors:
+  123e4567-e89b-12d3-a456-426614174000:
+    first_name: "John"
+    last_name: "Doe"
+    email: "john.doe@example.com"
+    url: "https://johndoe.com"
+    languages:
+      - "en-US"
+      - "fr-CA"

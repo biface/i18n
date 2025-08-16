@@ -1,0 +1,152 @@
+configuration:
+  root: "mock"
+  application: "mock/application"
+  package: "mock/package"
+  config: "_i18n_tools"
+  backup: "backup"
+  locale: "locales"
+  messages: "LC_MESSAGES"
+  template: "templates"
+repository:
+  application:
+    root: "repository-test"
+    repository: "repository-test"
+    config: "repository-test/fsm_tools/locales/_i18n_tools"
+    settings: "i18n-tools.yaml"
+    failed: "failed-i18n-tools.yaml"
+  package:
+    root: "package-configuration"
+    repository: "package-configuration"
+    config: "package-configuration/i18n_tools/locales/_i18n_tools"
+    settings: "i18n-tools.yaml"
+  other : "test-function"
+  locale: "locales"
+  configuration:
+    valid: "valid-i18n-tools.yaml"
+    error: "error-i18n-tools.yaml"
+config:
+  application:
+    authors:
+      7d097ac4-ba77-4333-a63f-76d48a75b38c:
+        email: john@doe.com
+        first_name: John
+        languages:
+          - fr
+          - en
+        last_name: Doe
+        url: ''
+      baf52b25-d1ed-4651-a3e6-273850901cf0:
+        email: jeanne@doe.com
+        first_name: Jeanne
+        languages:
+          - fr
+          - en
+        last_name: Doe
+        url: ''
+    domains:
+      fsm_tools:
+        - usage
+        - model
+      fsm_tools/lba:
+        - information
+        - error
+      fsm_tools/turing:
+        - information
+        - error
+      django-fsm_tools:
+        - usage
+        - information
+        - error
+      django-fsm_tools/context:
+        - usage
+        - error
+        - output
+    languages:
+      fallback: en
+      hierarchy:
+        en:
+          - en-US
+          - en-GB
+        fr:
+          - fr-FR
+      source: en
+    paths:
+      config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools
+      modules:
+        - fsm_tools
+        - fsm_tools/turing
+        - fsm_tools/lba
+        - django-fsm_tools
+        - django-fsm_tools/context
+      repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
+      root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application
+      backup: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/application/fsm_tools/locales/_i18n_tools/backup
+      settings: i18n-tools.yaml
+    translators:
+      GoogleTranslate:
+        details:
+          name: GoogleTranslate
+          status: free
+          url: https://translate.google.com
+        pricing:
+          cost_per_translation: null
+          payment_plan: null
+        technical:
+          api:
+            key: your_api_key
+            key_expiration: '2025-12-31'
+            request_limit: 10000
+          performance:
+            max_text_size: 5000
+            priority: 1
+            success_rate: 99.5
+    details:
+      description: This project is a study of implementation of Chomsky's formal language
+        and usage of finite state machine
+      name: fsm-tools
+      summary: A toolbox for Chomsky's formal language hierarchy
+      version: 0.0.1
+files:
+  yaml: "config.yaml"
+  toml: "config.toml"
+  err_yaml: "config_err.yaml"
+setup:
+  paths:
+    application:
+      base: 'repository'
+      modules:
+        - mod1/
+        - mod2/pkg1/
+        - mod2/pkg2/
+  languages:
+    source: en
+    hierarchy:
+      fr: ["fr-FR", "fr-BE", "fr-CA"]
+      en: ["en-IE", "en-US", "en-GB"]
+    fallback: fr
+  domains:
+    package:
+      "i18n_tools":
+        - "domain1"
+    application:
+      "mod1":
+        - "domain2"
+        - "domain3"
+      "mod2/pkg1/":
+        - "domain4"
+        - "domain5"
+      "mod2/pkg2/":
+        - "domain6"
+        - "domain7"
+details:
+  name: "Configuration test file"
+  description: "This is a temporary configuration test file"
+authors:
+  123e4567-e89b-12d3-a456-426614174000:
+    first_name: "John"
+    last_name: "Doe"
+    email: "john.doe@example.com"
+    url: "https://johndoe.com"
+    languages:
+      - "en-US"
+      - "fr-CA"

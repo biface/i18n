@@ -1,20 +1,26 @@
 """
-formatter.py
-============
+Formatter Module
+================
 
-This module handles the formatting of translations, including the management
-of plural forms, genders, and dynamic variables.
+This module is responsible for constructing messages to be added to a translation dictionary, transcribing data supplied by converters, and formatting them into strings for error messages.
 
-**Key Features:**
-- Format messages with pluralization and gender rules.
-- Replace dynamic variables in translations.
-- Provide locale-specific formatting utilities.
+It also publishes messages in i18next mode using the appropriate APIs.
 
-**License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
+Main responsibilities:
+    - Build a message to be stored in a translation dictionary
+    - Transcribe and format data from converters.
+    - Publish messages in i18next mode using appropriate APIs.
 
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
 """
+
+from .models import Corpus, Message
+
+
+def publish(message: Message) -> str:
+    """
+    Format a message using the appropriate format.
+    """
+    try:
+        return message.format()
+    except Exception as e:
+        raise e

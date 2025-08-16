@@ -1,7 +1,9 @@
 import pytest
+
 from i18n_tools.locale import (
-    normalize_language_tag,
+    get_all_languages,
     is_valid_language_tag,
+    normalize_language_tag,
     validate_and_normalize_language_tags,
 )
 
@@ -92,3 +94,27 @@ def test_validate_and_normalize_language_tags_valid(tags, expected):
 def test_validate_and_normalize_language_tags_invalid(tags, invalid_tag):
     with pytest.raises(ValueError, match=f"Invalid language tag: {invalid_tag}"):
         validate_and_normalize_language_tags(tags)
+
+
+@pytest.mark.parametrize(
+    "hierarchy, expected_output",
+    [
+        (
+            {"fr": ["fr-FR", "fr-BE", "fr-CA"], "en": ["en-IE", "en-US", "en-GB"]},
+            {"fr", "fr-FR", "fr-BE", "fr-CA", "en", "en-IE", "en-US", "en-GB"},
+        ),
+        (
+            {"es": ["es-ES", "es-MX"], "de": ["de-DE", "de-AT"]},
+            {"es", "es-ES", "es-MX", "de", "de-DE", "de-AT"},
+        ),
+        (
+            {"zh": ["zh-CN", "zh-TW"], "ja": ["ja-JP"]},
+            {"zh", "zh-CN", "zh-TW", "ja", "ja-JP"},
+        ),
+        ({}, set()),
+    ],
+)
+def test_get_all_languages(hierarchy, expected_output):
+    """Test the get_all_languages function."""
+    result = get_all_languages(hierarchy)
+    assert result == expected_output

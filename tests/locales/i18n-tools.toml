@@ -4,11 +4,6 @@ description = "This is a temporary configuration test file"
 
 [setup.paths]
 config = "/home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools.toml"
-package = "/home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales"
-
-[setup.domains]
-package = [ "messages",]
-application = [ "information", "errors",]
 
 [setup.languages]
 source = "en"
@@ -21,9 +16,22 @@ email = "john.doe@example.com"
 url = "https://johndoe.com"
 languages = [ "en-US", "fr-CA",]
 
+[setup.paths.package]
+locale = "/home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales"
+base = "/home/fabricemoutte/Personnel/dev/python/i18n/src"
+modules = [ "i18n_tools",]
+
 [setup.paths.application]
 base = ""
-modules = [ "mod-1/locales", "mod-2/pkg-1/locales", "mod-2/pkk-2/locales",]
+modules = [ "mod-1/", "mod-2/pkg-1/", "mod-2/pkk-2/",]
+
+[setup.domains.package]
+i18n_tools = [ "api", "classes",]
+
+[setup.domains.application]
+"mod-1/" = [ "errors", "information",]
+"mod-2/pkg-1/" = [ "usages", "information",]
+"mod-2/pkg-2/" = [ "information", "errors",]
 
 [setup.languages.hierarchy]
 fr = [ "fr-FR", "fr-BE", "fr-CA",]

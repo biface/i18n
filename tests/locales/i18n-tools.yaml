@@ -13,10 +13,19 @@ details:
 setup:
   domains:
     application:
-    - information
-    - errors
+      mod-1/:
+      - errors
+      - information
+      mod-2/pkg-1/:
+      - usages
+      - information
+      mod-2/pkg-2/:
+      - information
+      - errors
     package:
-    - messages
+      i18n_tools:
+      - api
+      - classes
   languages:
     fallback: fr
     hierarchy:
@@ -33,11 +42,15 @@ setup:
     application:
       base: ''
       modules:
-      - mod-1/locales
-      - mod-2/pkg-1/locales
-      - mod-2/pkk-2/locales
+      - mod-1/
+      - mod-2/pkg-1/
+      - mod-2/pkk-2/
     config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/locales/i18n-tools.yaml
-    package: /home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales
+    package:
+      base: /home/fabricemoutte/Personnel/dev/python/i18n/src
+      locale: /home/fabricemoutte/Personnel/dev/python/i18n/src/i18n_tools/locales
+      modules:
+      - i18n_tools
   translators:
     GoogleTranslate:
       details:
