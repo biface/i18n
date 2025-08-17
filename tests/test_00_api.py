@@ -42,37 +42,37 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        "https://httpstat.us/204": {
+        "https://httpbin.org/status/204": {
             "url": url,
             "is_alive": True,
             "status_code": 204,
             "error": None,
         },
-        "https://httpstat.us/401": {
+        "https://httpbin.org/status/401": {
             "url": url,
             "is_alive": True,
             "status_code": 401,
             "error": None,
         },
-        "https://httpstat.us/403": {
+        "https://httpbin.org/status/403": {
             "url": url,
             "is_alive": True,
             "status_code": 403,
             "error": None,
         },
-        "https://httpstat.us/405": {
+        "https://httpbin.org/status/405": {
             "url": url,
             "is_alive": True,
             "status_code": 405,
             "error": None,
         },
-        "https://httpstat.us/429": {
+        "https://httpbin.org/status/429": {
             "url": url,
             "is_alive": True,
             "status_code": 429,
             "error": None,
         },
-        "https://httpstat.us/500": {
+        "https://httpbin.org/status/500": {
             "url": url,
             "is_alive": True,
             "status_code": 500,
@@ -181,11 +181,11 @@ def get_validate_api_url(use_real_network_resources):
             {"is_alive": True, "status_code": 200, "error": None},
         ),
         (
-            "https://httpstat.us/204",
+            "https://httpbin.org/status/204",
             {"is_alive": True, "status_code": 204, "error": None},
         ),
         (
-            "https://httpstat.us/401",
+            "https://httpbin.org/status/401",
             {"is_alive": True, "status_code": 401, "error": None},
         ),
     ],

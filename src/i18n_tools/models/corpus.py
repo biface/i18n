@@ -1540,9 +1540,42 @@ class Book:
         messages (StrictNestedDictionary): A dictionary of messages in this book.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, *args: Message, **kwargs: Dict[str, Any]) -> None:
+        """
+        Initialize a Book instance.
+        :param args: a list of message to store inf the book
+        :type args: List[Message]
+        :param kwargs: parameters in the metadata
+        :type kwargs: Dict[str, Any]
+        :raises KeyError: If peculiar key are missing in the kwargs
+        """
+        lang = kwargs.pop("language", None)
+        if lang is None:
+            raise KeyError("No language specified")
+        else:
+            lang = normalize_language_tag(lang)
 
+        domain = kwargs.pop("domain", None)
+        if domain is None:
+            raise KeyError("No domain specified")
+
+        self.messages = StrictNestedDictionary()
+        self.metadata = StrictNestedDictionary(language=lang, domain=domain, format=kwargs.pop("format", "json"))
+
+        if len(args) > 0:
+            for entity in args:
+                if isinstance(entity, Message):
+                    if entity.metadata["language"] == self.metadata["language"]:
+                        self.messages[entity.id] = entity
+                    else:
+                        raise ValueError(f"Language of message {entity.id} is not compatible with this book language")
+                elif isinstance(entity, tuple) or isinstance(entity, list):
+                    for message in entity:
+                        if message.metadata["language"] == self.metadata["language"]:
+                            self.messages[message.id] = message
+                        else:
+                            raise ValueError(
+                                f"Language of message {message.id} is not compatible with this book language")
 
 class Corpus:
     """

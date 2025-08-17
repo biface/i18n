@@ -1,5 +1,5 @@
 """
-Test module for the Message class in the formatter module.
+Test module for the Message class in the models module.
 """
 
 import re
