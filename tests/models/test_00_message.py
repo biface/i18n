@@ -11,67 +11,12 @@ from i18n_tools import __version__
 from i18n_tools.models import Message
 
 
-@pytest.fixture
-def fr_message():
-    return Message(
-        id="1000",
-        default="Bonjour",
-        options={
-            1: "Bonjour Mme {name}",
-            2: "Bonjour M. {name}",
-        },
-        default_plurals={1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-        options_plurals={
-            1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-            2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-        },
-        metadata={
-            "version": "0.1.0",
-            "language": "fr-FR",
-            "location": [],
-            "flags": ["python-format"],
-            "comments": "In French, Greeting message to one or more...",
-            "count": {"singular": 0, "plurals": []},
-        },
-    )
 
 
-@pytest.fixture
-def en_message():
-    return Message(
-        id="1000",
-        default="Hello",
-        options={
-            1: "Hello {name}",
-            2: "Hello {name}",
-        },
-        default_plurals={1: "Hi everybody", 2: "Hi everyone"},
-        options_plurals={
-            1: {1: "Hi everybody", 2: "Ladies"},
-            2: {1: "Hi everyone", 2: "Gentlemen"},
-        },
-        metadata={
-            "version": "0.1.0",
-            "language": "en",
-            "location": [],
-            "flags": ["python-format"],
-            "comments": "Greeting message to one or more...",
-            "count": {"singular": 0, "plurals": []},
-        },
-    )
 
 
-@pytest.fixture
-def empty_message():
-    return Message(id="1000", default="")
 
 
-@pytest.fixture(scope="module")
-def empty_module_message():
-    return Message(
-        id="1000",
-        default="",
-    )
 
 
 # 1. Testing attributes

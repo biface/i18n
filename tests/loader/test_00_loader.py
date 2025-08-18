@@ -1,7 +1,6 @@
 import shutil
 
 import pytest
-from conftest import conf_tests, tmp_function_repository
 
 from i18n_tools.loaders import create_directory, file_exists
 
@@ -28,6 +27,7 @@ def temp_dir(tmp_function_repository):
         ("application", "test.txt", False),
     ],
 )
+
 def test_file_exists(target, path, verified, conf_tests, tmp_function_repository):
     temp_file = (
         tmp_function_repository[0][0]

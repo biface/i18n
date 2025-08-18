@@ -2,12 +2,6 @@ import os
 
 import pytest
 from babel.core import Locale
-from conftest import (
-    conf_tests,
-    tmp_function_repository,
-    tmp_module_repository,
-    tmp_repository,
-)
 from isort.profiles import django
 
 from i18n_tools.loaders.handler import (
@@ -81,6 +75,7 @@ def build_test_repository(tmp_repository):
         ("application", ["locales", "..", "templates"], "locales/templates", False),
     ],
 )
+
 def test_build_path(
     tmp_function_repository, conf_tests, module, sub_dirs, expected, verified
 ):
@@ -120,6 +115,7 @@ def test_build_path(
         "fsm_tools/turing/locales/fr-FR/LC_MESSAGES",
     ],
 )
+
 def test_create_directory(tmp_module_repository, dir_path):
     dir_path = tmp_module_repository[2][1] / dir_path
     create_directory(str(dir_path))
@@ -138,6 +134,7 @@ def test_create_directory(tmp_module_repository, dir_path):
         ("fsm_tools/turing", "error", False, FileExistsError),
     ],
 )
+
 def test_create_template(tmp_module_repository, module, domain, valid, exception):
     if valid:
         create_template(tmp_module_repository[4].get_repository(), module, domain)
@@ -163,6 +160,7 @@ def test_create_template(tmp_module_repository, module, domain, valid, exception
         ("fsm_tools/turing", "fr-FR", "error", True),
     ],
 )
+
 def test_create_catalog(tmp_module_repository, module, language, domain, valid):
     if valid:
         create_catalog(
@@ -200,6 +198,7 @@ def test_create_catalog(tmp_module_repository, module, language, domain, valid):
         ("fsm_tools/turing", "fr-FR", "error", True),
     ],
 )
+
 def test_create_dictionary(tmp_module_repository, module, language, domain, valid):
     if valid:
         create_dictionary(
@@ -213,6 +212,7 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
         assert catalog_file.exists() == True
     else:
         with pytest.raises(Exception):
+        
             create_dictionary(
                 tmp_module_repository[4].get_repository(), module, language, domain
             )
@@ -229,6 +229,7 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
         ("fsm_tools", "usage", ["fsm-tools", "usage"], True),
     ],
 )
+
 def test_fetch_template(tmp_module_repository, module, domain, content, valid):
     if valid:
         catalog = fetch_template(
@@ -253,6 +254,7 @@ def test_fetch_template(tmp_module_repository, module, domain, content, valid):
         ("fsm_tools/turing", "error", "fr-FR", ["fsm-tools", "error"], True),
     ],
 )
+
 def test_fetch_catalog(tmp_module_repository, module, language, domain, content, valid):
     if valid:
         catalog = fetch_catalog(
@@ -281,6 +283,7 @@ def test_fetch_catalog(tmp_module_repository, module, language, domain, content,
         ("fms_tools/lba", "fr", "information", ["fsm-tools", "information"], False),
     ],
 )
+
 def test_fetch_dictionary(
     tmp_module_repository, module, domain, language, content, valid
 ):
@@ -339,6 +342,7 @@ def test_fetch_dictionary(
         ),
     ],
 )
+
 def test_update_catalog(
     conf_tests, tmp_module_repository, module, language, domain, data, valid
 ):
@@ -395,6 +399,7 @@ def test_update_catalog(
         ),
     ],
 )
+
 def test_update_dictionary(
     tmp_module_repository, module, language, domain, data, valid
 ):
@@ -424,6 +429,7 @@ def test_update_dictionary(
         ("django", "django", False),
     ],
 )
+
 def test_create_module_archive(tmp_module_repository, module, archive, valid):
     if valid:
         create_module_archive(
@@ -451,6 +457,7 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
         ("fsm_tools", "model"),
     ],
 )
+
 def test_remove_template(tmp_module_repository, module, domain):
     remove_template(tmp_module_repository[4].get_repository(), module, domain)
     template_file = (
@@ -465,6 +472,7 @@ def test_remove_template(tmp_module_repository, module, domain):
         ("fsm_tools", "fr-FR", "usage"),
     ],
 )
+
 def test_remove_catalog(tmp_module_repository, module, language, domain):
     catalog_file = (
         tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
@@ -479,6 +487,7 @@ def test_remove_catalog(tmp_module_repository, module, language, domain):
         ("fsm_tools", "fr-FR", "usage"),
     ],
 )
+
 def test_remove_dictionary(tmp_module_repository, module, language, domain):
     dictionary_file = (
         tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
@@ -497,6 +506,7 @@ def test_remove_dictionary(tmp_module_repository, module, language, domain):
         ("fsm_tools", "no-archive", False),
     ],
 )
+
 def test_restore_module_from_archive(tmp_module_repository, module, archive, valid):
     if valid:
         files_names = [
@@ -549,6 +559,7 @@ def test_remove_with_failed_paths(tmp_module_repository):
         ),
     ],
 )
+
 def test_build_repository(tmp_module_repository, modules, domains, languages):
     # Call build_repository
     build_repository(tmp_module_repository[4].get_repository())
@@ -601,6 +612,7 @@ def test_verify_repository(tmp_module_repository):
         ("fsm-tools/turing", "information", False, ValueError),
     ],
 )
+
 def test_aggregate_dictionaries(
     tmp_module_repository, module, domain, valid, exception
 ):
@@ -632,6 +644,7 @@ def test_aggregate_dictionaries(
         ),
     ],
 )
+
 def test_translation_lang_file(
     tmp_module_repository, module, domain, lang, valid, exception
 ):
@@ -675,6 +688,7 @@ def test_translation_lang_file(
         ("application", "fsm_tools/turing", False, ValueError),
     ],
 )
+
 def test_verify_path_and_modules(
     tmp_module_repository, repository, modified_path, valid, exception
 ):
@@ -718,6 +732,7 @@ def test_verify_path_and_modules(
         (["sv", "en-US", "en-GB", "fr-FR"], False, ValueError),
     ],
 )
+
 def test_verify_available_language(tmp_module_repository, languages, valid, exception):
     if valid:
         _verify_available_languages(
@@ -738,6 +753,7 @@ def test_verify_available_language(tmp_module_repository, languages, valid, exce
         ("fsm-tools/turing", False, ValueError),
     ],
 )
+
 def test_verify_target_module(tmp_module_repository, module, valid, exception):
     if valid:
         _verify_target_module(tmp_module_repository[4].get_repository(), module)
@@ -766,6 +782,7 @@ def test_verify_target_module(tmp_module_repository, module, valid, exception):
         ),
     ],
 )
+
 def test_verify_target_domain(
     tmp_module_repository, module, domain, valid, exception, msg_error
 ):
@@ -845,6 +862,7 @@ def test_verify_target_domain(
         ),
     ],
 )
+
 def test_update_json_translation(
     existing_translation, translation_data, expected_result
 ):
@@ -965,6 +983,7 @@ def test_update_json_translation(
         ("fsm_tools", "usages", {}, False, [], IndexError, ""),
     ],
 )
+
 def tests_add_translation_set(
     tmp_module_repository,
     module,
@@ -1122,6 +1141,7 @@ def tests_add_translation_set(
         ),
     ],
 )
+
 def tests_update_translation_set(
     tmp_module_repository,
     module,
@@ -1176,6 +1196,7 @@ def tests_update_translation_set(
         ("fsm_tools", "usages", {}, False, [], IndexError, ""),
     ],
 )
+
 def tests_remove_translation_set(
     tmp_module_repository,
     module,
