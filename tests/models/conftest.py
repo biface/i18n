@@ -16,6 +16,7 @@ tmp_module_repository = None
 
 # --- Fixtures originally from test_00_message.py ---
 
+
 @pytest.fixture
 def fr_message():
     return MessageModel(
@@ -81,6 +82,7 @@ def empty_module_message():
 
 # --- Fixtures originally from test_01_book.py ---
 
+
 @pytest.fixture
 def fr_fr_messages():
     return {
@@ -98,8 +100,15 @@ def fr_fr_messages():
             },
             options_plurals={
                 1: {1: "Voici de belles {flower}", 2: "Voici deux belles {flower}"},
-                2: {1: "Voici des {flower} rares", 2: "Voici deux {flower} rares", 3: "Voici plusieurs {flower} rares"},
-                3: {1: "Voici des {flower} de la région {region}", 2: "Voici deux {flower} de la région {region}"},
+                2: {
+                    1: "Voici des {flower} rares",
+                    2: "Voici deux {flower} rares",
+                    3: "Voici plusieurs {flower} rares",
+                },
+                3: {
+                    1: "Voici des {flower} de la région {region}",
+                    2: "Voici deux {flower} de la région {region}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -123,9 +132,19 @@ def fr_fr_messages():
                 2: "J'aime ces deux montagnes",
             },
             options_plurals={
-                1: {1: "J'aime ces montagnes {mountain}", 2: "J'aime ces deux montagnes {mountain}"},
-                2: {1: "J'aime ces montagnes situées à {location}", 2: "J'aime ces deux montagnes situées à {location}"},
-                3: {1: "J'aime ces montagnes appelées {name}", 2: "J'aime ces deux montagnes appelées {name}", 3: "J'aime ces nombreuses montagnes appelées {name}"},
+                1: {
+                    1: "J'aime ces montagnes {mountain}",
+                    2: "J'aime ces deux montagnes {mountain}",
+                },
+                2: {
+                    1: "J'aime ces montagnes situées à {location}",
+                    2: "J'aime ces deux montagnes situées à {location}",
+                },
+                3: {
+                    1: "J'aime ces montagnes appelées {name}",
+                    2: "J'aime ces deux montagnes appelées {name}",
+                    3: "J'aime ces nombreuses montagnes appelées {name}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -149,9 +168,18 @@ def fr_fr_messages():
                 2: "Je pars en deux voyages",
             },
             options_plurals={
-                1: {1: "Je pars en voyages à {destination}", 2: "Je pars en deux voyages à {destination}"},
-                2: {1: "Je pars en voyages avec {companion}", 2: "Je pars en deux voyages avec {companion}"},
-                3: {1: "Je pars en voyages pour {duration} jours", 2: "Je pars en deux voyages pour {duration} jours"},
+                1: {
+                    1: "Je pars en voyages à {destination}",
+                    2: "Je pars en deux voyages à {destination}",
+                },
+                2: {
+                    1: "Je pars en voyages avec {companion}",
+                    2: "Je pars en deux voyages avec {companion}",
+                },
+                3: {
+                    1: "Je pars en voyages pour {duration} jours",
+                    2: "Je pars en deux voyages pour {duration} jours",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -175,9 +203,19 @@ def fr_fr_messages():
                 2: "Les deux automates sont prêts",
             },
             options_plurals={
-                1: {1: "Les automates {automaton} sont prêts", 2: "Les deux automates {automaton} sont prêts"},
-                2: {1: "Les automates conçus pour {purpose} sont prêts", 2: "Les deux automates conçus pour {purpose} sont prêts"},
-                3: {1: "Les automates de type {type} sont prêts", 2: "Les deux automates de type {type} sont prêts", 3: "Les nombreux automates de type {type} sont prêts"},
+                1: {
+                    1: "Les automates {automaton} sont prêts",
+                    2: "Les deux automates {automaton} sont prêts",
+                },
+                2: {
+                    1: "Les automates conçus pour {purpose} sont prêts",
+                    2: "Les deux automates conçus pour {purpose} sont prêts",
+                },
+                3: {
+                    1: "Les automates de type {type} sont prêts",
+                    2: "Les deux automates de type {type} sont prêts",
+                    3: "Les nombreux automates de type {type} sont prêts",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -201,9 +239,18 @@ def fr_fr_messages():
                 2: "Les deux fleurs ont de belles couleurs",
             },
             options_plurals={
-                1: {1: "Les {flower} ont de belles couleurs", 2: "Les deux {flower} ont de belles couleurs"},
-                2: {1: "Les {flower} de couleur {color} sont magnifiques", 2: "Les deux {flower} de couleur {color} sont magnifiques"},
-                3: {1: "Les {flower} de l'année {year} sont splendides", 2: "Les deux {flower} de l'année {year} sont splendides"},
+                1: {
+                    1: "Les {flower} ont de belles couleurs",
+                    2: "Les deux {flower} ont de belles couleurs",
+                },
+                2: {
+                    1: "Les {flower} de couleur {color} sont magnifiques",
+                    2: "Les deux {flower} de couleur {color} sont magnifiques",
+                },
+                3: {
+                    1: "Les {flower} de l'année {year} sont splendides",
+                    2: "Les deux {flower} de l'année {year} sont splendides",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -227,9 +274,19 @@ def fr_fr_messages():
                 2: "Les deux montagnes sont couvertes de neige",
             },
             options_plurals={
-                1: {1: "Les montagnes {mountain} sont couvertes de neige", 2: "Les deux montagnes {mountain} sont couvertes de neige"},
-                2: {1: "Les montagnes situées à {location} sont couvertes de neige", 2: "Les deux montagnes situées à {location} sont couvertes de neige"},
-                3: {1: "Les montagnes en {season} sont couvertes de neige", 2: "Les deux montagnes en {season} sont couvertes de neige", 3: "Les nombreuses montagnes en {season} sont couvertes de neige"},
+                1: {
+                    1: "Les montagnes {mountain} sont couvertes de neige",
+                    2: "Les deux montagnes {mountain} sont couvertes de neige",
+                },
+                2: {
+                    1: "Les montagnes situées à {location} sont couvertes de neige",
+                    2: "Les deux montagnes situées à {location} sont couvertes de neige",
+                },
+                3: {
+                    1: "Les montagnes en {season} sont couvertes de neige",
+                    2: "Les deux montagnes en {season} sont couvertes de neige",
+                    3: "Les nombreuses montagnes en {season} sont couvertes de neige",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -253,9 +310,18 @@ def fr_fr_messages():
                 2: "Ces deux voyages sont longs",
             },
             options_plurals={
-                1: {1: "Les voyages vers {destination} sont longs", 2: "Ces deux voyages vers {destination} sont longs"},
-                2: {1: "Les voyages avec {companion} sont longs", 2: "Ces deux voyages avec {companion} sont longs"},
-                3: {1: "Les voyages de {duration} jours sont longs", 2: "Ces deux voyages de {duration} jours sont longs"},
+                1: {
+                    1: "Les voyages vers {destination} sont longs",
+                    2: "Ces deux voyages vers {destination} sont longs",
+                },
+                2: {
+                    1: "Les voyages avec {companion} sont longs",
+                    2: "Ces deux voyages avec {companion} sont longs",
+                },
+                3: {
+                    1: "Les voyages de {duration} jours sont longs",
+                    2: "Ces deux voyages de {duration} jours sont longs",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -279,9 +345,19 @@ def fr_fr_messages():
                 2: "Les deux automates fonctionnent",
             },
             options_plurals={
-                1: {1: "Les automates {automaton} fonctionnent", 2: "Les deux automates {automaton} fonctionnent"},
-                2: {1: "Les automates pour {purpose} fonctionnent", 2: "Les deux automates pour {purpose} fonctionnent"},
-                3: {1: "Les automates de type {type} fonctionnent", 2: "Les deux automates de type {type} fonctionnent", 3: "Les nombreux automates de type {type} fonctionnent"},
+                1: {
+                    1: "Les automates {automaton} fonctionnent",
+                    2: "Les deux automates {automaton} fonctionnent",
+                },
+                2: {
+                    1: "Les automates pour {purpose} fonctionnent",
+                    2: "Les deux automates pour {purpose} fonctionnent",
+                },
+                3: {
+                    1: "Les automates de type {type} fonctionnent",
+                    2: "Les deux automates de type {type} fonctionnent",
+                    3: "Les nombreux automates de type {type} fonctionnent",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -306,8 +382,14 @@ def fr_fr_messages():
             },
             options_plurals={
                 1: {1: "Les {flower} sentent bon", 2: "Ces deux {flower} sentent bon"},
-                2: {1: "Les {flower} de couleur {color} sentent bon", 2: "Ces deux {flower} de couleur {color} sentent bon"},
-                3: {1: "Les {flower} cultivées en {year} sentent bon", 2: "Ces deux {flower} cultivées en {year} sentent bon"},
+                2: {
+                    1: "Les {flower} de couleur {color} sentent bon",
+                    2: "Ces deux {flower} de couleur {color} sentent bon",
+                },
+                3: {
+                    1: "Les {flower} cultivées en {year} sentent bon",
+                    2: "Ces deux {flower} cultivées en {year} sentent bon",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -331,9 +413,19 @@ def fr_fr_messages():
                 2: "Ces deux montagnes sont enneigées",
             },
             options_plurals={
-                1: {1: "Les montagnes {mountain} sont enneigées", 2: "Ces deux montagnes {mountain} sont enneigées"},
-                2: {1: "Les montagnes situées à {location} sont enneigées", 2: "Ces deux montagnes situées à {location} sont enneigées"},
-                3: {1: "Les montagnes en {season} sont enneigées", 2: "Ces deux montagnes en {season} sont enneigées", 3: "Les nombreuses montagnes en {season} sont enneigées"},
+                1: {
+                    1: "Les montagnes {mountain} sont enneigées",
+                    2: "Ces deux montagnes {mountain} sont enneigées",
+                },
+                2: {
+                    1: "Les montagnes situées à {location} sont enneigées",
+                    2: "Ces deux montagnes situées à {location} sont enneigées",
+                },
+                3: {
+                    1: "Les montagnes en {season} sont enneigées",
+                    2: "Ces deux montagnes en {season} sont enneigées",
+                    3: "Les nombreuses montagnes en {season} sont enneigées",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -363,9 +455,19 @@ def en_us_messages():
                 2: "Here are two flowers",
             },
             options_plurals={
-                1: {1: "Here are beautiful {flower}", 2: "Here are two beautiful {flower}"},
-                2: {1: "Here are rare {flower}", 2: "Here are two rare {flower}", 3: "Here are several rare {flower}"},
-                3: {1: "Here are {flower} from the {region} region", 2: "Here are two {flower} from the {region} region"},
+                1: {
+                    1: "Here are beautiful {flower}",
+                    2: "Here are two beautiful {flower}",
+                },
+                2: {
+                    1: "Here are rare {flower}",
+                    2: "Here are two rare {flower}",
+                    3: "Here are several rare {flower}",
+                },
+                3: {
+                    1: "Here are {flower} from the {region} region",
+                    2: "Here are two {flower} from the {region} region",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -389,9 +491,19 @@ def en_us_messages():
                 2: "I like these two mountains",
             },
             options_plurals={
-                1: {1: "I like these mountains {mountain}", 2: "I like these two mountains {mountain}"},
-                2: {1: "I like these mountains located at {location}", 2: "I like these two mountains located at {location}"},
-                3: {1: "I like these mountains called {name}", 2: "I like these two mountains called {name}", 3: "I like these numerous mountains called {name}"},
+                1: {
+                    1: "I like these mountains {mountain}",
+                    2: "I like these two mountains {mountain}",
+                },
+                2: {
+                    1: "I like these mountains located at {location}",
+                    2: "I like these two mountains located at {location}",
+                },
+                3: {
+                    1: "I like these mountains called {name}",
+                    2: "I like these two mountains called {name}",
+                    3: "I like these numerous mountains called {name}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -415,9 +527,18 @@ def en_us_messages():
                 2: "I'm going on two trips",
             },
             options_plurals={
-                1: {1: "I'm going on trips to {destination}", 2: "I'm going on two trips to {destination}"},
-                2: {1: "I'm going on trips with {companion}", 2: "I'm going on two trips with {companion}"},
-                3: {1: "I'm going on trips for {duration} days", 2: "I'm going on two trips for {duration} days"},
+                1: {
+                    1: "I'm going on trips to {destination}",
+                    2: "I'm going on two trips to {destination}",
+                },
+                2: {
+                    1: "I'm going on trips with {companion}",
+                    2: "I'm going on two trips with {companion}",
+                },
+                3: {
+                    1: "I'm going on trips for {duration} days",
+                    2: "I'm going on two trips for {duration} days",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -441,9 +562,19 @@ def en_us_messages():
                 2: "The two automatons are ready",
             },
             options_plurals={
-                1: {1: "The automatons {automaton} are ready", 2: "The two automatons {automaton} are ready"},
-                2: {1: "The automatons designed for {purpose} are ready", 2: "The two automatons designed for {purpose} are ready"},
-                3: {1: "The automatons of type {type} are ready", 2: "The two automatons of type {type} are ready", 3: "The numerous automatons of type {type} are ready"},
+                1: {
+                    1: "The automatons {automaton} are ready",
+                    2: "The two automatons {automaton} are ready",
+                },
+                2: {
+                    1: "The automatons designed for {purpose} are ready",
+                    2: "The two automatons designed for {purpose} are ready",
+                },
+                3: {
+                    1: "The automatons of type {type} are ready",
+                    2: "The two automatons of type {type} are ready",
+                    3: "The numerous automatons of type {type} are ready",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -467,9 +598,18 @@ def en_us_messages():
                 2: "The two flowers have beautiful colors",
             },
             options_plurals={
-                1: {1: "The {flower} have beautiful colors", 2: "The two {flower} have beautiful colors"},
-                2: {1: "The {flower} of color {color} are magnificent", 2: "The two {flower} of color {color} are magnificent"},
-                3: {1: "The {flower} of the year {year} are splendid", 2: "The two {flower} of the year {year} are splendid"},
+                1: {
+                    1: "The {flower} have beautiful colors",
+                    2: "The two {flower} have beautiful colors",
+                },
+                2: {
+                    1: "The {flower} of color {color} are magnificent",
+                    2: "The two {flower} of color {color} are magnificent",
+                },
+                3: {
+                    1: "The {flower} of the year {year} are splendid",
+                    2: "The two {flower} of the year {year} are splendid",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -493,9 +633,19 @@ def en_us_messages():
                 2: "These two mountains are snow-covered",
             },
             options_plurals={
-                1: {1: "The mountains {mountain} are snow-covered", 2: "These two mountains {mountain} are snow-covered"},
-                2: {1: "The mountains located at {location} are snow-covered", 2: "These two mountains located at {location} are snow-covered"},
-                3: {1: "The mountains in {season} are snow-covered", 2: "These two mountains in {season} are snow-covered", 3: "The numerous mountains in {season} are snow-covered"},
+                1: {
+                    1: "The mountains {mountain} are snow-covered",
+                    2: "These two mountains {mountain} are snow-covered",
+                },
+                2: {
+                    1: "The mountains located at {location} are snow-covered",
+                    2: "These two mountains located at {location} are snow-covered",
+                },
+                3: {
+                    1: "The mountains in {season} are snow-covered",
+                    2: "These two mountains in {season} are snow-covered",
+                    3: "The numerous mountains in {season} are snow-covered",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -519,9 +669,18 @@ def en_us_messages():
                 2: "These two trips are long",
             },
             options_plurals={
-                1: {1: "Trips to {destination} are long", 2: "These two trips to {destination} are long"},
-                2: {1: "Trips with {companion} are long", 2: "These two trips with {companion} are long"},
-                3: {1: "Trips of {duration} days are long", 2: "These two trips of {duration} days are long"},
+                1: {
+                    1: "Trips to {destination} are long",
+                    2: "These two trips to {destination} are long",
+                },
+                2: {
+                    1: "Trips with {companion} are long",
+                    2: "These two trips with {companion} are long",
+                },
+                3: {
+                    1: "Trips of {duration} days are long",
+                    2: "These two trips of {duration} days are long",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -545,9 +704,19 @@ def en_us_messages():
                 2: "The two automatons work",
             },
             options_plurals={
-                1: {1: "The automatons {automaton} work", 2: "The two automatons {automaton} work"},
-                2: {1: "The automatons for {purpose} work", 2: "The two automatons for {purpose} work"},
-                3: {1: "The automatons of type {type} work", 2: "The two automatons of type {type} work", 3: "The numerous automatons of type {type} work"},
+                1: {
+                    1: "The automatons {automaton} work",
+                    2: "The two automatons {automaton} work",
+                },
+                2: {
+                    1: "The automatons for {purpose} work",
+                    2: "The two automatons for {purpose} work",
+                },
+                3: {
+                    1: "The automatons of type {type} work",
+                    2: "The two automatons of type {type} work",
+                    3: "The numerous automatons of type {type} work",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -572,8 +741,14 @@ def en_us_messages():
             },
             options_plurals={
                 1: {1: "The {flower} smell good", 2: "These two {flower} smell good"},
-                2: {1: "The {flower} of color {color} smell good", 2: "These two {flower} of color {color} smell good"},
-                3: {1: "The {flower} cultivated in {year} smell good", 2: "These two {flower} cultivated in {year} smell good"},
+                2: {
+                    1: "The {flower} of color {color} smell good",
+                    2: "These two {flower} of color {color} smell good",
+                },
+                3: {
+                    1: "The {flower} cultivated in {year} smell good",
+                    2: "These two {flower} cultivated in {year} smell good",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -597,9 +772,19 @@ def en_us_messages():
                 2: "These two mountains are snowy",
             },
             options_plurals={
-                1: {1: "The mountains {mountain} are snowy", 2: "These two mountains {mountain} are snowy"},
-                2: {1: "The mountains located at {location} are snowy", 2: "These two mountains located at {location} are snowy"},
-                3: {1: "The mountains in {season} are snowy", 2: "These two mountains in {season} are snowy", 3: "The numerous mountains in {season} are snowy"},
+                1: {
+                    1: "The mountains {mountain} are snowy",
+                    2: "These two mountains {mountain} are snowy",
+                },
+                2: {
+                    1: "The mountains located at {location} are snowy",
+                    2: "These two mountains located at {location} are snowy",
+                },
+                3: {
+                    1: "The mountains in {season} are snowy",
+                    2: "These two mountains in {season} are snowy",
+                    3: "The numerous mountains in {season} are snowy",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -629,9 +814,19 @@ def en_gb_messages():
                 2: "Here are two flowers",
             },
             options_plurals={
-                1: {1: "Here are beautiful {flower}", 2: "Here are two beautiful {flower}"},
-                2: {1: "Here are rare {flower}", 2: "Here are two rare {flower}", 3: "Here are several rare {flower}"},
-                3: {1: "Here are {flower} from the {region} region", 2: "Here are two {flower} from the {region} region"},
+                1: {
+                    1: "Here are beautiful {flower}",
+                    2: "Here are two beautiful {flower}",
+                },
+                2: {
+                    1: "Here are rare {flower}",
+                    2: "Here are two rare {flower}",
+                    3: "Here are several rare {flower}",
+                },
+                3: {
+                    1: "Here are {flower} from the {region} region",
+                    2: "Here are two {flower} from the {region} region",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -655,9 +850,19 @@ def en_gb_messages():
                 2: "I like these two mountains",
             },
             options_plurals={
-                1: {1: "I like these mountains {mountain}", 2: "I like these two mountains {mountain}"},
-                2: {1: "I like these mountains located at {location}", 2: "I like these two mountains located at {location}"},
-                3: {1: "I like these mountains called {name}", 2: "I like these two mountains called {name}", 3: "I like these numerous mountains called {name}"},
+                1: {
+                    1: "I like these mountains {mountain}",
+                    2: "I like these two mountains {mountain}",
+                },
+                2: {
+                    1: "I like these mountains located at {location}",
+                    2: "I like these two mountains located at {location}",
+                },
+                3: {
+                    1: "I like these mountains called {name}",
+                    2: "I like these two mountains called {name}",
+                    3: "I like these numerous mountains called {name}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -681,9 +886,18 @@ def en_gb_messages():
                 2: "I'm going on two trips",
             },
             options_plurals={
-                1: {1: "I'm going on trips to {destination}", 2: "I'm going on two trips to {destination}"},
-                2: {1: "I'm going on trips with {companion}", 2: "I'm going on two trips with {companion}"},
-                3: {1: "I'm going on trips for {duration} days", 2: "I'm going on two trips for {duration} days"},
+                1: {
+                    1: "I'm going on trips to {destination}",
+                    2: "I'm going on two trips to {destination}",
+                },
+                2: {
+                    1: "I'm going on trips with {companion}",
+                    2: "I'm going on two trips with {companion}",
+                },
+                3: {
+                    1: "I'm going on trips for {duration} days",
+                    2: "I'm going on two trips for {duration} days",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -707,9 +921,19 @@ def en_gb_messages():
                 2: "The two automatons are ready",
             },
             options_plurals={
-                1: {1: "The automatons {automaton} are ready", 2: "The two automatons {automaton} are ready"},
-                2: {1: "The automatons designed for {purpose} are ready", 2: "The two automatons designed for {purpose} are ready"},
-                3: {1: "The automatons of type {type} are ready", 2: "The two automatons of type {type} are ready", 3: "The numerous automatons of type {type} are ready"},
+                1: {
+                    1: "The automatons {automaton} are ready",
+                    2: "The two automatons {automaton} are ready",
+                },
+                2: {
+                    1: "The automatons designed for {purpose} are ready",
+                    2: "The two automatons designed for {purpose} are ready",
+                },
+                3: {
+                    1: "The automatons of type {type} are ready",
+                    2: "The two automatons of type {type} are ready",
+                    3: "The numerous automatons of type {type} are ready",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -733,9 +957,18 @@ def en_gb_messages():
                 2: "The two flowers have beautiful colours",
             },
             options_plurals={
-                1: {1: "The {flower} have beautiful colours", 2: "The two {flower} have beautiful colours"},
-                2: {1: "The {flower} of colour {color} are magnificent", 2: "The two {flower} of colour {color} are magnificent"},
-                3: {1: "The {flower} of the year {year} are splendid", 2: "The two {flower} of the year {year} are splendid"},
+                1: {
+                    1: "The {flower} have beautiful colours",
+                    2: "The two {flower} have beautiful colours",
+                },
+                2: {
+                    1: "The {flower} of colour {color} are magnificent",
+                    2: "The two {flower} of colour {color} are magnificent",
+                },
+                3: {
+                    1: "The {flower} of the year {year} are splendid",
+                    2: "The two {flower} of the year {year} are splendid",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -759,9 +992,19 @@ def en_gb_messages():
                 2: "These two mountains are snow-covered",
             },
             options_plurals={
-                1: {1: "The mountains {mountain} are snow-covered", 2: "These two mountains {mountain} are snow-covered"},
-                2: {1: "The mountains located at {location} are snow-covered", 2: "These two mountains located at {location} are snow-covered"},
-                3: {1: "The mountains in {season} are snow-covered", 2: "These two mountains in {season} are snow-covered", 3: "The numerous mountains in {season} are snow-covered"},
+                1: {
+                    1: "The mountains {mountain} are snow-covered",
+                    2: "These two mountains {mountain} are snow-covered",
+                },
+                2: {
+                    1: "The mountains located at {location} are snow-covered",
+                    2: "These two mountains located at {location} are snow-covered",
+                },
+                3: {
+                    1: "The mountains in {season} are snow-covered",
+                    2: "These two mountains in {season} are snow-covered",
+                    3: "The numerous mountains in {season} are snow-covered",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -785,9 +1028,18 @@ def en_gb_messages():
                 2: "These two trips are long",
             },
             options_plurals={
-                1: {1: "Trips to {destination} are long", 2: "These two trips to {destination} are long"},
-                2: {1: "Trips with {companion} are long", 2: "These two trips with {companion} are long"},
-                3: {1: "Trips of {duration} days are long", 2: "These two trips of {duration} days are long"},
+                1: {
+                    1: "Trips to {destination} are long",
+                    2: "These two trips to {destination} are long",
+                },
+                2: {
+                    1: "Trips with {companion} are long",
+                    2: "These two trips with {companion} are long",
+                },
+                3: {
+                    1: "Trips of {duration} days are long",
+                    2: "These two trips of {duration} days are long",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -811,9 +1063,19 @@ def en_gb_messages():
                 2: "The two automatons work",
             },
             options_plurals={
-                1: {1: "The automatons {automaton} work", 2: "The two automatons {automaton} work"},
-                2: {1: "The automatons for {purpose} work", 2: "The two automatons for {purpose} work"},
-                3: {1: "The automatons of type {type} work", 2: "The two automatons of type {type} work", 3: "The numerous automatons of type {type} work"},
+                1: {
+                    1: "The automatons {automaton} work",
+                    2: "The two automatons {automaton} work",
+                },
+                2: {
+                    1: "The automatons for {purpose} work",
+                    2: "The two automatons for {purpose} work",
+                },
+                3: {
+                    1: "The automatons of type {type} work",
+                    2: "The two automatons of type {type} work",
+                    3: "The numerous automatons of type {type} work",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -838,8 +1100,14 @@ def en_gb_messages():
             },
             options_plurals={
                 1: {1: "The {flower} smell nice", 2: "These two {flower} smell nice"},
-                2: {1: "The {flower} of colour {color} smell nice", 2: "These two {flower} of colour {color} smell nice"},
-                3: {1: "The {flower} cultivated in {year} smell nice", 2: "These two {flower} cultivated in {year} smell nice"},
+                2: {
+                    1: "The {flower} of colour {color} smell nice",
+                    2: "These two {flower} of colour {color} smell nice",
+                },
+                3: {
+                    1: "The {flower} cultivated in {year} smell nice",
+                    2: "These two {flower} cultivated in {year} smell nice",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -863,9 +1131,19 @@ def en_gb_messages():
                 2: "These two mountains are covered with snow",
             },
             options_plurals={
-                1: {1: "The mountains {mountain} are covered with snow", 2: "These two mountains {mountain} are covered with snow"},
-                2: {1: "The mountains located at {location} are covered with snow", 2: "These two mountains located at {location} are covered with snow"},
-                3: {1: "The mountains in {season} are covered with snow", 2: "These two mountains in {season} are covered with snow", 3: "The numerous mountains in {season} are covered with snow"},
+                1: {
+                    1: "The mountains {mountain} are covered with snow",
+                    2: "These two mountains {mountain} are covered with snow",
+                },
+                2: {
+                    1: "The mountains located at {location} are covered with snow",
+                    2: "These two mountains located at {location} are covered with snow",
+                },
+                3: {
+                    1: "The mountains in {season} are covered with snow",
+                    2: "These two mountains in {season} are covered with snow",
+                    3: "The numerous mountains in {season} are covered with snow",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -895,9 +1173,19 @@ def it_it_messages():
                 2: "Ecco due fiori",
             },
             options_plurals={
-                1: {1: "Ecco dei bellissimi {flower}", 2: "Ecco due bellissimi {flower}"},
-                2: {1: "Ecco dei {flower} rari", 2: "Ecco due {flower} rari", 3: "Ecco diversi {flower} rari"},
-                3: {1: "Ecco dei {flower} della regione {region}", 2: "Ecco due {flower} della regione {region}"},
+                1: {
+                    1: "Ecco dei bellissimi {flower}",
+                    2: "Ecco due bellissimi {flower}",
+                },
+                2: {
+                    1: "Ecco dei {flower} rari",
+                    2: "Ecco due {flower} rari",
+                    3: "Ecco diversi {flower} rari",
+                },
+                3: {
+                    1: "Ecco dei {flower} della regione {region}",
+                    2: "Ecco due {flower} della regione {region}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -921,9 +1209,19 @@ def it_it_messages():
                 2: "Mi piacciono queste due montagne",
             },
             options_plurals={
-                1: {1: "Mi piacciono queste montagne {mountain}", 2: "Mi piacciono queste due montagne {mountain}"},
-                2: {1: "Mi piacciono queste montagne situate a {location}", 2: "Mi piacciono queste due montagne situate a {location}"},
-                3: {1: "Mi piacciono queste montagne chiamate {name}", 2: "Mi piacciono queste due montagne chiamate {name}", 3: "Mi piacciono queste numerose montagne chiamate {name}"},
+                1: {
+                    1: "Mi piacciono queste montagne {mountain}",
+                    2: "Mi piacciono queste due montagne {mountain}",
+                },
+                2: {
+                    1: "Mi piacciono queste montagne situate a {location}",
+                    2: "Mi piacciono queste due montagne situate a {location}",
+                },
+                3: {
+                    1: "Mi piacciono queste montagne chiamate {name}",
+                    2: "Mi piacciono queste due montagne chiamate {name}",
+                    3: "Mi piacciono queste numerose montagne chiamate {name}",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -947,9 +1245,18 @@ def it_it_messages():
                 2: "Parto per due viaggi",
             },
             options_plurals={
-                1: {1: "Parto per dei viaggi verso {destination}", 2: "Parto per due viaggi verso {destination}"},
-                2: {1: "Parto per dei viaggi con {companion}", 2: "Parto per due viaggi con {companion}"},
-                3: {1: "Parto per dei viaggi di {duration} giorni", 2: "Parto per due viaggi di {duration} giorni"},
+                1: {
+                    1: "Parto per dei viaggi verso {destination}",
+                    2: "Parto per due viaggi verso {destination}",
+                },
+                2: {
+                    1: "Parto per dei viaggi con {companion}",
+                    2: "Parto per due viaggi con {companion}",
+                },
+                3: {
+                    1: "Parto per dei viaggi di {duration} giorni",
+                    2: "Parto per due viaggi di {duration} giorni",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -973,9 +1280,19 @@ def it_it_messages():
                 2: "I due automi sono pronti",
             },
             options_plurals={
-                1: {1: "Gli automi {automaton} sono pronti", 2: "I due automi {automaton} sono pronti"},
-                2: {1: "Gli automi progettati per {purpose} sono pronti", 2: "I due automi progettati per {purpose} sono pronti"},
-                3: {1: "Gli automi di tipo {type} sono pronti", 2: "I due automi di tipo {type} sono pronti", 3: "I numerosi automi di tipo {type} sono pronti"},
+                1: {
+                    1: "Gli automi {automaton} sono pronti",
+                    2: "I due automi {automaton} sono pronti",
+                },
+                2: {
+                    1: "Gli automi progettati per {purpose} sono pronti",
+                    2: "I due automi progettati per {purpose} sono pronti",
+                },
+                3: {
+                    1: "Gli automi di tipo {type} sono pronti",
+                    2: "I due automi di tipo {type} sono pronti",
+                    3: "I numerosi automi di tipo {type} sono pronti",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -999,9 +1316,18 @@ def it_it_messages():
                 2: "I due fiori hanno bei colori",
             },
             options_plurals={
-                1: {1: "I {flower} hanno bei colori", 2: "I due {flower} hanno bei colori"},
-                2: {1: "I {flower} di colore {color} sono magnifici", 2: "I due {flower} di colore {color} sono magnifici"},
-                3: {1: "I {flower} dell'anno {year} sono splendidi", 2: "I due {flower} dell'anno {year} sono splendidi"},
+                1: {
+                    1: "I {flower} hanno bei colori",
+                    2: "I due {flower} hanno bei colori",
+                },
+                2: {
+                    1: "I {flower} di colore {color} sono magnifici",
+                    2: "I due {flower} di colore {color} sono magnifici",
+                },
+                3: {
+                    1: "I {flower} dell'anno {year} sono splendidi",
+                    2: "I due {flower} dell'anno {year} sono splendidi",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -1025,9 +1351,19 @@ def it_it_messages():
                 2: "Queste due montagne sono ricoperte di neve",
             },
             options_plurals={
-                1: {1: "Le montagne {mountain} sono ricoperte di neve", 2: "Queste due montagne {mountain} sono ricoperte di neve"},
-                2: {1: "Le montagne situate a {location} sono ricoperte di neve", 2: "Queste due montagne situate a {location} sono ricoperte di neve"},
-                3: {1: "Le montagne in {season} sono ricoperte di neve", 2: "Queste due montagne in {season} sono ricoperte di neve", 3: "Le numerose montagne in {season} sono ricoperte di neve"},
+                1: {
+                    1: "Le montagne {mountain} sono ricoperte di neve",
+                    2: "Queste due montagne {mountain} sono ricoperte di neve",
+                },
+                2: {
+                    1: "Le montagne situate a {location} sono ricoperte di neve",
+                    2: "Queste due montagne situate a {location} sono ricoperte di neve",
+                },
+                3: {
+                    1: "Le montagne in {season} sono ricoperte di neve",
+                    2: "Queste due montagne in {season} sono ricoperte di neve",
+                    3: "Le numerose montagne in {season} sono ricoperte di neve",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -1051,9 +1387,18 @@ def it_it_messages():
                 2: "Questi due viaggi sono lunghi",
             },
             options_plurals={
-                1: {1: "I viaggi verso {destination} sono lunghi", 2: "Questi due viaggi verso {destination} sono lunghi"},
-                2: {1: "I viaggi con {companion} sono lunghi", 2: "Questi due viaggi con {companion} sono lunghi"},
-                3: {1: "I viaggi di {duration} giorni sono lunghi", 2: "Questi due viaggi di {duration} giorni sono lunghi"},
+                1: {
+                    1: "I viaggi verso {destination} sono lunghi",
+                    2: "Questi due viaggi verso {destination} sono lunghi",
+                },
+                2: {
+                    1: "I viaggi con {companion} sono lunghi",
+                    2: "Questi due viaggi con {companion} sono lunghi",
+                },
+                3: {
+                    1: "I viaggi di {duration} giorni sono lunghi",
+                    2: "Questi due viaggi di {duration} giorni sono lunghi",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -1077,9 +1422,19 @@ def it_it_messages():
                 2: "I due automi funzionano",
             },
             options_plurals={
-                1: {1: "Gli automi {automaton} funzionano", 2: "I due automi {automaton} funzionano"},
-                2: {1: "Gli automi per {purpose} funzionano", 2: "I due automi per {purpose} funzionano"},
-                3: {1: "Gli automi di tipo {type} funzionano", 2: "I due automi di tipo {type} funzionano", 3: "I numerosi automi di tipo {type} funzionano"},
+                1: {
+                    1: "Gli automi {automaton} funzionano",
+                    2: "I due automi {automaton} funzionano",
+                },
+                2: {
+                    1: "Gli automi per {purpose} funzionano",
+                    2: "I due automi per {purpose} funzionano",
+                },
+                3: {
+                    1: "Gli automi di tipo {type} funzionano",
+                    2: "I due automi di tipo {type} funzionano",
+                    3: "I numerosi automi di tipo {type} funzionano",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -1103,9 +1458,18 @@ def it_it_messages():
                 2: "Questi due fiori profumano bene",
             },
             options_plurals={
-                1: {1: "I {flower} profumano bene", 2: "Questi due {flower} profumano bene"},
-                2: {1: "I {flower} di colore {color} profumano bene", 2: "Questi due {flower} di colore {color} profumano bene"},
-                3: {1: "I {flower} coltivati nel {year} profumano bene", 2: "Questi due {flower} coltivati nel {year} profumano bene"},
+                1: {
+                    1: "I {flower} profumano bene",
+                    2: "Questi due {flower} profumano bene",
+                },
+                2: {
+                    1: "I {flower} di colore {color} profumano bene",
+                    2: "Questi due {flower} di colore {color} profumano bene",
+                },
+                3: {
+                    1: "I {flower} coltivati nel {year} profumano bene",
+                    2: "Questi due {flower} coltivati nel {year} profumano bene",
+                },
             },
             metadata={
                 "version": "0.1.0",
@@ -1129,9 +1493,19 @@ def it_it_messages():
                 2: "Queste due montagne sono innevate",
             },
             options_plurals={
-                1: {1: "Le montagne {mountain} sono innevate", 2: "Queste due montagne {mountain} sono innevate"},
-                2: {1: "Le montagne situate a {location} sono innevate", 2: "Queste due montagne situate a {location} sono innevate"},
-                3: {1: "Le montagne in {season} sono innevate", 2: "Queste due montagne in {season} sono innevate", 3: "Le numerose montagne in {season} sono innevate"},
+                1: {
+                    1: "Le montagne {mountain} sono innevate",
+                    2: "Queste due montagne {mountain} sono innevate",
+                },
+                2: {
+                    1: "Le montagne situate a {location} sono innevate",
+                    2: "Queste due montagne situate a {location} sono innevate",
+                },
+                3: {
+                    1: "Le montagne in {season} sono innevate",
+                    2: "Queste due montagne in {season} sono innevate",
+                    3: "Le numerose montagne in {season} sono innevate",
+                },
             },
             metadata={
                 "version": "0.1.0",

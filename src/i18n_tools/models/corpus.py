@@ -1560,7 +1560,9 @@ class Book:
             raise KeyError("No domain specified")
 
         self.messages = StrictNestedDictionary()
-        self.metadata = StrictNestedDictionary(language=lang, domain=domain, format=kwargs.pop("format", "json"))
+        self.metadata = StrictNestedDictionary(
+            language=lang, domain=domain, format=kwargs.pop("format", "json")
+        )
 
         if len(args) > 0:
             for entity in args:
@@ -1568,14 +1570,18 @@ class Book:
                     if entity.metadata["language"] == self.metadata["language"]:
                         self.messages[entity.id] = entity
                     else:
-                        raise ValueError(f"Language of message {entity.id} is not compatible with this book language")
+                        raise ValueError(
+                            f"Language of message {entity.id} is not compatible with this book language"
+                        )
                 elif isinstance(entity, tuple) or isinstance(entity, list):
                     for message in entity:
                         if message.metadata["language"] == self.metadata["language"]:
                             self.messages[message.id] = message
                         else:
                             raise ValueError(
-                                f"Language of message {message.id} is not compatible with this book language")
+                                f"Language of message {message.id} is not compatible with this book language"
+                            )
+
 
 class Corpus:
     """
