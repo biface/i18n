@@ -128,6 +128,7 @@ from .api import validate_api_url
 from .loaders import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 from .patterns import Singleton
+from .models.repository import Repository
 
 
 class Config(metaclass=Singleton):
@@ -175,45 +176,14 @@ class Config(metaclass=Singleton):
             :return: an initialized nested dictionary with used keys
             :rtype: StrictNestedDictionary
             """
-            return StrictNestedDictionary(
-                {
-                    "details": {
-                        "name": "",  # Configuration name
-                        "summary": "",
-                        "description": "",  # Configuration description
-                        "version": "",
-                        "content_type": "text/plain",
-                        "copyright_holder": "",
-                        "creation_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                        "language": "",
-                        "language_team": "",
-                        "flags": {
-                            "fuzzy": True,
-                            "python-format": True,
-                        },
-                        "report-bugs-to": "",
-                    },
-                    "paths": {
-                        "root": "",
-                        "repository": "",
-                        "config": config_dir if config_dir else "",
-                        "backup": "",
-                        "settings": (
-                            settings_file if settings_file else "i18n-tools.yaml"
-                        ),
-                        # May be changed for .json or .toml
-                        "modules": [],
-                    },
-                    "domains": {},
-                    "languages": {
-                        "source": "",
-                        "hierarchy": {},
-                        "fallback": "",
-                    },
-                    "translators": {},
-                    "authors": {},
-                }
+            # Initialize using Repository class instead of raw StrictNestedDictionary
+            repo = Repository()
+            # Set initial config directory and settings file name
+            repo[["paths", "config"]] = config_dir if config_dir else ""
+            repo[["paths", "settings"]] = (
+                settings_file if settings_file else "i18n-tools.yaml"
             )
+            return repo
 
         self.package = _setup_configuration(
             I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE
