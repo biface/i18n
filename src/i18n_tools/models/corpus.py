@@ -1581,6 +1581,63 @@ class Book:
                             raise ValueError(
                                 f"Language of message {message.id} is not compatible with this book language"
                             )
+        self.metadata[["count", "messages"]] = len(self.messages)
+
+    def get(self, index: str) -> Optional[Message]:
+        """
+        Get a message by id.
+        :param index: id of the message
+        :type index: str
+        :return: a message or None
+        :rtype: Message
+        """
+        return self.messages.get(index, None)
+
+    def add(self, domain: str, messages: List[Message]) -> None:
+        """
+        Add messages to the book if language and domain are identical.
+        :param messages: list of messages to add to the book
+        :type messages: List[Message]
+        :param domain: the domain of the messages
+        :type domain: str
+        :return: nothing
+        :rtype: None
+        :raises ValueError: If a message is not compatible with this book language and domain or already registered.
+        """
+        if self.metadata["domain"] != domain:
+            raise ValueError(
+                f"Domain of message '{domain}' is not compatible with this book domain '{self.metadata['domain']}'"
+            )
+
+        for message in messages:
+            if message.metadata["language"] != self.metadata["language"]:
+                raise ValueError(
+                    f"Language of message ({message.id} : '{message.metadata['language']}') is not compatible with this book language ('{self.metadata['language']}')"
+                )
+
+            if message.id in self.messages.keys():
+                raise ValueError(
+                    f"Message with id ({message.id}) is already present in this book"
+                )
+
+            self.messages[message.id] = message
+            self.metadata[["count", "messages"]] = len(self.messages)
+
+    def remove(self, index: str) -> None:
+        """
+        Remove a message from the book if language and domain are identical.
+        :param index: key index of message to remove
+        :type index: str
+        :return: nothing
+        :rtype: None
+        :raises KeyError: If key message is not in this book.
+        """
+
+        if index not in self.messages.keys():
+            raise ValueError(f"Message identifier {index} is not in this book")
+        else:
+            del self.messages[index]
+            self.metadata[["count", "messages"]] = len(self.messages)
 
 
 class Corpus:
