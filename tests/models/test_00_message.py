@@ -10,7 +10,6 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools import __version__
 from i18n_tools.models import Message
 
-
 # 1. Testing attributes
 
 

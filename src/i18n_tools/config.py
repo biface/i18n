@@ -127,8 +127,8 @@ from .__static__ import (
 from .api import validate_api_url
 from .loaders import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
-from .patterns import Singleton
 from .models.repository import Repository
+from .patterns import Singleton
 
 
 class Config(metaclass=Singleton):

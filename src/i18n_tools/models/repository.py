@@ -10,6 +10,7 @@ translations based on languages and domains used in applications' modules.
 """
 
 from datetime import datetime
+
 from ndict_tools import StrictNestedDictionary
 
 # Shared default setup to avoid repetition
@@ -80,9 +81,9 @@ class Repository(StrictNestedDictionary):
 
     def _apply_args(self, args) -> None:
         for path, value in args:
-            if not (
-                (isinstance(path, list) and path in self.dict_paths())
-            ) and not (isinstance(path, str) and self.is_key(path)):
+            if not ((isinstance(path, list) and path in self.dict_paths())) and not (
+                isinstance(path, str) and self.is_key(path)
+            ):
                 raise KeyError(f"{path} is not a valid path or key")
 
             if not isinstance(value, dict):

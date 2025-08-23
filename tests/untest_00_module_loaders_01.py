@@ -36,8 +36,6 @@ from i18n_tools.loaders.utils import (
     _save_yaml,
 )
 
-import pytest
-
 pytestmark = pytest.mark.skip(reason="Moved to tests/loader/test_01_loader.py")
 
 

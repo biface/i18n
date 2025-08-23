@@ -1,11 +1,12 @@
 import pytest
 
+from i18n_tools.models import Message as MessageModel
+from i18n_tools.models.corpus import Book, Message
+
 # Shared fixtures for models tests (Message and Book)
 # These fixtures were previously defined inside test_00_message.py and test_01_book.py
 # Consolidating them here allows reuse across tests in this directory and works with the root tests/conftest.py.
 
-from i18n_tools.models import Message as MessageModel
-from i18n_tools.models.corpus import Message, Book
 
 # Compatibility: some tests import `from conftest import conf_tests, tmp_module_repository`.
 # When Python resolves the module name `conftest` to this file, ensure those names exist
