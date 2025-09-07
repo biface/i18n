@@ -1,7 +1,4 @@
 """
-Configuration Module
-=====================
-
 This module is responsible for managing the configuration parameters for both the i18n-tools package and the application utilizing it. It ensures that the structure of localized messages is maintained and that all configuration details are accurate and easily accessible.
 
 Key Responsibilities:
@@ -242,7 +239,7 @@ class Config(metaclass=Singleton):
         """
         Save the current configuration settings to a file.
 
-        Uses the `loader.save_config` function to write the configuration
+        Uses the `loaders.save_config` function to write the configuration
         to `self.paths['config']`.
         """
         current_config = self.__getattribute__(self._current_config)

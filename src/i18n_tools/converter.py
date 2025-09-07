@@ -1,7 +1,4 @@
 """
-Converter Module
-================
-
 This module is responsible for converting data between different internationalization (i18n) formats as described in
 package documentation. It serves as a bridge between various translation systems, allowing seamless conversion and
 interoperability.
@@ -1033,7 +1030,8 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
             "language": message.metadata.get("language", ""),
             "locations": message.metadata.get("locations", []),
             "flags": message.metadata.get("flags", []),
-            "comments": message.metadata.get("comments", ""),
+            "user_comments": message.metadata.get("user_comments", []),
+            "auto_comments": message.metadata.get("auto_comments", []),
             "singular_count": len(first_list),
             "plural_counts": (
                 [len(plural_list) for plural_list in value_lists[1:]]
@@ -1106,7 +1104,8 @@ def i18n_tools_format_to_message_dict(
         result["metadata"] = {
             "location": metadata.get("locations", []),
             "flags": metadata.get("flags", []),
-            "comments": metadata.get("comments", ""),
+            "user_comments": metadata.get("user_comments", []),
+            "auto_comments": metadata.get("auto_comments", []),
             "count": {
                 "singular": metadata.get("singular_count", 1),
                 "plurals": metadata.get("plural_counts", []),

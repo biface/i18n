@@ -4,8 +4,8 @@ import pytest
 from babel.core import Locale
 from isort.profiles import django
 
-# Deprecated location: tests moved to tests/loader/test_02_loader.py
-pytestmark = pytest.mark.skip(reason="Moved to tests/loader/test_02_loader.py")
+# Deprecated location: tests moved to tests/loaders/test_02_loader.py
+pytestmark = pytest.mark.skip(reason="Moved to tests/loaders/test_02_loader.py")
 
 from i18n_tools.loaders.handler import (
     build_path,

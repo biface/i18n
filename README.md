@@ -1,64 +1,137 @@
 ![Python](https://img.shields.io/badge/Language-python-green.svg)
 
 --------------
-# Lecteur français
+# i18n-tools
 
-_Unification de l'usage de i18n et i18next en Python_
+**[English version](#english-reader-and-row)** (for English readers and ROW)
 
-## Description
+---
 
-Le projet **i18n-tools** a pour objectif de simplifier et d'unifier l'usage des bibliothèques i18n et i18next dans les
-projets Python. Il fournit aux développeurs une boîte à outils permettant de gérer de manière fluide et cohérente les
-traductions, les fichiers de ressources et l'internationalisation des applications Python.
+## Lecteur français et francophones
 
-### Objectifs
+### Description
+Le projet **i18n-tools** vise à simplifier et moderniser la gestion des traductions dans les applications Python. Il introduit un **nouveau format de fichiers de traduction** flexible, indépendant de toute langue dominante, et permet une conversion vers les standards **i18next** et **i18n** (fichiers `.po`/`.mo`).
 
-- **Unification** des usages de i18n et i18next pour offrir une expérience homogène.
-- **Simplification** de l'intégration des fichiers de traduction JSON dans les projets Python.
-- **Outils pratiques** pour la gestion des clés de traduction, la récupération des traductions et la configuration des
-  paramètres régionaux.
-- **Flexibilité** pour s'adapter à différents besoins de projets (support pour plusieurs langues, gestion des fallbacks,
-  etc.).
+L'objectif est d'offrir une solution **modulaire**, **adaptable** et **sans contrainte linguistique**, avec un support natif pour les **variantes de traduction**, les **pluriels multiples**, et une gestion transparente des langues.
+
+---
+
+### Objectifs par version
+
+#### Version 1.0
+- **Nouveau format de traduction** :
+  - Support des **variantes** pour une même clé de traduction.
+  - Gestion des **pluriels multiples** pour chaque traduction et variante.
+  - Stockage des fichiers en **JSON** ou **YAML**.
+  - Indépendance linguistique : aucune langue ne domine les autres.
+
+#### Version 1.5
+- **Convertibilité vers i18next** :
+  - Export des traductions vers le format **i18next**.
+  - Amélioration du code et optimisation des performances.
+  - Support de nouveaux formats de fichiers (à définir).
+
+#### Version 2.0
+- **Intégration avec Babel** :
+  - Conversion vers le format **i18n** (fichiers `.po`, `.mo`, `.pot`).
+  - Utilisation des règles de pluralisation avancées de Babel.
+  - Compatibilité avec les outils existants (gettext, etc.).
+
+---
 
 ### Fonctionnalités
 
-- **Chargement des fichiers JSON de traduction** pour une utilisation directe avec i18next.
-- **API Python** pour récupérer et manipuler les traductions facilement.
-- **Support des variables dynamiques** dans les traductions (pluriels, genres, etc.).
-- **Gestion automatique des fallback languages** et des erreurs de traduction.
-- **Extensions pour la gestion des paramètres régionaux** et des formats spécifiques.
+<custom-element data-json="%7B%22type%22%3A%22table-metadata%22%2C%22attributes%22%3A%7B%22title%22%3A%22Fonctionnalit%C3%A9s%20cl%C3%A9s%22%7D%7D" />
 
-### Contribuer
+| Fonctionnalité                     | Version 1.0 | Version 1.5 | Version 2.0 |
+|------------------------------------|------------|------------|------------|
+| Format de traduction indépendant   | ✅          | ✅          | ✅          |
+| Variantes et pluriels multiples    | ✅          | ✅          | ✅          |
+| Support JSON/YAML                  | ✅          | ✅          | ✅          |
+| Conversion vers i18next            | ❌          | ✅          | ✅          |
+| Conversion vers i18n (Babel)        | ❌          | ❌          | ✅          |
+| Gestion des fallbacks              | ✅          | ✅          | ✅          |
 
-Nous vous invitons à contribuer au projet en ouvrant des issues, des pull requests ou en suggérant des améliorations.
-Pour toute question, n'hésitez pas à consulter la documentation ou à nous contacter.
 
-# English reader and ROW
+---
 
-_Unifying the use of i18n and i18next in Python_
+### Pourquoi ce projet ?
+- **Flexibilité** : Un format conçu pour s’adapter à tous les besoins de traduction, sans contrainte linguistique.
+- **Extensibilité** : Conversion vers les standards existants (i18next, i18n) pour une intégration facile.
+- **Modernité** : Support natif des variables dynamiques (pluriels, genres, contextes).
 
-## Description
+---
 
-The i18n-tools project aims to simplify and unify the usage of i18n and i18next libraries within Python projects. It
-provides developers with a toolkit to manage translations, resource files, and internationalization in Python
-applications smoothly and consistently.
+### Licence
+Voir le fichier [LICENSE.md](LICENSE.md).
+---
 
-## Objectives
+### Contact
+Pour toute question, ouvrez une issue ou contactez-nous à [email@example.com](mailto\:email@example.com).
 
-- **Unification** of i18n and i18next usage to provide a consistent experience.
-- **Simplification** of integrating JSON translation files into Python projects.
-- **Practical** tools for managing translation keys, retrieving translations, and setting up locale configurations.
-- **Flexibility** to suit different project needs (support for multiple languages, fallback management, etc.).
+---
 
-## Features
+---
 
-- **Load JSON translation** files for direct use with i18next.
-- **Python API** to easily retrieve and manipulate translations.
-- **Support for dynamic variables** in translations (plurals, genders, etc.).
-- **Automatic fallback** language management and translation errors.
-- **Extensions** for handling regional settings and specific formats.
+## English reader and ROW
 
-## Contributing
+### Description
+The **i18n-tools** project aims to simplify and modernize translation management in Python applications. It introduces a **new flexible translation file format**, independent of any dominant language, and enables conversion to **i18next** and **i18n** standards (`.po`/`.mo` files).
 
-We encourage you to contribute to the project by opening issues, submitting pull requests, or suggesting improvements.
-For any questions, feel free to check the documentation or reach out to us.
+The goal is to provide a **modular**, **adaptable**, and **language-agnostic** solution, with native support for **translation variants**, **multiple plurals**, and **transparent language management**.
+
+---
+
+### Goals by Version
+
+#### Version 1.0
+- **New translation format**:
+  - Support for **variants** for the same translation key.
+  - Management of **multiple plurals** for each translation and variant.
+  - File storage in **JSON** or **YAML**.
+  - Language independence: no dominant language.
+
+#### Version 1.5
+- **Convertibility to i18next**:
+  - Export translations to **i18next** format.
+  - Code improvements and performance optimization.
+  - Support for new file formats (to be defined).
+
+#### Version 2.0
+- **Integration with Babel**:
+  - Conversion to **i18n** format (`.po`, `.mo`, `.pot` files).
+  - Use of Babel's advanced pluralization rules.
+  - Compatibility with existing tools (gettext, etc.).
+
+---
+
+### Features
+
+<custom-element data-json="%7B%22type%22%3A%22table-metadata%22%2C%22attributes%22%3A%7B%22title%22%3A%22Key%20Features%22%7D%7D" />
+
+| Feature                              | Version 1.0 | Version 1.5 | Version 2.0 |
+|--------------------------------------|------------|------------|------------|
+| Independent translation format       | ✅          | ✅          | ✅          |
+| Variants and multiple plurals         | ✅          | ✅          | ✅          |
+| JSON/YAML support                    | ✅          | ✅          | ✅          |
+| Convert to i18next                   | ❌          | ✅          | ✅          |
+| Convert to i18n (Babel)              | ❌          | ❌          | ✅          |
+| Fallback management                   | ✅          | ✅          | ✅          |
+
+
+---
+
+### Why This Project?
+- **Flexibility**: A format designed to adapt to all translation needs, without linguistic constraints.
+- **Extensibility**: Conversion to existing standards (i18next, i18n) for easy integration.
+- **Modernity**: Native support for dynamic variables (plurals, genders, contexts).
+
+---
+
+### License
+See the [LICENSE.md](LICENSE.md) file.
+
+---
+
+### Contact
+For any questions, open an issue or contact us at [email@example.com](mailto\:email@example.com).

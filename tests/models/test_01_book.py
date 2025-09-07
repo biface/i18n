@@ -25,6 +25,17 @@ class TestBook:
             assert id == message.id
         assert len(book.messages) == 10
 
+    def test_book_is_iterable(self, fr_fr_book):
+        # Ensure Book yields Message instances and order matches insertion order
+        msgs = list(fr_fr_book)
+        assert len(msgs) == len(fr_fr_book.messages)
+        # All yielded elements are Message
+        assert all(isinstance(m, Message) for m in msgs)
+        # Order correspondence: ids in same order as dict values()
+        ids_from_iter = [m.id for m in msgs]
+        ids_from_dict = list(fr_fr_book.messages.keys())
+        assert ids_from_iter == ids_from_dict
+
     @pytest.mark.parametrize(
         "fixture_book, language",
         [
@@ -36,7 +47,7 @@ class TestBook:
     )
     def test_book_language(self, fixture_book, language, request):
         book = request.getfixturevalue(fixture_book)
-        assert book.metadata["language"] == language
+        assert book.language == language
         assert book.messages["1100"].metadata["language"] == language
 
     # Be careful: messages created for books in the file conftest.py file have deliberately incorrect counters.
@@ -171,7 +182,7 @@ def test_book_get(fixture_book, id, expected, request):
                         "language": "fr-FR",
                         "location": [],
                         "flags": ["python-format"],
-                        "comments": "Message sur des chiots",
+                        "user_comments": ["Message sur des chiots"],
                         "count": {"singular": 3, "plurals": [2, 3, 2]},
                     },
                 ),
@@ -207,7 +218,7 @@ def test_book_get(fixture_book, id, expected, request):
                         "language": "fr-FR",
                         "location": [],
                         "flags": ["python-format"],
-                        "comments": "Message sur des chattons",
+                        "user_comments": ["Message sur des chattons"],
                         "count": {"singular": 3, "plurals": [2, 3, 2]},
                     },
                 ),
@@ -310,7 +321,7 @@ def test_book_add(fixture_book, messages, expected, request):
                         "language": "fr-BE",
                         "location": [],
                         "flags": ["python-format"],
-                        "comments": "Message sur des chiots",
+                        "user_comments": ["Message sur des chiots"],
                         "count": {"singular": 3, "plurals": [2, 3, 2]},
                     },
                 )
@@ -353,7 +364,7 @@ def test_book_add(fixture_book, messages, expected, request):
                         "language": "fr-FR",
                         "location": [],
                         "flags": ["python-format"],
-                        "comments": "Message sur des chiots",
+                        "user_comments": ["Message sur des chiots"],
                         "count": {"singular": 3, "plurals": [2, 3, 2]},
                     },
                 )
@@ -397,3 +408,207 @@ def test_book_remove_failed(fr_fr_book):
         ValueError, match=re.escape("Message identifier 1000 is not in this book")
     ):
         fr_fr_book.remove("1000")
+
+
+# New tests for enhanced metadata and statistics in Book
+@pytest.mark.parametrize(
+    "fixture_book", ["fr_fr_book", "en_us_book", "en_gb_book", "it_it_book"]
+)
+def test_book_metadata_defaults_and_language_domain(fixture_book, request):
+    book = request.getfixturevalue(fixture_book)
+    # Core attributes now stored on instance
+    assert isinstance(book.language, str)
+    assert isinstance(book.domain, str)
+    assert isinstance(book.format, str)
+    # These keys should NOT be in metadata anymore
+    assert not book.metadata.is_key("language")
+    assert not book.metadata.is_key("domain")
+    assert not book.metadata.is_key("format")
+    # Default values for remaining metadata
+    assert book.metadata.get("project_id_version", None) == "i18n-tools 1.0"
+    assert book.metadata.get("report_msgid_bugs_to", None) == "bugs@example.com"
+    assert book.metadata.get("pot_creation_date", None) == ""
+    assert book.metadata.get("language_team", None) == ""
+    assert book.metadata.get("header_comment", None) == ""
+    # Statistics exist and initialized or computed
+    assert book.metadata.dict_paths().__contains__(
+        ["statistics", "total_messages"]
+    ) and isinstance(book.metadata[["statistics", "total_messages"]], int)
+    assert book.metadata.dict_paths().__contains__(
+        ["statistics", "total_words"]
+    ) and isinstance(book.metadata[["statistics", "total_words"]], int)
+    # Count backward compatibility
+    assert book.metadata[["count", "messages"]] == len(book.messages)
+
+
+def _make_simple_message(lang: str) -> Message:
+    return Message(
+        id="tmp1",
+        default="Hello world",
+        options={1: "Hello {who}"},
+        default_plurals={1: "Hello worlds"},
+        options_plurals={1: {1: "Hello {who}s"}},
+        metadata={
+            "version": "0.1.0",
+            "language": lang,
+            "location": [],
+            "flags": ["python-format"],
+            "user_comments": [],
+            "count": {"singular": 1, "plurals": [1]},
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    "fixture_book,lang",
+    [
+        ("fr_fr_book", "fr-FR"),
+        ("en_us_book", "en-US"),
+        ("en_gb_book", "en-GB"),
+        ("it_it_book", "it-IT"),
+    ],
+)
+def test_book_statistics_update_on_add_and_remove(fixture_book, lang, request):
+    book = request.getfixturevalue(fixture_book)
+    initial_msgs = book.metadata[["statistics", "total_messages"]]
+    initial_words = book.metadata[["statistics", "total_words"]]
+
+    # Add a simple message and verify stats updated
+    msg = _make_simple_message(lang)
+    book.add(book.domain, [msg])
+    assert book.metadata[["statistics", "total_messages"]] == initial_msgs + 1
+    # The delta words should equal counts from msg strings
+    # default (2 words) + default_plural (2) + option(2) + option_plural(2) = 8 words
+    assert book.metadata[["statistics", "total_words"]] == initial_words + 8
+
+    # Remove and verify rollback
+    book.remove(msg.id)
+    assert book.metadata[["statistics", "total_messages"]] == initial_msgs
+    assert book.metadata[["statistics", "total_words"]] == initial_words
+
+
+@pytest.mark.parametrize(
+    "key,value,expected_path,expected_value",
+    [
+        ("header_comment", "Global notes", ["header_comment"], "Global notes"),
+        ("header_comment", None, ["header_comment"], ""),
+        (["statistics", "total_words"], 1234, ["statistics", "total_words"], 1234),
+        (["statistics", "total_words"], None, ["statistics", "total_words"], 0),
+        ("custom_meta", {"a": 1}, ["custom_meta"], {"a": 1}),
+    ],
+)
+@pytest.mark.parametrize("fixture_book", ["fr_fr_book"])  # one is enough for API checks
+def test_book_set_metadata_update_and_reset(
+    fixture_book, key, value, expected_path, expected_value, request
+):
+    book = request.getfixturevalue(fixture_book)
+    book.set_metadata(key, value)
+    # Access metadata using path semantics supported by StrictNestedDictionary
+    # For top-level keys, expected_path is [key]
+    if len(expected_path) == 1:
+        assert book.metadata[expected_path[0]] == expected_value
+    else:
+        assert book.metadata[expected_path] == expected_value
+
+
+@pytest.mark.parametrize(
+    "key,value,expected_exception",
+    [
+        (None, "x", KeyError),
+        ("does_not_exist", None, KeyError),
+        (["not", "there"], 42, KeyError),
+        (123, "x", TypeError),
+        ({"a": 1}, "x", TypeError),
+    ],
+)
+@pytest.mark.parametrize("fixture_book", ["fr_fr_book"])  # check failure scenarios
+def test_book_set_metadata_update_and_reset_failed(
+    fixture_book, key, value, expected_exception, request
+):
+    book = request.getfixturevalue(fixture_book)
+    with pytest.raises(expected_exception):
+        book.set_metadata(key, value)
+
+
+# --- New tests: getters/add/update/remove for language, domain, format ---
+
+
+@pytest.mark.parametrize(
+    "fixture_book, expected_lang, expected_domain, expected_format",
+    [
+        ("fr_fr_book", "fr-FR", "test", "json"),
+        ("en_us_book", "en-US", "test", "json"),
+    ],
+)
+def test_attribute_getters(
+    fixture_book, expected_lang, expected_domain, expected_format, request
+):
+    book = request.getfixturevalue(fixture_book)
+    assert book.get_language() == expected_lang
+    assert book.get_domain() == expected_domain
+    assert book.get_format() == expected_format
+
+
+def test_add_attribute_methods_fail_when_already_set(fr_fr_book):
+    # add_language when already set
+    with pytest.raises(ValueError, match="Language is already set for this book"):
+        fr_fr_book.add_language("fr")
+    # add_domain when already set
+    with pytest.raises(ValueError, match="Domain is already set for this book"):
+        fr_fr_book.add_domain("test")
+    # add_format when already set
+    with pytest.raises(ValueError, match="Format is already set for this book"):
+        fr_fr_book.add_format("json")
+
+
+def test_remove_attributes_then_add_again():
+    # create a minimal empty book
+    book = Book(domain="d", language="fr-FR")
+    # remove then add
+    book.remove_language()
+    assert book.language is None
+    book.add_language("fr")  # normalized to fr-FR
+    assert book.language == "fr"
+
+    book.remove_domain()
+    assert book.domain is None
+    book.add_domain("d2")
+    assert book.domain == "d2"
+
+    book.remove_format()
+    assert book.format is None
+    book.add_format("yaml")
+    assert book.format == "yaml"
+
+
+def test_update_language_success_on_empty_book():
+    book = Book(domain="d", language="fr-FR")
+    # No messages: update freely
+    book.update_language("fr")
+    assert book.language == "fr"  # normalization and same
+    book.update_language("en-us")
+    assert book.language == "en-US"
+
+
+def test_update_language_failure_on_mismatch(fr_fr_book, en_message):
+    # ensure en_message language mismatches fr-FR after normalization
+    assert en_message.metadata["language"] in ("en", "en-US", "en-GB")
+    # Try to update the book language to en-US while it contains fr-FR messages -> should fail
+    with pytest.raises(
+        ValueError,
+        match=r"Language of message \(.*\) is not compatible with updated book language \('en-US'\)",
+    ):
+        fr_fr_book.update_language("en-US")
+
+
+def test_update_domain_and_format_success(fr_fr_book):
+    fr_fr_book.update_domain("animals")
+    assert fr_fr_book.domain == "animals"
+    assert fr_fr_book.format == "json"
+    assert fr_fr_book.filename == "animals.json.i18n"
+    fr_fr_book.update_format("yaml")
+    assert fr_fr_book.format == "yaml"
+    assert fr_fr_book.filename == "animals.yaml.i18n"
+
+def test_save(fr_fr_book):
+    fr_fr_book.save("tmp")

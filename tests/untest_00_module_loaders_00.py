@@ -4,8 +4,8 @@ import pytest
 
 from i18n_tools.loaders import create_directory, file_exists
 
-# Deprecated location: tests moved to tests/loader/test_00_loader.py
-pytestmark = pytest.mark.skip(reason="Moved to tests/loader/test_00_loader.py")
+# Deprecated location: tests moved to tests/loaders/test_00_loader.py
+pytestmark = pytest.mark.skip(reason="Moved to tests/loaders/test_00_loader.py")
 
 
 @pytest.fixture

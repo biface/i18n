@@ -1,13 +1,11 @@
 """
-Handler Module
-==============
-
 This module handles the manipulation of files within the repository using utils.py. It calculates paths, controls file names and access, and retrieves data contained in translation files.
 
 Key Responsibilities:
     - Manipulate files within the repository.
     - Calculate paths, control file names and access.
     - Retrieve data from translation files.
+
 """
 
 from pathlib import Path

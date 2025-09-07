@@ -1,11 +1,8 @@
 """
-Repository module
-=================
+The **Repository** module represents the translation repository as a nested dictionary, inheriting from
+`StrictNestedDictionary` (documented `here <https://ndict-tools.readthedocs.io/en/latest/api.html#ndict_tools.core.StrictNestedDictionary>`_).
 
-This module is in charge of repositories management. A repository is seen às the directory hierarchy to store
-translations based on languages and domains used in applications' modules.
-
-
+It describes the structure and organization of translation files.
 
 """
 

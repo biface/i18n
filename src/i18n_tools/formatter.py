@@ -1,7 +1,4 @@
 """
-Formatter Module
-================
-
 This module is responsible for constructing messages to be added to a translation dictionary, transcribing data supplied by converters, and formatting them into strings for error messages.
 
 It also publishes messages in i18next mode using the appropriate APIs.

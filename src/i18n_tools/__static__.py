@@ -7,6 +7,15 @@ Static and global variables module
 import os
 from pathlib import Path
 
+I18N_TOOLS_EXT_SET = ("i18t", "itl")
+"""
+This variable stores dedicated translation file extensions for i18n-tools
+"""
+I18N_TOOLS_TRANSLATION_FILE_EXT = "i18n"
+"""
+This variable is used to store the default 4 letters translation file extension. Since the file format could be
+either JSON or YAML, translation file will be _domain.[json|yaml].i18n_
+"""
 I18N_TOOLS_LOCALE = "locales"
 """
 This variable is used to store the name of the locale directory as the translation repository root in the project.

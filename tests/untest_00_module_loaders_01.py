@@ -36,7 +36,7 @@ from i18n_tools.loaders.utils import (
     _save_yaml,
 )
 
-pytestmark = pytest.mark.skip(reason="Moved to tests/loader/test_01_loader.py")
+pytestmark = pytest.mark.skip(reason="Moved to tests/loaders/test_01_loader.py")
 
 
 @pytest.fixture(scope="function")
