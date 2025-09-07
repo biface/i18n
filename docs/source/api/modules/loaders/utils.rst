@@ -1,3 +1,6 @@
+Utils module
+============
+
 .. automodule:: i18n_tools.loaders.utils
     :private-members: __check_path, __check_config_extension
     :no-index:

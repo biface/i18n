@@ -1,3 +1,6 @@
+Handler module
+==============
+
 .. automodule:: i18n_tools.loaders.handler
 
     .. autofunction:: check_json_integrity

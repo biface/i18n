@@ -1,4 +1,13 @@
+Configuration Module
+=====================
+
 .. automodule:: i18n_tools.config
+
+Configuartion class
+-------------------
+
+This class is designed as a singleton in order to manage a single instance.
+
 .. autoclass:: Config
 
     .. automethod:: load
