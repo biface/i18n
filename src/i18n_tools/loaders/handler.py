@@ -22,6 +22,8 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
+    I18N_TRANSLATION_FORMAT,
+    TranslationFileFormat,
 )
 
 from .utils import (
@@ -33,11 +35,16 @@ from .utils import (
     _exist_path,
     _load_config_file,
     _load_json,
+    _load_yaml,
     _load_text,
     _remove_file,
     _save_config_file,
     _save_json,
+    _save_yaml,
     _save_text,
+    _validate_translation_format,
+    _load_by_format,
+    _save_by_format,
 )
 
 
@@ -257,7 +264,7 @@ def create_catalog(
 
 
 def create_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str, fmt: TranslationFileFormat | None = None
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -283,9 +290,11 @@ def create_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        # Default behavior remains JSON when fmt is None
+        _fmt = _validate_translation_format(fmt)
+        dictionary_path = path + f"/{domain}.{_fmt}"
         if not _exist_path(dictionary_path):
-            _save_json(dictionary_path, {})
+            _save_by_format(dictionary_path, {}, _fmt)
         else:
             raise FileExistsError(
                 f"The path '{dictionary_path}' already exists. You cannot overwrite it"
@@ -372,7 +381,7 @@ def fetch_catalog(
 
 
 def fetch_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str, fmt: TranslationFileFormat | None = None
 ) -> Dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
@@ -400,8 +409,9 @@ def fetch_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
-        dictionary = _load_json(dictionary_path)
+        _fmt = _validate_translation_format(fmt)
+        dictionary_path = path + f"/{domain}.{_fmt}"
+        dictionary = _load_by_format(dictionary_path, _fmt)
     except Exception as e:
         raise e
 
@@ -494,6 +504,7 @@ def update_dictionary(
     language: str,
     domain: str,
     data: Dict[str, Any],
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Updates the translation dictionary for a given language and domain.
@@ -521,8 +532,9 @@ def update_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
-        dictionary = _load_json(dictionary_path)
+        _fmt = _validate_translation_format(fmt)
+        dictionary_path = path + f"/{domain}.{_fmt}"
+        dictionary = _load_by_format(dictionary_path, _fmt)
 
         if not check_json_integrity(data):
             raise ValueError(
@@ -532,7 +544,7 @@ def update_dictionary(
         for key, item in data.items():
             dictionary[key] = item
 
-        _save_json(dictionary_path, dictionary)
+        _save_by_format(dictionary_path, dictionary, _fmt)
 
     except Exception as e:
         raise e
@@ -571,6 +583,7 @@ def dump_dictionary(
     language: str,
     domain: str,
     data: Dict[str, Any],
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Dump the translation dictionary for a given language and domain.
@@ -598,14 +611,15 @@ def dump_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        _fmt = _validate_translation_format(fmt)
+        dictionary_path = path + f"/{domain}.{_fmt}"
 
         if not check_json_integrity(data):
             raise ValueError(
                 f"The dictionary {data} is not compatible with i18n-tools translations"
             )
 
-        _save_json(dictionary_path, data)
+        _save_by_format(dictionary_path, data, _fmt)
 
     except Exception as e:
         raise e
@@ -681,7 +695,7 @@ def remove_catalog(
 
 
 def remove_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary, module: str, language: str, domain: str, fmt: TranslationFileFormat | None = None
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -707,7 +721,10 @@ def remove_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        _fmt = fmt or "json"
+        if _fmt not in I18N_TRANSLATION_FORMAT:
+            raise ValueError(f"Unknown format '{_fmt}'")
+        dictionary_path = path + f"/{domain}.{_fmt}"
         _remove_file(dictionary_path)
     except Exception as e:
         raise e

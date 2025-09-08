@@ -31,6 +31,12 @@ Utils module
         :no-index:
     .. autofunction:: _save_machine
         :no-index:
+    .. autofunction:: _validate_translation_format
+        :no-index:
+    .. autofunction:: _load_by_format
+        :no-index:
+    .. autofunction:: _save_by_format
+        :no-index:
     .. autofunction:: _convert_catalog
         :no-index:
     .. autofunction:: _build_path

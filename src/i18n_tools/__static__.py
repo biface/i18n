@@ -3,10 +3,21 @@ Static and global variables module
 ==================================
 
 """
+from typing_extensions import Unpack
 
 import os
 from pathlib import Path
+from typing import Literal
 
+
+I18N_TRANSLATION_FORMAT = {"json", "yaml"}
+"""
+This format defines the set of standard storage files for translations
+"""
+TranslationFileFormat = Literal["json", "yaml"]
+"""
+This format defines a generic type for standard storage files for translations
+"""
 I18N_TOOLS_EXT_SET = ("i18t", "itl")
 """
 This variable stores dedicated translation file extensions for i18n-tools

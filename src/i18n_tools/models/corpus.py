@@ -7,7 +7,6 @@ import re
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ndict_tools import StrictNestedDictionary
-from validators import domain
 
 from i18n_tools import __version__
 from i18n_tools.converter import (
@@ -15,7 +14,8 @@ from i18n_tools.converter import (
     message_to_i18n_tools_format,
 )
 from i18n_tools.locale import normalize_language_tag
-from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT
+from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
+from i18n_tools.loaders.utils import _validate_translation_format
 
 
 def _check_index_dict(dictionary: Dict[int, str]) -> bool:
@@ -1721,6 +1721,7 @@ class Book:
           book language.
         """
         # Required metadata -> set instance attributes directly
+        self.filename = ""
         language = kwargs.pop("language", None)
         if language is None:
             raise KeyError("No language specified")
@@ -1830,21 +1831,24 @@ class Book:
         """Return the serialization/storage format hint."""
         return self.format
 
-    def add_format(self, fmt: str) -> None:
+    def add_format(self, fmt: TranslationFileFormat) -> None:
         """Set the format if not already set."""
         if getattr(self, "format", None) is not None:
             raise ValueError("Format is already set for this book")
-        self.format = fmt
+
+        # Validate using shared loader utils
+        self.format = _validate_translation_format(fmt)
         self.__set_filename()
 
-    def update_format(self, fmt: str) -> None:
+    def update_format(self, fmt: TranslationFileFormat) -> None:
         """Update the format hint."""
-        self.format = fmt
+        self.format = _validate_translation_format(fmt)
         self.__set_filename()
 
     def remove_format(self) -> None:
         """Unset the format hint."""
         self.format = None
+        self.filename = ""
 
     def _compute_statistics(self) -> None:
         """
