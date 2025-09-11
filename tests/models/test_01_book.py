@@ -271,7 +271,7 @@ def test_book_add(fixture_book, messages, expected, request):
     book = request.getfixturevalue(fixture_book)
     book.add("test", messages)
     for msg_id, msg_main, msg_variants in expected:
-        assert book.get(msg_id).get_main() == msg_main
+        assert book.get(msg_id).get_principal() == msg_main
         for index, msg_variant in enumerate(msg_variants):
             assert book.get(msg_id).get_variant(index + 1) == msg_variant
 

@@ -1,7 +1,4 @@
-"""
-
-
-"""
+""" """
 
 import re
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -403,9 +400,28 @@ class Message:
         self.context = ""
         self.metadata = _build_empty_metadata()
 
+    @property
+    def message(self) -> List[List[str]]:
+        """
+        The list of translations in Message instance.
+        :return:
+        """
+        msg = [self.principal]
+        msg.extend(self.variants)
+        return msg
+    @message.setter
+    def message(self, value: List[List[str]]) -> None:
+        """
+        Set the translations in Message instance.
+        :param value:
+        :return:
+        """
+        self.principal = value[0]
+        self.variants = value[1:]
+
     # Managing main
 
-    def get_main(self) -> List[str]:
+    def get_principal(self) -> List[str]:
         """
         Get the main translation and its plural forms.
 
@@ -417,7 +433,7 @@ class Message:
             translations.extend(self.default_plurals.values())
         return translations
 
-    def get_main_plurals(self) -> List[str]:
+    def get_principal_plurals(self) -> List[str]:
         """
         Get the main translation's plural forms.
 
@@ -429,7 +445,7 @@ class Message:
             plurals.extend(self.default_plurals.values())
         return plurals
 
-    def add_main(self, *args, **kwargs) -> None:
+    def add_principal(self, *args, **kwargs) -> None:
         """
         Add the main translation or its plural forms and update the metadata counters..
         :param args: is a list of translation components
@@ -471,7 +487,7 @@ class Message:
         else:
             raise (ValueError("No translation specified"))
 
-    def update_main(self, *args, **kwargs) -> None:
+    def update_principal(self, *args, **kwargs) -> None:
         """
         Update segments of a translation
         :param args: list of translation component
@@ -512,7 +528,7 @@ class Message:
         else:
             raise (ValueError("No updates specified"))
 
-    def remove_main(self) -> None:
+    def remove_principal(self) -> None:
         """
         Removes the main translation from message and update metadata
         :return: nothing (void function)
@@ -523,7 +539,7 @@ class Message:
         self.metadata[["count", "singular"]] = self.__count_singular__()
         self.metadata[["count", "plurals"]] = self.__count_plurals__()
 
-    def _remove_default_segment(self):
+    def _remove_principal_segment(self):
         """
         Protected function to empties self.default.
 
@@ -533,7 +549,7 @@ class Message:
         self.default = ""
         self.metadata[["count", "singular"]] = self.__count_singular__()
 
-    def _remove_default_plurals_segment(self, index: int) -> None:
+    def _remove_principal_plurals_segment(self, index: int) -> None:
         """
         Protected function to empties self.default_plurals.
         :param index: the location index (token) of the plural to be removed
@@ -555,6 +571,23 @@ class Message:
             raise IndexError(
                 f"The location ({index}) of the plural to be remove is out of range"
             )
+
+    @property
+    def principal(self) -> list[str]:
+        """
+        The principal of the translation.
+        :return:
+        """
+        return self.get_principal()
+
+    @principal.setter
+    def principal(self, value: list[str]) -> None:
+        """
+        Adds the principal of the translation.
+        :param value:
+        :return:
+        """
+        self.add_principal(value)
 
     # Managing variant
 
@@ -678,7 +711,7 @@ class Message:
         :return: nothing (void function)
         """
         if option == 0:
-            self.update_main(*args, **kwargs)
+            self.update_principal(*args, **kwargs)
         elif option > len(self.options) or option <= 0:
             raise (IndexError(f"Option '{option}' out of range"))
         elif args and len(args) == 1 and isinstance(args[0], list):
@@ -723,7 +756,7 @@ class Message:
         :return: the corresponding segment located at the token location
         :rtype: str
         """
-        __translation = self.get_main()
+        __translation = self.get_principal()
         if len(__translation) > index >= 0:
             return __translation[index]
         else:
@@ -1089,7 +1122,26 @@ class Message:
         else:
             raise IndexError(f"The plural path [{option}, {index}] is out of range")
 
-    # Switching and toggling translations
+    @property
+    def variants(self) -> List[List[str]]:
+        """
+        The list of variants in the repository.
+        :return:
+        """
+        variants = []
+        for index in range(1, len(self.options)+1):
+            variants.append(self.get_variant(index))
+        return variants
+
+    @variants.setter
+    def variants(self, variants: List[List[str]]) -> None:
+        """
+        The list of variants in the repository.
+        :param variants:
+        :return:
+        """
+        for index, variant in enumerate(variants):
+            self.update_variant(index+1, variant)
 
     # Managing metadata
 
@@ -1469,7 +1521,7 @@ class Message:
             self._assert_valid_option(option)
             translations = self.get_variant(option)
         else:
-            translations = self.get_main()
+            translations = self.get_principal()
 
         extraction = []
         for t in translations:
@@ -1780,7 +1832,9 @@ class Book:
         This private function is used to set or update filename, if one of these component changes.
         :return: nothing
         """
-        self.filename = self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
+        self.filename = (
+            self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
+        )
 
     def get_language(self) -> str:
         """Return the normalized language tag of this book."""
@@ -2017,10 +2071,10 @@ class Book:
             self.metadata[["count", "messages"]] = len(self.messages)
             self._compute_statistics()
 
-    def load(self, path_directory:str) -> None:
+    def load(self, path_directory: str) -> None:
         pass
 
-    def save(self, path_directory:str) -> None:
+    def save(self, path_directory: str) -> None:
         """
         This function save the content of the Book in a file
         :param path_directory: the named directory where the file book is saved

@@ -143,9 +143,9 @@ def test_message_get_id(fixture_name, expected_language, request) -> None:
 )
 def test_message_get_main(fixture_name, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_main() == expect
+    assert message.get_principal() == expect
     assert message.default == expect[0]
-    assert message.get_main()[0] == expect[0]
+    assert message.get_principal()[0] == expect[0]
 
 
 @pytest.mark.parametrize(
@@ -158,7 +158,7 @@ def test_message_get_main(fixture_name, expect, request) -> None:
 )
 def test_message_get_main_plurals(fixture_name, expect, request) -> None:
     message = request.getfixturevalue(fixture_name)
-    assert message.get_main_plurals() == expect
+    assert message.get_principal_plurals() == expect
 
 
 # 2.2 Testing access to variant translations
@@ -753,9 +753,9 @@ def test_message_add_message_failed(fixture_name, options, expected, request) ->
 def test_message_add_main(fixture_name, translation, expected, request) -> None:
     message = request.getfixturevalue(fixture_name)
     if isinstance(translation, dict):
-        message.add_main(**translation)
+        message.add_principal(**translation)
     else:
-        message.add_main(translation)
+        message.add_principal(translation)
     assert message.default == expected[0]
     assert message.default_plurals == expected[1]
     assert message.metadata[["count", "singular"]] == expected[2]
@@ -792,9 +792,9 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
     message = request.getfixturevalue(fixture_name)
     with pytest.raises(ValueError, match=re.escape(expected)):
         if isinstance(translation, dict):
-            message.add_main(**translation)
+            message.add_principal(**translation)
         else:
-            message.add_main(translation)
+            message.add_principal(translation)
 
 
 # 3.3 Testing adding variant translation
@@ -970,7 +970,7 @@ def test_message_add_main_failed(fixture_name, translation, expected, request) -
 def test_message_add_variant(fixture_name, translation, expected, request) -> None:
     message = request.getfixturevalue(fixture_name)
     if message.default == "":
-        message.add_main(["Hello", "Hi everybody", "Hi everyone"])
+        message.add_principal(["Hello", "Hi everybody", "Hi everyone"])
     if isinstance(translation, dict):
         message.add_variant(**translation)
     else:
@@ -1063,7 +1063,7 @@ def test_message_add_main_segment(
 ) -> None:
     message = request.getfixturevalue(fixture_name)
     message.add_main_segment(segment, token)
-    assert message.get_main()[token] == expected
+    assert message.get_principal()[token] == expected
 
 
 @pytest.mark.parametrize(
@@ -1801,9 +1801,9 @@ def test_message_update_message_failed(options, expected) -> None:
 def test_message_update_main(translation, expected) -> None:
     message = Message("1001", "Hi")
     if isinstance(translation, dict):
-        message.update_main(**translation)
+        message.update_principal(**translation)
     else:
-        message.update_main(translation)
+        message.update_principal(translation)
     for attr, value in expected:
         assert getattr(message, attr) == value
 
@@ -1823,9 +1823,9 @@ def test_message_update_main_failed(translation, expected) -> None:
     message = Message("1001", "Hi")
     with pytest.raises(ValueError, match=re.escape(expected)):
         if isinstance(translation, dict):
-            message.update_main(**translation)
+            message.update_principal(**translation)
         else:
-            message.update_main(translation)
+            message.update_principal(translation)
 
 
 # 4.3 Testing updating variant translation
@@ -1997,7 +1997,7 @@ def test_message_update_main_segment(
     message = request.getfixturevalue(fixture_message)
     message.update_main_segment(segment, token)
     for token, text in expected:
-        assert message.get_main()[token] == text
+        assert message.get_principal()[token] == text
 
 
 @pytest.mark.parametrize(
@@ -2051,7 +2051,7 @@ def test_message_protected_update_default_segment(
     message = request.getfixturevalue(fixture_message)
     message._update_default_segment(segment)
     for token, text in expected:
-        assert message.get_main()[token] == text
+        assert message.get_principal()[token] == text
 
 
 @pytest.mark.parametrize(
@@ -2072,7 +2072,7 @@ def test_message_protected_update_default_plurals_segment(
     message = request.getfixturevalue(fixture_message)
     message._update_default_plurals_segment(segment, token)
     for token, text in expected:
-        assert message.get_main()[token] == text
+        assert message.get_principal()[token] == text
 
 
 @pytest.mark.parametrize(
@@ -2670,7 +2670,7 @@ def test_message_remove_message(fixture_message, expected, request) -> None:
 )
 def test_message_remove_main(fixture_message, expected, request) -> None:
     message = request.getfixturevalue(fixture_message)
-    message.remove_main()
+    message.remove_principal()
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -2725,7 +2725,7 @@ def test_message_protected_remove_default_segment(
         fixture_message, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
-    message._remove_default_segment()
+    message._remove_principal_segment()
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -2782,7 +2782,7 @@ def test_message_protected_remove_default_plurals_segment(
         fixture_message, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
-    message._remove_default_plurals_segment(token)
+    message._remove_principal_plurals_segment(token)
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -2807,7 +2807,7 @@ def test_message_protected_remove_default_plurals_segment_failed(
 ) -> None:
     message = request.getfixturevalue(fixture_message)
     with pytest.raises(IndexError, match=re.escape(expected)):
-        message._remove_default_plurals_segment(token)
+        message._remove_principal_plurals_segment(token)
 
 
 # 5.2 Testing variant translations
@@ -3123,7 +3123,7 @@ def test_message_remove_metadata_failed(
 def test_message_switch(fixture_message, source, destination, expected, request):
     message = request.getfixturevalue(fixture_message)
     message.switch(source, destination)
-    assert message.get_main() == expected[0]
+    assert message.get_principal() == expected[0]
     assert message.get_variant(1) == expected[1]
     assert message.get_variant(2) == expected[2]
 
@@ -3206,7 +3206,7 @@ def test_message_toggle(fixture_message, orientations, expected, request):
     message = request.getfixturevalue(fixture_message)
     for orientation in orientations:
         message.toggle(orientation)
-    assert message.get_main() == expected[0]
+    assert message.get_principal() == expected[0]
     assert message.get_variant(1) == expected[1]
     assert message.get_variant(2) == expected[2]
 
