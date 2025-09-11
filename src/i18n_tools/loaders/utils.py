@@ -20,7 +20,11 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 from ndict_tools import StrictNestedDictionary
-from i18n_tools.__static__ import I18N_TRANSLATION_FORMAT, TranslationFileFormat
+from i18n_tools.__static__ import (
+    I18N_TRANSLATION_FORMAT,
+    TranslationFileFormat,
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
+)
 
 # Generic empty files
 
@@ -178,7 +182,9 @@ def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
-def _validate_translation_format(fmt: TranslationFileFormat | None) -> TranslationFileFormat:
+def _validate_translation_format(
+    fmt: TranslationFileFormat | None,
+) -> TranslationFileFormat:
     """
     Normalize and validate a translation format.
     - If fmt is None, default to "json" to preserve current behavior.
@@ -190,7 +196,9 @@ def _validate_translation_format(fmt: TranslationFileFormat | None) -> Translati
     return _fmt  # type: ignore[return-value]
 
 
-def _load_by_format(file_path: Union[Path, str], fmt: TranslationFileFormat) -> Dict[str, Any]:
+def _load_by_format(
+    file_path: Union[Path, str], fmt: TranslationFileFormat
+) -> Dict[str, Any]:
     """
     Load a dictionary file according to the given format (json|yaml).
     """
@@ -199,7 +207,9 @@ def _load_by_format(file_path: Union[Path, str], fmt: TranslationFileFormat) -> 
     return _load_yaml(file_path)
 
 
-def _save_by_format(file_path: Union[Path, str], data: Dict[str, Any], fmt: TranslationFileFormat) -> None:
+def _save_by_format(
+    file_path: Union[Path, str], data: Dict[str, Any], fmt: TranslationFileFormat
+) -> None:
     """
     Save a dictionary to a file according to the given format (json|yaml).
     """
@@ -207,6 +217,21 @@ def _save_by_format(file_path: Union[Path, str], data: Dict[str, Any], fmt: Tran
         _save_json(file_path, data)
     else:
         _save_yaml(file_path, data)
+
+
+def _build_dictionary_path(
+    base_path: Union[Path, str], domain: str, fmt: TranslationFileFormat | None
+) -> str:
+    """
+    Build the dictionary file path from a base directory, a domain and a format.
+
+    - If fmt is None, defaults to "json" (current behavior).
+    - Validates fmt against I18N_TRANSLATION_FORMAT.
+    - Returns a string path like: <base_path>/<domain>.<fmt>.<I18N_TOOLS_TRANSLATION_FILE_EXT>
+    """
+    _fmt = _validate_translation_format(fmt)
+    base = str(base_path)
+    return base + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
 
 
 def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:

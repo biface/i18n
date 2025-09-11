@@ -3,7 +3,6 @@ Static and global variables module
 ==================================
 
 """
-from typing_extensions import Unpack
 
 import os
 from pathlib import Path

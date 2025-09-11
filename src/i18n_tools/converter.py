@@ -185,12 +185,6 @@ from typing import Any, Dict, List, Optional, Union
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders import (
-    dump_catalog,
-    dump_dictionary,
-    fetch_catalog,
-    fetch_dictionary,
-)
 from i18n_tools.loaders.utils import _load_json, _load_text, _save_json, _save_text
 from i18n_tools.locale import get_all_languages
 
@@ -1310,6 +1304,9 @@ def seek_translation(
     )
 
     try:
+        # Local import to avoid circular imports at module level
+        from i18n_tools.loaders.handler import fetch_dictionary
+
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():
             translation["msg_id"] = message_id

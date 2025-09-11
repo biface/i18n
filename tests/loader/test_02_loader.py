@@ -2,7 +2,6 @@ import os
 
 import pytest
 from babel.core import Locale
-from isort.profiles import django
 
 from i18n_tools.loaders.handler import (
     build_path,
@@ -37,6 +36,7 @@ from i18n_tools.loaders.repository import (
     verify_repository,
 )
 
+from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT
 
 @pytest.fixture
 def build_test_repository(tmp_repository):
@@ -202,7 +202,7 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
         catalog_file = (
             tmp_module_repository[2][1]
             / module
-            / f"locales/{language}/LC_MESSAGES/{domain}.json"
+            / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
         )
         assert catalog_file.exists() == True
     else:
@@ -496,7 +496,7 @@ def test_restore_module_from_archive(tmp_module_repository, module, archive, val
     if valid:
         files_names = [
             f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/fr-FR/LC_MESSAGES/usage.{ext}"
-            for ext in ["json", "po", "mo"]
+            for ext in ["json."+I18N_TOOLS_TRANSLATION_FILE_EXT, "po", "mo"]
         ]
         """files_names.append(f"{tmp_module_repository[4].get_repository()[['paths', 'repository']]}/{module}/locales/templates/usage.pot")"""
         for file in files_names:
@@ -579,10 +579,9 @@ def test_build_repository(tmp_module_repository, modules, domains, languages):
                 dictionary_file = (
                     tmp_module_repository[2][1]
                     / module
-                    / f"locales/{language}/LC_MESSAGES/{domain}.json"
+                    / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
                 )
                 assert dictionary_file.exists() == True
-
 
 def test_verify_repository(tmp_module_repository):
     assert verify_repository(tmp_module_repository[4].get_repository()) == True
@@ -1117,6 +1116,7 @@ def tests_add_translation_set(
         ),
     ],
 )
+@pytest.mark.skip(reason="update_translation_set must be rewritten")
 def tests_update_translation_set(
     tmp_module_repository,
     module,

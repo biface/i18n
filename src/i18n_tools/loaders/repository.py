@@ -22,6 +22,7 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
 )
 from i18n_tools.locale import get_all_languages, normalize_language_tag
 
@@ -46,9 +47,11 @@ from .utils import (
     _is_absolute_path,
     _non_traversal_path,
     _save_json,
+    _build_dictionary_path,
 )
 
 
+# FIXME Must introduce format and i18t extension
 def _translation_lang_files(
     repository: StrictNestedDictionary, module: str, domain: str, lang: str
 ) -> Tuple[str, str, str]:
@@ -352,6 +355,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
                     pass
 
 
+# FIXME Must introduce format and i18t extension
 def verify_repository(repository: StrictNestedDictionary) -> bool:
     """
     Verifies that the translation repository is properly constructed.
@@ -418,8 +422,10 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
                     if not _exist_path(catalog_path):
                         return False
 
-                    # Check dictionary file
-                    dictionary_path = build_path(language_directory, f"{domain}.json")
+                    # Check dictionary file (default json for backward compatibility)
+                    dictionary_path = _build_dictionary_path(
+                        language_directory, domain, None
+                    )
                     if not _exist_path(dictionary_path):
                         return False
 
@@ -543,7 +549,7 @@ def update_translation_set(
         json_file_path, po_file_path, pot_file_path = _translation_lang_files(
             repository, module, domain, lang
         )
-
+        print("File :", json_file_path)
         # Load existing translations
         existing_translations = (
             fetch_dictionary(repository, module, lang, domain)
