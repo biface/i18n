@@ -610,5 +610,6 @@ def test_update_domain_and_format_success(fr_fr_book):
     assert fr_fr_book.format == "yaml"
     assert fr_fr_book.filename == "animals.yaml.i18n"
 
+
 def test_save(fr_fr_book):
     fr_fr_book.save("tmp")

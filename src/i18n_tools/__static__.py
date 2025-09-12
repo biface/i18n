@@ -8,7 +8,6 @@ import os
 from pathlib import Path
 from typing import Literal
 
-
 I18N_TRANSLATION_FORMAT = {"json", "yaml"}
 """
 This format defines the set of standard storage files for translations

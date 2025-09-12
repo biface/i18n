@@ -6,6 +6,8 @@ Key Responsibilities:
     - Ensure efficient and accurate file operations.
 """
 
+from __future__ import annotations
+
 import gzip
 import json
 import os
@@ -20,10 +22,11 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 from ndict_tools import StrictNestedDictionary
+
 from i18n_tools.__static__ import (
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
     I18N_TRANSLATION_FORMAT,
     TranslationFileFormat,
-    I18N_TOOLS_TRANSLATION_FILE_EXT,
 )
 
 # Generic empty files

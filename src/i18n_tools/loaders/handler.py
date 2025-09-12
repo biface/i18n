@@ -9,7 +9,7 @@ Key Responsibilities:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -18,8 +18,6 @@ from ndict_tools import StrictNestedDictionary
 
 # import i18n_tools
 from i18n_tools import __version__ as i18n_tools_version
-
-
 from i18n_tools.__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
@@ -27,30 +25,30 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TEMPLATE,
 )
 
+# Local import to avoid circular imports when loading i18n_tools.loaders
+from i18n_tools.models.repository import Repository
+
 from .utils import (
+    _build_dictionary_path,
     _build_path,
     _check_domains,
     _convert_catalog,
     _create_directory,
     _create_empty_json,
     _exist_path,
+    _load_by_format,
     _load_config_file,
     _load_json,
-    _load_yaml,
     _load_text,
+    _load_yaml,
     _remove_file,
+    _save_by_format,
     _save_config_file,
     _save_json,
-    _save_yaml,
     _save_text,
+    _save_yaml,
     _validate_translation_format,
-    _load_by_format,
-    _save_by_format,
-    _build_dictionary_path,
 )
-
-# Local import to avoid circular imports when loading i18n_tools.loaders
-from i18n_tools.models.repository import Repository
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:

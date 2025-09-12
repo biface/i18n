@@ -6,13 +6,13 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
+from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
     message_to_i18n_tools_format,
 )
-from i18n_tools.locale import normalize_language_tag
-from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
 from i18n_tools.loaders.utils import _validate_translation_format
+from i18n_tools.locale import normalize_language_tag
 
 
 def _check_index_dict(dictionary: Dict[int, str]) -> bool:
@@ -409,6 +409,7 @@ class Message:
         msg = [self.principal]
         msg.extend(self.variants)
         return msg
+
     @message.setter
     def message(self, value: List[List[str]]) -> None:
         """
@@ -1129,7 +1130,7 @@ class Message:
         :return:
         """
         variants = []
-        for index in range(1, len(self.options)+1):
+        for index in range(1, len(self.options) + 1):
             variants.append(self.get_variant(index))
         return variants
 
@@ -1141,7 +1142,7 @@ class Message:
         :return:
         """
         for index, variant in enumerate(variants):
-            self.update_variant(index+1, variant)
+            self.update_variant(index + 1, variant)
 
     # Managing metadata
 

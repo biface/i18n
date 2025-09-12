@@ -225,7 +225,9 @@ def fr_fr_messages():
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
-                "user_comments": ["Message sur les automates basés sur les grammaires de Chomsky"],
+                "user_comments": [
+                    "Message sur les automates basés sur les grammaires de Chomsky"
+                ],
                 "count": {"singular": 3, "plurals": [2, 2, 3]},
             },
         ),
@@ -367,7 +369,9 @@ def fr_fr_messages():
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
-                "user_comments": ["Message sur les automates basés sur les grammaires de Chomsky"],
+                "user_comments": [
+                    "Message sur les automates basés sur les grammaires de Chomsky"
+                ],
                 "count": {"singular": 3, "plurals": [2, 2, 3]},
             },
         ),
@@ -1302,7 +1306,9 @@ def it_it_messages():
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
-                "user_comments": ["Messaggio sugli automi basati sulle grammatiche di Chomsky"],
+                "user_comments": [
+                    "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+                ],
                 "count": {"singular": 3, "plurals": [2, 2, 3]},
             },
         ),
@@ -1444,7 +1450,9 @@ def it_it_messages():
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
-                "user_comments": ["Messaggio sugli automi basati sulle grammatiche di Chomsky"],
+                "user_comments": [
+                    "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+                ],
                 "count": {"singular": 3, "plurals": [2, 2, 3]},
             },
         ),

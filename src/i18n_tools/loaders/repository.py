@@ -40,6 +40,7 @@ from .handler import (
     update_dictionary,
 )
 from .utils import (
+    _build_dictionary_path,
     _check_domains,
     _check_module,
     _create_gzip,
@@ -47,7 +48,6 @@ from .utils import (
     _is_absolute_path,
     _non_traversal_path,
     _save_json,
-    _build_dictionary_path,
 )
 
 
