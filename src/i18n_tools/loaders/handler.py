@@ -7,9 +7,10 @@ Key Responsibilities:
     - Retrieve data from translation files.
 
 """
+from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Tuple
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -17,12 +18,12 @@ from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
 # import i18n_tools
-from i18n_tools import __version__ as i18n_tools_version
+from i18n_tools import __version__ as i18n_tools_version, I18N_TOOLS_LOCALE
 from i18n_tools.__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
-    I18N_TOOLS_TEMPLATE,
+    I18N_TOOLS_TEMPLATE, TranslationFileFormat, I18N_TOOLS_TRANSLATION_FILE_EXT,
 )
 
 # Local import to avoid circular imports when loading i18n_tools.loaders
@@ -47,8 +48,9 @@ from .utils import (
     _save_json,
     _save_text,
     _save_yaml,
-    _validate_translation_format,
+    _validate_translation_format, _is_absolute_path,
 )
+from ..locale import normalize_language_tag, get_all_languages
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:
@@ -797,3 +799,137 @@ def save_config(file_path: str, data: dict) -> None:
     """
 
     _save_config_file(file_path, data)
+
+
+def build_translation_lang_files(
+    repository: StrictNestedDictionary,
+        module: str,
+        domain: str,
+        lang: str,
+        fmt: TranslationFileFormat | None = None,
+) -> Tuple[str, str, str]:
+    """
+    Build from repository TLD, path for translation files
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: StrictNestedDictionary
+    :param module: Module name
+    :type module: str
+    :param domain: Domain name
+    :type domain: str
+    :param lang: language code
+    :type lang: str
+    :param fmt: Translation file format
+    :type fmt: TranslationFileFormat | None
+    :return: a tuple of a file path
+    """
+    _fmt = _validate_translation_format(fmt)
+    repository_path = repository[["paths", "repository"]]
+    normalized_lang = normalize_language_tag(lang)
+    lang_path = build_path(
+        repository_path, module, I18N_TOOLS_LOCALE, normalized_lang, I18N_TOOLS_MESSAGES
+    )
+    json_file_path = lang_path + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+    po_file_path = lang_path + f"/{domain}.po"
+    pot_file = (
+        build_path(repository_path, module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE)
+        + f"/{domain}.pot"
+    )
+
+    return json_file_path, po_file_path, pot_file
+
+
+def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
+    """
+    Verify that the repository paths and modules exist.
+
+    This function checks if the base path is absolute and if all specified modules
+    and their corresponding paths exist in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :raises ValueError: If the base path is not an absolute path.
+    :raises FileNotFoundError: If any module path does not exist.
+    """
+
+    repository_path = repository[["paths", "repository"]]
+
+    if not _is_absolute_path(repository_path):
+        raise ValueError(
+            f"The repository_path must be an absolute path: {repository[['paths', 'repository']]}"
+        )
+
+    for module in repository[["paths", "modules"]]:
+        module_path = repository_path + "/" + module + "/" + "locales"
+        if not file_exists(module_path):
+            raise FileNotFoundError(f"The module path does not exist: {module_path}")
+
+
+def _verify_available_languages(
+    repository: StrictNestedDictionary, languages: list[str]
+) -> None:
+    """
+    Verify that languages in translation sets are registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param languages: languages in translation set.
+    :type languages: list[str].
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any language does not exist in allowed languages.
+    """
+    for language in languages:
+        if language not in get_all_languages(repository[["languages", "hierarchy"]]):
+            raise ValueError(
+                f"The language {language} is not registered in the repository"
+            )
+
+
+def _verify_target_module(
+    repository: StrictNestedDictionary, target_module: str
+) -> None:
+    """
+    Verify that a target module is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any module is not registered in the repository.
+    """
+    if target_module not in repository[["paths", "modules"]]:
+        raise ValueError(
+            f"The target module {target_module} is not registered in the repository"
+        )
+
+
+def _verify_target_domain(
+    repository: StrictNestedDictionary, target_module: str, target_domain: str
+) -> None:
+    """
+    Verify that a target domain is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :param target_domain: domain of translation.
+    :type target_domain: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any domain is not registered in the repository.
+    """
+    try:
+        _verify_target_module(repository, target_module)
+        if target_domain not in repository[["domains", target_module]]:
+            raise IndexError(
+                f"The target domain '{target_domain}' is not registered in the repository"
+            )
+    except IndexError as e:
+        raise e
+    except Exception as e:
+        raise ValueError(
+            f"The target module '{target_module}' is not registered in the repository"
+        )

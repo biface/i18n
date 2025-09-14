@@ -26,8 +26,8 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools.__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
     I18N_TRANSLATION_FORMAT,
-    TranslationFileFormat,
-)
+    TranslationFileFormat, )
+
 
 # Generic empty files
 
@@ -611,3 +611,5 @@ def _check_domains(
         raise e
 
     return True
+
+

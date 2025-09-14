@@ -18,15 +18,11 @@ from i18n_tools.loaders.handler import (
     remove_dictionary,
     remove_template,
     update_catalog,
-    update_dictionary,
+    update_dictionary, build_translation_lang_files, _verify_paths_and_modules, _verify_available_languages,
+    _verify_target_module, _verify_target_domain,
 )
 from i18n_tools.loaders.repository import (
-    _translation_lang_files,
     _update_json_translations,
-    _verify_available_languages,
-    _verify_paths_and_modules,
-    _verify_target_domain,
-    _verify_target_module,
     add_translation_set,
     aggregate_dictionaries,
     build_repository,
@@ -34,8 +30,7 @@ from i18n_tools.loaders.repository import (
     remove_translation_set,
     restore_module_from_archive,
     update_translation_set,
-    verify_repository,
-)
+    verify_repository, )
 
 
 @pytest.fixture
@@ -632,7 +627,7 @@ def test_translation_lang_file(
 ):
     repository = tmp_module_repository[4].get_repository()
     if valid:
-        file_json, file_po, file_pot = _translation_lang_files(
+        file_json, file_po, file_pot = build_translation_lang_files(
             repository, module, domain, lang
         )
         assert (
@@ -644,7 +639,7 @@ def test_translation_lang_file(
             + lang
             + "/LC_MESSAGES/"
             + domain
-            + ".json"
+            + ".json.i18t"
         )
         assert (
             file_po
@@ -659,7 +654,7 @@ def test_translation_lang_file(
         )
     else:
         with pytest.raises(exception):
-            _translation_lang_files(repository, module, domain, lang)
+            build_translation_lang_files(repository, module, domain, lang)
 
 
 @pytest.mark.parametrize(
@@ -1117,7 +1112,6 @@ def tests_add_translation_set(
         ),
     ],
 )
-@pytest.mark.skip(reason="update_translation_set must be rewritten")
 def tests_update_translation_set(
     tmp_module_repository,
     module,
