@@ -20,7 +20,7 @@ I18N_TOOLS_EXT_SET = ("i18t", "itl")
 """
 This variable stores dedicated translation file extensions for i18n-tools
 """
-I18N_TOOLS_TRANSLATION_FILE_EXT = "i18n"
+I18N_TOOLS_TRANSLATION_FILE_EXT = "i18t"
 """
 This variable is used to store the default 4 letters translation file extension. Since the file format could be
 either JSON or YAML, translation file will be _domain.[json|yaml].i18n_

@@ -20,12 +20,17 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_BACKUP,
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_MESSAGES,
-    I18N_TOOLS_TEMPLATE
+    I18N_TOOLS_TEMPLATE,
 )
 from i18n_tools.locale import get_all_languages
 
+from .. import I18N_TOOLS_LOCALE
 from .handler import (
+    _verify_available_languages,
+    _verify_paths_and_modules,
+    _verify_target_domain,
     build_path,
+    build_translation_lang_files,
     create_catalog,
     create_dictionary,
     create_directory,
@@ -33,8 +38,7 @@ from .handler import (
     dump_dictionary,
     fetch_dictionary,
     file_exists,
-    update_dictionary, build_translation_lang_files, _verify_paths_and_modules, _verify_available_languages,
-    _verify_target_domain,
+    update_dictionary,
 )
 from .utils import (
     _build_dictionary_path,
@@ -43,9 +47,8 @@ from .utils import (
     _create_gzip,
     _exist_path,
     _non_traversal_path,
-    _save_json, )
-from .. import I18N_TOOLS_LOCALE
-
+    _save_json,
+)
 
 # FIXME Must introduce format and i18t extension
 
@@ -488,5 +491,3 @@ def remove_translation_set(
         print(f"Existing translations: {existing_translations}")
         dump_dictionary(repository, module, lang, domain, existing_translations)
         # update_catalog(repository, module, lang, domain, existing_translations)
-
-

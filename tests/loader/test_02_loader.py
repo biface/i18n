@@ -5,7 +5,12 @@ from babel.core import Locale
 
 from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT
 from i18n_tools.loaders.handler import (
+    _verify_available_languages,
+    _verify_paths_and_modules,
+    _verify_target_domain,
+    _verify_target_module,
     build_path,
+    build_translation_lang_files,
     create_catalog,
     create_dictionary,
     create_directory,
@@ -18,8 +23,7 @@ from i18n_tools.loaders.handler import (
     remove_dictionary,
     remove_template,
     update_catalog,
-    update_dictionary, build_translation_lang_files, _verify_paths_and_modules, _verify_available_languages,
-    _verify_target_module, _verify_target_domain,
+    update_dictionary,
 )
 from i18n_tools.loaders.repository import (
     _update_json_translations,
@@ -30,7 +34,8 @@ from i18n_tools.loaders.repository import (
     remove_translation_set,
     restore_module_from_archive,
     update_translation_set,
-    verify_repository, )
+    verify_repository,
+)
 
 
 @pytest.fixture

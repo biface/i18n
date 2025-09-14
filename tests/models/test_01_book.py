@@ -605,10 +605,10 @@ def test_update_domain_and_format_success(fr_fr_book):
     fr_fr_book.update_domain("animals")
     assert fr_fr_book.domain == "animals"
     assert fr_fr_book.format == "json"
-    assert fr_fr_book.filename == "animals.json.i18n"
+    assert fr_fr_book.filename == "animals.json.i18t"
     fr_fr_book.update_format("yaml")
     assert fr_fr_book.format == "yaml"
-    assert fr_fr_book.filename == "animals.yaml.i18n"
+    assert fr_fr_book.filename == "animals.yaml.i18t"
 
 
 def test_save(fr_fr_book):

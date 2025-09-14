@@ -7,10 +7,11 @@ Key Responsibilities:
     - Retrieve data from translation files.
 
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -18,17 +19,21 @@ from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
 # import i18n_tools
-from i18n_tools import __version__ as i18n_tools_version, I18N_TOOLS_LOCALE
+from i18n_tools import I18N_TOOLS_LOCALE
+from i18n_tools import __version__ as i18n_tools_version
 from i18n_tools.__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
-    I18N_TOOLS_TEMPLATE, TranslationFileFormat, I18N_TOOLS_TRANSLATION_FILE_EXT,
+    I18N_TOOLS_TEMPLATE,
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
+    TranslationFileFormat,
 )
 
 # Local import to avoid circular imports when loading i18n_tools.loaders
 from i18n_tools.models.repository import Repository
 
+from ..locale import get_all_languages, normalize_language_tag
 from .utils import (
     _build_dictionary_path,
     _build_path,
@@ -37,6 +42,7 @@ from .utils import (
     _create_directory,
     _create_empty_json,
     _exist_path,
+    _is_absolute_path,
     _load_by_format,
     _load_config_file,
     _load_json,
@@ -48,9 +54,8 @@ from .utils import (
     _save_json,
     _save_text,
     _save_yaml,
-    _validate_translation_format, _is_absolute_path,
+    _validate_translation_format,
 )
-from ..locale import normalize_language_tag, get_all_languages
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:
@@ -803,10 +808,10 @@ def save_config(file_path: str, data: dict) -> None:
 
 def build_translation_lang_files(
     repository: StrictNestedDictionary,
-        module: str,
-        domain: str,
-        lang: str,
-        fmt: TranslationFileFormat | None = None,
+    module: str,
+    domain: str,
+    lang: str,
+    fmt: TranslationFileFormat | None = None,
 ) -> Tuple[str, str, str]:
     """
     Build from repository TLD, path for translation files

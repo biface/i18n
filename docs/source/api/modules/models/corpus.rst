@@ -5,6 +5,9 @@ Corpus module
 
    .. autoclass:: Message
 
+      .. autoproperty:: message
+      .. autoproperty:: principal
+      .. autoproperty:: variants
       .. autoproperty:: has_variants
       .. autoproperty:: has_plurals
       .. autoproperty:: translations_set
@@ -12,11 +15,11 @@ Corpus module
       .. automethod:: add_message
       .. automethod:: update_message
       .. automethod:: remove_message
-      .. automethod:: get_main
-      .. automethod:: get_main_plurals
-      .. automethod:: add_main
-      .. automethod:: update_main
-      .. automethod:: remove_main
+      .. automethod:: get_principal
+      .. automethod:: get_principal_plurals
+      .. automethod:: add_principal
+      .. automethod:: update_principal
+      .. automethod:: remove_principal
       .. automethod:: get_variant
       .. automethod:: get_variant_plurals
       .. automethod:: add_variant

@@ -2736,7 +2736,7 @@ def test_message_protected_remove_default_segment(
     fixture_message, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
-    message._remove_principal_segment()
+    message._remove_default_segment()
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -2795,7 +2795,7 @@ def test_message_protected_remove_default_plurals_segment(
     fixture_message, token, expected, request
 ) -> None:
     message = request.getfixturevalue(fixture_message)
-    message._remove_principal_plurals_segment(token)
+    message._remove_default_plurals_segment(token)
     for attribute, value in expected:
         assert message.__getattribute__(attribute) == value
 
@@ -2820,7 +2820,7 @@ def test_message_protected_remove_default_plurals_segment_failed(
 ) -> None:
     message = request.getfixturevalue(fixture_message)
     with pytest.raises(IndexError, match=re.escape(expected)):
-        message._remove_principal_plurals_segment(token)
+        message._remove_default_plurals_segment(token)
 
 
 # 5.2 Testing variant translations

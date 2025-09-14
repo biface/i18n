@@ -87,6 +87,7 @@ class Message:
 
 
     Attributes:
+
         id (str): A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.
         default (str): The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.
         options (Dict[int, str]): A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.
@@ -404,7 +405,9 @@ class Message:
     def message(self) -> List[List[str]]:
         """
         The list of translations in Message instance.
-        :return:
+
+        :return: The list of translations in Message instance.
+        :rtype: List[List[str]]
         """
         msg = [self.principal]
         msg.extend(self.variants)
@@ -414,8 +417,10 @@ class Message:
     def message(self, value: List[List[str]]) -> None:
         """
         Set the translations in Message instance.
-        :param value:
-        :return:
+
+        :param value: the list of translations in Message instance.
+        :return: nothing (void function)
+        :rtype: None
         """
         self.principal = value[0]
         self.variants = value[1:]
@@ -540,7 +545,7 @@ class Message:
         self.metadata[["count", "singular"]] = self.__count_singular__()
         self.metadata[["count", "plurals"]] = self.__count_plurals__()
 
-    def _remove_principal_segment(self):
+    def _remove_default_segment(self):
         """
         Protected function to empties self.default.
 
@@ -550,7 +555,7 @@ class Message:
         self.default = ""
         self.metadata[["count", "singular"]] = self.__count_singular__()
 
-    def _remove_principal_plurals_segment(self, index: int) -> None:
+    def _remove_default_plurals_segment(self, index: int) -> None:
         """
         Protected function to empties self.default_plurals.
         :param index: the location index (token) of the plural to be removed
@@ -576,8 +581,10 @@ class Message:
     @property
     def principal(self) -> list[str]:
         """
-        The principal of the translation.
-        :return:
+        The components of the main or default translation (principal) as a list of sentences.
+
+        :return: a list of sentences
+        :rtype: list[str]
         """
         return self.get_principal()
 
@@ -585,8 +592,11 @@ class Message:
     def principal(self, value: list[str]) -> None:
         """
         Adds the principal of the translation.
-        :param value:
-        :return:
+
+        :param value: a list of sentences constitutive of the default translation
+        :type value: list[str]
+        :return: nothing (void function)
+        :rtype: None
         """
         self.add_principal(value)
 
@@ -1710,14 +1720,17 @@ class Book:
     domain and a single language, using the i18n_tools format.
 
     Iteration
+
     - The class is iterable: iterating over a Book yields its Message instances
       in the natural dictionary order of self.messages (insertion order).
 
     Invariants
+
     - All messages in a Book share the same normalized language (BCP 47-like tag)
       and the same domain.
 
     Core attributes (moved out of metadata)
+
     - language (str): Normalized language tag of this book (e.g. "fr-FR").
     - domain (str): Functional or logical domain grouping the messages.
     - format (str): Serialization/storage format hint (e.g. "json").
@@ -1727,6 +1740,7 @@ class Book:
       header_comment, statistics, and backward compatible counters.
 
     Notes
+
     - The keys "language", "domain" and "format" are NOT present in metadata
       anymore; they are stored as instance attributes.
     - Statistics are available under metadata["statistics"], with

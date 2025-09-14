@@ -1,16 +1,42 @@
 """
-The **Repository** module represents the translation repository as a nested dictionary, inheriting from
-`StrictNestedDictionary` (documented `here <https://ndict-tools.readthedocs.io/en/latest/api.html#ndict_tools.core.StrictNestedDictionary>`_).
+Repository module
+=================
 
-It describes the structure and organization of translation files.
+This module defines the Repository class, the in-memory representation of an
+i18n repository used by i18n_tools. A repository is modeled as a nested
+mapping built on top of ndict_tools.core.StrictNestedDictionary in order to
+preserve structure, validate paths, and provide convenient access helpers.
 
+It describes the structure and the organization of translation files and their
+metadata (details, paths, languages, domains, translators, authors, etc.).
+
+References
+----------
+- StrictNestedDictionary: https://ndict-tools.readthedocs.io/en/latest/api.html#ndict_tools.core.StrictNestedDictionary
+
+Quick example
+-------------
+
+>>> from i18n_tools.models.repository import Repository
+>>> repo = Repository()
+>>> repo.name = "My Project"
+>>> repo.add_module("src/app")
+>>> repo.add_domain("src/app", "messages")
+>>> repo.hierarchy  # doctest: +ELLIPSIS
+StrictNestedDictionary({...})
+
+The Repository instance can then be serialized via ndict_tools helpers or used
+by other components (loaders, handlers, CLI) to manage i18n content.
 """
 
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 from ndict_tools import StrictNestedDictionary
+
+from ..api import validate_api_url
 
 # Shared default setup to avoid repetition
 _DEFAULT_SETUP = {"indent": 2}
@@ -18,9 +44,35 @@ _DEFAULT_SETUP = {"indent": 2}
 
 class Repository(StrictNestedDictionary):
     """
-    A class for handling i18n_tools repository structure.
+    Repository
+    ----------
+    High-level, structured container describing an i18n repository.
 
-    This class provides functionality to build and organize an i18n_tools repository.
+    The repository is split into several top-level sections:
+    - details: General metadata (name, version, dates, language, flags, etc.).
+    - paths: File-system related paths and the list of application modules.
+    - domains: Mapping of module -> list of gettext-like domains.
+    - languages: Source language, fallback, and variants hierarchy.
+    - translators: Registered online translators and their technical/pricing data.
+    - authors: Contributors metadata.
+
+    Instances behave like a StrictNestedDictionary while providing friendly
+    Python properties and helper methods to keep the underlying structure
+    consistent.
+
+    Examples
+    --------
+    >>> repo = Repository()
+    >>> repo.name = "i18n-tools sample"
+    >>> repo.add_module("src/web")
+    >>> repo.add_domain("src/web", "messages")
+    >>> repo.languages["source"]
+    ''
+
+    Notes
+    -----
+    All sections are created with a default ndict_tools setup (indent=2) to
+    keep JSON/YAML rendering consistent across the project.
     """
 
     def __init__(self, *args, **kwargs):
@@ -86,7 +138,7 @@ class Repository(StrictNestedDictionary):
 
     def _apply_args(self, args) -> None:
         for path, value in args:
-            if not ((isinstance(path, list) and path in self.dict_paths())) and not (
+            if not (isinstance(path, list) and path in self.dict_paths()) and not (
                 isinstance(path, str) and self.is_key(path)
             ):
                 raise KeyError(f"{path} is not a valid path or key")
@@ -156,15 +208,15 @@ class Repository(StrictNestedDictionary):
         Returns the value located at path ["details", "date", "created"].
         Also kept mirrored to ["details", "creation_date"] for APIs expecting a flat key.
         """
-        return self[["details", "date", "created"]]
+        return str(self[["details", "date", "created"]])
 
     @property
-    def updated_date(self) -> datetime:
+    def updated_date(self) -> str:
         """Property for the updated date stored at details.date.updated.
 
         Returns the value located at path ["details", "date", "updated"].
         """
-        return self[["details", "date", "updated"]]
+        return str(self[["details", "date", "updated"]])
 
     @updated_date.setter
     def updated_date(self, value: str) -> None:
@@ -235,15 +287,18 @@ class Repository(StrictNestedDictionary):
         """
         if module in self[["paths", "modules"]]:
             self[["paths", "modules"]].remove(module)
+            if module in self["domains"]:
+                del self[["domains", module]]
         else:
             raise ValueError(f"Module {module} does not exist")
 
     def clean_modules(self) -> None:
         """
-        Removes all modules from the list of  modules.
+        Removes all modules from the list of modules, and thus reset domains.
         :return:
         """
-        self.modules.clear()
+        self[["paths", "modules"]] = []
+        self["domains"] = self._new_section({})
 
     @property
     def domains(self) -> dict[str, list[str]]:
@@ -285,13 +340,13 @@ class Repository(StrictNestedDictionary):
             elif domain not in self[["domains", module]]:
                 self[["domains", module]].append(domain)
             else:
-                raise ValueError(f"Domain {domain} already exists in module {module} ")
+                raise ValueError(f"Domain {domain} already exists in module {module}")
         else:
             raise ValueError(f"Module {module} does not exist")
 
     def remove_domain(self, module: str, domain: str) -> None:
         """
-        Removes a specific domain from the list of domains attached to one module of the rrepository.
+        Removes a specific domain from the list of domains attached to one module of the repository.
         :param module:
         :param domain:
         :return:
@@ -301,7 +356,7 @@ class Repository(StrictNestedDictionary):
             if domain in self.domains[module]:
                 self[["domains", module]].remove(domain)
             else:
-                raise ValueError(f"Domain {domain} does not exist in module {module} ")
+                raise ValueError(f"Domain {domain} does not exist in module {module}")
         else:
             raise ValueError(f"Module {module} does not exist")
 
@@ -381,7 +436,7 @@ class Repository(StrictNestedDictionary):
     def hierarchy(self, value: dict) -> None:
         if not isinstance(value, dict):
             raise TypeError(f"hierarchy must be a dictionary, not {type(value)}")
-        self[["languages", "hierarchy"]] = value
+        self[["languages", "hierarchy"]] = self._new_section(value)
 
     def add_hierarchy(self, base: str, variants) -> None:
         # Accept a single variant or a list of variants
@@ -491,3 +546,323 @@ class Repository(StrictNestedDictionary):
     def clean_authors(self) -> None:
         """Remove all authors."""
         self["authors"] = self._new_section({})
+
+    # --- translators helpers ---
+    def add_translator(
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: str | None = None,
+        cost_per_translation: float | None = None,
+        request_limit: int | None = None,
+        key_expiration: str | None = None,
+        priority: int | None = None,
+        success_rate: float | None = None,
+        max_text_size: int | None = None,
+        payment_plan: str | None = None,
+    ) -> None:
+        """
+        Add a new translator entry under the top-level "translators" mapping.
+
+        This mirrors Config.add_translator for consistency across the codebase
+        and initializes all nested keys so the structure is predictable.
+
+        :param name: Translator unique name (used as key in the mapping).
+        :type name: str
+        :param url: Public API base URL of the translator service.
+        :type url: str
+        :param status: Translator status, typically "free" or "license".
+        :type status: str
+        :param api_key: API key or token to authenticate calls (can be empty).
+        :type api_key: str
+        :param supported_languages: List of supported language codes.
+        :type supported_languages: list[str]
+        :param translation_type: Content specialization, e.g. "general", "technical".
+        :type translation_type: str | None
+        :param cost_per_translation: Optional unit price.
+        :type cost_per_translation: float | None
+        :param request_limit: Daily/monthly request limit.
+        :type request_limit: int | None
+        :param key_expiration: Expiration date of the API key in "YYYY-MM-DD" format.
+        :type key_expiration: str | None
+        :param priority: Selection priority among translators.
+        :type priority: int | None
+        :param success_rate: Estimated success rate between 0.0 and 1.0.
+        :type success_rate: float | None
+        :param max_text_size: Max accepted text length (characters).
+        :type max_text_size: int | None
+        :param payment_plan: Payment plan label (e.g., "monthly", "annual").
+        :type payment_plan: str | None
+        :raises ValueError: If the URL is invalid/unreachable or the expiration is in the past.
+        :raises KeyError: If a translator with the same name already exists.
+        :return: None
+        :rtype: None
+        """
+        # Validate the URL using shared validator
+        validation_result = validate_api_url(url)
+        if validation_result["error"]:
+            raise ValueError(validation_result["error"])
+
+        # Validate key expiration if provided
+        if key_expiration:
+            expiration_date = datetime.strptime(key_expiration, "%Y-%m-%d")
+            if expiration_date < datetime.now():
+                raise ValueError(
+                    f"The expiration date '{key_expiration}' is in the past."
+                )
+
+        translator_data = {
+            "details": {
+                "name": name,
+                "url": url,
+                "status": status,
+                "translation_type": (
+                    translation_type if translation_type is not None else ""
+                ),
+            },
+            "technical": {
+                "api": {
+                    "key": api_key if api_key else "",
+                    "key_expiration": key_expiration if key_expiration else "",
+                    "request_limit": request_limit if request_limit is not None else 0,
+                    "supported_languages": (
+                        supported_languages if supported_languages else []
+                    ),
+                },
+                "performance": {
+                    "max_text_size": max_text_size if max_text_size is not None else 0,
+                    "priority": priority if priority is not None else 0,
+                    "success_rate": success_rate if success_rate is not None else 0.0,
+                },
+            },
+            "pricing": {
+                "cost_per_translation": (
+                    cost_per_translation if cost_per_translation is not None else 0.0
+                ),
+                "payment_plan": payment_plan if payment_plan else "",
+            },
+        }
+
+        # Ensure translators section exists as a StrictNestedDictionary
+        if not isinstance(self["translators"], StrictNestedDictionary):
+            self["translators"] = self._new_section({})
+
+        # Check duplicates
+        if name in self["translators"]:
+            raise KeyError(f"Translator '{name}' already exists.")
+
+        self[["translators", name]] = StrictNestedDictionary(
+            translator_data, default_setup=_DEFAULT_SETUP
+        )
+
+    def update_translator(self, name: str, updates: dict) -> None:
+        """
+        Update an existing translator's details with structural validation.
+
+        The provided updates must match the existing nested structure (keys and
+        value types). Unknown keys or type mismatches raise a ValueError.
+
+        :param name: Translator name to update.
+        :type name: str
+        :param updates: Partial mapping reflecting the translator structure
+            (e.g. {"technical": {"api": {"request_limit": 1000}}}).
+        :type updates: dict
+        :raises KeyError: If the translator does not exist.
+        :raises ValueError: If updates contain unknown keys or type mismatches.
+        :return: None
+        :rtype: None
+        """
+        translators = self["translators"]
+        if name not in translators:
+            raise KeyError(f"Translator '{name}' does not exist.")
+
+        existing_translator = translators[name]
+
+        def validate_structure(expected: dict, actual: dict, path: str = ""):
+            for key, value in actual.items():
+                full_path = f"{path}.{key}" if path else key
+                if key not in expected:
+                    raise ValueError(f"Invalid key '{full_path}' in updates.")
+                if isinstance(expected[key], dict):
+                    if not isinstance(value, dict):
+                        raise ValueError(
+                            f"Expected a dictionary for '{full_path}', but got '{type(value).__name__}'."
+                        )
+                    validate_structure(expected[key], value, full_path)
+                elif not isinstance(value, type(expected[key])):
+                    raise ValueError(
+                        f"Type mismatch for '{full_path}': expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
+                    )
+
+        validate_structure(existing_translator, updates)
+
+        def apply_updates(target: dict, source: dict):
+            for key, value in source.items():
+                if isinstance(value, dict):
+                    apply_updates(target[key], value)
+                else:
+                    target[key] = value
+
+        apply_updates(existing_translator, updates)
+
+    def remove_translator(self, name: str) -> bool:
+        """
+        Remove a translator by name.
+
+        :param name: Translator unique name.
+        :type name: str
+        :returns: True if the translator was removed, False if it did not exist.
+        :rtype: bool
+        """
+        translators = self["translators"]
+        if name in translators:
+            translators.pop(name)
+            if not translators:
+                self["translators"] = self._new_section({})
+            return True
+        return False
+
+    def clean_translators(self) -> None:
+        """
+        Remove all translators and reset the section to an empty mapping.
+
+        :return: None
+        :rtype: None
+        """
+        self["translators"] = self._new_section({})
+
+    def add_value(self, path: list[str], value: Any) -> None:
+        """
+        Add a value in the repository
+
+        :param path: path (hierarchical key of nested dictionary) of the value to add.
+        :type path: list[str]
+        :param value: value to add.
+        :type value: Any
+        :return: void function
+        :rtype: None
+        :raises KeyError: If the value does not exist.
+        :raises TypeError: If the value is different from the expected type in the repository.
+        :raises ValueError: If the value already exist in the repository or the parameter is empty.
+        """
+
+        if not self.dict_paths().__contains__(path):
+            raise KeyError(f"Path '{path}' does not exist in the repository.")
+
+        if type(value) != type(self[path]):
+            raise TypeError(f"type of {value} must be {type(self[path])}")
+
+        if not self[path] and (value is not None or not value):
+            raise ValueError(
+                f"Value '{value}' is not a valid value or {path} is not empty."
+            )
+
+        self[path] = value
+
+    def update_value(self, path: list[str], value: Any) -> None:
+        """
+        Update an existing value in the repository.
+
+        :param path: hierarchical key (list of str) pointing to the value to update.
+        :type path: list[str]
+        :param value: new value to set.
+        :type value: Any
+        :return: None
+        :rtype: None
+        :raises KeyError: If the path does not exist in the repository.
+        :raises TypeError: If the value type differs from the existing value type.
+        :raises ValueError: If the current value is empty (use add_value instead).
+        """
+        if not self.dict_paths().__contains__(path):
+            raise KeyError(f"Path '{path}' does not exist in the repository.")
+
+        if type(value) != type(self[path]):
+            raise TypeError(f"type of {value} must be {type(self[path])}")
+
+        # For update, ensure there is already a value (non-empty) present
+        if not self[path]:
+            raise ValueError(
+                f"Cannot update empty value at {path}. Use add_value instead."
+            )
+
+        self[path] = value
+
+    def remove_value(self, path: list[str]) -> None:
+        """
+        Remove a value from the repository by resetting it to its empty/default value.
+
+        This does not delete schema keys; it resets them to an empty placeholder
+        according to their type.
+
+        :param path: hierarchical key (list of str) of the value to remove.
+        :type path: list[str]
+        :return: None
+        :rtype: None
+        :raises KeyError: If the path does not exist in the repository.
+        :raises ValueError: If the value is already empty.
+        """
+        if not self.dict_paths().__contains__(path):
+            raise KeyError(f"Path '{path}' does not exist in the repository.")
+
+        current = self[path]
+        # If already empty/falsy, consider it removed
+        if not current:
+            raise ValueError(f"Value at {path} is already empty.")
+
+        # Compute an empty/default value according to current type
+        if isinstance(current, StrictNestedDictionary):
+            empty_val = self._new_section({})
+        elif isinstance(current, dict):
+            empty_val = {}
+        elif isinstance(current, list):
+            empty_val = []
+        elif isinstance(current, str):
+            empty_val = ""
+        elif isinstance(current, bool):
+            empty_val = False
+        elif isinstance(current, int):
+            empty_val = 0
+        elif isinstance(current, float):
+            empty_val = 0.0
+        else:
+            # Fallback to None for unknown types
+            empty_val = None
+
+        self[path] = empty_val
+
+    def clean_value(self, path: list[str]) -> None:
+        """
+        Clean a value in the repository by resetting it to its empty/default value,
+        regardless of its current state.
+
+        :param path: hierarchical key (list of str) of the value to clean.
+        :type path: list[str]
+        :return: None
+        :rtype: None
+        :raises KeyError: If the path does not exist in the repository.
+        """
+        if not self.dict_paths().__contains__(path):
+            raise KeyError(f"Path '{path}' does not exist in the repository.")
+
+        current = self[path]
+        if isinstance(current, StrictNestedDictionary):
+            empty_val = self._new_section({})
+        elif isinstance(current, dict):
+            empty_val = {}
+        elif isinstance(current, list):
+            empty_val = []
+        elif isinstance(current, str):
+            empty_val = ""
+        elif isinstance(current, bool):
+            empty_val = False
+        elif isinstance(current, int):
+            empty_val = 0
+        elif isinstance(current, float):
+            empty_val = 0.0
+        else:
+            empty_val = None
+
+        self[path] = empty_val
