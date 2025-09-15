@@ -1,4 +1,5 @@
 ![Python](https://img.shields.io/badge/Language-python-green.svg)
+![Codecov](https://img.shields.io/codecov/c/github/biface/i18n)
 
 --------------
 # i18n-tools
