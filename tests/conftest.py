@@ -122,6 +122,31 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
     ]
 
 
+@pytest.fixture(scope="class")
+def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
+
+    tmp_path = tmp_path_factory.mktemp("class-factory")
+    destination_package = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "package"
+    )
+    destination_application = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "application"
+    )
+
+    other = tmp_path / conf_tests["repository"]["other"]
+    os.makedirs(other, exist_ok=True)
+
+    return [
+        [str(tmp_path), tmp_path],
+        [str(destination_package), destination_package],
+        [str(destination_application), destination_application],
+        [str(other), other],
+        config_data(
+            str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"),
+            "i18n-tools.yaml",
+        ),
+    ]
+
 @pytest.fixture(scope="module")
 def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
 

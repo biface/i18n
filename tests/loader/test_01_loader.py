@@ -470,17 +470,17 @@ def test_create_directories_with_failures(tmp_module_repository, dir_path, path)
     ],
 )
 def test_load_and_save_config(
-    tmp_module_repository, source, valid_s, destination, valid_d
+        tmp_module_repository, source, valid_s, destination, valid_d
 ):
     source_file = (
-        tmp_module_repository[2][1] / "fsm_tools" / "locales" / "_i18n_tools" / source
+            tmp_module_repository[2][1] / "fsm_tools" / "locales" / "_i18n_tools" / source
     )
     destination_file = (
-        tmp_module_repository[2][1]
-        / "fsm_tools"
-        / "locales"
-        / "_i18n_tools"
-        / destination
+            tmp_module_repository[2][1]
+            / "fsm_tools"
+            / "locales"
+            / "_i18n_tools"
+            / destination
     )
     if valid_s:
         data = _load_config_file(source_file)

@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from i18n_tools.loaders import create_directory, file_exists
+from i18n_tools.loaders.handler import create_directory, file_exists
 
 
 @pytest.fixture
