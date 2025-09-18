@@ -147,6 +147,7 @@ def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
         ),
     ]
 
+
 @pytest.fixture(scope="module")
 def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
 

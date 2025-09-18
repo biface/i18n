@@ -28,12 +28,12 @@ def test_config_init(tmp_module_repository):
         + tmp_module_repository[4].get_repository()[["paths", "settings"]]
     )
     assert (
-            config.application[["paths", "config"]]
-            == tmp_module_repository[4].get_repository()[["paths", "config"]]
+        config.application[["paths", "config"]]
+        == tmp_module_repository[4].get_repository()[["paths", "config"]]
     )
     assert (
-            config.application[["paths", "settings"]]
-            == tmp_module_repository[4].get_repository()[["paths", "settings"]]
+        config.application[["paths", "settings"]]
+        == tmp_module_repository[4].get_repository()[["paths", "settings"]]
     )
     Singleton._instances = true_singleton
 
@@ -62,9 +62,9 @@ def test_load_and_save_config_file(tmp_module_repository, source, destination, v
     tmp_module_repository[4].get_repository()[["paths", "settings"]] = source
     tmp_module_repository[4].load()
     destination_file = (
-            tmp_module_repository[4].get_repository()[["paths", "config"]]
-            + "/"
-            + destination
+        tmp_module_repository[4].get_repository()[["paths", "config"]]
+        + "/"
+        + destination
     )
     tmp_module_repository[4].get_repository()[["paths", "settings"]] = destination
     assert not os.path.exists(destination_file)
@@ -403,7 +403,7 @@ def test_update_config_repository_failed_file(conf_tests, tmp_function_repositor
 )
 def test_add_author(
     conf_tests,
-        tmp_module_repository,
+    tmp_module_repository,
     repository,
     first_name,
     last_name,
@@ -522,7 +522,7 @@ def test_add_author(
 )
 def test_get_author(
     conf_tests,
-        tmp_module_repository,
+    tmp_module_repository,
     repository,
     index,
     valid,
@@ -621,7 +621,7 @@ def test_get_author(
     ],
 )
 def test_remove_author(
-        tmp_module_repository, repository, index, valid, expected_data, exception
+    tmp_module_repository, repository, index, valid, expected_data, exception
 ):
     config = tmp_module_repository[4]
     if repository == "application":
@@ -777,7 +777,7 @@ def test_existing_domains(tmp_module_repository, repository, module, domains):
     ],
 )
 def test_add_domain(
-        tmp_module_repository, repository, module, contains, domain, expected
+    tmp_module_repository, repository, module, contains, domain, expected
 ):
     config = tmp_module_repository[4]
 
@@ -824,7 +824,7 @@ def test_add_domain(
     ],
 )
 def test_add_domain_with_failure(
-        tmp_module_repository, repository, module, domain, error
+    tmp_module_repository, repository, module, domain, error
 ):
     config = tmp_module_repository[4]
 
@@ -1037,7 +1037,7 @@ def test_remove_module(tmp_module_repository, repository, module, expected):
     ],
 )
 def test_add_translator(
-        tmp_module_repository, repository, translator_data, valid, exception, error_message
+    tmp_module_repository, repository, translator_data, valid, exception, error_message
 ):
     config = tmp_module_repository[4]
     if repository == "application":
@@ -1062,7 +1062,7 @@ def test_add_translator(
     ],
 )
 def test_get_translator(
-        tmp_module_repository, repository, translator, status, performance, cost
+    tmp_module_repository, repository, translator, status, performance, cost
 ):
     config = tmp_module_repository[4]
     if repository == "application":
@@ -1133,7 +1133,7 @@ def test_lists_translators(tmp_module_repository):
     ],
 )
 def test_update_translator(
-        tmp_module_repository,
+    tmp_module_repository,
     repository,
     translator,
     data,
@@ -1205,9 +1205,9 @@ def test_config_with_malformed_file(conf_tests, tmp_module_repository):
 def test_config_with_unfitted_file(conf_tests, tmp_module_repository):
     tmp_module_repository[4].switch_to_application_config()
     tmp_module_repository[4].get_repository()[["paths", "config"]] = (
-            tmp_module_repository[0][0]
-            + "/"
-            + conf_tests["repository"]["package"]["config"]
+        tmp_module_repository[0][0]
+        + "/"
+        + conf_tests["repository"]["package"]["config"]
     )
     with pytest.raises(IndexError):
         tmp_module_repository[4].load()
@@ -1386,7 +1386,7 @@ def test_add_details(tmp_module_repository, repository, details, expected):
     ],
 )
 def test_update_details(
-        tmp_module_repository, repository, key, value, valid, exception, error_message
+    tmp_module_repository, repository, key, value, valid, exception, error_message
 ):
     """
     Test updating details in the configuration.

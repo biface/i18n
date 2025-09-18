@@ -136,7 +136,7 @@ def test_create_template(tmp_module_repository, module, domain, valid, exception
     if valid:
         create_template(tmp_module_repository[4].get_repository(), module, domain)
         template_file = (
-                tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
         )
         assert template_file.exists() == True
     else:
@@ -163,15 +163,15 @@ def test_create_catalog(tmp_module_repository, module, language, domain, valid):
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.po"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.po"
         )
         assert catalog_file.exists() == True
         machine_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.mo"
         )
         assert machine_file.exists() == True
     else:
@@ -200,9 +200,9 @@ def test_create_dictionary(tmp_module_repository, module, language, domain, vali
             tmp_module_repository[4].get_repository(), module, language, domain
         )
         catalog_file = (
-                tmp_module_repository[2][1]
-                / module
-                / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+            tmp_module_repository[2][1]
+            / module
+            / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
         )
         assert catalog_file.exists() == True
     else:
@@ -277,7 +277,7 @@ def test_fetch_catalog(tmp_module_repository, module, language, domain, content,
     ],
 )
 def test_fetch_dictionary(
-        tmp_module_repository, module, domain, language, content, valid
+    tmp_module_repository, module, domain, language, content, valid
 ):
     if valid:
         dictionary = fetch_dictionary(
@@ -391,7 +391,7 @@ def test_update_catalog(
     ],
 )
 def test_update_dictionary(
-        tmp_module_repository, module, language, domain, data, valid
+    tmp_module_repository, module, language, domain, data, valid
 ):
     if valid:
         update_dictionary(
@@ -425,12 +425,12 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
             tmp_module_repository[4].get_repository(), module, archive
         )
         archive_file = (
-                tmp_module_repository[4].get_repository()[["paths", "repository"]]
-                + "/"
-                + module
-                + "/locales/_i18n_tools/backup/"
-                + archive
-                + ".tar.gz"
+            tmp_module_repository[4].get_repository()[["paths", "repository"]]
+            + "/"
+            + module
+            + "/locales/_i18n_tools/backup/"
+            + archive
+            + ".tar.gz"
         )
         assert os.path.exists(archive_file)
     else:
@@ -449,7 +449,7 @@ def test_create_module_archive(tmp_module_repository, module, archive, valid):
 def test_remove_template(tmp_module_repository, module, domain):
     remove_template(tmp_module_repository[4].get_repository(), module, domain)
     template_file = (
-            tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
+        tmp_module_repository[2][1] / module / "locales/templates" / f"{domain}.pot"
     )
     assert not template_file.exists()
 
@@ -462,7 +462,7 @@ def test_remove_template(tmp_module_repository, module, domain):
 )
 def test_remove_catalog(tmp_module_repository, module, language, domain):
     catalog_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.po"
     )
     remove_catalog(tmp_module_repository[4].get_repository(), module, language, domain)
     assert not catalog_file.exists()
@@ -476,7 +476,7 @@ def test_remove_catalog(tmp_module_repository, module, language, domain):
 )
 def test_remove_dictionary(tmp_module_repository, module, language, domain):
     dictionary_file = (
-            tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
+        tmp_module_repository[2][1] / module / f"locales/{language}/{domain}.json"
     )
     remove_dictionary(
         tmp_module_repository[4].get_repository(), module, language, domain
@@ -552,34 +552,34 @@ def test_build_repository(tmp_module_repository, modules, domains, languages):
     for module in modules:
         for domain in domains.get(module, []):
             template_file = (
-                    tmp_module_repository[2][1]
-                    / module
-                    / "locales/templates"
-                    / f"{domain}.pot"
+                tmp_module_repository[2][1]
+                / module
+                / "locales/templates"
+                / f"{domain}.pot"
             )
             assert template_file.exists() == True
 
             # Check that catalog files exist for each module, domain, and language
             for language in languages:
                 catalog_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.po"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.po"
                 )
                 assert catalog_file.exists() == True
 
                 machine_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.mo"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.mo"
                 )
                 assert machine_file.exists() == True
 
                 # Check that dictionary files exist for each module, domain, and language
                 dictionary_file = (
-                        tmp_module_repository[2][1]
-                        / module
-                        / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+                    tmp_module_repository[2][1]
+                    / module
+                    / f"locales/{language}/LC_MESSAGES/{domain}.json.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
                 )
                 assert dictionary_file.exists() == True
 
@@ -597,7 +597,7 @@ def test_verify_repository(tmp_module_repository):
     ],
 )
 def test_aggregate_dictionaries(
-        tmp_module_repository, module, domain, valid, exception
+    tmp_module_repository, module, domain, valid, exception
 ):
     config = tmp_module_repository[4]
     if valid:
@@ -628,7 +628,7 @@ def test_aggregate_dictionaries(
     ],
 )
 def test_translation_lang_file(
-        tmp_module_repository, module, domain, lang, valid, exception
+    tmp_module_repository, module, domain, lang, valid, exception
 ):
     repository = tmp_module_repository[4].get_repository()
     if valid:
@@ -671,7 +671,7 @@ def test_translation_lang_file(
     ],
 )
 def test_verify_path_and_modules(
-        tmp_module_repository, repository, modified_path, valid, exception
+    tmp_module_repository, repository, modified_path, valid, exception
 ):
     config = tmp_module_repository[4]
     if repository == "application":
@@ -681,7 +681,7 @@ def test_verify_path_and_modules(
         config.switch_to_package_config()
         config.get_repository()["paths"]["repository"] = tmp_module_repository[1][0]
         config.get_repository()["paths"]["config"] = (
-                tmp_module_repository[1][0] + "/i18n_tools/locales/_i18n_tools"
+            tmp_module_repository[1][0] + "/i18n_tools/locales/_i18n_tools"
         )
         config.get_repository()["paths"]["settings"] = "i18n-tools.yaml"
         config.load()
@@ -762,7 +762,7 @@ def test_verify_target_module(tmp_module_repository, module, valid, exception):
     ],
 )
 def test_verify_target_domain(
-        tmp_module_repository, module, domain, valid, exception, msg_error
+    tmp_module_repository, module, domain, valid, exception, msg_error
 ):
     if valid:
         _verify_target_domain(tmp_module_repository[4].get_repository(), module, domain)
@@ -961,7 +961,7 @@ def test_update_json_translation(
     ],
 )
 def tests_add_translation_set(
-        tmp_module_repository,
+    tmp_module_repository,
     module,
     domain,
     translation_data,
@@ -1118,7 +1118,7 @@ def tests_add_translation_set(
     ],
 )
 def tests_update_translation_set(
-        tmp_module_repository,
+    tmp_module_repository,
     module,
     domain,
     translation_data,
@@ -1172,7 +1172,7 @@ def tests_update_translation_set(
     ],
 )
 def tests_remove_translation_set(
-        tmp_module_repository,
+    tmp_module_repository,
     module,
     domain,
     translation_data,

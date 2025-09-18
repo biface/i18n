@@ -38,8 +38,8 @@ from uuid import UUID
 from ndict_tools import StrictNestedDictionary
 
 from ..api import validate_api_url
+from ..loaders.handler import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import is_valid_language_tag
-from ..loaders.handler import normalize_module_identifier, file_exists, is_absolute_path
 
 # Shared default setup to avoid repetition
 _DEFAULT_SETUP = {"indent": 2}
@@ -143,7 +143,7 @@ class Repository(StrictNestedDictionary):
     def _apply_args(self, args) -> None:
         for path, value in args:
             if not (isinstance(path, list) and path in self.dict_paths()) and not (
-                    isinstance(path, str) and self.is_key(path)
+                isinstance(path, str) and self.is_key(path)
             ):
                 raise KeyError(f"{path} is not a valid path or key")
 
@@ -203,7 +203,7 @@ class Repository(StrictNestedDictionary):
         """
         file_index = value.rfind("/")
         self[["paths", "config"]] = value[:file_index]
-        self[["paths", "settings"]] = value[file_index + 1:]
+        self[["paths", "settings"]] = value[file_index + 1 :]
 
     @property
     def creation_date(self) -> str:
@@ -392,7 +392,7 @@ class Repository(StrictNestedDictionary):
         if not isinstance(path, str):
             raise TypeError(f"Repository must be a string, not {type(path)}")
         try:
-         self.add_repository(path)
+            self.add_repository(path)
         except ValueError:
             self[["paths", "repository"]] = ""
             self.add_repository(path)
@@ -434,7 +434,9 @@ class Repository(StrictNestedDictionary):
         for fallback, variants in value.items():
             self.add_hierarchy(fallback, variants)
 
-    def _normalize_hierarchy_input(self, fallback: str, languages: str | list[str]) -> list[str]:
+    def _normalize_hierarchy_input(
+        self, fallback: str, languages: str | list[str]
+    ) -> list[str]:
         """Validate fallback and languages, normalize to a de-duplicated list.
 
         - Validates the fallback type and IETF compliance.
@@ -445,7 +447,9 @@ class Repository(StrictNestedDictionary):
         if not isinstance(fallback, str):
             raise TypeError(f"Fallback must be a string, not {type(fallback)}")
         if not is_valid_language_tag(fallback):
-            raise ValueError(f"Fallback language must be a compliant IETF Tag, not {fallback}")
+            raise ValueError(
+                f"Fallback language must be a compliant IETF Tag, not {fallback}"
+            )
 
         if isinstance(languages, str):
             langs_list = [languages]
@@ -505,7 +509,9 @@ class Repository(StrictNestedDictionary):
             if language in self[["languages", "hierarchy", fallback]]:
                 self[["languages", "hierarchy", fallback]].remove(language)
             else:
-                raise ValueError(f"Language {language} does not exist for base language {fallback}")
+                raise ValueError(
+                    f"Language {language} does not exist for base language {fallback}"
+                )
 
     def update_hierarchy(self, fallback: str, languages: str | list[str]) -> None:
         """Replace the variants list for a given fallback language.
@@ -611,20 +617,20 @@ class Repository(StrictNestedDictionary):
 
     # --- translators helpers ---
     def add_translator(
-            self,
-            name: str,
-            url: str,
-            status: str,
-            api_key: str,
-            supported_languages: list,
-            translation_type: str | None = None,
-            cost_per_translation: float | None = None,
-            request_limit: int | None = None,
-            key_expiration: str | None = None,
-            priority: int | None = None,
-            success_rate: float | None = None,
-            max_text_size: int | None = None,
-            payment_plan: str | None = None,
+        self,
+        name: str,
+        url: str,
+        status: str,
+        api_key: str,
+        supported_languages: list,
+        translation_type: str | None = None,
+        cost_per_translation: float | None = None,
+        request_limit: int | None = None,
+        key_expiration: str | None = None,
+        priority: int | None = None,
+        success_rate: float | None = None,
+        max_text_size: int | None = None,
+        payment_plan: str | None = None,
     ) -> None:
         """
         Add a new translator entry under the top-level "translators" mapping.
