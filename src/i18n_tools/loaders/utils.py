@@ -13,7 +13,7 @@ import json
 import os
 import shutil
 import tarfile
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, Dict, List, Union
 
 import toml
@@ -23,7 +23,7 @@ from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.__static__ import (
+from ..__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
     I18N_TRANSLATION_FORMAT,
     TranslationFileFormat,
@@ -558,6 +558,46 @@ def _remove_file(file_path: Union[Path, str]) -> None:
         os.remove(file_path)
     else:
         raise FileNotFoundError(f'File "{file_path}" not found.')
+
+
+def _normalize_module_identifier(path: str) -> str:
+    """
+    Normalize a module identifier from a given string path.
+
+    Rules:
+    - If `path` is absolute, strip the drive/root and convert separators to POSIX.
+    - If the last segment is 'locale' or 'locales', drop that segment.
+    - For relative inputs, normalize './' and '../' prefixes and separators.
+    - Trim leading/trailing punctuation and slashes; result must be non-empty.
+
+    This function is private to loaders and used by public wrappers in handler.
+    """
+    if not isinstance(path, str):
+        raise TypeError(f"path must be a string, not {type(path)}")
+
+    p = PurePath(path)
+
+    if p.is_absolute():
+        target = p.parent if p.name in {"locale", "locales"} else p
+        parts = list(target.parts)
+        if parts and target.anchor:
+            parts = parts[1:]
+        module_path = PurePosixPath(*parts).as_posix()
+    else:
+        pp = PurePosixPath(path)
+        if pp.name in {"locale", "locales"}:
+            pp = pp.parent
+        module_path = pp.as_posix().lstrip("/")
+        while module_path.startswith("./"):
+            module_path = module_path[2:]
+        while module_path.startswith("../"):
+            module_path = module_path[3:]
+        module_path = module_path.strip(",./")
+
+    if not module_path:
+        raise ValueError("Module path cannot be empty")
+
+    return module_path
 
 
 # Other module specific and private tools

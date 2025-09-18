@@ -19,9 +19,8 @@ from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
 # import i18n_tools
-from i18n_tools import I18N_TOOLS_LOCALE
 from i18n_tools import __version__ as i18n_tools_version
-from i18n_tools.__static__ import (
+from ..__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
@@ -29,9 +28,6 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
     TranslationFileFormat,
 )
-
-# Local import to avoid circular imports when loading i18n_tools.loaders
-from i18n_tools.models.repository import Repository
 
 from ..locale import get_all_languages, normalize_language_tag
 from .utils import (
@@ -49,6 +45,7 @@ from .utils import (
     _load_text,
     _load_yaml,
     _remove_file,
+    _normalize_module_identifier,
     _save_by_format,
     _save_config_file,
     _save_json,
@@ -56,6 +53,15 @@ from .utils import (
     _save_yaml,
     _validate_translation_format,
 )
+
+
+def normalize_module_identifier(path: str) -> str:
+    """Public API to normalize a module identifier from a filesystem path or identifier.
+
+    Delegates to the private loaders.utils helper so other layers (CLI, config)
+    can prepare a proper module string before interacting with models.
+    """
+    return _normalize_module_identifier(path)
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:
@@ -129,6 +135,9 @@ def file_exists(file_path: str) -> bool:
     :rtype: bool
     """
     return _exist_path(file_path)
+
+def is_absolute_path(path: str) -> bool:
+    return _is_absolute_path(path)
 
 
 def create_directory(path: str) -> None:

@@ -122,7 +122,7 @@ from .__static__ import (
     I18N_TOOLS_LOCALE,
 )
 from .api import validate_api_url
-from .loaders import build_path, file_exists, load_config, save_config
+from .loaders.handler import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 from .models.repository import Repository
 from .patterns import Singleton

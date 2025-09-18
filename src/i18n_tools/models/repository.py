@@ -32,11 +32,14 @@ by other components (loaders, handlers, CLI) to manage i18n content.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, List
+from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
 
 from ..api import validate_api_url
+from ..locale import is_valid_language_tag
+from ..loaders.handler import normalize_module_identifier, file_exists, is_absolute_path
 
 # Shared default setup to avoid repetition
 _DEFAULT_SETUP = {"indent": 2}
@@ -76,6 +79,7 @@ class Repository(StrictNestedDictionary):
     """
 
     def __init__(self, *args, **kwargs):
+        kwargs.pop("default_setup", None)
         super().__init__(default_setup=_DEFAULT_SETUP)
 
         # Initialize sections with a helper to factorize StrictNestedDictionary creation
@@ -139,7 +143,7 @@ class Repository(StrictNestedDictionary):
     def _apply_args(self, args) -> None:
         for path, value in args:
             if not (isinstance(path, list) and path in self.dict_paths()) and not (
-                isinstance(path, str) and self.is_key(path)
+                    isinstance(path, str) and self.is_key(path)
             ):
                 raise KeyError(f"{path} is not a valid path or key")
 
@@ -199,7 +203,7 @@ class Repository(StrictNestedDictionary):
         """
         file_index = value.rfind("/")
         self[["paths", "config"]] = value[:file_index]
-        self[["paths", "settings"]] = value[file_index + 1 :]
+        self[["paths", "settings"]] = value[file_index + 1:]
 
     @property
     def creation_date(self) -> str:
@@ -268,14 +272,25 @@ class Repository(StrictNestedDictionary):
     def add_module(self, module: str) -> None:
         """
         Adds a specific module to the list of  modules.
+        Supports both module identifiers (e.g., "fsm_tools/pda") and absolute
+        file-system paths that may include a trailing 'locale' or 'locales' directory.
+        The provided absolute path does not need to exist.
         :param module:
         :return:
         :raises ValueError: if module already exists
         """
-        if module not in self[["paths", "modules"]]:
-            self[["paths", "modules"]].append(module)
+        if not isinstance(module, str):
+            raise TypeError(f"module must be a string, not {type(module)}")
+
+        module_path = normalize_module_identifier(module)
+
+        if not module_path:
+            raise ValueError("Module path cannot be empty")
+
+        if module_path not in self[["paths", "modules"]]:
+            self[["paths", "modules"]].append(module_path)
         else:
-            raise ValueError(f"Module {module} already exists")
+            raise ValueError(f"Module {module_path} already exists")
 
     def remove_module(self, module: str) -> None:
         """
@@ -367,54 +382,30 @@ class Repository(StrictNestedDictionary):
         """
         self["domains"] = self._new_section({})
 
-    # --- details.flags helpers ---
-    @property
-    def flags(self) -> dict:
-        """
-        Property exposing details.flags dictionary.
-        """
-        return self[["details", "flags"]]
-
-    @flags.setter
-    def flags(self, values: dict) -> None:
-        if not isinstance(values, dict):
-            raise TypeError(f"flags must be a dictionary, not {type(values)}")
-        # Replace flags with provided mapping
-        self[["details", "flags"]] = values
-
-    def add_flag(self, name: str, value) -> None:
-        if name in self[["details", "flags"]]:
-            raise ValueError(f"Flag {name} already exists")
-        self[["details", "flags", name]] = value
-
-    def remove_flag(self, name: str) -> None:
-        if name not in self[["details", "flags"]]:
-            raise ValueError(f"Flag {name} does not exist")
-        del self[["details", "flags"]][name]
-
-    def update_flag(self, name: str, value) -> None:
-        if name not in self[["details", "flags"]]:
-            raise ValueError(f"Flag {name} does not exist")
-        self[["details", "flags", name]] = value
-
-    def clean_flags(self) -> None:
-        self[["details", "flags"]] = self._new_section({})
-
     # --- paths.repository helpers ---
     @property
     def repository(self) -> str:
         return self[["paths", "repository"]]
 
     @repository.setter
-    def repository(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError(f"repository must be a string, not {type(value)}")
-        self[["paths", "repository"]] = value
+    def repository(self, path: str) -> None:
+        if not isinstance(path, str):
+            raise TypeError(f"Repository must be a string, not {type(path)}")
+        try:
+         self.add_repository(path)
+        except ValueError:
+            self[["paths", "repository"]] = ""
+            self.add_repository(path)
+        except TypeError as e:
+            raise e
 
     def add_repository(self, path: str) -> None:
         if self[["paths", "repository"]]:
             raise ValueError("Repository path already set")
-        self[["paths", "repository"]] = path
+        if is_absolute_path(path) and file_exists(path):
+            self[["paths", "repository"]] = path
+        else:
+            raise FileNotFoundError(f"Repository {path} does not exist")
 
     def remove_repository(self) -> None:
         if not self[["paths", "repository"]]:
@@ -433,42 +424,103 @@ class Repository(StrictNestedDictionary):
         return self[["languages", "hierarchy"]]
 
     @hierarchy.setter
-    def hierarchy(self, value: dict) -> None:
+    def hierarchy(self, value: Dict[str, str | List[str]]) -> None:
+
         if not isinstance(value, dict):
             raise TypeError(f"hierarchy must be a dictionary, not {type(value)}")
-        self[["languages", "hierarchy"]] = self._new_section(value)
 
-    def add_hierarchy(self, base: str, variants) -> None:
-        # Accept a single variant or a list of variants
-        if isinstance(variants, str):
-            variants = [variants]
-        elif not isinstance(variants, list):
-            raise TypeError("variants must be a string or a list of strings")
+        # Rebuild the hierarchy by delegating to add_hierarchy for each fallback
+        self[["languages", "hierarchy"]] = self._new_section({})
+        for fallback, variants in value.items():
+            self.add_hierarchy(fallback, variants)
 
-        if base not in self[["languages", "hierarchy"]]:
-            self[["languages", "hierarchy", base]] = []
-        for v in variants:
-            if v not in self[["languages", "hierarchy", base]]:
-                self[["languages", "hierarchy", base]].append(v)
-            else:
-                raise ValueError(f"Variant {v} already exists for base {base}")
+    def _normalize_hierarchy_input(self, fallback: str, languages: str | list[str]) -> list[str]:
+        """Validate fallback and languages, normalize to a de-duplicated list.
 
-    def remove_hierarchy(self, base: str, variant: str | None = None) -> None:
-        if base not in self[["languages", "hierarchy"]]:
-            raise ValueError(f"Base language {base} does not exist in hierarchy")
-        if variant is None:
-            # Remove the entire base entry
-            del self[["languages", "hierarchy"]][base]
+        - Validates the fallback type and IETF compliance.
+        - Accepts a single string or a list of strings for languages.
+        - Validates each language tag and deduplicates while preserving order.
+        - Returns the normalized list of variants.
+        """
+        if not isinstance(fallback, str):
+            raise TypeError(f"Fallback must be a string, not {type(fallback)}")
+        if not is_valid_language_tag(fallback):
+            raise ValueError(f"Fallback language must be a compliant IETF Tag, not {fallback}")
+
+        if isinstance(languages, str):
+            langs_list = [languages]
+        elif isinstance(languages, list):
+            langs_list = languages
         else:
-            if variant in self[["languages", "hierarchy", base]]:
-                self[["languages", "hierarchy", base]].remove(variant)
-            else:
-                raise ValueError(f"Variant {variant} does not exist for base {base}")
+            raise TypeError(
+                f"Languages must be a string or a list of strings, not {type(languages)}"
+            )
 
-    def update_hierarchy(self, base: str, variants: list[str]) -> None:
-        if not isinstance(variants, list):
-            raise TypeError("variants must be a list of strings")
-        self[["languages", "hierarchy", base]] = variants
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for lang in langs_list:
+            if not isinstance(lang, str):
+                raise TypeError(
+                    f"Language hierarchy must be a list of string, not {type(lang)}"
+                )
+            if not is_valid_language_tag(lang):
+                raise ValueError(
+                    f"Language in hierarchy value must be a compliant IETF Tag, not {lang}"
+                )
+            if lang not in seen:
+                seen.add(lang)
+                normalized.append(lang)
+        print(normalized)
+        return normalized
+
+    def add_hierarchy(self, fallback: str, languages: str | list[str]) -> None:
+        """Add language variants to a fallback language in the hierarchy.
+
+        - Accepts `langs` as a single string or a list of strings.
+        - Validates IETF language tags for both `fallback` and variants.
+        - Deduplicates the provided `langs` list while preserving order.
+        - Raises if attempting to add a variant already present for `fallback`.
+        """
+        # Normalize and validate using shared helper
+        normalized = self._normalize_hierarchy_input(fallback, languages)
+
+        # Ensure fallback entry exists
+        if fallback not in self[["languages", "hierarchy"]]:
+            self[["languages", "hierarchy", fallback]] = []
+
+        # Append variants, raising on duplicates already present
+        for v in normalized:
+            if v not in self[["languages", "hierarchy", fallback]]:
+                self[["languages", "hierarchy", fallback]].append(v)
+            else:
+                raise ValueError(f"Language {v} already exists for fallback {fallback}")
+
+    def remove_hierarchy(self, fallback: str, language: str | None = None) -> None:
+        if fallback not in self[["languages", "hierarchy"]]:
+            raise ValueError(f"Base language {fallback} does not exist in hierarchy")
+        if language is None:
+            # Remove the entire base entry
+            del self[["languages", "hierarchy"]][fallback]
+        else:
+            if language in self[["languages", "hierarchy", fallback]]:
+                self[["languages", "hierarchy", fallback]].remove(language)
+            else:
+                raise ValueError(f"Language {language} does not exist for base language {fallback}")
+
+    def update_hierarchy(self, fallback: str, languages: str | list[str]) -> None:
+        """Replace the variants list for a given fallback language.
+
+        This method performs a transactional update:
+        - Validates the fallback and all variants (IETF tags).
+        - Accepts a single string or a list of strings for `languages`.
+        - Deduplicates variants while preserving order.
+        - If validation fails, the repository is left unchanged.
+        """
+        # Validate and normalize without mutating current state
+        normalized = self._normalize_hierarchy_input(fallback, languages)
+
+        # All checks passed: replace the list atomically
+        self[["languages", "hierarchy", fallback]] = normalized
 
     def clean_hierarchy(self) -> None:
         self[["languages", "hierarchy"]] = self._new_section({})
@@ -502,6 +554,16 @@ class Repository(StrictNestedDictionary):
         This method mirrors the structure expected by Config.add_author outputs,
         but here you explicitly provide the identifier and the author mapping.
         """
+        # Validate author_id is a UUID4 string
+        if not isinstance(author_id, str):
+            raise TypeError("author_id must be a string")
+        try:
+            parsed = UUID(author_id)
+        except ValueError:
+            raise ValueError("author_id must be a valid UUID4 string")
+        if parsed.version != 4:
+            raise ValueError("author_id must be a valid UUID4 string")
+
         if not isinstance(author, dict):
             raise TypeError("author must be a dictionary")
         required = {"first_name", "last_name", "email", "url", "languages"}
@@ -549,20 +611,20 @@ class Repository(StrictNestedDictionary):
 
     # --- translators helpers ---
     def add_translator(
-        self,
-        name: str,
-        url: str,
-        status: str,
-        api_key: str,
-        supported_languages: list,
-        translation_type: str | None = None,
-        cost_per_translation: float | None = None,
-        request_limit: int | None = None,
-        key_expiration: str | None = None,
-        priority: int | None = None,
-        success_rate: float | None = None,
-        max_text_size: int | None = None,
-        payment_plan: str | None = None,
+            self,
+            name: str,
+            url: str,
+            status: str,
+            api_key: str,
+            supported_languages: list,
+            translation_type: str | None = None,
+            cost_per_translation: float | None = None,
+            request_limit: int | None = None,
+            key_expiration: str | None = None,
+            priority: int | None = None,
+            success_rate: float | None = None,
+            max_text_size: int | None = None,
+            payment_plan: str | None = None,
     ) -> None:
         """
         Add a new translator entry under the top-level "translators" mapping.
