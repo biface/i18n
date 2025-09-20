@@ -1,13 +1,12 @@
 """
-Locale Module
-=============
-
 This module manages the locale of the environment and handles locale changes to adapt to user requests or parameters. It ensures that the locale settings are verified and normalized to the ISO IETF Tag standard.
 
 Key Responsibilities:
     - Manage environment locale and handle locale changes.
     - Verify and normalize locale settings to ISO IETF Tag standard.
 """
+
+from __future__ import annotations
 
 from typing import Dict, List, Set
 
@@ -61,3 +60,47 @@ def get_all_languages(hierarchy: Dict[str, List[str]]) -> Set[str]:
     for lang_list in hierarchy.values():
         all_languages.update(lang_list)
     return all_languages
+
+
+def normalize_languages_hierarchy(
+    fallback: str, languages: str | list[str]
+) -> list[str]:
+    """Validate fallback and languages, normalize to a de-duplicated list.
+
+    - Validates the fallback type and IETF compliance.
+    - Accepts a single string or a list of strings for languages.
+    - Validates each language tag and deduplicates while preserving order.
+    - Returns the normalized list of variants.
+    """
+    if not isinstance(fallback, str):
+        raise TypeError(f"Fallback must be a string, not {type(fallback)}")
+    if not is_valid_language_tag(fallback):
+        raise ValueError(
+            f"Fallback language must be a compliant IETF Tag, not {fallback}"
+        )
+
+    if isinstance(languages, str):
+        langs_list = [languages]
+    elif isinstance(languages, list):
+        langs_list = languages
+    else:
+        raise TypeError(
+            f"Languages must be a string or a list of strings, not {type(languages)}"
+        )
+
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for lang in langs_list:
+        if not isinstance(lang, str):
+            raise TypeError(
+                f"Language hierarchy must be a list of string, not {type(lang)}"
+            )
+        if not is_valid_language_tag(lang):
+            raise ValueError(
+                f"Language in hierarchy value must be a compliant IETF Tag, not {lang}"
+            )
+        if lang not in seen:
+            seen.add(lang)
+            normalized.append(lang)
+
+    return normalized

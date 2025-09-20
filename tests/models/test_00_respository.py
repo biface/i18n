@@ -12,7 +12,7 @@ from i18n_tools.models.repository import Repository
 
 @pytest.fixture(scope="class")
 def test_repository(tmp_class_repository):
-    return tmp_class_repository[4].application
+    return Repository(**tmp_class_repository[4])
 
 
 class TestRepositoryInit:
@@ -158,18 +158,18 @@ class TestRepositoryProperties:
         test_repository.name = "automata-tools"
         assert test_repository.name == "automata-tools"
 
-    def test_repository_get_config(self, tmp_module_repository, test_repository):
+    def test_repository_get_config(self, tmp_class_repository, test_repository):
         assert (
             test_repository.config
-            == tmp_module_repository[0][0]
+            == tmp_class_repository[0][0]
             + "/repository-test/fsm_tools/locales/_i18n_tools/i18n-tools.yaml"
         )
 
-    def test_repository_set_config(self, tmp_module_repository, test_repository):
+    def test_repository_set_config(self, tmp_class_repository, test_repository):
         old_config = test_repository.config
         old_config_path = test_repository[["paths", "config"]]
         new_config = (
-            tmp_module_repository[0][0]
+            tmp_class_repository[0][0]
             + "/repository-test/fsm_tools/locales/_i18n_tools/i18n-tools.toml"
         )
         test_repository.config = new_config
@@ -178,10 +178,11 @@ class TestRepositoryProperties:
         test_repository.config = old_config
         assert test_repository[["paths", "settings"]] == "i18n-tools.yaml"
 
-    def test_repository_get_repository(self, tmp_module_repository, test_repository):
+    def test_repository_get_repository(self, tmp_class_repository, test_repository):
+        print(test_repository)
         assert (
             test_repository.repository
-            == tmp_module_repository[0][0] + "/repository-test"
+            == tmp_class_repository[0][0] + "/repository-test"
         )
 
     def test_repository_set_repository(self, tmp_module_repository, test_repository):
@@ -391,8 +392,57 @@ class TestRepositoryProperties:
         ],
     )
     def test_repository_get_authors(self, test_repository, key, values):
+        print(test_repository["paths"])
         for index, value in values:
             assert test_repository.authors[key][index] == value
+
+    def test_repository_set_authors(self, test_repository):
+        uuid_1 = "c64673e4-5d7d-4798-a22f-d1ea7cc807c1"
+        uuid_2 = "00b482a7-9ace-489c-8c48-6a8ec48d6876"
+        test_repository.authors = {
+            uuid_1: {
+                "email": "jean@dupond.com",
+                "first_name": "Jean",
+                "last_name": "Dupond",
+                "languages": ["fr"],
+                "url": "",
+            },
+            uuid_2: {
+                "email": "jeanne@dupond.com",
+                "first_name": "Jeanne",
+                "last_name": "Dupond",
+                "languages": ["en"],
+                "url": "",
+            },
+        }
+        assert test_repository[["authors", uuid_1, "email"]] == "jean@dupond.com"
+        assert test_repository[["authors", uuid_2, "languages"]] == ["en"]
+
+    def test_repository_set_authors_failed(self, test_repository):
+        uuid_1 = "c64673e4-5d7d-4798-a22f-d1ea7cc807c1"
+        uuid_2 = "00b482a7-9ace-489c-8c48-6a8ec48d6876"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("authors must be a dictionary, not <class 'list'>"),
+        ):
+            test_repository.authors = [
+                uuid_1,
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                uuid_2,
+                {
+                    "email": "jeanne@dupond.com",
+                    "first_name": "Jeanne",
+                    "last_name": "Dupond",
+                    "languages": ["en"],
+                    "url": "",
+                },
+            ]
 
 
 class TestRepositoryMethods:
@@ -402,21 +452,25 @@ class TestRepositoryMethods:
         assert "fsm_tools/pda" in test_repository.modules
 
     @pytest.mark.parametrize(
-        "module, error_msg",
+        "module, error, error_msg",
         [
-            ("fsm_tools", "Module fsm_tools already exists"),
-            ("fsm_tools/turing", "Module fsm_tools/turing already exists"),
-            ("fsm_tools/lba", "Module fsm_tools/lba already exists"),
-            ("django-fsm_tools", "Module django-fsm_tools already exists"),
+            (["fsm_tools"], TypeError, "Module must be a string, not <class 'list'>"),
+            ("fsm_tools", ValueError, "Module fsm_tools already exists"),
+            ("fsm_tools/turing", ValueError, "Module fsm_tools/turing already exists"),
+            ("fsm_tools/lba", ValueError, "Module fsm_tools/lba already exists"),
+            ("django-fsm_tools", ValueError, "Module django-fsm_tools already exists"),
             (
                 "django-fsm_tools/context",
+                ValueError,
                 "Module django-fsm_tools/context already exists",
             ),
-            ("fsm_tools/pda", "Module fsm_tools/pda already exists"),
+            ("fsm_tools/pda", ValueError, "Module fsm_tools/pda already exists"),
         ],
     )
-    def test_repository_add_modules_failed(self, test_repository, module, error_msg):
-        with pytest.raises(ValueError, match=re.escape(error_msg)):
+    def test_repository_add_modules_failed(
+        self, test_repository, module, error, error_msg
+    ):
+        with pytest.raises(error, match=re.escape(error_msg)):
             test_repository.add_module(module)
 
     def test_repository_remove_module(self, test_repository):
@@ -656,6 +710,193 @@ class TestRepositoryMethods:
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
             test_repository.update_hierarchy(fallback, languages)
+
+    @pytest.mark.parametrize(
+        "author_id, auther_desc, expected",
+        [
+            (
+                "54d961ad-59dd-41d0-899a-d7ea58170547",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                [
+                    ("email", "jean@dupond.com"),
+                    ("first_name", "Jean"),
+                    ("last_name", "Dupond"),
+                    ("languages", ["fr"]),
+                ],
+            ),
+            (
+                "dab8b521-2588-4eed-8360-85ddaccdfc2f",
+                {
+                    "email": "jeanne@dupond.com",
+                    "first_name": "Jeanne",
+                    "last_name": "Dupond",
+                    "languages": ["en"],
+                    "url": "",
+                },
+                [
+                    ("email", "jeanne@dupond.com"),
+                    ("first_name", "Jeanne"),
+                    ("last_name", "Dupond"),
+                    ("languages", ["en"]),
+                ],
+            ),
+        ],
+    )
+    def test_repository_add_author(
+        self, test_repository, author_id, auther_desc, expected
+    ):
+        test_repository.add_author(author_id, auther_desc)
+        for key, value in expected:
+            assert test_repository[["authors", author_id, key]] == value
+
+    @pytest.mark.parametrize(
+        "author_id, auther_desc, error, error_msg",
+        [
+            (
+                1285,
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                TypeError,
+                "author_id must be a string",
+            ),
+            (
+                "54d961ad-__dd-41d0-899a-d7ea58170547",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                ValueError,
+                "author_id must be a valid UUID4 string",
+            ),
+            (
+                "380a6cb2-962f-11f0-874a-d93c4922b5f2",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                ValueError,
+                "author_id must be a valid UUID4 string",
+            ),
+        ],
+    )
+    def test_repository_add_author_id_failed(
+        self, test_repository, author_id, auther_desc, error, error_msg
+    ):
+        with pytest.raises(error, match=re.escape(error_msg)):
+            test_repository.add_author(author_id, auther_desc)
+
+    @pytest.mark.parametrize(
+        "author_id, auther_desc, error, error_msg",
+        [
+            (
+                "0b97f269-d168-408e-9e82-519800643f3f",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                },
+                KeyError,
+                "author is missing required keys: ['url']",
+            ),
+            (
+                "0b97f269-d168-408e-9e82-519800643f3f",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "languages": ["fr"],
+                },
+                KeyError,
+                "author is missing required keys: ['last_name', 'url']",
+            ),
+            (
+                "0b97f269-d168-408e-9e82-519800643f3f",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": "fr",
+                    "url": "",
+                },
+                TypeError,
+                "author['languages'] must be a list of strings",
+            ),
+            (
+                "0b97f269-d168-408e-9e82-519800643f3f",
+                [
+                    "email",
+                    "jean@dupond.com",
+                    "first_name",
+                    "Jean",
+                    "last_name",
+                    "Dupond",
+                    "languages",
+                    ["fr"],
+                    "url",
+                    "",
+                ],
+                TypeError,
+                "author must be a dictionary",
+            ),
+        ],
+    )
+    def test_repository_add_author_payload_failed(
+        self, test_repository, author_id, auther_desc, error, error_msg
+    ):
+        with pytest.raises(error, match=re.escape(error_msg)):
+            test_repository.add_author(author_id, auther_desc)
+
+    @pytest.mark.parametrize(
+        "author_id, auther_desc, error, error_msg",
+        [
+            (
+                "7d097ac4-ba77-4333-a63f-76d48a75b38c",
+                {
+                    "email": "jean@dupond.com",
+                    "first_name": "Jean",
+                    "last_name": "Dupond",
+                    "languages": ["fr"],
+                    "url": "",
+                },
+                ValueError,
+                "Author '7d097ac4-ba77-4333-a63f-76d48a75b38c' already exists",
+            ),
+            (
+                "baf52b25-d1ed-4651-a3e6-273850901cf0",
+                {
+                    "email": "jeanne@dupond.com",
+                    "first_name": "Jeanne",
+                    "last_name": "Dupond",
+                    "languages": ["en"],
+                    "url": "",
+                },
+                ValueError,
+                "Author 'baf52b25-d1ed-4651-a3e6-273850901cf0' already exists",
+            ),
+        ],
+    )
+    def test_repository_add_author_failed(
+        self, test_repository, author_id, auther_desc, error, error_msg
+    ):
+        with pytest.raises(error, match=re.escape(error_msg)):
+            test_repository.add_author(author_id, auther_desc)
 
 
 class TestRepositoryCleanModules:

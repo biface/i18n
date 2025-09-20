@@ -10,6 +10,7 @@ This section provides detailed documentation for the **i18n-tools** API, includi
    main_variables
    modules/patterns
    modules/api
+   modules/locale.rst
    modules/loaders/index
    modules/models/index
    modules/config

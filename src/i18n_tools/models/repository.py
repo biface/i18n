@@ -39,10 +39,95 @@ from ndict_tools import StrictNestedDictionary
 
 from ..api import validate_api_url
 from ..loaders.handler import file_exists, is_absolute_path, normalize_module_identifier
-from ..locale import is_valid_language_tag
+from ..locale import normalize_languages_hierarchy
 
 # Shared default setup to avoid repetition
 _DEFAULT_SETUP = {"indent": 2}
+
+
+# --- Module-private helpers (factorized logic for authors/domains) ---
+
+
+def _validate_uuid4_string(value: str, name: str = "author_id") -> None:
+    """Validate that a value is a UUID4 string; raise consistent errors.
+
+    Keeps exact error messages used across Repository author helpers.
+    """
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string")
+    try:
+        parsed = UUID(value)
+    except ValueError:
+        raise ValueError(f"{name} must be a valid UUID4 string")
+    if parsed.version != 4:
+        raise ValueError(f"{name} must be a valid UUID4 string")
+
+
+def _ensure_author_exists(
+    repo: "Repository", author_id: str, should_exist: bool
+) -> None:
+    """Check presence of an author and raise ValueError with consistent message."""
+    exists = author_id in repo["authors"].keys()
+    if should_exist and not exists:
+        raise ValueError(f"Author '{author_id}' does not exist")
+    if not should_exist and exists:
+        raise ValueError(f"Author '{author_id}' already exists")
+
+
+def _validate_author_payload(author: dict) -> None:
+    """Validate the structure of an author mapping."""
+    if not isinstance(author, dict):
+        raise TypeError("author must be a dictionary")
+    required = {"first_name", "last_name", "email", "url", "languages"}
+    missing = required - set(author.keys())
+    if missing:
+        # keep list-like formatting as in original code (sorted list emitted)
+        raise KeyError(f"author is missing required keys: {sorted(missing)}")
+    if not isinstance(author.get("languages"), list):
+        raise TypeError("author['languages'] must be a list of strings")
+
+
+def _apply_typed_updates(current: StrictNestedDictionary, updates: dict) -> None:
+    """Apply updates ensuring keys exist and types match current values."""
+    if not isinstance(updates, dict):
+        raise TypeError("updates must be a dictionary")
+    for k, v in updates.items():
+        if k not in current.keys():
+            raise KeyError(f"Key '{k}' is not a valid field for author")
+        if type(v) != type(current[k]):
+            raise TypeError(
+                f"Type mismatch for '{k}': expected {type(current[k])}, got {type(v)}"
+            )
+        current[k] = v
+
+
+# --- Domains helpers ---
+
+
+def _ensure_module_present_for_domain(
+    repo: "Repository", module: str, *, use_domains_section: bool
+) -> None:
+    """Ensure module presence according to the original method semantics.
+
+    - add_domain checks presence in repo.modules (paths.modules).
+    - remove_domain checks presence in repo.domains (domains mapping keys).
+    """
+    present = module in (repo.domains if use_domains_section else repo.modules)
+    if not present:
+        raise ValueError(f"Module {module} does not exist")
+
+
+def _ensure_domain_presence(
+    repo: "Repository", module: str, domain: str, *, should_exist: bool
+) -> None:
+    exists = False
+    # If the module key does not exist under domains, the list is effectively empty
+    if module in repo.domains:
+        exists = domain in repo[["domains", module]]
+    if should_exist and not exists:
+        raise ValueError(f"Domain {domain} does not exist in module {module}")
+    if not should_exist and exists:
+        raise ValueError(f"Domain {domain} already exists in module {module}")
 
 
 class Repository(StrictNestedDictionary):
@@ -280,12 +365,9 @@ class Repository(StrictNestedDictionary):
         :raises ValueError: if module already exists
         """
         if not isinstance(module, str):
-            raise TypeError(f"module must be a string, not {type(module)}")
+            raise TypeError(f"Module must be a string, not {type(module)}")
 
         module_path = normalize_module_identifier(module)
-
-        if not module_path:
-            raise ValueError("Module path cannot be empty")
 
         if module_path not in self[["paths", "modules"]]:
             self[["paths", "modules"]].append(module_path)
@@ -349,15 +431,12 @@ class Repository(StrictNestedDictionary):
         :return:
         :raises ValueError: if module does not exist ou domain already exists
         """
-        if module in self.modules:
-            if module not in self.domains.keys():
-                self[["domains", module]] = [domain]
-            elif domain not in self[["domains", module]]:
-                self[["domains", module]].append(domain)
-            else:
-                raise ValueError(f"Domain {domain} already exists in module {module}")
-        else:
-            raise ValueError(f"Module {module} does not exist")
+        _ensure_module_present_for_domain(self, module, use_domains_section=False)
+        # Ensure the module key exists in domains mapping
+        if module not in self.domains.keys():
+            self[["domains", module]] = []
+        _ensure_domain_presence(self, module, domain, should_exist=False)
+        self[["domains", module]].append(domain)
 
     def remove_domain(self, module: str, domain: str) -> None:
         """
@@ -367,13 +446,9 @@ class Repository(StrictNestedDictionary):
         :return:
         :raises ValueError: if module does not exist or domain does not exist
         """
-        if module in self.domains:
-            if domain in self.domains[module]:
-                self[["domains", module]].remove(domain)
-            else:
-                raise ValueError(f"Domain {domain} does not exist in module {module}")
-        else:
-            raise ValueError(f"Module {module} does not exist")
+        _ensure_module_present_for_domain(self, module, use_domains_section=True)
+        _ensure_domain_presence(self, module, domain, should_exist=True)
+        self[["domains", module]].remove(domain)
 
     def clean_domains(self) -> None:
         """
@@ -434,49 +509,6 @@ class Repository(StrictNestedDictionary):
         for fallback, variants in value.items():
             self.add_hierarchy(fallback, variants)
 
-    def _normalize_hierarchy_input(
-        self, fallback: str, languages: str | list[str]
-    ) -> list[str]:
-        """Validate fallback and languages, normalize to a de-duplicated list.
-
-        - Validates the fallback type and IETF compliance.
-        - Accepts a single string or a list of strings for languages.
-        - Validates each language tag and deduplicates while preserving order.
-        - Returns the normalized list of variants.
-        """
-        if not isinstance(fallback, str):
-            raise TypeError(f"Fallback must be a string, not {type(fallback)}")
-        if not is_valid_language_tag(fallback):
-            raise ValueError(
-                f"Fallback language must be a compliant IETF Tag, not {fallback}"
-            )
-
-        if isinstance(languages, str):
-            langs_list = [languages]
-        elif isinstance(languages, list):
-            langs_list = languages
-        else:
-            raise TypeError(
-                f"Languages must be a string or a list of strings, not {type(languages)}"
-            )
-
-        normalized: list[str] = []
-        seen: set[str] = set()
-        for lang in langs_list:
-            if not isinstance(lang, str):
-                raise TypeError(
-                    f"Language hierarchy must be a list of string, not {type(lang)}"
-                )
-            if not is_valid_language_tag(lang):
-                raise ValueError(
-                    f"Language in hierarchy value must be a compliant IETF Tag, not {lang}"
-                )
-            if lang not in seen:
-                seen.add(lang)
-                normalized.append(lang)
-        print(normalized)
-        return normalized
-
     def add_hierarchy(self, fallback: str, languages: str | list[str]) -> None:
         """Add language variants to a fallback language in the hierarchy.
 
@@ -486,7 +518,7 @@ class Repository(StrictNestedDictionary):
         - Raises if attempting to add a variant already present for `fallback`.
         """
         # Normalize and validate using shared helper
-        normalized = self._normalize_hierarchy_input(fallback, languages)
+        normalized = normalize_languages_hierarchy(fallback, languages)
 
         # Ensure fallback entry exists
         if fallback not in self[["languages", "hierarchy"]]:
@@ -523,7 +555,7 @@ class Repository(StrictNestedDictionary):
         - If validation fails, the repository is left unchanged.
         """
         # Validate and normalize without mutating current state
-        normalized = self._normalize_hierarchy_input(fallback, languages)
+        normalized = normalize_languages_hierarchy(fallback, languages)
 
         # All checks passed: replace the list atomically
         self[["languages", "hierarchy", fallback]] = normalized
@@ -552,7 +584,9 @@ class Repository(StrictNestedDictionary):
         if not isinstance(value, dict):
             raise TypeError(f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
-        self["authors"] = self._new_section(value)
+        self["authors"] = self._new_section({})
+        for author_id, author in value.items():
+            self.add_author(author_id, author)
 
     def add_author(self, author_id: str, author: dict) -> None:
         """Add a new author entry.
@@ -560,26 +594,9 @@ class Repository(StrictNestedDictionary):
         This method mirrors the structure expected by Config.add_author outputs,
         but here you explicitly provide the identifier and the author mapping.
         """
-        # Validate author_id is a UUID4 string
-        if not isinstance(author_id, str):
-            raise TypeError("author_id must be a string")
-        try:
-            parsed = UUID(author_id)
-        except ValueError:
-            raise ValueError("author_id must be a valid UUID4 string")
-        if parsed.version != 4:
-            raise ValueError("author_id must be a valid UUID4 string")
-
-        if not isinstance(author, dict):
-            raise TypeError("author must be a dictionary")
-        required = {"first_name", "last_name", "email", "url", "languages"}
-        missing = required - set(author.keys())
-        if missing:
-            raise KeyError(f"author is missing required keys: {sorted(missing)}")
-        if not isinstance(author.get("languages"), list):
-            raise TypeError("author['languages'] must be a list of strings")
-        if author_id in self["authors"].keys():
-            raise ValueError(f"Author '{author_id}' already exists")
+        _validate_uuid4_string(author_id, "author_id")
+        _validate_author_payload(author)
+        _ensure_author_exists(self, author_id, should_exist=False)
         # Ensure authors sub-dicts are StrictNestedDictionary for consistency
         self[["authors", author_id]] = StrictNestedDictionary(
             author, default_setup=_DEFAULT_SETUP
@@ -587,29 +604,21 @@ class Repository(StrictNestedDictionary):
 
     def remove_author(self, author_id: str) -> None:
         """Remove an author by its identifier."""
-        if author_id in self["authors"].keys():
-            del self["authors"][author_id]
-        else:
-            raise ValueError(f"Author '{author_id}' does not exist")
+
+        _validate_uuid4_string(author_id, "author_id")
+        _ensure_author_exists(self, author_id, should_exist=True)
+        del self["authors"][author_id]
 
     def update_author(self, author_id: str, updates: dict) -> None:
         """Update fields of an existing author with type checking.
 
         Only existing keys can be updated and their types must match the current values.
         """
-        if author_id not in self["authors"].keys():
-            raise ValueError(f"Author '{author_id}' does not exist")
-        if not isinstance(updates, dict):
-            raise TypeError("updates must be a dictionary")
+
+        _validate_uuid4_string(author_id, "author_id")
+        _ensure_author_exists(self, author_id, should_exist=True)
         current = self[["authors", author_id]]
-        for k, v in updates.items():
-            if k not in current.keys():
-                raise KeyError(f"Key '{k}' is not a valid field for author")
-            if type(v) != type(current[k]):
-                raise TypeError(
-                    f"Type mismatch for '{k}': expected {type(current[k])}, got {type(v)}"
-                )
-            current[k] = v
+        _apply_typed_updates(current, updates)
 
     def clean_authors(self) -> None:
         """Remove all authors."""
