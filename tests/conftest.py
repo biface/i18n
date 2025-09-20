@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import subprocess
@@ -124,7 +125,6 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
 
 @pytest.fixture(scope="class")
 def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
-
     tmp_path = tmp_path_factory.mktemp("class-factory")
     destination_package = copy_and_update_repository(
         root_conf_test, tmp_path, conf_tests, "package"
@@ -136,15 +136,23 @@ def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
     other = tmp_path / conf_tests["repository"]["other"]
     os.makedirs(other, exist_ok=True)
 
+    # Work on a deep copy to avoid mutating the session-scoped conf_tests data
+    repository_class = copy.deepcopy(conf_tests["repository-content"])
+    repository_class["paths"]["root"] = str(destination_application)
+    repository_class["paths"]["repository"] = str(destination_application)
+    repository_class["paths"]["config"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools"
+    )
+    repository_class["paths"]["backup"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools" / "backup"
+    )
+
     return [
         [str(tmp_path), tmp_path],
         [str(destination_package), destination_package],
         [str(destination_application), destination_application],
         [str(other), other],
-        config_data(
-            str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"),
-            "i18n-tools.yaml",
-        ),
+        repository_class,
     ]
 
 

@@ -1,4 +1,5 @@
 import pytest
+from conftest import tmp_class_repository, tmp_module_repository
 
 from i18n_tools.models import Message as MessageModel
 from i18n_tools.models.corpus import Book, Message
