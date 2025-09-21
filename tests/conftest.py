@@ -359,7 +359,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": "L'URL 'invalid_url' n'est pas valide au format.",
+            "error": "URL 'invalid_url' is not a valid format.",
         },
         "ftp://example.com": {
             "url": url,

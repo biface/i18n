@@ -29,7 +29,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
 
     # Validation du format de l'URL
     if not validators.url(url):
-        result["error"] = f"L'URL '{url}' n'est pas valide au format."
+        result["error"] = f"URL '{url}' is not a valid format."
         return result
 
     # Vérification de l'accessibilité de l'URL
