@@ -187,7 +187,9 @@ def create_template(
             copyright_holder=f"i18n-tools ({i18n_tools_version}) builder",
             msgid_bugs_address=repository[["details", "report-bugs-to"]],
             fuzzy=(
-                True if repository[["details", "flags", "fuzzy"]] == "True" else False
+                bool(repository[["details", "flags", "fuzzy"]])
+                if ["details", "flags", "fuzzy"] in repository.dict_paths()
+                else True
             ),
         )
         catalog.header_comment = f"""

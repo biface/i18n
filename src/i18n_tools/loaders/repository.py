@@ -211,7 +211,6 @@ def build_repository(repository: StrictNestedDictionary) -> None:
                 )
 
                 if not file_exists(language_directory):
-                    print(f"Creating directory {language_directory}")
                     create_directory(language_directory)
 
                 try:
@@ -307,7 +306,6 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         return True
 
     except Exception as e:
-        print(f"Error verifying repository: {str(e)}")
         return False
 
 
@@ -423,7 +421,6 @@ def update_translation_set(
         json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
             repository, module, domain, lang
         )
-        print("File :", json_file_path)
         # Load existing translations
         existing_translations = (
             fetch_dictionary(repository, module, lang, domain)
@@ -485,9 +482,7 @@ def remove_translation_set(
         # Remove specified translations
         for msgid, options in msgids.items():
             if msgid in existing_translations:
-                print(f"Removing translation for msgid '{msgid}' in language '{lang}'")
                 del existing_translations[msgid]
 
-        print(f"Existing translations: {existing_translations}")
         dump_dictionary(repository, module, lang, domain, existing_translations)
         # update_catalog(repository, module, lang, domain, existing_translations)
