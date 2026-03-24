@@ -49,3 +49,5 @@ html_theme_options = {
 html_use_index = True
 html_search_language = 'en'
 html_static_path = ['_static']
+html_logo = "_static/images/logo.svg"
+html_favicon = "_static/images/logo.svg"

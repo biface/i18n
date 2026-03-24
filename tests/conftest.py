@@ -385,6 +385,24 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": None,
             "error": "Impossible de se connecter au serveur.",
         },
+        "https://www.deepl.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://translate.google.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://www_unvalide_url": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "URL 'https://www_unvalide_url' is not a valid format.",
+        },
     }
 
     # Retourner une réponse simulée si elle existe, sinon une erreur générique
@@ -450,9 +468,11 @@ def patch_validate_api_url(is_main_branch):
         # Patch both the direct import in api module and the import in config module
         with mock.patch(
             "i18n_tools.api.validate_api_url", mock_validate_api_url
-        ), mock.patch("i18n_tools.config.validate_api_url", mock_validate_api_url):
+        ), mock.patch(
+            "i18n_tools.config.validate_api_url", mock_validate_api_url
+        ), mock.patch(
+            "i18n_tools.models.repository.validate_api_url", mock_validate_api_url):
             yield
-
 
 @pytest.fixture(scope="function", autouse=True)
 def patch_validate_email(is_main_branch):
