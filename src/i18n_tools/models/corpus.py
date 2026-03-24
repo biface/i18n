@@ -281,6 +281,7 @@ class Message:
         self.options_plurals = StrictNestedDictionary()
         self.context = context
         self.metadata = _build_empty_metadata()
+        self.plural_rule = None
 
         # Process standard attributes with a parameterized loop
 
@@ -1789,6 +1790,7 @@ class Book:
         """
         # Required metadata -> set instance attributes directly
         self.filename = ""
+        self.plural_rule = None
         language = kwargs.pop("language", None)
         if language is None:
             raise KeyError("No language specified")
@@ -2128,6 +2130,7 @@ class Corpus:
         self.repository = (
             repository if repository is not None else StrictNestedDictionary()
         )
+        self.messages: Dict[str, Message] = {}
         if messages is not None:
             for message in messages:
                 self.messages[message.id] = message

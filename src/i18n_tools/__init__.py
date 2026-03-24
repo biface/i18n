@@ -20,7 +20,7 @@ from i18n_tools.__static__ import (
 
 __version__ = "0.1.0"
 
-__ALL__ = [
+__all__ = [
     I18N_TOOLS_MODULE_NAME,
     I18N_TOOLS_ROOT_NAME,
 ]
