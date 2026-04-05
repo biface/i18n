@@ -1,7 +1,4 @@
 """
-loaders.py
-==========
-
 This module handles the file operations necessary for internationalization
 (i18n) tools. It focuses on loading and saving configuration files and
 managing `.pot` files for translation projects.
@@ -9,16 +6,8 @@ managing `.pot` files for translation projects.
 **Key Features:**
     - Load and save configuration files in YAML, TOML, or JSON formats.
     - Search for configuration files in application directories.
-    - Load and save `.pot` files, including metadata headers and translation
-  entries.
+    - Load and save `.pot` files, including metadata headers and translation entries.
 
-**License:**
-This file is distributed under the `CeCILL-C Free Software License Agreement
-<https://cecill.info/licences/Licence_CeCILL-C_V1-en.html>`_. By using or
-modifying this file, you agree to abide by the terms of this license.
-
-**Author(s):**
-This module is authored and maintained as part of the i18n-tools package.
 """
 
 from pathlib import Path

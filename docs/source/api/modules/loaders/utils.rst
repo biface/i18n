@@ -1,3 +1,6 @@
+Utils module
+============
+
 .. automodule:: i18n_tools.loaders.utils
     :private-members: __check_path, __check_config_extension
     :no-index:
@@ -27,6 +30,12 @@
     .. autofunction:: _load_machine
         :no-index:
     .. autofunction:: _save_machine
+        :no-index:
+    .. autofunction:: _validate_translation_format
+        :no-index:
+    .. autofunction:: _load_by_format
+        :no-index:
+    .. autofunction:: _save_by_format
         :no-index:
     .. autofunction:: _convert_catalog
         :no-index:

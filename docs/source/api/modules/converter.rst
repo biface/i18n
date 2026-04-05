@@ -1,4 +1,11 @@
+Converter Module
+================
+
+
 .. automodule:: i18n_tools.converter
+
+Converting functions
+--------------------
 
     .. autofunction:: catalog_to_unified_format()
     .. autofunction:: unified_format_to_catalog()

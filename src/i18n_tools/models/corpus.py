@@ -1,20 +1,17 @@
-"""
-Corpus module
-=============
-
-
-"""
+""" """
 
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
+from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
     message_to_i18n_tools_format,
 )
+from i18n_tools.loaders.utils import _validate_translation_format
 from i18n_tools.locale import normalize_language_tag
 
 
@@ -41,7 +38,9 @@ def _build_empty_metadata() -> StrictNestedDictionary:
             "language": "",
             "location": [],
             "flags": ["python-format"],
-            "comments": "",
+            # "comments": {"user": [], "auto": []},
+            "user_comments": [],
+            "auto_comments": [],
             "count": {
                 "singular": 0,
                 "plurals": [],
@@ -88,6 +87,7 @@ class Message:
 
 
     Attributes:
+
         id (str): A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.
         default (str): The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.
         options (Dict[int, str]): A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.
@@ -222,22 +222,22 @@ class Message:
         if not (0 < option <= len(self.options)):
             raise IndexError(f"The variant location ({option}) is out of range")
 
-    def _assert_valid_token_in_option(self, option: int, token: int) -> None:
+    def _assert_valid_token_in_option(self, option: int, index: int) -> None:
         """Ensure the given token index refers to an existing plural of an option.
 
         Expects the option to exist. Raises IndexError if token is out of range.
         """
-        if not (0 < token <= len(self.options_plurals[option])):
+        if not (0 < index <= len(self.options_plurals[option])):
             raise IndexError(
-                f"The token location ({token}) of the variant location ({option}) is out of range"
+                f"The token location ({index}) of the variant location ({option}) is out of range"
             )
 
-    def _assert_valid_default_plural_token(self, token: int) -> None:
+    def _assert_valid_default_plural_token(self, index: int) -> None:
         """Ensure the given token index refers to an existing default plural.
         Raises IndexError if token is out of range.
         """
-        if not (0 < token <= len(self.default_plurals)):
-            raise IndexError(f"The token location ({token}) is out of range")
+        if not (0 < index <= len(self.default_plurals)):
+            raise IndexError(f"The token location ({index}) is out of range")
 
     def _refresh_counts(self, singular: bool = False, plurals: bool = False) -> None:
         """Refresh metadata counts.
@@ -281,6 +281,7 @@ class Message:
         self.options_plurals = StrictNestedDictionary()
         self.context = context
         self.metadata = _build_empty_metadata()
+        self.plural_rule = None
 
         # Process standard attributes with a parameterized loop
 
@@ -401,9 +402,33 @@ class Message:
         self.context = ""
         self.metadata = _build_empty_metadata()
 
+    @property
+    def message(self) -> List[List[str]]:
+        """
+        The list of translations in Message instance.
+
+        :return: The list of translations in Message instance.
+        :rtype: List[List[str]]
+        """
+        msg = [self.principal]
+        msg.extend(self.variants)
+        return msg
+
+    @message.setter
+    def message(self, value: List[List[str]]) -> None:
+        """
+        Set the translations in Message instance.
+
+        :param value: the list of translations in Message instance.
+        :return: nothing (void function)
+        :rtype: None
+        """
+        self.principal = value[0]
+        self.variants = value[1:]
+
     # Managing main
 
-    def get_main(self) -> List[str]:
+    def get_principal(self) -> List[str]:
         """
         Get the main translation and its plural forms.
 
@@ -415,7 +440,7 @@ class Message:
             translations.extend(self.default_plurals.values())
         return translations
 
-    def get_main_plurals(self) -> List[str]:
+    def get_principal_plurals(self) -> List[str]:
         """
         Get the main translation's plural forms.
 
@@ -427,7 +452,7 @@ class Message:
             plurals.extend(self.default_plurals.values())
         return plurals
 
-    def add_main(self, *args, **kwargs) -> None:
+    def add_principal(self, *args, **kwargs) -> None:
         """
         Add the main translation or its plural forms and update the metadata counters..
         :param args: is a list of translation components
@@ -451,13 +476,13 @@ class Message:
                     self.default_plurals[index + 1] = token
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         elif kwargs:
-            singular_token = kwargs.pop("default", None)
-            if singular_token is not None and singular_token != "":
-                self.default = singular_token
+            alt_singular = kwargs.pop("default", None)
+            if alt_singular is not None and alt_singular != "":
+                self.default = alt_singular
                 self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{singular_token}'"
+                    f"Singular of translation is required and cannot be None or empty : '{alt_singular}'"
                 )
             plural = kwargs.pop("default_plurals", None)
             if plural is not None:
@@ -469,7 +494,7 @@ class Message:
         else:
             raise (ValueError("No translation specified"))
 
-    def update_main(self, *args, **kwargs) -> None:
+    def update_principal(self, *args, **kwargs) -> None:
         """
         Update segments of a translation
         :param args: list of translation component
@@ -482,9 +507,9 @@ class Message:
                 self.default = translation[0]
 
             if len(translation) > 1:
-                for index, token in enumerate(translation[1:]):
-                    if token is not None and token != "":
-                        self.default_plurals[index + 1] = token
+                for index, text in enumerate(translation[1:]):
+                    if text is not None and text != "":
+                        self.default_plurals[index + 1] = text
         elif kwargs:
             pop_text = kwargs.pop("default", None)
             if pop_text is not None and pop_text != "":
@@ -498,8 +523,8 @@ class Message:
                     self.default_plurals = pop_plurals
                 elif isinstance(pop_plurals, list):
                     d_pop_plural = {}
-                    for index, token in enumerate(pop_plurals):
-                        d_pop_plural[index + 1] = token
+                    for index, text in enumerate(pop_plurals):
+                        d_pop_plural[index + 1] = text
                     self.default_plurals = d_pop_plural
                 else:
                     raise (
@@ -510,7 +535,7 @@ class Message:
         else:
             raise (ValueError("No updates specified"))
 
-    def remove_main(self) -> None:
+    def remove_principal(self) -> None:
         """
         Removes the main translation from message and update metadata
         :return: nothing (void function)
@@ -531,17 +556,17 @@ class Message:
         self.default = ""
         self.metadata[["count", "singular"]] = self.__count_singular__()
 
-    def _remove_default_plurals_segment(self, token: int) -> None:
+    def _remove_default_plurals_segment(self, index: int) -> None:
         """
         Protected function to empties self.default_plurals.
-        :param token: the location index (token) of the plural to be removed
-        :type token: int
+        :param index: the location index (token) of the plural to be removed
+        :type index: int
         :return: nothing (void function)
         :rtype: None
         :raises IndexError: if the token is out of range
         """
-        if 0 < token <= len(self.default_plurals):
-            del self.default_plurals[token]
+        if 0 < index <= len(self.default_plurals):
+            del self.default_plurals[index]
 
             reshaped_dict: Dict[int, str] = {}
             for idx, key in enumerate(sorted(self.default_plurals.keys()), start=1):
@@ -551,8 +576,30 @@ class Message:
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         else:
             raise IndexError(
-                f"The location ({token}) of the plural to be remove is out of range"
+                f"The location ({index}) of the plural to be remove is out of range"
             )
+
+    @property
+    def principal(self) -> list[str]:
+        """
+        The components of the main or default translation (principal) as a list of sentences.
+
+        :return: a list of sentences
+        :rtype: list[str]
+        """
+        return self.get_principal()
+
+    @principal.setter
+    def principal(self, value: list[str]) -> None:
+        """
+        Adds the principal of the translation.
+
+        :param value: a list of sentences constitutive of the default translation
+        :type value: list[str]
+        :return: nothing (void function)
+        :rtype: None
+        """
+        self.add_principal(value)
 
     # Managing variant
 
@@ -626,21 +673,21 @@ class Message:
                 )
             # Managing alternate plurals in args
             if len(translation) > 1:
-                for index, token in enumerate(translation[1:]):
-                    self.options_plurals[[option, index + 1]] = token
+                for index, text in enumerate(translation[1:]):
+                    self.options_plurals[[option, index + 1]] = text
             else:
                 self.options_plurals.update({option: {}})
 
             self.metadata[["count", "plurals"]] = self.__count_plurals__()
         elif kwargs:
             # Managing alternate translation in kwargs (obliviate if args is not None)
-            singular_token = kwargs.pop("options", None)
-            if singular_token is not None and singular_token != "":
-                self.options[option] = singular_token
+            alt_singular = kwargs.pop("options", None)
+            if alt_singular is not None and alt_singular != "":
+                self.options[option] = alt_singular
                 self.metadata[["count", "singular"]] = self.__count_singular__()
             else:
                 raise ValueError(
-                    f"Singular of a variant is required and cannot be None or empty : '{singular_token}'"
+                    f"Singular of a variant is required and cannot be None or empty : '{alt_singular}'"
                 )
             # Managing alternate plurals
             alt_plural = kwargs.pop("options_plurals", None)
@@ -649,8 +696,8 @@ class Message:
                     self.options_plurals.update({option: alt_plural})
                 elif isinstance(alt_plural, list):
                     d_alt_plural = {}
-                    for index, token in enumerate(alt_plural):
-                        d_alt_plural[index + 1] = token
+                    for index, text in enumerate(alt_plural):
+                        d_alt_plural[index + 1] = text
                     self.options_plurals.update({option: d_alt_plural})
                 else:
                     raise (
@@ -676,7 +723,7 @@ class Message:
         :return: nothing (void function)
         """
         if option == 0:
-            self.update_main(*args, **kwargs)
+            self.update_principal(*args, **kwargs)
         elif option > len(self.options) or option <= 0:
             raise (IndexError(f"Option '{option}' out of range"))
         elif args and len(args) == 1 and isinstance(args[0], list):
@@ -685,11 +732,10 @@ class Message:
                 self.options[option] = translation[0]
 
             if len(translation) > 1:
-                for index, token in enumerate(translation[1:]):
-                    if token is not None and token != "":
-                        self.options_plurals[[option, index + 1]] = token
+                for index, text in enumerate(translation[1:]):
+                    if text is not None and text != "":
+                        self.options_plurals[[option, index + 1]] = text
         elif kwargs:
-            print("kwargs :", kwargs)
             pop_text = kwargs.pop("options", None)
             if pop_text is not None and pop_text != "":
                 self.options[option] = pop_text
@@ -697,12 +743,11 @@ class Message:
             pop_plurals = kwargs.pop("options_plurals", None)
             if pop_plurals is not None:
                 if isinstance(pop_plurals, dict) and _check_index_dict(pop_plurals):
-                    print("Alternatives plural :", pop_plurals)
                     self.options_plurals.update({option: pop_plurals})
                 elif isinstance(pop_plurals, list):
                     d_pop_plural = {}
-                    for index, token in enumerate(pop_plurals):
-                        d_pop_plural[index + 1] = token
+                    for index, text in enumerate(pop_plurals):
+                        d_pop_plural[index + 1] = text
                     self.options_plurals.update({option: d_pop_plural})
                 else:
                     raise (
@@ -715,38 +760,38 @@ class Message:
 
     # managing segments in translations
 
-    def get_main_segment(self, token: int = 0) -> str:
+    def get_main_segment(self, index: int = 0) -> str:
         """
         Private function to get token in the main translation
-        :param token: segment's location in the main translation
-        :type token: int
+        :param index: segment's location in the main translation
+        :type index: int
         :return: the corresponding segment located at the token location
         :rtype: str
         """
-        __translation = self.get_main()
-        if len(__translation) > token >= 0:
-            return __translation[token]
+        __translation = self.get_principal()
+        if len(__translation) > index >= 0:
+            return __translation[index]
         else:
-            raise (IndexError(f"Segment location '{token}' is out of range"))
+            raise (IndexError(f"Segment location '{index}' is out of range"))
 
-    def get_variant_segment(self, option: int = 1, token: int = 0) -> str:
+    def get_variant_segment(self, option: int = 1, index: int = 0) -> str:
         """
         Private function to get token in the variant translation
         :param option: segment's option in the variant translation
         :type option: int
-        :param token: segment's location in the variant option
-        :type token: int
+        :param index: segment's location in the variant option
+        :type index: int
         :return: the corresponding segment located at the token location of the variant option
         """
         try:
             __translation = self.get_variant(option)
 
-            if len(__translation) > token >= 0:
-                return __translation[token]
+            if len(__translation) > index >= 0:
+                return __translation[index]
             else:
                 raise (
                     IndexError(
-                        f"Segment location '{token}' of variant option '{option}' is out of range"
+                        f"Segment location '{index}' of variant option '{option}' is out of range"
                     )
                 )
         except IndexError as e:
@@ -780,31 +825,31 @@ class Message:
         if source == "main":
             return self.get_main_segment(token)
         else:
-            return self.get_variant_segment(option=option, token=token)
+            return self.get_variant_segment(option=option, index=token)
 
-    def add_main_segment(self, segment: str, token: int = 0) -> None:
+    def add_main_segment(self, segment: str, index: int = 0) -> None:
         """
         Add a plural form to the message. This function is securing text adding by not allowing emptied texts. If you
         need to add en empty string use the _add_default_segement method.
 
         Args:
-            token (int): location of segment in the main translation, if token = 0 change self.default is is None
+            index (int): location of segment in the main translation, if token = 0 change self.default is is None
             segment (str): The text for the plural form.
 
         Raises:
             ValueError: If the index is less than or equal to 0.
         """
-        if token == 0:
+        if index == 0:
             if segment != "":
                 self.default = segment
             else:
                 raise ValueError(
                     f"Singular of translation is required and cannot be None or empty : '{segment}'"
                 )
-        elif 0 < token <= len(self.default_plurals) + 1:
-            self.default_plurals[token] = segment
+        elif 0 < index <= len(self.default_plurals) + 1:
+            self.default_plurals[index] = segment
         else:
-            raise ValueError(f"Plural form index ({token}) is not in a valid range")
+            raise ValueError(f"Plural form index ({index}) is not in a valid range")
 
     def _add_default_segment(self, segment: str) -> None:
         """
@@ -888,20 +933,20 @@ class Message:
         else:
             raise IndexError(f"Option index ({option}) is not in a valid range")
 
-    def update_main_segment(self, segment: str, token: int = 0) -> None:
+    def update_main_segment(self, segment: str, index: int = 0) -> None:
         """
         Update an existing element (singular or one of the plurals) of the main translation of the message.
 
         :param segment: the text to add
         :type segment: str
-        :param token: the location in the main translation list of the element to be updated.
-        :type token: int
+        :param index: the location in the main translation list of the element to be updated.
+        :type index: int
         :return: nothing (void method)
         :raises IndexError: If token is out of range.
         :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
         """
         if segment != "":
-            if 0 == token:
+            if 0 == index:
                 if self.default != segment:
                     self.default = segment
                 else:
@@ -909,12 +954,12 @@ class Message:
                         f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'"
                     )
             else:
-                self._assert_valid_default_plural_token(token)
-                if self.default_plurals.get(token) != segment:
-                    self.default_plurals[token] = segment
+                self._assert_valid_default_plural_token(index)
+                if self.default_plurals.get(index) != segment:
+                    self.default_plurals[index] = segment
                 else:
                     raise ValueError(
-                        f"The text value ('{segment}') is already stored as default plural index ({token}) : '{self.default_plurals[token]}'"
+                        f"The text value ('{segment}') is already stored as default plural index ({index}) : '{self.default_plurals[index]}'"
                     )
         else:
             raise ValueError("Empty text cannot be added")
@@ -929,37 +974,37 @@ class Message:
         """
         self.default = segment
 
-    def _update_default_plurals_segment(self, segment: str, token: int) -> None:
+    def _update_default_plurals_segment(self, segment: str, index: int) -> None:
         """
         Protected method to update the default plural translation of the message.
 
         :param segment: the text to update
-        :param token: the location in the main translation list of the element to be updated.
+        :param index: the location in the main translation list of the element to be updated.
         :return: nothing (void method)
         :raise IndexError: If token is out of range.
         """
-        self._assert_valid_default_plural_token(token)
-        self.default_plurals[token] = segment
+        self._assert_valid_default_plural_token(index)
+        self.default_plurals[index] = segment
 
     def update_variant_segment(
-        self, segment: str, option: int = 1, token: int = 0
+        self, segment: str, option: int = 1, index: int = 0
     ) -> None:
         """
         Update an existing element (singular or one of the plurals) of (option) the variant translation of the message.
         :param segment: the text to update
         :param option: the index of the variant translation to update.
-        :param token: the index of the element to be updated in the variant translation.
+        :param index: the index of the element to be updated in the variant translation.
         :return: nothing (void method)
         :raises IndexError: If option or token is out of range.
         :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
         """
         if segment != "":
             self._assert_valid_option(option)
-            if token == 0:
+            if index == 0:
                 self.options[option] = segment
             else:
-                self._assert_valid_token_in_option(option, token)
-                self.options_plurals[[option, token]] = segment
+                self._assert_valid_token_in_option(option, index)
+                self.options_plurals[[option, index]] = segment
         else:
             raise ValueError("Empty text cannot be added")
 
@@ -975,19 +1020,19 @@ class Message:
         self.options[option] = segment
 
     def _update_options_plurals_segment(
-        self, segment: str, option: int, token: int
+        self, segment: str, option: int, index: int
     ) -> None:
         """
         Protected function to update one of the (option) variant plural (token) translation singular of the message.
         :param segment: the text to update
         :param option: the variant index
-        :param token: the index of the element to be updated in the variant plural.
+        :param index: the index of the element to be updated in the variant plural.
         :return: nothing (void method)
         :raises IndexError: If option or toaken is out of range.
         """
         self._assert_valid_option(option)
-        self._assert_valid_token_in_option(option, token)
-        self.options_plurals[[option, token]] = segment
+        self._assert_valid_token_in_option(option, index)
+        self.options_plurals[[option, index]] = segment
 
     def remove_variant(self, option: int) -> None:
         """
@@ -1064,22 +1109,21 @@ class Message:
         self._refresh_counts(singular=True)
 
     def _remove_options_plurals_segment(
-        self, option: int, token: Optional[int] = None
+        self, option: int, index: Optional[int] = None
     ) -> None:
         """
         Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
         :param option: the index of the variant translation to be reached.
-        :param token: the index of the plural translation to be removed.
+        :param index: the index of the plural translation to be removed.
         :return: nothing (void method)
         :rtype: None
         :raises IndexError: If option or token is out of range.
         """
         self._assert_valid_option(option)
-        if token is None:
+        if index is None:
             self._remove_options_segment(option)
-        elif self.options_plurals.dict_paths().__contains__([option, token]):
-            print("option :", option, "token :", token)
-            del self.options_plurals[[option, token]]
+        elif self.options_plurals.dict_paths().__contains__([option, index]):
+            del self.options_plurals[[option, index]]
             reshaped_dict: Dict[int, str] = {}
             for idx, key in enumerate(
                 sorted(self.options_plurals[option].keys()), start=1
@@ -1088,9 +1132,28 @@ class Message:
             self.options_plurals.update({option: reshaped_dict})
             self._refresh_counts(plurals=True)
         else:
-            raise IndexError(f"The plural path [{option}, {token}] is out of range")
+            raise IndexError(f"The plural path [{option}, {index}] is out of range")
 
-    # Switching and toggling translations
+    @property
+    def variants(self) -> List[List[str]]:
+        """
+        The list of variants in the repository.
+        :return:
+        """
+        variants = []
+        for index in range(1, len(self.options) + 1):
+            variants.append(self.get_variant(index))
+        return variants
+
+    @variants.setter
+    def variants(self, variants: List[List[str]]) -> None:
+        """
+        The list of variants in the repository.
+        :param variants:
+        :return:
+        """
+        for index, variant in enumerate(variants):
+            self.update_variant(index + 1, variant)
 
     # Managing metadata
 
@@ -1140,14 +1203,18 @@ class Message:
         """
         self.metadata["language"] = normalize_language_tag(lang)
 
-    def add_comment(self, comment: str) -> None:
+    def add_comment(self, mode: Literal["auto", "user"], comment: str) -> None:
         """
         Add an author's comment to the message.
 
         Args:
+            mode (Literal["auto", "user"], optional): The mode of the comment. Defaults to "auto".
             comment (str): The author's comment to add.
         """
-        self.metadata["comment"] = comment
+        if len(comment) == 0:
+            raise ValueError("Unable to add empty comment")
+        key = mode + "_comments"
+        self.metadata[key].append(comment)
 
     def add_metadata(self, *args: Tuple[List[str], Any], **kwargs) -> None:
         """
@@ -1232,7 +1299,6 @@ class Message:
                     )
         if kwargs:
             for key, value in kwargs.items():
-                print((key, value))
                 if isinstance(value, set):
                     raise TypeError(
                         f"{type(value)} of {value} is not compatible metadata"
@@ -1467,13 +1533,46 @@ class Message:
             self._assert_valid_option(option)
             translations = self.get_variant(option)
         else:
-            translations = self.get_main()
+            translations = self.get_principal()
 
         extraction = []
         for t in translations:
             extraction.append(extract_variables(t))
 
         return extraction
+
+    @property
+    def has_variants(self) -> bool:
+        """
+        Indique s'il existe des variantes (options) pour cette traduction.
+        Retourne True si au moins une variante (options) ou des pluriels de variantes (options_plurals) existent.
+        """
+        try:
+            return (isinstance(self.options, dict) and len(self.options) > 0) or (
+                isinstance(self.options_plurals, (dict, StrictNestedDictionary))
+                and len(self.options_plurals) > 0
+            )
+        except Exception:
+            return False
+
+    @property
+    def has_plurals(self) -> bool:
+        """
+        Indique s'il existe des formes plurielles pour cette traduction.
+        Retourne True si des pluriels par défaut (default_plurals) existent ou si
+        au moins une variante possède des pluriels (options_plurals).
+        """
+        try:
+            default_has = (
+                isinstance(self.default_plurals, dict) and len(self.default_plurals) > 0
+            )
+            variant_has = (
+                isinstance(self.options_plurals, (dict, StrictNestedDictionary))
+                and len(self.options_plurals) > 0
+            )
+            return default_has or variant_has
+        except Exception:
+            return False
 
     def to_i18n_tools_format(self) -> Dict[str, Any]:
         """
@@ -1529,19 +1628,480 @@ class Message:
         """
         return f"Message(id='{self.id}', translation='{self.default}')"
 
+    # Equality based on exact properties
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Message):
+            return NotImplemented
+
+        # Normalize potentially nested dictionaries for comparison
+        def to_plain(d):
+            if isinstance(d, StrictNestedDictionary):
+                return d.to_dict() if hasattr(d, "to_dict") else dict(d)
+            return d
+
+        return (
+            self.id == other.id
+            and self.default == other.default
+            and self.context == other.context
+            and to_plain(self.options) == to_plain(other.options)
+            and to_plain(self.default_plurals) == to_plain(other.default_plurals)
+            and to_plain(self.options_plurals) == to_plain(other.options_plurals)
+            and to_plain(self.metadata) == to_plain(other.metadata)
+        )
+
+    def equals(self, other: object) -> bool:
+        """
+        Vérifie si deux messages sont égaux en comparant exactement toutes leurs propriétés.
+        Retourne True si et seulement si toutes les propriétés sont identiques.
+        """
+        try:
+            return bool(self == other)
+        except Exception:
+            return False
+
+    @property
+    def translations_set(self) -> set:
+        """
+        Construit un ensemble de toutes les chaînes de traduction présentes dans ce message,
+        en agrégeant le texte principal, ses pluriels, ainsi que toutes les variantes et leurs pluriels.
+        L'objectif est de permettre une comparaison d'équivalence indépendante du rangement en
+        « main » (default/default_plurals) ou « variant » (options/options_plurals).
+        """
+        texts = set()
+        # Default
+        if isinstance(self.default, str) and self.default:
+            texts.add(self.default)
+        # Default plurals
+        dp = self.default_plurals
+        if isinstance(dp, StrictNestedDictionary):
+            dp = dp.to_dict()
+        if isinstance(dp, dict):
+            for v in dp.values():
+                if isinstance(v, str) and v:
+                    texts.add(v)
+        # Options (variants)
+        opts = self.options
+        if isinstance(opts, StrictNestedDictionary):
+            opts = opts.to_dict()
+        if isinstance(opts, dict):
+            for v in opts.values():
+                if isinstance(v, str) and v:
+                    texts.add(v)
+        # Options plurals
+        op = self.options_plurals
+        if isinstance(op, StrictNestedDictionary):
+            op = op.to_dict()
+        if isinstance(op, dict):
+            for inner in op.values():
+                if isinstance(inner, StrictNestedDictionary):
+                    inner = inner.to_dict()
+                if isinstance(inner, dict):
+                    for v in inner.values():
+                        if isinstance(v, str) and v:
+                            texts.add(v)
+        return texts
+
+    def is_similar(self, other: object) -> bool:
+        """
+        Deux messages sont « semblables » s'ils possèdent le même ensemble de traductions,
+        indépendamment de l'endroit où elles sont rangées (principal vs variantes).
+        Cette comparaison ignore id, context, metadata et l'organisation entre default/options.
+        """
+        if not isinstance(other, Message):
+            return False
+        try:
+            return self.translations_set == other.translations_set
+        except Exception:
+            return False
+
 
 class Book:
     """
-    A class for handling book of internationalization messages using the i18n_tools format.
+    Manage a book (collection) of internationalization Message objects for a single
+    domain and a single language, using the i18n_tools format.
 
-    This class manages internationalization messages in a single domain and language.
+    Iteration
 
-    Attributes:
-        messages (StrictNestedDictionary): A dictionary of messages in this book.
+    - The class is iterable: iterating over a Book yields its Message instances
+      in the natural dictionary order of self.messages (insertion order).
+
+    Invariants
+
+    - All messages in a Book share the same normalized language (BCP 47-like tag)
+      and the same domain.
+
+    Core attributes (moved out of metadata)
+
+    - language (str): Normalized language tag of this book (e.g. "fr-FR").
+    - domain (str): Functional or logical domain grouping the messages.
+    - format (str): Serialization/storage format hint (e.g. "json").
+    - messages (StrictNestedDictionary): Mapping of message.id -> Message.
+    - metadata (StrictNestedDictionary): Additional data such as
+      project_id_version, report_msgid_bugs_to, pot_creation_date, language_team,
+      header_comment, statistics, and backward compatible counters.
+
+    Notes
+
+    - The keys "language", "domain" and "format" are NOT present in metadata
+      anymore; they are stored as instance attributes.
+    - Statistics are available under metadata["statistics"], with
+      "total_messages" and "total_words".
     """
 
-    def __init__(self):
+    def __init__(self, *args: Message, **kwargs: Dict[str, Any]) -> None:
+        """
+        Initialize a Book.
+
+        Positional arguments
+        - args: Zero or more Message instances or iterables of Message.
+          Any provided messages must have a metadata["language"] matching the
+          book language; otherwise a ValueError is raised.
+
+        Keyword arguments
+        - language (str, required): Language for the book. The value is normalized
+          using normalize_language_tag (e.g., "fr" -> "fr-FR"). If not provided,
+          KeyError("No language specified") is raised.
+        - domain (str, required): Domain for the book. If not provided,
+          KeyError("No domain specified") is raised.
+        - format (str, optional): Serialization/storage format hint. Default: "json".
+        - project_id_version (str, optional): Default "i18n-tools 1.0".
+        - report_msgid_bugs_to (str, optional): Default "bugs@example.com".
+        - pot_creation_date (str, optional): Default empty string.
+        - language_team (str, optional): Default empty string.
+        - header_comment (str, optional): Default empty string.
+
+        Behavior
+        - Stores language, domain, and format as instance attributes (not in metadata).
+        - Builds metadata as a StrictNestedDictionary with the keys above (except
+          language/domain/format) and an initial statistics section:
+          metadata["statistics"] = {"total_words": 0, "total_messages": 0}.
+        - Loads any provided Message instances into the book if their
+          metadata["language"] equals the normalized book language; otherwise
+          raises ValueError.
+        - Maintains backward compatibility counter metadata[["count", "messages"]]
+          with the number of messages in the book.
+        - Computes initial statistics (total_words, total_messages) from message
+          contents.
+
+        Raises
+        - KeyError: if language or domain keyword is missing.
+        - ValueError: if any provided Message has a language different than the
+          book language.
+        """
+        # Required metadata -> set instance attributes directly
+        self.filename = ""
+        self.plural_rule = None
+        language = kwargs.pop("language", None)
+        if language is None:
+            raise KeyError("No language specified")
+        self.language = normalize_language_tag(language)
+
+        self.domain = kwargs.pop("domain", None)
+        if self.domain is None:
+            raise KeyError("No domain specified")
+        elif not isinstance(self.domain, str):
+            raise TypeError("Book domain must be a string.")
+
+        # Initialize collections
+        self.messages = StrictNestedDictionary()
+
+        # Core metadata for naming and storage format
+        self.format = kwargs.pop("format", "json")
+
+        # Build metadata dictionary (without language, domain, format)
+        self.metadata = StrictNestedDictionary(
+            project_id_version=kwargs.pop("project_id_version", "i18n-tools 1.0"),
+            report_msgid_bugs_to=kwargs.pop("report_msgid_bugs_to", "bugs@example.com"),
+            pot_creation_date=kwargs.pop("pot_creation_date", ""),
+            language_team=kwargs.pop("language_team", ""),
+            header_comment=kwargs.pop("header_comment", ""),
+            statistics={"total_words": 0, "total_messages": 0},
+        )
+
+        # Load initial messages (if any)
+        if len(args) > 0:
+            for entity in args:
+                if isinstance(entity, Message):
+                    if entity.metadata["language"] == self.language:
+                        self.messages[entity.id] = entity
+                    else:
+                        raise ValueError(
+                            f"Language of message {entity.id} is not compatible with this book language"
+                        )
+                elif isinstance(entity, tuple) or isinstance(entity, list):
+                    for message in entity:
+                        if message.metadata["language"] == self.language:
+                            self.messages[message.id] = message
+                        else:
+                            raise ValueError(
+                                f"Language of message {message.id} is not compatible with this book language"
+                            )
+        # Keep a simple count for backward compatibility
+        self.metadata[["count", "messages"]] = len(self.messages)
+        # Compute statistics based on current messages
+        self._compute_statistics()
+        # Set filename
+        self.__set_filename()
+
+    # --- Attribute management for language, domain, and format ---
+    def __set_filename(self) -> None:
+        """
+        This private function is used to set or update filename, if one of these component changes.
+        :return: nothing
+        """
+        self.filename = (
+            self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
+        )
+
+    def get_language(self) -> str:
+        """Return the normalized language tag of this book."""
+        return self.language
+
+    def add_language(self, lang: str) -> None:
+        """Set the language if not already set; value is normalized."""
+        if getattr(self, "language", None) is not None:
+            raise ValueError("Language is already set for this book")
+        self.language = normalize_language_tag(lang)
+
+    def update_language(self, lang: str) -> None:
+        """Update the book language after verifying every Message matches it."""
+        # Ensure all messages in the book match the new language
+        new_lang = normalize_language_tag(lang)
+        for mid, msg in self.messages.items():
+            if msg.metadata.get("language") != new_lang:
+                raise ValueError(
+                    f"Language of message ({mid} : '{msg.metadata.get('language')}') is not compatible with updated book language ('{new_lang}')"
+                )
+        self.language = new_lang
+
+    def remove_language(self) -> None:
+        """Unset the book language (may leave the book in an inconsistent state)."""
+        self.language = None
+
+    def get_domain(self) -> Optional[str]:
+        """Return the domain of this book."""
+        return self.domain
+
+    def add_domain(self, domain: str) -> None:
+        """Set the domain if not already set."""
+        if getattr(self, "domain", None) is not None:
+            raise ValueError("Domain is already set for this book")
+        self.domain = domain
+        self.__set_filename()
+
+    def update_domain(self, domain: str) -> None:
+        """Update the book domain."""
+        self.domain = domain
+        self.__set_filename()
+
+    def remove_domain(self) -> None:
+        """Unset the book domain (may leave the book unusable until reset)."""
+        self.domain = None
+
+    def get_format(self) -> Optional[str]:
+        """Return the serialization/storage format hint."""
+        return self.format
+
+    def add_format(self, fmt: TranslationFileFormat) -> None:
+        """Set the format if not already set."""
+        if getattr(self, "format", None) is not None:
+            raise ValueError("Format is already set for this book")
+
+        # Validate using shared loader utils
+        self.format = _validate_translation_format(fmt)
+        self.__set_filename()
+
+    def update_format(self, fmt: TranslationFileFormat) -> None:
+        """Update the format hint."""
+        self.format = _validate_translation_format(fmt)
+        self.__set_filename()
+
+    def remove_format(self) -> None:
+        """Unset the format hint."""
+        self.format = None
+        self.filename = ""
+
+    def _compute_statistics(self) -> None:
+        """
+        Compute statistics from the messages contained in the book and store them in metadata.statistics.
+        - total_messages: number of messages in the book
+        - total_words: total word count across all message strings (default, options, default_plurals, options_plurals)
+        """
+
+        def count_words(text: str) -> int:
+            # Simple whitespace-based word count; braces from placeholders are ignored for counting tokens
+            if not isinstance(text, str) or text.strip() == "":
+                return 0
+            return len(text.split())
+
+        total_words = 0
+        for _id, message in self.messages.items():
+            # default
+            total_words += count_words(message.default)
+            # default plurals
+            if isinstance(message.default_plurals, dict):
+                for _t, seg in message.default_plurals.items():
+                    total_words += count_words(seg)
+            # options (singulars)
+            if isinstance(message.options, dict):
+                for _opt, seg in message.options.items():
+                    total_words += count_words(seg)
+            # options plurals
+            if isinstance(message.options_plurals, dict):
+                for _opt, plural_map in message.options_plurals.items():
+                    if isinstance(plural_map, dict):
+                        for _t, seg in plural_map.items():
+                            total_words += count_words(seg)
+
+        self.metadata[["statistics", "total_messages"]] = len(self.messages)
+        self.metadata[["statistics", "total_words"]] = total_words
+
+    def set_metadata(
+        self, key: Optional[Union[str, List[str]]], value: Any = None
+    ) -> None:
+        """
+        Add, update or delete a metadata entry.
+        - If value is None, the metadata is reset/removed to its default for the given key.
+        - If key is a string, it refers to a top-level key in self.metadata.
+        - If key is a list, it refers to a nested path.
+        """
+        if key is None:
+            raise KeyError("A metadata key or path must be provided")
+
+        # Define defaults for keys we manage so we can restore them on delete
+        default_meta = StrictNestedDictionary(
+            project_id_version="i18n-tools 1.0",
+            report_msgid_bugs_to="bugs@example.com",
+            pot_creation_date="",
+            language_team="",
+            header_comment="",
+            statistics={"total_words": 0, "total_messages": 0},
+        )
+
+        # Validate deletion or update
+        if value is None:
+            # delete/reset
+            if isinstance(key, list):
+                if key not in self.metadata.dict_paths():
+                    raise KeyError(
+                        f"The path '{key}' is not a present key in the metadata dictionary"
+                    )
+                # If we know a default for that path, use it, otherwise remove by setting empty value
+                self.metadata[key] = (
+                    default_meta[key] if key in default_meta.dict_paths() else None
+                )
+            elif isinstance(key, str):
+                if not self.metadata.is_key(key):
+                    raise KeyError(
+                        f"The key '{key}' is not a present key in the metadata dictionary"
+                    )
+                self.metadata[key] = (
+                    default_meta[key] if key in default_meta.keys() else None
+                )
+            else:
+                raise TypeError("key must be a str or a list of str")
+        else:
+            # add/update
+            if isinstance(key, list):
+                if key not in self.metadata.dict_paths():
+                    # allow creating nested metadata path only for 'statistics'
+                    # otherwise require existing path
+                    raise KeyError(
+                        f"The path '{key}' is not a present key in the metadata dictionary"
+                    )
+                self.metadata[key] = value
+            elif isinstance(key, str):
+                if not self.metadata.is_key(key):
+                    # For top-level additions, we allow adding a new simple key
+                    self.metadata.update({key: value})
+                else:
+                    self.metadata[key] = value
+            else:
+                raise TypeError("key must be a str or a list of str")
+
+        # Keep backward compatibility counter and recompute statistics if messages count involved
+        self.metadata[["count", "messages"]] = len(self.messages)
+
+    def get(self, index: str) -> Optional[Message]:
+        """
+        Get a message by id.
+        :param index: id of the message
+        :type index: str
+        :return: a message or None
+        :rtype: Message
+        """
+        return self.messages.get(index, None)
+
+    def __iter__(self):
+        """
+        Iterate over Message instances contained in the book.
+        Yields Message objects in insertion order of the underlying dictionary.
+        """
+        return iter(self.messages.values())
+
+    def add(self, domain: str, messages: List[Message]) -> None:
+        """
+        Add messages to the book if language and domain are identical.
+        :param messages: list of messages to add to the book
+        :type messages: List[Message]
+        :param domain: the domain of the messages
+        :type domain: str
+        :return: nothing
+        :rtype: None
+        :raises ValueError: If a message is not compatible with this book language and domain or already registered.
+        """
+        if self.domain != domain:
+            raise ValueError(
+                f"Domain of message '{domain}' is not compatible with this book domain '{self.domain}'"
+            )
+
+        for message in messages:
+            if message.metadata["language"] != self.language:
+                raise ValueError(
+                    f"Language of message ({message.id} : '{message.metadata['language']}') is not compatible with this book language ('{self.language}')"
+                )
+
+            if message.id in self.messages.keys():
+                raise ValueError(
+                    f"Message with id ({message.id}) is already present in this book"
+                )
+
+            self.messages[message.id] = message
+            self.metadata[["count", "messages"]] = len(self.messages)
+        # refresh statistics after adding all messages
+        self._compute_statistics()
+
+    def remove(self, index: str) -> None:
+        """
+        Remove a message from the book if language and domain are identical.
+        :param index: key index of message to remove
+        :type index: str
+        :return: nothing
+        :rtype: None
+        :raises KeyError: If key message is not in this book.
+        """
+
+        if index not in self.messages.keys():
+            raise ValueError(f"Message identifier {index} is not in this book")
+        else:
+            del self.messages[index]
+            self.metadata[["count", "messages"]] = len(self.messages)
+            self._compute_statistics()
+
+    def load(self, path_directory: str) -> None:
         pass
+
+    def save(self, path_directory: str) -> None:
+        """
+        This function save the content of the Book in a file
+        :param path_directory: the named directory where the file book is saved
+        :type path_directory: str
+        :return: nothing
+        :rtype: None
+        """
+        tmp_dict = {"metadata": self.metadata.to_dict()}
+        for msg in self.messages.values():
+            tmp_dict[msg.id] = msg.to_i18n_tools_format()
 
 
 class Corpus:
@@ -1570,6 +2130,7 @@ class Corpus:
         self.repository = (
             repository if repository is not None else StrictNestedDictionary()
         )
+        self.messages: Dict[str, Message] = {}
         if messages is not None:
             for message in messages:
                 self.messages[message.id] = message

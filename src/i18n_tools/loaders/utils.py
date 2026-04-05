@@ -1,7 +1,4 @@
 """
-Utils Module
-============
-
 This module provides low-level, private, and internal functions for loading and saving files (JSON and i18n). It ensures that file operations are handled efficiently and accurately.
 
 Key Responsibilities:
@@ -9,12 +6,14 @@ Key Responsibilities:
     - Ensure efficient and accurate file operations.
 """
 
+from __future__ import annotations
+
 import gzip
 import json
 import os
 import shutil
 import tarfile
-from pathlib import Path
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, Dict, List, Union
 
 import toml
@@ -23,6 +22,12 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
 from babel.messages.pofile import read_po, write_po
 from ndict_tools import StrictNestedDictionary
+
+from ..__static__ import (
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
+    I18N_TRANSLATION_FORMAT,
+    TranslationFileFormat,
+)
 
 # Generic empty files
 
@@ -178,6 +183,58 @@ def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
             yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
     except Exception as exception:
         raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+
+
+def _validate_translation_format(
+    fmt: TranslationFileFormat | None,
+) -> TranslationFileFormat:
+    """
+    Normalize and validate a translation format.
+    - If fmt is None, default to "json" to preserve current behavior.
+    - Ensure the resulting value is one of I18N_TRANSLATION_FORMAT.
+    """
+    _fmt: str = fmt or "json"
+    if _fmt not in I18N_TRANSLATION_FORMAT:
+        raise ValueError(f"Unknown format '{_fmt}'")
+    return _fmt  # type: ignore[return-value]
+
+
+def _load_by_format(
+    file_path: Union[Path, str], fmt: TranslationFileFormat
+) -> Dict[str, Any]:
+    """
+    Load a dictionary file according to the given format (json|yaml).
+    """
+    if fmt == "json":
+        return _load_json(file_path)
+    return _load_yaml(file_path)
+
+
+def _save_by_format(
+    file_path: Union[Path, str], data: Dict[str, Any], fmt: TranslationFileFormat
+) -> None:
+    """
+    Save a dictionary to a file according to the given format (json|yaml).
+    """
+    if fmt == "json":
+        _save_json(file_path, data)
+    else:
+        _save_yaml(file_path, data)
+
+
+def _build_dictionary_path(
+    base_path: Union[Path, str], domain: str, fmt: TranslationFileFormat | None
+) -> str:
+    """
+    Build the dictionary file path from a base directory, a domain and a format.
+
+    - If fmt is None, defaults to "json" (current behavior).
+    - Validates fmt against I18N_TRANSLATION_FORMAT.
+    - Returns a string path like: <base_path>/<domain>.<fmt>.<I18N_TOOLS_TRANSLATION_FILE_EXT>
+    """
+    _fmt = _validate_translation_format(fmt)
+    base = str(base_path)
+    return base + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
 
 
 def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
@@ -501,6 +558,46 @@ def _remove_file(file_path: Union[Path, str]) -> None:
         os.remove(file_path)
     else:
         raise FileNotFoundError(f'File "{file_path}" not found.')
+
+
+def _normalize_module_identifier(path: str) -> str:
+    """
+    Normalize a module identifier from a given string path.
+
+    Rules:
+    - If `path` is absolute, strip the drive/root and convert separators to POSIX.
+    - If the last segment is 'locale' or 'locales', drop that segment.
+    - For relative inputs, normalize './' and '../' prefixes and separators.
+    - Trim leading/trailing punctuation and slashes; result must be non-empty.
+
+    This function is private to loaders and used by public wrappers in handler.
+    """
+    if not isinstance(path, str):
+        raise TypeError(f"path must be a string, not {type(path)}")
+
+    p = PurePath(path)
+
+    if p.is_absolute():
+        target = p.parent if p.name in {"locale", "locales"} else p
+        parts = list(target.parts)
+        if parts and target.anchor:
+            parts = parts[1:]
+        module_path = PurePosixPath(*parts).as_posix()
+    else:
+        pp = PurePosixPath(path)
+        if pp.name in {"locale", "locales"}:
+            pp = pp.parent
+        module_path = pp.as_posix().lstrip("/")
+        while module_path.startswith("./"):
+            module_path = module_path[2:]
+        while module_path.startswith("../"):
+            module_path = module_path[3:]
+        module_path = module_path.strip(",./")
+
+    if not module_path:
+        raise ValueError("Module path cannot be empty")
+
+    return module_path
 
 
 # Other module specific and private tools

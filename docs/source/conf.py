@@ -27,6 +27,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
+    'sphinx.ext.intersphinx',
     'sphinx_rtd_theme',
     # contributions
 ]
@@ -42,6 +43,11 @@ exclude_patterns = []
 html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     'navigation_depth': 4,
+    'collapse_navigation': False,
 }
 
+html_use_index = True
+html_search_language = 'en'
 html_static_path = ['_static']
+html_logo = "_static/images/logo.svg"
+html_favicon = "_static/images/logo.svg"

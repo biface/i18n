@@ -1,9 +1,11 @@
 import shutil
 
 import pytest
-from conftest import conf_tests, tmp_function_repository
 
 from i18n_tools.loaders import create_directory, file_exists
+
+# Deprecated location: tests moved to tests/loaders/test_00_loader.py
+pytestmark = pytest.mark.skip(reason="Moved to tests/loaders/test_00_loader.py")
 
 
 @pytest.fixture

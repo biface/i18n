@@ -1,7 +1,4 @@
 """
-Configuration Module
-=====================
-
 This module is responsible for managing the configuration parameters for both the i18n-tools package and the application utilizing it. It ensures that the structure of localized messages is maintained and that all configuration details are accurate and easily accessible.
 
 Key Responsibilities:
@@ -125,8 +122,9 @@ from .__static__ import (
     I18N_TOOLS_LOCALE,
 )
 from .api import validate_api_url
-from .loaders import build_path, file_exists, load_config, save_config
+from .loaders.handler import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
+from .models.repository import Repository
 from .patterns import Singleton
 
 
@@ -175,45 +173,14 @@ class Config(metaclass=Singleton):
             :return: an initialized nested dictionary with used keys
             :rtype: StrictNestedDictionary
             """
-            return StrictNestedDictionary(
-                {
-                    "details": {
-                        "name": "",  # Configuration name
-                        "summary": "",
-                        "description": "",  # Configuration description
-                        "version": "",
-                        "content_type": "text/plain",
-                        "copyright_holder": "",
-                        "creation_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                        "language": "",
-                        "language_team": "",
-                        "flags": {
-                            "fuzzy": True,
-                            "python-format": True,
-                        },
-                        "report-bugs-to": "",
-                    },
-                    "paths": {
-                        "root": "",
-                        "repository": "",
-                        "config": config_dir if config_dir else "",
-                        "backup": "",
-                        "settings": (
-                            settings_file if settings_file else "i18n-tools.yaml"
-                        ),
-                        # May be changed for .json or .toml
-                        "modules": [],
-                    },
-                    "domains": {},
-                    "languages": {
-                        "source": "",
-                        "hierarchy": {},
-                        "fallback": "",
-                    },
-                    "translators": {},
-                    "authors": {},
-                }
+            # Initialize using Repository class instead of raw StrictNestedDictionary
+            repo = Repository()
+            # Set initial config directory and settings file name
+            repo[["paths", "config"]] = config_dir if config_dir else ""
+            repo[["paths", "settings"]] = (
+                settings_file if settings_file else "i18n-tools.yaml"
             )
+            return repo
 
         self.package = _setup_configuration(
             I18N_TOOLS_CONFIG_DIR, I18N_TOOLS_CONFIG_FILE
@@ -272,7 +239,7 @@ class Config(metaclass=Singleton):
         """
         Save the current configuration settings to a file.
 
-        Uses the `loader.save_config` function to write the configuration
+        Uses the `loaders.save_config` function to write the configuration
         to `self.paths['config']`.
         """
         current_config = self.__getattribute__(self._current_config)

@@ -1,46 +1,67 @@
 """
-Handler Module
-==============
-
 This module handles the manipulation of files within the repository using utils.py. It calculates paths, controls file names and access, and retrieves data contained in translation files.
 
 Key Responsibilities:
     - Manipulate files within the repository.
     - Calculate paths, control file names and access.
     - Retrieve data from translation files.
+
 """
 
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from babel import __version__ as babel_version
 from babel.core import Locale
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
-import i18n_tools
-from i18n_tools.__static__ import (
+# import i18n_tools
+from i18n_tools import __version__ as i18n_tools_version
+
+from ..__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
+    TranslationFileFormat,
 )
-
+from ..locale import get_all_languages, normalize_language_tag
 from .utils import (
+    _build_dictionary_path,
     _build_path,
     _check_domains,
     _convert_catalog,
     _create_directory,
     _create_empty_json,
     _exist_path,
+    _is_absolute_path,
+    _load_by_format,
     _load_config_file,
     _load_json,
     _load_text,
+    _load_yaml,
+    _normalize_module_identifier,
     _remove_file,
+    _save_by_format,
     _save_config_file,
     _save_json,
     _save_text,
+    _save_yaml,
+    _validate_translation_format,
 )
+
+
+def normalize_module_identifier(path: str) -> str:
+    """Public API to normalize a module identifier from a filesystem path or identifier.
+
+    Delegates to the private loaders.utils helper so other layers (CLI, config)
+    can prepare a proper module string before interacting with models.
+    """
+    return _normalize_module_identifier(path)
 
 
 def check_json_integrity(data: Dict[str, Any]) -> bool:
@@ -54,7 +75,7 @@ def check_json_integrity(data: Dict[str, Any]) -> bool:
     """
 
     for key, value in data.items():
-        if key != ".i18n_tools":
+        if key != ".i18n_tools" and key != "metadata":
             if not isinstance(value, list):
                 return False
 
@@ -116,6 +137,10 @@ def file_exists(file_path: str) -> bool:
     return _exist_path(file_path)
 
 
+def is_absolute_path(path: str) -> bool:
+    return _is_absolute_path(path)
+
+
 def create_directory(path: str) -> None:
     """
     Creates a directory at the specified path.
@@ -159,10 +184,12 @@ def create_template(
         catalog = Catalog(
             project=repository[["details", "name"]],
             version=repository[["details", "version"]],
-            copyright_holder=f"i18n-tools ({i18n_tools.__version__}) builder",
+            copyright_holder=f"i18n-tools ({i18n_tools_version}) builder",
             msgid_bugs_address=repository[["details", "report-bugs-to"]],
             fuzzy=(
-                True if repository[["details", "flags", "fuzzy"]] == "True" else False
+                bool(repository[["details", "flags", "fuzzy"]])
+                if ["details", "flags", "fuzzy"] in repository.dict_paths()
+                else True
             ),
         )
         catalog.header_comment = f"""
@@ -199,7 +226,7 @@ def create_template(
             ("Content-Transfer-Encoding", "8bit"),
             (
                 "Generated-By",
-                f"i18n-tools ({i18n_tools.__version__}) using Babel ({babel_version})",
+                f"i18n-tools ({i18n_tools_version}) using Babel ({babel_version})",
             ),
         ]
 
@@ -259,7 +286,11 @@ def create_catalog(
 
 
 def create_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary,
+    module: str,
+    language: str,
+    domain: str,
+    fmt: Optional[Union[str, None]] = None,
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -285,9 +316,11 @@ def create_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        # Default behavior remains JSON when fmt is None
+        dictionary_path = _build_dictionary_path(path, domain, fmt)
+        _fmt = _validate_translation_format(fmt)
         if not _exist_path(dictionary_path):
-            _save_json(dictionary_path, {})
+            _save_by_format(dictionary_path, {}, _fmt)
         else:
             raise FileExistsError(
                 f"The path '{dictionary_path}' already exists. You cannot overwrite it"
@@ -374,7 +407,11 @@ def fetch_catalog(
 
 
 def fetch_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary,
+    module: str,
+    language: str,
+    domain: str,
+    fmt: Optional[Union[str, None]] = None,
 ) -> Dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
@@ -402,8 +439,9 @@ def fetch_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
-        dictionary = _load_json(dictionary_path)
+        dictionary_path = _build_dictionary_path(path, domain, fmt)
+        _fmt = _validate_translation_format(fmt)
+        dictionary = _load_by_format(dictionary_path, _fmt)
     except Exception as e:
         raise e
 
@@ -496,6 +534,7 @@ def update_dictionary(
     language: str,
     domain: str,
     data: Dict[str, Any],
+    fmt: Optional[Union[str, None]] = None,
 ) -> None:
     """
     Updates the translation dictionary for a given language and domain.
@@ -523,8 +562,9 @@ def update_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
-        dictionary = _load_json(dictionary_path)
+        dictionary_path = _build_dictionary_path(path, domain, fmt)
+        _fmt = _validate_translation_format(fmt)
+        dictionary = _load_by_format(dictionary_path, _fmt)
 
         if not check_json_integrity(data):
             raise ValueError(
@@ -534,7 +574,7 @@ def update_dictionary(
         for key, item in data.items():
             dictionary[key] = item
 
-        _save_json(dictionary_path, dictionary)
+        _save_by_format(dictionary_path, dictionary, _fmt)
 
     except Exception as e:
         raise e
@@ -573,6 +613,7 @@ def dump_dictionary(
     language: str,
     domain: str,
     data: Dict[str, Any],
+    fmt: Optional[Union[str, None]] = None,
 ) -> None:
     """
     Dump the translation dictionary for a given language and domain.
@@ -600,14 +641,15 @@ def dump_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        dictionary_path = _build_dictionary_path(path, domain, fmt)
+        _fmt = _validate_translation_format(fmt)
 
         if not check_json_integrity(data):
             raise ValueError(
                 f"The dictionary {data} is not compatible with i18n-tools translations"
             )
 
-        _save_json(dictionary_path, data)
+        _save_by_format(dictionary_path, data, _fmt)
 
     except Exception as e:
         raise e
@@ -683,7 +725,11 @@ def remove_catalog(
 
 
 def remove_dictionary(
-    repository: StrictNestedDictionary, module: str, language: str, domain: str
+    repository: StrictNestedDictionary,
+    module: str,
+    language: str,
+    domain: str,
+    fmt: Optional[Union[str, None]] = None,
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -709,7 +755,7 @@ def remove_dictionary(
             language,
             I18N_TOOLS_MESSAGES,
         )
-        dictionary_path = path + f"/{domain}.json"
+        dictionary_path = _build_dictionary_path(path, domain, fmt)
         _remove_file(dictionary_path)
     except Exception as e:
         raise e
@@ -770,3 +816,137 @@ def save_config(file_path: str, data: dict) -> None:
     """
 
     _save_config_file(file_path, data)
+
+
+def build_translation_lang_files(
+    repository: StrictNestedDictionary,
+    module: str,
+    domain: str,
+    lang: str,
+    fmt: TranslationFileFormat | None = None,
+) -> Tuple[str, str, str]:
+    """
+    Build from repository TLD, path for translation files
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: StrictNestedDictionary
+    :param module: Module name
+    :type module: str
+    :param domain: Domain name
+    :type domain: str
+    :param lang: language code
+    :type lang: str
+    :param fmt: Translation file format
+    :type fmt: TranslationFileFormat | None
+    :return: a tuple of a file path
+    """
+    _fmt = _validate_translation_format(fmt)
+    repository_path = repository[["paths", "repository"]]
+    normalized_lang = normalize_language_tag(lang)
+    lang_path = build_path(
+        repository_path, module, I18N_TOOLS_LOCALE, normalized_lang, I18N_TOOLS_MESSAGES
+    )
+    json_file_path = lang_path + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+    po_file_path = lang_path + f"/{domain}.po"
+    pot_file = (
+        build_path(repository_path, module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE)
+        + f"/{domain}.pot"
+    )
+
+    return json_file_path, po_file_path, pot_file
+
+
+def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
+    """
+    Verify that the repository paths and modules exist.
+
+    This function checks if the base path is absolute and if all specified modules
+    and their corresponding paths exist in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :raises ValueError: If the base path is not an absolute path.
+    :raises FileNotFoundError: If any module path does not exist.
+    """
+
+    repository_path = repository[["paths", "repository"]]
+
+    if not _is_absolute_path(repository_path):
+        raise ValueError(
+            f"The repository_path must be an absolute path: {repository[['paths', 'repository']]}"
+        )
+
+    for module in repository[["paths", "modules"]]:
+        module_path = repository_path + "/" + module + "/" + "locales"
+        if not file_exists(module_path):
+            raise FileNotFoundError(f"The module path does not exist: {module_path}")
+
+
+def _verify_available_languages(
+    repository: StrictNestedDictionary, languages: list[str]
+) -> None:
+    """
+    Verify that languages in translation sets are registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param languages: languages in translation set.
+    :type languages: list[str].
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any language does not exist in allowed languages.
+    """
+    for language in languages:
+        if language not in get_all_languages(repository[["languages", "hierarchy"]]):
+            raise ValueError(
+                f"The language {language} is not registered in the repository"
+            )
+
+
+def _verify_target_module(
+    repository: StrictNestedDictionary, target_module: str
+) -> None:
+    """
+    Verify that a target module is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any module is not registered in the repository.
+    """
+    if target_module not in repository[["paths", "modules"]]:
+        raise ValueError(
+            f"The target module {target_module} is not registered in the repository"
+        )
+
+
+def _verify_target_domain(
+    repository: StrictNestedDictionary, target_module: str, target_domain: str
+) -> None:
+    """
+    Verify that a target domain is registered in the repository.
+
+    :param repository: The data structure which represents the repository information.
+    :type repository: Dict[str, Any].
+    :param target_module: module where translation should be located.
+    :type target_module: str.
+    :param target_domain: domain of translation.
+    :type target_domain: str.
+    :return: Nothing
+    :rtype: None
+    :raises ValueError: If any domain is not registered in the repository.
+    """
+    try:
+        _verify_target_module(repository, target_module)
+        if target_domain not in repository[["domains", target_module]]:
+            raise IndexError(
+                f"The target domain '{target_domain}' is not registered in the repository"
+            )
+    except IndexError as e:
+        raise e
+    except Exception as e:
+        raise ValueError(
+            f"The target module '{target_module}' is not registered in the repository"
+        )

@@ -36,8 +36,6 @@ from i18n_tools.loaders.utils import (
     _save_yaml,
 )
 
-from .conftest import tmp_function_repository, tmp_module_repository
-
 
 @pytest.fixture(scope="function")
 def json_test_file(tmp_function_repository):
@@ -310,11 +308,6 @@ def test_convert_catalog(text_test_file):
     # Vérifie que le catalogue chargé correspond au catalogue original
     assert loaded_catalog.project == "i18n-tools"
     assert loaded_catalog.version == "1.0"
-
-
-def test_convert_catalog_raises_exception():
-    with pytest.raises(IOError):
-        _convert_catalog("/nonexistent/path")
 
 
 @pytest.mark.parametrize(

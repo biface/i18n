@@ -79,5 +79,8 @@ application:
     name: fsm-tools
     summary: A toolbox for Chomsky's formal language hierarchy
     version: 0.0.1
+    date :
+      created : 2024-08-16 14:00
+      updated : 2025-09-14 14:54
 
 configuration: application

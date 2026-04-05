@@ -12,168 +12,45 @@ Key Responsibilities:
 from __future__ import annotations
 
 import tarfile
-from typing import Dict, Tuple
+from typing import Dict
 
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.__static__ import (
     I18N_TOOLS_BACKUP,
     I18N_TOOLS_CONFIG,
-    I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
 )
-from i18n_tools.locale import get_all_languages, normalize_language_tag
+from i18n_tools.locale import get_all_languages
 
+from .. import I18N_TOOLS_LOCALE
 from .handler import (
+    _verify_available_languages,
+    _verify_paths_and_modules,
+    _verify_target_domain,
     build_path,
+    build_translation_lang_files,
     create_catalog,
     create_dictionary,
     create_directory,
     create_template,
-    dump_catalog,
     dump_dictionary,
     fetch_dictionary,
     file_exists,
-    update_catalog,
     update_dictionary,
 )
 from .utils import (
+    _build_dictionary_path,
     _check_domains,
     _check_module,
     _create_gzip,
     _exist_path,
-    _is_absolute_path,
     _non_traversal_path,
     _save_json,
 )
 
-
-def _translation_lang_files(
-    repository: StrictNestedDictionary, module: str, domain: str, lang: str
-) -> Tuple[str, str, str]:
-    """
-    Build from repository TLD, path for translation files
-
-    :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
-    :param module: Module name
-    :type module: str
-    :param domain: Domain name
-    :type domain: str
-    :param lang: language code
-    :type lang: str
-    :return: a tuple of a file path
-    """
-    repository_path = repository[["paths", "repository"]]
-    normalized_lang = normalize_language_tag(lang)
-    lang_path = build_path(
-        repository_path, module, I18N_TOOLS_LOCALE, normalized_lang, I18N_TOOLS_MESSAGES
-    )
-    json_file_path = lang_path + f"/{domain}.json"
-    po_file_path = lang_path + f"/{domain}.po"
-    pot_file = (
-        build_path(repository_path, module, I18N_TOOLS_LOCALE, I18N_TOOLS_TEMPLATE)
-        + f"/{domain}.pot"
-    )
-
-    return json_file_path, po_file_path, pot_file
-
-
-def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
-    """
-    Verify that the repository paths and modules exist.
-
-    This function checks if the base path is absolute and if all specified modules
-    and their corresponding paths exist in the repository.
-
-    :param repository: The data structure which represents the repository information.
-    :raises ValueError: If the base path is not an absolute path.
-    :raises FileNotFoundError: If any module path does not exist.
-    """
-
-    repository_path = repository[["paths", "repository"]]
-
-    if not _is_absolute_path(repository_path):
-        raise ValueError(
-            f"The repository_path must be an absolute path: {repository[['paths', 'repository']]}"
-        )
-
-    for module in repository[["paths", "modules"]]:
-        module_path = repository_path + "/" + module + "/" + "locales"
-        if not file_exists(module_path):
-            raise FileNotFoundError(f"The module path does not exist: {module_path}")
-
-
-def _verify_available_languages(
-    repository: StrictNestedDictionary, languages: list[str]
-) -> None:
-    """
-    Verify that languages in translation sets are registered in the repository.
-
-    :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
-    :param languages: languages in translation set.
-    :type languages: list[str].
-    :return: Nothing
-    :rtype: None
-    :raises ValueError: If any language does not exist in allowed languages.
-    """
-    for language in languages:
-        if language not in get_all_languages(repository[["languages", "hierarchy"]]):
-            raise ValueError(
-                f"The language {language} is not registered in the repository"
-            )
-
-
-def _verify_target_module(
-    repository: StrictNestedDictionary, target_module: str
-) -> None:
-    """
-    Verify that a target module is registered in the repository.
-
-    :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
-    :param target_module: module where translation should be located.
-    :type target_module: str.
-    :return: Nothing
-    :rtype: None
-    :raises ValueError: If any module is not registered in the repository.
-    """
-    if target_module not in repository[["paths", "modules"]]:
-        raise ValueError(
-            f"The target module {target_module} is not registered in the repository"
-        )
-
-
-def _verify_target_domain(
-    repository: StrictNestedDictionary, target_module: str, target_domain: str
-) -> None:
-    """
-    Verify that a target domain is registered in the repository.
-
-    :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
-    :param target_module: module where translation should be located.
-    :type target_module: str.
-    :param target_domain: domain of translation.
-    :type target_domain: str.
-    :return: Nothing
-    :rtype: None
-    :raises ValueError: If any domain is not registered in the repository.
-    """
-    try:
-        _verify_target_module(repository, target_module)
-        if target_domain not in repository[["domains", target_module]]:
-            raise IndexError(
-                f"The target domain '{target_domain}' is not registered in the repository"
-            )
-    except IndexError as e:
-        raise e
-    except Exception as e:
-        raise ValueError(
-            f"The target module '{target_module}' is not registered in the repository"
-        )
+# FIXME Must introduce format and i18t extension
 
 
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
@@ -334,7 +211,6 @@ def build_repository(repository: StrictNestedDictionary) -> None:
                 )
 
                 if not file_exists(language_directory):
-                    print(f"Creating directory {language_directory}")
                     create_directory(language_directory)
 
                 try:
@@ -352,6 +228,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
                     pass
 
 
+# FIXME Must introduce format and i18t extension
 def verify_repository(repository: StrictNestedDictionary) -> bool:
     """
     Verifies that the translation repository is properly constructed.
@@ -418,8 +295,10 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
                     if not _exist_path(catalog_path):
                         return False
 
-                    # Check dictionary file
-                    dictionary_path = build_path(language_directory, f"{domain}.json")
+                    # Check dictionary file (default json for backward compatibility)
+                    dictionary_path = _build_dictionary_path(
+                        language_directory, domain, None
+                    )
                     if not _exist_path(dictionary_path):
                         return False
 
@@ -427,7 +306,6 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         return True
 
     except Exception as e:
-        print(f"Error verifying repository: {str(e)}")
         return False
 
 
@@ -493,7 +371,7 @@ def add_translation_set(
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = _translation_lang_files(
+        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
             repository, module, domain, lang
         )
 
@@ -540,10 +418,9 @@ def update_translation_set(
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = _translation_lang_files(
+        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
             repository, module, domain, lang
         )
-
         # Load existing translations
         existing_translations = (
             fetch_dictionary(repository, module, lang, domain)
@@ -591,7 +468,7 @@ def remove_translation_set(
 
     for lang, msgids in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = _translation_lang_files(
+        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
             repository, module, domain, lang
         )
 
@@ -605,9 +482,7 @@ def remove_translation_set(
         # Remove specified translations
         for msgid, options in msgids.items():
             if msgid in existing_translations:
-                print(f"Removing translation for msgid '{msgid}' in language '{lang}'")
                 del existing_translations[msgid]
 
-        print(f"Existing translations: {existing_translations}")
         dump_dictionary(repository, module, lang, domain, existing_translations)
         # update_catalog(repository, module, lang, domain, existing_translations)

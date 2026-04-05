@@ -1,13 +1,11 @@
 """
-API Module
-===========
-
 This module handles interactions with online translation services and provides functions to facilitate the retrieval of translations. It is responsible for communicating with various translation APIs, managing authentication, and ensuring that translations are accurately fetched and stored. Additionally, it records the translators used in the authors' section of the configuration.
 
 Key Responsibilities:
     - Dialogue with online translators.
     - Record translators used in the authors' section.
     - Provide functions for a command-line interface (CLI) to utilize package functionalities.
+
 """
 
 import requests
@@ -31,7 +29,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
 
     # Validation du format de l'URL
     if not validators.url(url):
-        result["error"] = f"L'URL '{url}' n'est pas valide au format."
+        result["error"] = f"URL '{url}' is not a valid format."
         return result
 
     # Vérification de l'accessibilité de l'URL

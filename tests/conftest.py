@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import subprocess
@@ -122,6 +123,39 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
     ]
 
 
+@pytest.fixture(scope="class")
+def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
+    tmp_path = tmp_path_factory.mktemp("class-factory")
+    destination_package = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "package"
+    )
+    destination_application = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "application"
+    )
+
+    other = tmp_path / conf_tests["repository"]["other"]
+    os.makedirs(other, exist_ok=True)
+
+    # Work on a deep copy to avoid mutating the session-scoped conf_tests data
+    repository_class = copy.deepcopy(conf_tests["repository-content"])
+    repository_class["paths"]["root"] = str(destination_application)
+    repository_class["paths"]["repository"] = str(destination_application)
+    repository_class["paths"]["config"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools"
+    )
+    repository_class["paths"]["backup"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools" / "backup"
+    )
+
+    return [
+        [str(tmp_path), tmp_path],
+        [str(destination_package), destination_package],
+        [str(destination_application), destination_application],
+        [str(other), other],
+        repository_class,
+    ]
+
+
 @pytest.fixture(scope="module")
 def tmp_module_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
 
@@ -240,37 +274,37 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        "https://httpstat.us/204": {
+        "https://httpbin.org/status/204": {
             "url": url,
             "is_alive": True,
             "status_code": 204,
             "error": None,
         },
-        "https://httpstat.us/401": {
+        "https://httpbin.org/status/401": {
             "url": url,
             "is_alive": True,
             "status_code": 401,
             "error": None,
         },
-        "https://httpstat.us/403": {
+        "https://httpbin.org/status/403": {
             "url": url,
             "is_alive": True,
             "status_code": 403,
             "error": None,
         },
-        "https://httpstat.us/405": {
+        "https://httpbin.org/status/405": {
             "url": url,
             "is_alive": True,
             "status_code": 405,
             "error": None,
         },
-        "https://httpstat.us/429": {
+        "https://httpbin.org/status/429": {
             "url": url,
             "is_alive": True,
             "status_code": 429,
             "error": None,
         },
-        "https://httpstat.us/500": {
+        "https://httpbin.org/status/500": {
             "url": url,
             "is_alive": True,
             "status_code": 500,
@@ -325,7 +359,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": "L'URL 'invalid_url' n'est pas valide au format.",
+            "error": "URL 'invalid_url' is not a valid format.",
         },
         "ftp://example.com": {
             "url": url,
@@ -350,6 +384,24 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "is_alive": False,
             "status_code": None,
             "error": "Impossible de se connecter au serveur.",
+        },
+        "https://www.deepl.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://translate.google.com": {
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
+        },
+        "https://www_unvalide_url": {
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "URL 'https://www_unvalide_url' is not a valid format.",
         },
     }
 
@@ -416,9 +468,11 @@ def patch_validate_api_url(is_main_branch):
         # Patch both the direct import in api module and the import in config module
         with mock.patch(
             "i18n_tools.api.validate_api_url", mock_validate_api_url
-        ), mock.patch("i18n_tools.config.validate_api_url", mock_validate_api_url):
+        ), mock.patch(
+            "i18n_tools.config.validate_api_url", mock_validate_api_url
+        ), mock.patch(
+            "i18n_tools.models.repository.validate_api_url", mock_validate_api_url):
             yield
-
 
 @pytest.fixture(scope="function", autouse=True)
 def patch_validate_email(is_main_branch):

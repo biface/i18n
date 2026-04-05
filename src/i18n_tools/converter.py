@@ -1,7 +1,4 @@
 """
-Converter Module
-================
-
 This module is responsible for converting data between different internationalization (i18n) formats as described in
 package documentation. It serves as a bridge between various translation systems, allowing seamless conversion and
 interoperability.
@@ -188,12 +185,6 @@ from typing import Any, Dict, List, Optional, Union
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders import (
-    dump_catalog,
-    dump_dictionary,
-    fetch_catalog,
-    fetch_dictionary,
-)
 from i18n_tools.loaders.utils import _load_json, _load_text, _save_json, _save_text
 from i18n_tools.locale import get_all_languages
 
@@ -1033,7 +1024,8 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
             "language": message.metadata.get("language", ""),
             "locations": message.metadata.get("locations", []),
             "flags": message.metadata.get("flags", []),
-            "comments": message.metadata.get("comments", ""),
+            "user_comments": message.metadata.get("user_comments", []),
+            "auto_comments": message.metadata.get("auto_comments", []),
             "singular_count": len(first_list),
             "plural_counts": (
                 [len(plural_list) for plural_list in value_lists[1:]]
@@ -1106,7 +1098,8 @@ def i18n_tools_format_to_message_dict(
         result["metadata"] = {
             "location": metadata.get("locations", []),
             "flags": metadata.get("flags", []),
-            "comments": metadata.get("comments", ""),
+            "user_comments": metadata.get("user_comments", []),
+            "auto_comments": metadata.get("auto_comments", []),
             "count": {
                 "singular": metadata.get("singular_count", 1),
                 "plurals": metadata.get("plural_counts", []),
@@ -1311,6 +1304,9 @@ def seek_translation(
     )
 
     try:
+        # Local import to avoid circular imports at module level
+        from i18n_tools.loaders.handler import fetch_dictionary
+
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():
             translation["msg_id"] = message_id

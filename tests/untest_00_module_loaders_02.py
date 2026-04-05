@@ -2,16 +2,18 @@ import os
 
 import pytest
 from babel.core import Locale
-from conftest import (
-    conf_tests,
-    tmp_function_repository,
-    tmp_module_repository,
-    tmp_repository,
-)
 from isort.profiles import django
 
+# Deprecated location: tests moved to tests/loaders/test_02_loader.py
+pytestmark = pytest.mark.skip(reason="Moved to tests/loaders/test_02_loader.py")
+
 from i18n_tools.loaders.handler import (
+    _verify_available_languages,
+    _verify_paths_and_modules,
+    _verify_target_domain,
+    _verify_target_module,
     build_path,
+    build_translation_lang_files,
     create_catalog,
     create_dictionary,
     create_directory,
@@ -27,12 +29,7 @@ from i18n_tools.loaders.handler import (
     update_dictionary,
 )
 from i18n_tools.loaders.repository import (
-    _translation_lang_files,
     _update_json_translations,
-    _verify_available_languages,
-    _verify_paths_and_modules,
-    _verify_target_domain,
-    _verify_target_module,
     add_translation_set,
     aggregate_dictionaries,
     build_repository,
@@ -637,7 +634,7 @@ def test_translation_lang_file(
 ):
     repository = tmp_module_repository[4].get_repository()
     if valid:
-        file_json, file_po, file_pot = _translation_lang_files(
+        file_json, file_po, file_pot = build_translation_lang_files(
             repository, module, domain, lang
         )
         assert (
@@ -664,7 +661,7 @@ def test_translation_lang_file(
         )
     else:
         with pytest.raises(exception):
-            _translation_lang_files(repository, module, domain, lang)
+            build_translation_lang_files(repository, module, domain, lang)
 
 
 @pytest.mark.parametrize(

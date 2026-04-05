@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timedelta
 
 import pytest
-from conftest import conf_tests, tmp_module_repository
+#from conftest import conf_tests, tmp_module_repository
 from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config
