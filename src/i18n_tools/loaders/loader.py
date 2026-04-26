@@ -10,8 +10,8 @@ managing `.pot` files for translation projects.
 
 """
 
+from typing import Any, Dict, List, Union
 from pathlib import Path
-from typing import Any, Dict, List
 
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
@@ -20,6 +20,7 @@ from babel.messages.pofile import read_po, write_po
 from i18n_tools.loaders.handler import check_json_integrity
 from i18n_tools.loaders.utils import (
     _create_gzip,
+    _detect_format,
     _load_json,
     _save_json,
 )
@@ -153,6 +154,30 @@ def load_locale_json(file_path: str) -> Dict[str, Any]:
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
     return data
+
+
+def load_book(file_path: str) -> Dict[str, Any]:
+    """
+    Load a .i18t dictionary file and return its contents as a filtered dict (DD-15, DD-16, DD-34).
+
+    The serialisation format is detected from the file extension (DD-34).
+    The reserved keys ``.i18n_tools`` and ``metadata`` are silently ignored.
+
+    :param file_path: Path to the .i18t translation file.
+    :type file_path: str
+    :return: Mapping of msgid to i18n_tools entry dict
+             ``{"messages": matrix, "metadata": {}}``.
+    :rtype: Dict[str, Any]
+    :raises FileNotFoundError: If the file does not exist.
+    :raises ValueError: If the file fails the integrity check.
+    """
+    data = load_locale_json(file_path)
+    result = {}
+    for msgid, matrix in data.items():
+        if msgid in (".i18n_tools", "metadata"):
+            continue
+        result[msgid] = {"messages": matrix, "metadata": {}}
+    return result
 
 
 def aggregate_locale_json(
