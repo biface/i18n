@@ -1,4 +1,5 @@
 import copy
+import locale as _locale
 import os
 import shutil
 import subprocess
@@ -11,6 +12,36 @@ from email_validator import EmailNotValidError
 
 from i18n_tools.api import validate_api_url
 from i18n_tools.config import Config
+
+# ---------------------------------------------------------------------------
+# Locale-aware error messages for mocks — extend with new language keys as needed.
+# ---------------------------------------------------------------------------
+
+_MOCK_ERRORS: dict = {
+    "timeout": {
+        "fr": "Le délai de connexion a expiré.",
+        "en": "Connection timed out.",
+    },
+    "connection": {
+        "fr": "Impossible de se connecter au serveur.",
+        "en": "Unable to connect to server.",
+    },
+}
+
+
+def _mock_error(key: str) -> str:
+    """Return the locale-appropriate mock error message for *key*."""
+    lang, _ = _locale.getdefaultlocale()
+    lang_code = (lang or "en")[:2]
+    messages = _MOCK_ERRORS[key]
+    return messages.get(lang_code, messages["en"])
+
+
+@pytest.fixture(scope="session")
+def system_lang() -> str:
+    """Two-letter system locale language code (e.g. 'fr', 'en')."""
+    lang, _ = _locale.getdefaultlocale()
+    return (lang or "en")[:2]
 
 
 @pytest.fixture(scope="session")
@@ -240,8 +271,8 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     Simulates the validate_api_url function by returning predefined responses for various scenarios.
 
     The function uses hardcoded responses for specific URLs to mock behaviors like valid responses,
-    errors, or connection timeouts. Simulated error messages should be adapted to the developer's
-    environment (locale) to ensure better clarity during testing.
+    errors, or connection timeouts. Error messages are locale-aware via _mock_error() so that
+    assertions using _MOCK_ERRORS remain consistent across development environments.
 
     Args:
         url (str): The URL to validate.
@@ -257,150 +288,88 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     simulated_responses = {
         # Valid cases
         "https://jsonplaceholder.typicode.com/posts": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://httpbin.org/get": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://api.github.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://httpbin.org/status/204": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 204,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 204, "error": None,
         },
         "https://httpbin.org/status/401": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 401,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 401, "error": None,
         },
         "https://httpbin.org/status/403": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 403,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 403, "error": None,
         },
         "https://httpbin.org/status/405": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 405,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 405, "error": None,
         },
         "https://httpbin.org/status/429": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 429,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 429, "error": None,
         },
         "https://httpbin.org/status/500": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 500,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 500, "error": None,
         },
         # URLs used in translator tests
         "https://dupont.org": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://dupont.com": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "Le délai de connexion a expiré.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": _mock_error("connection"),  # locale-aware — connection error
         },
         "https://joe.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://doe.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
-        # Simulating delays
+        # Simulating delays — locale-aware timeout message
         "https://httpbin.org/delay/10": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "Le délai de connexion a expiré." if timeout < 10 else None,
+            "url": url, "is_alive": False, "status_code": None,
+            "error": _mock_error("timeout") if timeout < 10 else None,
         },
         "https://httpbin.org/delay/15": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "Le délai de connexion a expiré." if timeout < 15 else None,
+            "url": url, "is_alive": False, "status_code": None,
+            "error": _mock_error("timeout") if timeout < 15 else None,
         },
         "https://httpbin.org/delay/25": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "Le délai de connexion a expiré." if timeout < 25 else None,
+            "url": url, "is_alive": False, "status_code": None,
+            "error": _mock_error("timeout") if timeout < 25 else None,
         },
         # Error cases
         "invalid_url": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "URL 'invalid_url' is not a valid format.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": "URL 'invalid_url' is not a valid format.",  # hardcoded English in api.py
         },
         "ftp://example.com": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "No connection adapters were found for 'ftp://example.com'.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": "No connection adapters were found for 'ftp://example.com'.",  # str(e) from requests
         },
         "http://": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "L'URL 'http://' n'est pas valide au format.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests — always English
         },
         "https://": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "L'URL 'https://' n'est pas valide au format.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests — always English
         },
         "https://thisurldoesnotexist12345.com": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
-            "error": "Impossible de se connecter au serveur.",
+            "url": url, "is_alive": False, "status_code": None,
+            "error": _mock_error("connection"),  # locale-aware
         },
         "https://www.deepl.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://translate.google.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
+            "url": url, "is_alive": True, "status_code": 200, "error": None,
         },
         "https://www_unvalide_url": {
-            "url": url,
-            "is_alive": False,
-            "status_code": None,
+            "url": url, "is_alive": False, "status_code": None,
             "error": "URL 'https://www_unvalide_url' is not a valid format.",
         },
     }
@@ -413,7 +382,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": f"Aucune réponse simulée pour l'URL '{url}'.",
+            "error": f"No simulated response for URL '{url}'.",
         },
     )
 
@@ -473,6 +442,7 @@ def patch_validate_api_url(is_main_branch):
         ), mock.patch(
             "i18n_tools.models.repository.validate_api_url", mock_validate_api_url):
             yield
+
 
 @pytest.fixture(scope="function", autouse=True)
 def patch_validate_email(is_main_branch):
