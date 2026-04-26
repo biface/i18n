@@ -50,7 +50,6 @@ from .utils import (
     _save_json,
 )
 
-# FIXME Must introduce format and i18t extension
 
 
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
@@ -228,7 +227,6 @@ def build_repository(repository: StrictNestedDictionary) -> None:
                     pass
 
 
-# FIXME Must introduce format and i18t extension
 def verify_repository(repository: StrictNestedDictionary) -> bool:
     """
     Verifies that the translation repository is properly constructed.
@@ -386,8 +384,9 @@ def add_translation_set(
         )
         update_dictionary(repository, module, lang, domain, existing_translations)
 
-        # Load existing PO file
-        # update_catalog(repository, module, lang, domain, existing_translations)
+        # BLOCKED (v0.3.x) — update_catalog() incompatible with the i18n-tools format.
+        # The native .i18t matrix (messages/plurals/alternatives) does not match
+        # the msgid/msgstr structure expected by Babel. See backlog C-09.
 
 
 def update_translation_set(
@@ -485,4 +484,6 @@ def remove_translation_set(
                 del existing_translations[msgid]
 
         dump_dictionary(repository, module, lang, domain, existing_translations)
-        # update_catalog(repository, module, lang, domain, existing_translations)
+        # BLOCKED (v0.3.x) — update_catalog() incompatible with the i18n-tools format.
+        # The native .i18t matrix (messages/plurals/alternatives) does not match
+        # the msgid/msgstr structure expected by Babel. See backlog C-09.
