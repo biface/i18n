@@ -3,13 +3,22 @@ Minimal test file for Book model using shared fixtures from tests/models/conftes
 """
 
 import re
-
+import json
 import pytest
 
+from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.models.corpus import Book, Message
 
 # Using fixtures: fr_fr_book, en_us_book, en_gb_book, it_it_book from local conftest.py
-
+@pytest.fixture
+def fr_fr_i18t_directory(tmp_path, fr_fr_messages):
+    """Écrit fr_fr_messages dans test.json.i18t et retourne le répertoire en str."""
+    data = {
+        msgid: message_to_i18n_tools_format(msg)["messages"]
+        for msgid, msg in fr_fr_messages.items()
+    }
+    (tmp_path / "test.json.i18t").write_text(json.dumps(data), encoding="utf-8")
+    return str(tmp_path)
 
 # Testing books attributes
 
@@ -106,6 +115,41 @@ class TestBook:
             ),
         ):
             Book(fr_message, domain="test", language="fr")
+
+
+class TestBookLoad:
+
+    def test_book_load_nominal(self, fr_fr_i18t_directory):
+        """Cas nominal : Book peuplé avec les 10 messages fr-FR."""
+        book = Book(language="fr-FR", domain="test")
+        book.load(fr_fr_i18t_directory)
+        assert len(list(book)) == 10
+        assert set(book.messages.keys()) == {
+            "1100", "1101", "1102", "1103", "1104",
+            "1105", "1106", "1107", "1108", "1109",
+        }
+
+    def test_book_load_language_assigned(self, fr_fr_i18t_directory):
+        """Chaque message chargé porte la langue du Book."""
+        book = Book(language="fr-FR", domain="test")
+        book.load(fr_fr_i18t_directory)
+        for msg in book:
+            assert msg.metadata["language"] == "fr-FR"
+
+    def test_book_load_file_not_found(self, tmp_path):
+        """Répertoire sans fichier correspondant → FileNotFoundError."""
+        book = Book(language="fr-FR", domain="test")
+        with pytest.raises(FileNotFoundError):
+            book.load(str(tmp_path))
+
+    def test_book_load_integrity_error(self, tmp_path):
+        """Fichier à matrice mal formée → ValueError."""
+        (tmp_path / "test.json.i18t").write_text(
+            json.dumps({"10001": "not-a-list"}), encoding="utf-8"
+        )
+        book = Book(language="fr-FR", domain="test")
+        with pytest.raises(ValueError):
+            book.load(str(tmp_path))
 
 
 @pytest.mark.parametrize(

@@ -117,7 +117,6 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
 
     # Check if the cleaned path exists
     if not cleaned_path.exists():
-        print(cleaned_path)
         raise IOError(f"The path '{cleaned_path}' does not exist.")
 
     return str(cleaned_path)

@@ -18,6 +18,7 @@ from i18n_tools.loaders.utils import (
     _create_empty_json,
     _create_gzip,
     _create_tar_gz,
+    _detect_format,
     _exist_path,
     _is_absolute_path,
     _load_config_file,
@@ -503,3 +504,18 @@ def test_load_and_save_config_failed_path():
 def test_remove_failed_path():
     with pytest.raises(FileNotFoundError):
         _remove_file("non-existent-path/i18n-tools.json")
+
+
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("domain.json.i18t", "json"),
+        ("domain.yaml.i18t", "yaml"),
+        ("/abs/path/to/domain.json.i18t", "json"),
+        ("/abs/path/to/domain.yaml.i18t", "yaml"),
+        (Path("domain.json.i18t"), "json"),
+        (Path("domain.yaml.i18t"), "yaml"),
+    ],
+)
+def test_detect_format(path, expected):
+    assert _detect_format(path) == expected

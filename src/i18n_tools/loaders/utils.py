@@ -560,6 +560,20 @@ def _remove_file(file_path: Union[Path, str]) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
+def _detect_format(path: Union[Path, str]) -> TranslationFileFormat:
+    """Detect serialisation format from file path extension (DD-34).
+
+    Returns ``'yaml'`` if *path* ends with ``.yaml.i18t``,
+    ``'json'`` otherwise.
+
+    :param path: Path to a translation file.
+    :type path: Union[Path, str]
+    :return: Serialisation format identifier.
+    :rtype: TranslationFileFormat
+    """
+    return "yaml" if str(path).endswith(".yaml.i18t") else "json"
+
+
 def _normalize_module_identifier(path: str) -> str:
     """
     Normalize a module identifier from a given string path.

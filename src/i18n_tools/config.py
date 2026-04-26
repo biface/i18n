@@ -197,6 +197,8 @@ class Config(metaclass=Singleton):
         else:
             self.application = _setup_configuration()
 
+        # TODO(ndict-tools-v1.2.0): replace direct StrictNestedDictionary({}) construction
+        # with Repository delegation once ndict-tools v1.2.0 is available. See #17 on GitHub.
         self._email_index = StrictNestedDictionary({})
         self._current_config = "application"
 
@@ -806,6 +808,8 @@ class Config(metaclass=Singleton):
             translators.pop(name)
 
             # Ensure the translators dictionary remains a valid empty dictionary if no translators remain
+            # TODO(ndict-tools-v1.2.0): replace direct StrictNestedDictionary({}) construction
+            # with Repository delegation once ndict-tools v1.2.0 is available. See #17.
             if not translators:
                 self.__getattribute__(self._current_config)["translators"] = (
                     StrictNestedDictionary({})

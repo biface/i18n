@@ -12,6 +12,7 @@ from i18n_tools.converter import (
     message_to_i18n_tools_format,
 )
 from i18n_tools.loaders.utils import _validate_translation_format
+from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
 
 
@@ -2089,7 +2090,26 @@ class Book:
             self._compute_statistics()
 
     def load(self, path_directory: str) -> None:
-        pass
+        """
+            Load messages from a .i18t file into this Book instance.
+
+            The file is located at ``path_directory/self.filename``.
+            Each message is assigned the book language before insertion.
+
+            :param path_directory: Directory containing the .i18t file.
+            :type path_directory: str
+            :raises FileNotFoundError: If the file does not exist.
+            :raises ValueError: If the file fails the integrity check.
+            """
+        file_path = path_directory + "/" + self.filename
+        data = _load_book(file_path)
+        for msgid, entry in data.items():
+            kwargs = i18n_tools_format_to_message_dict(entry)
+            msg = Message(id=msgid, **kwargs)
+            msg.add_language(self.language)
+            self.messages[msgid] = msg
+        self.metadata[["count", "messages"]] = len(self.messages)
+        self._compute_statistics()
 
     def save(self, path_directory: str) -> None:
         """
