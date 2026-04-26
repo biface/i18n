@@ -325,7 +325,7 @@ def aggregate_dictionaries(
     """
 
     languages = get_all_languages(repository[["languages", "hierarchy"]])
-    domain_dictionary = {".i18n_tools": repository["details"].to_dict()}
+    domain_dictionary = {"metadata": repository["details"].to_dict()}
 
     for language in languages:
         try:
@@ -338,8 +338,8 @@ def aggregate_dictionaries(
     module_directory = build_path(
         repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
     )
-    _save_json(module_directory + f"/{domain}.json", domain_dictionary)
-    _create_gzip(module_directory + f"/{domain}.json")
+    _save_json(module_directory + f"/{domain}_aggregated.json", domain_dictionary)
+    _create_gzip(module_directory + f"/{domain}_aggregated.json")
 
 
 def add_translation_set(

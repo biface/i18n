@@ -603,9 +603,9 @@ def test_aggregate_dictionaries(
     if valid:
         aggregate_dictionaries(config.get_repository(), module, domain)
         dictionary_path = build_path(tmp_module_repository[2][1] / module / "locales")
-        dictionary_file = dictionary_path + f"/{domain}.json"
+        dictionary_file = dictionary_path + f"/{domain}_aggregated.json"
         assert os.path.exists(dictionary_file)
-        dictionary_zip = dictionary_path + f"/{domain}.json.gz"
+        dictionary_zip = dictionary_path + f"/{domain}_aggregated.json.gz"
         assert os.path.exists(dictionary_zip)
     else:
         with pytest.raises(exception):
