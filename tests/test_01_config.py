@@ -2,7 +2,8 @@ import os
 from datetime import datetime, timedelta
 
 import pytest
-#from conftest import conf_tests, tmp_module_repository
+
+# from conftest import conf_tests, tmp_module_repository
 from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config
@@ -991,7 +992,10 @@ def test_remove_module(tmp_module_repository, repository, module, expected):
             },
             False,
             ValueError,
-            {"fr": "Impossible de se connecter au serveur.", "en": "Unable to connect to server."},
+            {
+                "fr": "Impossible de se connecter au serveur.",
+                "en": "Unable to connect to server.",
+            },
         ),
         (
             "package",
@@ -1037,7 +1041,13 @@ def test_remove_module(tmp_module_repository, repository, module, expected):
     ],
 )
 def test_add_translator(
-    tmp_module_repository, repository, translator_data, valid, exception, error_message, system_lang
+    tmp_module_repository,
+    repository,
+    translator_data,
+    valid,
+    exception,
+    error_message,
+    system_lang,
 ):
     config = tmp_module_repository[4]
     if repository == "application":

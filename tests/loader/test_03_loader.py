@@ -6,7 +6,6 @@ import pytest
 
 from i18n_tools.loaders.loader import load_book
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -32,6 +31,7 @@ def _write_i18t(directory, data, name="usage.json.i18t"):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_load_book_returns_filtered_dict(tmp_path):
     """Cas nominal : retourne un dict avec les bons msgids, clés réservées exclues."""

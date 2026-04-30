@@ -51,64 +51,107 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     simulated_responses = {
         # Valid cases
         "https://jsonplaceholder.typicode.com/posts": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://httpbin.org/get": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://api.github.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://httpbin.org/status/204": {
-            "url": url, "is_alive": True, "status_code": 204, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 204,
+            "error": None,
         },
         "https://httpbin.org/status/401": {
-            "url": url, "is_alive": True, "status_code": 401, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 401,
+            "error": None,
         },
         "https://httpbin.org/status/403": {
-            "url": url, "is_alive": True, "status_code": 403, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 403,
+            "error": None,
         },
         "https://httpbin.org/status/405": {
-            "url": url, "is_alive": True, "status_code": 405, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 405,
+            "error": None,
         },
         "https://httpbin.org/status/429": {
-            "url": url, "is_alive": True, "status_code": 429, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 429,
+            "error": None,
         },
         "https://httpbin.org/status/500": {
-            "url": url, "is_alive": True, "status_code": 500, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 500,
+            "error": None,
         },
         # Simulating delays — error is locale-aware
         "https://httpbin.org/delay/10": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": _mock_error("timeout") if timeout < 10 else None,
         },
         "https://httpbin.org/delay/15": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": _mock_error("timeout") if timeout < 15 else None,
         },
         "https://httpbin.org/delay/25": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": _mock_error("timeout") if timeout < 25 else None,
         },
         # Error cases
         "invalid_url": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": "URL 'invalid_url' is not a valid format.",  # hardcoded English in api.py
         },
         "ftp://example.com": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": _mock_error("connection"),  # locale-aware
         },
         "http://": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests — always English
         },
         "https://": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests — always English
         },
         "https://thisurldoesnotexist12345.com": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": _mock_error("connection"),  # locale-aware
         },
     }
@@ -228,7 +271,9 @@ def test_validate_api_url_valid_cases(url, expected, get_validate_api_url):
         ),
     ],
 )
-def test_validate_api_url_invalid_cases(url, expected, get_validate_api_url, system_lang):
+def test_validate_api_url_invalid_cases(
+    url, expected, get_validate_api_url, system_lang
+):
     """
     Tests the validate_api_url function with invalid or erroneous URLs.
 
@@ -241,12 +286,16 @@ def test_validate_api_url_invalid_cases(url, expected, get_validate_api_url, sys
     if expected["error"] is None:
         assert result["error"] is not None
     elif isinstance(expected["error"], dict):
-        assert result["error"] == expected["error"].get(system_lang, expected["error"]["en"])
+        assert result["error"] == expected["error"].get(
+            system_lang, expected["error"]["en"]
+        )
     else:
         assert result["error"] == expected["error"]
 
 
-@pytest.mark.skip(reason="httpbin.org behaviour unreliable on master — validate_api_url to be reviewed")
+@pytest.mark.skip(
+    reason="httpbin.org behaviour unreliable on master — validate_api_url to be reviewed"
+)
 @pytest.mark.parametrize(
     "url,timeout,expected",
     [
@@ -288,7 +337,9 @@ def test_validate_api_url_invalid_cases(url, expected, get_validate_api_url, sys
         ),
     ],
 )
-def test_validate_api_url_timeouts(url, timeout, expected, get_validate_api_url, system_lang):
+def test_validate_api_url_timeouts(
+    url, timeout, expected, get_validate_api_url, system_lang
+):
     """
     Tests the validate_api_url function with URLs simulating timeouts.
 
@@ -298,7 +349,9 @@ def test_validate_api_url_timeouts(url, timeout, expected, get_validate_api_url,
     result = get_validate_api_url(url, timeout=timeout)
     assert result["is_alive"] == expected["is_alive"]
     assert result["status_code"] == expected["status_code"]
-    assert result["error"] == expected["error"].get(system_lang, expected["error"]["en"])
+    assert result["error"] == expected["error"].get(
+        system_lang, expected["error"]["en"]
+    )
 
 
 @pytest.mark.parametrize(

@@ -10,8 +10,8 @@ managing `.pot` files for translation projects.
 
 """
 
-from typing import Any, Dict, List, Union
 from pathlib import Path
+from typing import Any, Dict, List, Union
 
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
