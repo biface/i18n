@@ -13,29 +13,6 @@ from email_validator import EmailNotValidError
 from i18n_tools.api import validate_api_url
 from i18n_tools.config import Config
 
-# ---------------------------------------------------------------------------
-# Locale-aware error messages for mocks — extend with new language keys as needed.
-# ---------------------------------------------------------------------------
-
-_MOCK_ERRORS: dict = {
-    "timeout": {
-        "fr": "Le délai de connexion a expiré.",
-        "en": "Connection timed out.",
-    },
-    "connection": {
-        "fr": "Impossible de se connecter au serveur.",
-        "en": "Unable to connect to server.",
-    },
-}
-
-
-def _mock_error(key: str) -> str:
-    """Return the locale-appropriate mock error message for *key*."""
-    lang, _ = _locale.getdefaultlocale()
-    lang_code = (lang or "en")[:2]
-    messages = _MOCK_ERRORS[key]
-    return messages.get(lang_code, messages["en"])
-
 
 @pytest.fixture(scope="session")
 def system_lang() -> str:
@@ -271,8 +248,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     Simulates the validate_api_url function by returning predefined responses for various scenarios.
 
     The function uses hardcoded responses for specific URLs to mock behaviors like valid responses,
-    errors, or connection timeouts. Error messages are locale-aware via _mock_error() so that
-    assertions using _MOCK_ERRORS remain consistent across development environments.
+    errors, or connection timeouts. Error messages are always in English (DD-35), consistent with api.py.
 
     Args:
         url (str): The URL to validate.
@@ -352,7 +328,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": _mock_error("connection"),  # locale-aware — connection error
+            "error": "Unable to connect to server.",  # DD-35: always English
         },
         "https://joe.com": {
             "url": url,
@@ -366,31 +342,31 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        # Simulating delays — locale-aware timeout message
+        # Simulating delays — DD-35: always English
         "https://httpbin.org/delay/10": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": _mock_error("timeout") if timeout < 10 else None,
+            "error": "Connection timed out." if timeout < 10 else None,
         },
         "https://httpbin.org/delay/15": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": _mock_error("timeout") if timeout < 15 else None,
+            "error": "Connection timed out." if timeout < 15 else None,
         },
         "https://httpbin.org/delay/25": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": _mock_error("timeout") if timeout < 25 else None,
+            "error": "Connection timed out." if timeout < 25 else None,
         },
         # Error cases
         "invalid_url": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": "URL 'invalid_url' is not a valid format.",  # hardcoded English in api.py
+            "error": "URL 'invalid_url' is not a valid format.",
         },
         "ftp://example.com": {
             "url": url,
@@ -402,19 +378,19 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests — always English
+            "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests
         },
         "https://": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests — always English
+            "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests
         },
         "https://thisurldoesnotexist12345.com": {
             "url": url,
             "is_alive": False,
             "status_code": None,
-            "error": _mock_error("connection"),  # locale-aware
+            "error": "Unable to connect to server.",  # DD-35: always English
         },
         "https://www.deepl.com": {
             "url": url,

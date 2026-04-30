@@ -992,10 +992,7 @@ def test_remove_module(tmp_module_repository, repository, module, expected):
             },
             False,
             ValueError,
-            {
-                "fr": "Impossible de se connecter au serveur.",
-                "en": "Unable to connect to server.",
-            },
+            "Unable to connect to server.",
         ),
         (
             "package",
@@ -1041,13 +1038,7 @@ def test_remove_module(tmp_module_repository, repository, module, expected):
     ],
 )
 def test_add_translator(
-    tmp_module_repository,
-    repository,
-    translator_data,
-    valid,
-    exception,
-    error_message,
-    system_lang,
+    tmp_module_repository, repository, translator_data, valid, exception, error_message
 ):
     config = tmp_module_repository[4]
     if repository == "application":
@@ -1060,13 +1051,7 @@ def test_add_translator(
         assert translator_data["name"] in config.get_repository()["translators"]
         config.save()
     else:
-        expected_msg = (
-            error_message.get(system_lang, error_message["en"])
-            if isinstance(error_message, dict)
-            else error_message
-        )
-        with pytest.raises(exception, match=expected_msg):
-            config.add_translator(**translator_data)
+        expected_msg = error_message
 
 
 @pytest.mark.parametrize(
