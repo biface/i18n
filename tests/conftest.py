@@ -1,3 +1,17 @@
+# ---------------------------------------------------------------------------
+# TEST EXECUTION ORDER — MANDATORY
+#
+# The Config class uses patterns.Singleton: only one instance exists per
+# pytest process. Directory prefixes enforce the required execution order:
+#
+#   00_api, 00_locale  → no Config dependency
+#   01_loader          → initializes the Singleton
+#   02_models          → no Config dependency
+#   09_config          → inherits the Singleton from 01_loader
+#
+# Changing this order will cause failures in 09_config (54 tests).
+# ---------------------------------------------------------------------------
+
 import copy
 import locale as _locale
 import os
