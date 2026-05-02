@@ -33,30 +33,28 @@ def _write_i18t(directory, data, name="usage.json.i18t"):
 # ---------------------------------------------------------------------------
 
 
-def test_load_book_returns_filtered_dict(tmp_path):
-    """Cas nominal : retourne un dict avec les bons msgids, clés réservées exclues."""
-    result = load_book(_write_i18t(tmp_path, VALID_DATA))
-    assert isinstance(result, dict)
-    assert set(result.keys()) == {"10001", "10002"}
-    assert ".i18n_tools" not in result
-    assert "metadata" not in result
+class TestLoadBook:
+    def test_load_book_returns_filtered_dict(self, tmp_path):
+        """Cas nominal : retourne un dict avec les bons msgids, clés réservées exclues."""
+        result = load_book(_write_i18t(tmp_path, VALID_DATA))
+        assert isinstance(result, dict)
+        assert set(result.keys()) == {"10001", "10002"}
+        assert ".i18n_tools" not in result
+        assert "metadata" not in result
 
+    def test_load_book_entry_structure(self, tmp_path):
+        """Chaque entrée contient les clés 'messages' et 'metadata'."""
+        result = load_book(_write_i18t(tmp_path, VALID_DATA))
+        for entry in result.values():
+            assert "messages" in entry
+            assert "metadata" in entry
 
-def test_load_book_entry_structure(tmp_path):
-    """Chaque entrée contient les clés 'messages' et 'metadata'."""
-    result = load_book(_write_i18t(tmp_path, VALID_DATA))
-    for entry in result.values():
-        assert "messages" in entry
-        assert "metadata" in entry
+    def test_load_book_file_not_found(self, tmp_path):
+        """Fichier inexistant → FileNotFoundError."""
+        with pytest.raises(FileNotFoundError):
+            load_book(str(tmp_path / "no_such_file.json.i18t"))
 
-
-def test_load_book_file_not_found(tmp_path):
-    """Fichier inexistant → FileNotFoundError."""
-    with pytest.raises(FileNotFoundError):
-        load_book(str(tmp_path / "no_such_file.json.i18t"))
-
-
-def test_load_book_integrity_error(tmp_path):
-    """Matrice mal formée → ValueError."""
-    with pytest.raises(ValueError):
-        load_book(_write_i18t(tmp_path, INVALID_DATA))
+    def test_load_book_integrity_error(self, tmp_path):
+        """Matrice mal formée → ValueError."""
+        with pytest.raises(ValueError):
+            load_book(_write_i18t(tmp_path, INVALID_DATA))

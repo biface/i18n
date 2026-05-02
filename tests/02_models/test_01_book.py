@@ -23,6 +23,24 @@ def fr_fr_i18t_directory(tmp_path, fr_fr_messages):
     return str(tmp_path)
 
 
+def _make_simple_message(lang: str) -> Message:
+    return Message(
+        id="tmp1",
+        default="Hello world",
+        options={1: "Hello {who}"},
+        default_plurals={1: "Hello worlds"},
+        options_plurals={1: {1: "Hello {who}s"}},
+        metadata={
+            "version": "0.1.0",
+            "language": lang,
+            "location": [],
+            "flags": ["python-format"],
+            "user_comments": [],
+            "count": {"singular": 1, "plurals": [1]},
+        },
+    )
+
+
 # Testing books attributes
 
 
@@ -120,6 +138,493 @@ class TestBook:
             Book(fr_message, domain="test", language="fr")
 
 
+class TestBookGet:
+    @pytest.mark.parametrize(
+        "fixture_book, id, expected",
+        [
+            (
+                "fr_fr_book",
+                "1100",
+                [
+                    ("default", None, None, "Voici une fleur"),
+                    ("default_plurals", 1, None, "Voici des fleurs"),
+                ],
+            ),
+            (
+                "fr_fr_book",
+                "1100",
+                [
+                    ("options", 2, None, "Voici une {flower} rare"),
+                    ("options_plurals", 2, 3, "Voici plusieurs {flower} rares"),
+                ],
+            ),
+            ("fr_fr_book", "1000", None),
+        ],
+    )
+    def test_book_get(self, fixture_book, id, expected, request):
+        book = request.getfixturevalue(fixture_book)
+        if expected is None:
+            assert book.get(id) == None
+        else:
+            for attribute, opt, token, value in expected:
+                if opt is None:
+                    assert getattr(book.get(id), attribute) == value
+                elif token is None:
+                    assert getattr(book.get(id), attribute)[opt] == value
+                else:
+                    assert getattr(book.get(id), attribute)[[opt, token]] == value
+
+
+class TestBookAdd:
+    @pytest.mark.parametrize(
+        "fixture_book, messages, expected",
+        [
+            (
+                "fr_fr_book",
+                [
+                    Message(
+                        id="1000",
+                        default="Voici un chiot",
+                        options={
+                            1: "Voici un joli {puppy}",
+                            2: "Voici un chiot {puppy} rare",
+                            3: "Voici un chiot {puppy} de la région {region}",
+                        },
+                        default_plurals={
+                            1: "Voici des chiots",
+                            2: "Voici deux chiots",
+                        },
+                        options_plurals={
+                            1: {
+                                1: "Voici de jolis chiots {puppy}",
+                                2: "Voici deux beaux chiots {puppy}",
+                            },
+                            2: {
+                                1: "Voici des chiots {puppy} rares",
+                                2: "Voici deux chiots {puppy} rares",
+                                3: "Voici plusieurs chiots {puppy} rares",
+                            },
+                            3: {
+                                1: "Voici des chiots {puppy} de la région {region}",
+                                2: "Voici deux chiots {puppy} de la région {region}",
+                            },
+                        },
+                        metadata={
+                            "version": "0.1.0",
+                            "language": "fr-FR",
+                            "location": [],
+                            "flags": ["python-format"],
+                            "user_comments": ["Message sur des chiots"],
+                            "count": {"singular": 3, "plurals": [2, 3, 2]},
+                        },
+                    ),
+                    Message(
+                        id="1001",
+                        default="Voici un chatton",
+                        options={
+                            1: "Voici un joli {kitten}",
+                            2: "Voici un chatton {kitten} rare",
+                            3: "Voici un chatton {kitten} de la région {region}",
+                        },
+                        default_plurals={
+                            1: "Voici des chattons",
+                            2: "Voici deux chattons",
+                        },
+                        options_plurals={
+                            1: {
+                                1: "Voici de jolis chattons {kitten}",
+                                2: "Voici deux beaux chattons {kitten}",
+                            },
+                            2: {
+                                1: "Voici des chattons {kitten} rares",
+                                2: "Voici deux chattons {kitten} rares",
+                                3: "Voici plusieurs chattons {kitten} rares",
+                            },
+                            3: {
+                                1: "Voici des chattons {kitten} de la région {region}",
+                                2: "Voici deux chattons {kitten} de la région {region}",
+                            },
+                        },
+                        metadata={
+                            "version": "0.1.0",
+                            "language": "fr-FR",
+                            "location": [],
+                            "flags": ["python-format"],
+                            "user_comments": ["Message sur des chattons"],
+                            "count": {"singular": 3, "plurals": [2, 3, 2]},
+                        },
+                    ),
+                ],
+                [
+                    [
+                        "1000",
+                        ["Voici un chiot", "Voici des chiots", "Voici deux chiots"],
+                        [
+                            [
+                                "Voici un joli {puppy}",
+                                "Voici de jolis chiots {puppy}",
+                                "Voici deux beaux chiots {puppy}",
+                            ],
+                            [
+                                "Voici un chiot {puppy} rare",
+                                "Voici des chiots {puppy} rares",
+                                "Voici deux chiots {puppy} rares",
+                                "Voici plusieurs chiots {puppy} rares",
+                            ],
+                            [
+                                "Voici un chiot {puppy} de la région {region}",
+                                "Voici des chiots {puppy} de la région {region}",
+                                "Voici deux chiots {puppy} de la région {region}",
+                            ],
+                        ],
+                    ],
+                    [
+                        "1001",
+                        [
+                            "Voici un chatton",
+                            "Voici des chattons",
+                            "Voici deux chattons",
+                        ],
+                        [
+                            [
+                                "Voici un joli {kitten}",
+                                "Voici de jolis chattons {kitten}",
+                                "Voici deux beaux chattons {kitten}",
+                            ],
+                            [
+                                "Voici un chatton {kitten} rare",
+                                "Voici des chattons {kitten} rares",
+                                "Voici deux chattons {kitten} rares",
+                                "Voici plusieurs chattons {kitten} rares",
+                            ],
+                        ],
+                    ],
+                ],
+            )
+        ],
+    )
+    def test_book_add(self, fixture_book, messages, expected, request):
+        book = request.getfixturevalue(fixture_book)
+        book.add("test", messages)
+        for msg_id, msg_main, msg_variants in expected:
+            assert book.get(msg_id).get_principal() == msg_main
+            for index, msg_variant in enumerate(msg_variants):
+                assert book.get(msg_id).get_variant(index + 1) == msg_variant
+
+    @pytest.mark.parametrize(
+        "fixture_book, domain, messages, expected",
+        [
+            (
+                "fr_fr_book",
+                "animals",
+                [],
+                "Domain of message 'animals' is not compatible with this book domain 'test'",
+            ),
+            (
+                "fr_fr_book",
+                "test",
+                [
+                    Message(
+                        id="1000",
+                        default="Voici un chiot",
+                        options={
+                            1: "Voici un joli {puppy}",
+                            2: "Voici un chiot {puppy} rare",
+                            3: "Voici un chiot {puppy} de la région {region}",
+                        },
+                        default_plurals={
+                            1: "Voici des chiots",
+                            2: "Voici deux chiots",
+                        },
+                        options_plurals={
+                            1: {
+                                1: "Voici de jolis chiots {puppy}",
+                                2: "Voici deux beaux chiots {puppy}",
+                            },
+                            2: {
+                                1: "Voici des chiots {puppy} rares",
+                                2: "Voici deux chiots {puppy} rares",
+                                3: "Voici plusieurs chiots {puppy} rares",
+                            },
+                            3: {
+                                1: "Voici des chiots {puppy} de la région {region}",
+                                2: "Voici deux chiots {puppy} de la région {region}",
+                            },
+                        },
+                        metadata={
+                            "version": "0.1.0",
+                            "language": "fr-BE",
+                            "location": [],
+                            "flags": ["python-format"],
+                            "user_comments": ["Message sur des chiots"],
+                            "count": {"singular": 3, "plurals": [2, 3, 2]},
+                        },
+                    )
+                ],
+                "Language of message (1000 : 'fr-BE') is not compatible with this book language ('fr-FR')",
+            ),
+            (
+                "fr_fr_book",
+                "test",
+                [
+                    Message(
+                        id="1100",
+                        default="Voici un chiot",
+                        options={
+                            1: "Voici un joli {puppy}",
+                            2: "Voici un chiot {puppy} rare",
+                            3: "Voici un chiot {puppy} de la région {region}",
+                        },
+                        default_plurals={
+                            1: "Voici des chiots",
+                            2: "Voici deux chiots",
+                        },
+                        options_plurals={
+                            1: {
+                                1: "Voici de jolis chiots {puppy}",
+                                2: "Voici deux beaux chiots {puppy}",
+                            },
+                            2: {
+                                1: "Voici des chiots {puppy} rares",
+                                2: "Voici deux chiots {puppy} rares",
+                                3: "Voici plusieurs chiots {puppy} rares",
+                            },
+                            3: {
+                                1: "Voici des chiots {puppy} de la région {region}",
+                                2: "Voici deux chiots {puppy} de la région {region}",
+                            },
+                        },
+                        metadata={
+                            "version": "0.1.0",
+                            "language": "fr-FR",
+                            "location": [],
+                            "flags": ["python-format"],
+                            "user_comments": ["Message sur des chiots"],
+                            "count": {"singular": 3, "plurals": [2, 3, 2]},
+                        },
+                    )
+                ],
+                "Message with id (1100) is already present in this book",
+            ),
+        ],
+    )
+    def test_book_add_failed(self, fixture_book, domain, messages, expected, request):
+        book = request.getfixturevalue(fixture_book)
+        with pytest.raises(ValueError, match=re.escape(expected)):
+            book.add(domain, messages)
+
+
+class TestBookRemove:
+    @pytest.mark.parametrize(
+        "fixture_book, messages_id, expected",
+        [
+            ("fr_fr_book", ["1100"], 9),
+            ("fr_fr_book", ["1100", "1101"], 8),
+            ("en_gb_book", ["1102"], 9),
+            ("en_gb_book", ["1102", "1103"], 8),
+            ("fr_fr_book", ["1100", "1101", "1104"], 7),
+            ("en_us_book", ["1105"], 9),
+            ("it_it_book", ["1106"], 9),
+            ("it_it_book", ["1106", "1107"], 8),
+            ("en_us_book", ["1105", "1108"], 8),
+            ("en_us_book", ["1105", "1108", "1109"], 7),
+            ("en_us_book", ["1105", "1100", "1108", "1104", "1109", "1102"], 4),
+        ],
+    )
+    def test_book_remove(self, fixture_book, messages_id, expected, request):
+        book = request.getfixturevalue(fixture_book)
+        for message_id in messages_id:
+            book.remove(message_id)
+            assert book.get(message_id) is None
+        assert book.metadata[["count", "messages"]] == expected
+
+    def test_book_remove_failed(self, fr_fr_book):
+        with pytest.raises(
+            ValueError, match=re.escape("Message identifier 1000 is not in this book")
+        ):
+            fr_fr_book.remove("1000")
+
+
+class TestBookMetadata:
+    @pytest.mark.parametrize(
+        "fixture_book", ["fr_fr_book", "en_us_book", "en_gb_book", "it_it_book"]
+    )
+    def test_book_metadata_defaults_and_language_domain(self, fixture_book, request):
+        book = request.getfixturevalue(fixture_book)
+        # Core attributes now stored on instance
+        assert isinstance(book.language, str)
+        assert isinstance(book.domain, str)
+        assert isinstance(book.format, str)
+        # These keys should NOT be in metadata anymore
+        assert not book.metadata.is_key("language")
+        assert not book.metadata.is_key("domain")
+        assert not book.metadata.is_key("format")
+        # Default values for remaining metadata
+        assert book.metadata.get("project_id_version", None) == "i18n-tools 1.0"
+        assert book.metadata.get("report_msgid_bugs_to", None) == "bugs@example.com"
+        assert book.metadata.get("pot_creation_date", None) == ""
+        assert book.metadata.get("language_team", None) == ""
+        assert book.metadata.get("header_comment", None) == ""
+        # Statistics exist and initialized or computed
+        assert book.metadata.dict_paths().__contains__(
+            ["statistics", "total_messages"]
+        ) and isinstance(book.metadata[["statistics", "total_messages"]], int)
+        assert book.metadata.dict_paths().__contains__(
+            ["statistics", "total_words"]
+        ) and isinstance(book.metadata[["statistics", "total_words"]], int)
+        # Count backward compatibility
+        assert book.metadata[["count", "messages"]] == len(book.messages)
+
+    @pytest.mark.parametrize(
+        "fixture_book,lang",
+        [
+            ("fr_fr_book", "fr-FR"),
+            ("en_us_book", "en-US"),
+            ("en_gb_book", "en-GB"),
+            ("it_it_book", "it-IT"),
+        ],
+    )
+    def test_book_statistics_update_on_add_and_remove(
+        self, fixture_book, lang, request
+    ):
+        book = request.getfixturevalue(fixture_book)
+        initial_msgs = book.metadata[["statistics", "total_messages"]]
+        initial_words = book.metadata[["statistics", "total_words"]]
+
+        # Add a simple message and verify stats updated
+        msg = _make_simple_message(lang)
+        book.add(book.domain, [msg])
+        assert book.metadata[["statistics", "total_messages"]] == initial_msgs + 1
+        # The delta words should equal counts from msg strings
+        # default (2 words) + default_plural (2) + option(2) + option_plural(2) = 8 words
+        assert book.metadata[["statistics", "total_words"]] == initial_words + 8
+
+        # Remove and verify rollback
+        book.remove(msg.id)
+        assert book.metadata[["statistics", "total_messages"]] == initial_msgs
+        assert book.metadata[["statistics", "total_words"]] == initial_words
+
+    @pytest.mark.parametrize(
+        "key,value,expected_path,expected_value",
+        [
+            ("header_comment", "Global notes", ["header_comment"], "Global notes"),
+            ("header_comment", None, ["header_comment"], ""),
+            (["statistics", "total_words"], 1234, ["statistics", "total_words"], 1234),
+            (["statistics", "total_words"], None, ["statistics", "total_words"], 0),
+            ("custom_meta", {"a": 1}, ["custom_meta"], {"a": 1}),
+        ],
+    )
+    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
+    @pytest.mark.parametrize(
+        "fixture_book", ["fr_fr_book"]
+    )  # one is enough for API checks
+    def test_book_set_metadata_update_and_reset(
+        self, fixture_book, key, value, expected_path, expected_value, request
+    ):
+        book = request.getfixturevalue(fixture_book)
+        book.set_metadata(key, value)
+        # Access metadata using path semantics supported by StrictNestedDictionary
+        # For top-level keys, expected_path is [key]
+        if len(expected_path) == 1:
+            assert book.metadata[expected_path[0]] == expected_value
+        else:
+            assert book.metadata[expected_path] == expected_value
+
+    @pytest.mark.parametrize(
+        "key,value,expected_exception",
+        [
+            (None, "x", KeyError),
+            ("does_not_exist", None, KeyError),
+            (["not", "there"], 42, KeyError),
+            (123, "x", TypeError),
+            ({"a": 1}, "x", TypeError),
+        ],
+    )
+    @pytest.mark.parametrize("fixture_book", ["fr_fr_book"])  # check failure scenarios
+    def test_book_set_metadata_update_and_reset_failed(
+        self, fixture_book, key, value, expected_exception, request
+    ):
+        book = request.getfixturevalue(fixture_book)
+        with pytest.raises(expected_exception):
+            book.set_metadata(key, value)
+
+
+class TestBookAttributes:
+    @pytest.mark.parametrize(
+        "fixture_book, expected_lang, expected_domain, expected_format",
+        [
+            ("fr_fr_book", "fr-FR", "test", "json"),
+            ("en_us_book", "en-US", "test", "json"),
+        ],
+    )
+    def test_attribute_getters(
+        self, fixture_book, expected_lang, expected_domain, expected_format, request
+    ):
+        book = request.getfixturevalue(fixture_book)
+        assert book.get_language() == expected_lang
+        assert book.get_domain() == expected_domain
+        assert book.get_format() == expected_format
+
+    def test_add_attribute_methods_fail_when_already_set(self, fr_fr_book):
+        # add_language when already set
+        with pytest.raises(ValueError, match="Language is already set for this book"):
+            fr_fr_book.add_language("fr")
+        # add_domain when already set
+        with pytest.raises(ValueError, match="Domain is already set for this book"):
+            fr_fr_book.add_domain("test")
+        # add_format when already set
+        with pytest.raises(ValueError, match="Format is already set for this book"):
+            fr_fr_book.add_format("json")
+
+    def test_remove_attributes_then_add_again(self):
+        # create a minimal empty book
+        book = Book(domain="d", language="fr-FR")
+        # remove then add
+        book.remove_language()
+        assert book.language is None
+        book.add_language("fr")  # normalized to fr-FR
+        assert book.language == "fr"
+
+        book.remove_domain()
+        assert book.domain is None
+        book.add_domain("d2")
+        assert book.domain == "d2"
+
+        book.remove_format()
+        assert book.format is None
+        book.add_format("yaml")
+        assert book.format == "yaml"
+
+
+class TestBookUpdate:
+    def test_update_language_success_on_empty_book(self):
+        book = Book(domain="d", language="fr-FR")
+        # No messages: update freely
+        book.update_language("fr")
+        assert book.language == "fr"  # normalization and same
+        book.update_language("en-us")
+        assert book.language == "en-US"
+
+    def test_update_language_failure_on_mismatch(self, fr_fr_book, en_message):
+        # ensure en_message language mismatches fr-FR after normalization
+        assert en_message.metadata["language"] in ("en", "en-US", "en-GB")
+        # Try to update the book language to en-US while it contains fr-FR messages -> should fail
+        with pytest.raises(
+            ValueError,
+            match=r"Language of message \(.*\) is not compatible with updated book language \('en-US'\)",
+        ):
+            fr_fr_book.update_language("en-US")
+
+    def test_update_domain_and_format_success(self, fr_fr_book):
+        fr_fr_book.update_domain("animals")
+        assert fr_fr_book.domain == "animals"
+        assert fr_fr_book.format == "json"
+        assert fr_fr_book.filename == "animals.json.i18t"
+        fr_fr_book.update_format("yaml")
+        assert fr_fr_book.format == "yaml"
+        assert fr_fr_book.filename == "animals.yaml.i18t"
+
+
 class TestBookLoad:
 
     def test_book_load_nominal(self, fr_fr_i18t_directory):
@@ -163,509 +668,6 @@ class TestBookLoad:
             book.load(str(tmp_path))
 
 
-@pytest.mark.parametrize(
-    "fixture_book, id, expected",
-    [
-        (
-            "fr_fr_book",
-            "1100",
-            [
-                ("default", None, None, "Voici une fleur"),
-                ("default_plurals", 1, None, "Voici des fleurs"),
-            ],
-        ),
-        (
-            "fr_fr_book",
-            "1100",
-            [
-                ("options", 2, None, "Voici une {flower} rare"),
-                ("options_plurals", 2, 3, "Voici plusieurs {flower} rares"),
-            ],
-        ),
-        ("fr_fr_book", "1000", None),
-    ],
-)
-def test_book_get(fixture_book, id, expected, request):
-    book = request.getfixturevalue(fixture_book)
-    if expected is None:
-        assert book.get(id) == None
-    else:
-        for attribute, opt, token, value in expected:
-            if opt is None:
-                assert getattr(book.get(id), attribute) == value
-            elif token is None:
-                assert getattr(book.get(id), attribute)[opt] == value
-            else:
-                assert getattr(book.get(id), attribute)[[opt, token]] == value
-
-
-@pytest.mark.parametrize(
-    "fixture_book, messages, expected",
-    [
-        (
-            "fr_fr_book",
-            [
-                Message(
-                    id="1000",
-                    default="Voici un chiot",
-                    options={
-                        1: "Voici un joli {puppy}",
-                        2: "Voici un chiot {puppy} rare",
-                        3: "Voici un chiot {puppy} de la région {region}",
-                    },
-                    default_plurals={
-                        1: "Voici des chiots",
-                        2: "Voici deux chiots",
-                    },
-                    options_plurals={
-                        1: {
-                            1: "Voici de jolis chiots {puppy}",
-                            2: "Voici deux beaux chiots {puppy}",
-                        },
-                        2: {
-                            1: "Voici des chiots {puppy} rares",
-                            2: "Voici deux chiots {puppy} rares",
-                            3: "Voici plusieurs chiots {puppy} rares",
-                        },
-                        3: {
-                            1: "Voici des chiots {puppy} de la région {region}",
-                            2: "Voici deux chiots {puppy} de la région {region}",
-                        },
-                    },
-                    metadata={
-                        "version": "0.1.0",
-                        "language": "fr-FR",
-                        "location": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Message sur des chiots"],
-                        "count": {"singular": 3, "plurals": [2, 3, 2]},
-                    },
-                ),
-                Message(
-                    id="1001",
-                    default="Voici un chatton",
-                    options={
-                        1: "Voici un joli {kitten}",
-                        2: "Voici un chatton {kitten} rare",
-                        3: "Voici un chatton {kitten} de la région {region}",
-                    },
-                    default_plurals={
-                        1: "Voici des chattons",
-                        2: "Voici deux chattons",
-                    },
-                    options_plurals={
-                        1: {
-                            1: "Voici de jolis chattons {kitten}",
-                            2: "Voici deux beaux chattons {kitten}",
-                        },
-                        2: {
-                            1: "Voici des chattons {kitten} rares",
-                            2: "Voici deux chattons {kitten} rares",
-                            3: "Voici plusieurs chattons {kitten} rares",
-                        },
-                        3: {
-                            1: "Voici des chattons {kitten} de la région {region}",
-                            2: "Voici deux chattons {kitten} de la région {region}",
-                        },
-                    },
-                    metadata={
-                        "version": "0.1.0",
-                        "language": "fr-FR",
-                        "location": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Message sur des chattons"],
-                        "count": {"singular": 3, "plurals": [2, 3, 2]},
-                    },
-                ),
-            ],
-            [
-                [
-                    "1000",
-                    ["Voici un chiot", "Voici des chiots", "Voici deux chiots"],
-                    [
-                        [
-                            "Voici un joli {puppy}",
-                            "Voici de jolis chiots {puppy}",
-                            "Voici deux beaux chiots {puppy}",
-                        ],
-                        [
-                            "Voici un chiot {puppy} rare",
-                            "Voici des chiots {puppy} rares",
-                            "Voici deux chiots {puppy} rares",
-                            "Voici plusieurs chiots {puppy} rares",
-                        ],
-                        [
-                            "Voici un chiot {puppy} de la région {region}",
-                            "Voici des chiots {puppy} de la région {region}",
-                            "Voici deux chiots {puppy} de la région {region}",
-                        ],
-                    ],
-                ],
-                [
-                    "1001",
-                    ["Voici un chatton", "Voici des chattons", "Voici deux chattons"],
-                    [
-                        [
-                            "Voici un joli {kitten}",
-                            "Voici de jolis chattons {kitten}",
-                            "Voici deux beaux chattons {kitten}",
-                        ],
-                        [
-                            "Voici un chatton {kitten} rare",
-                            "Voici des chattons {kitten} rares",
-                            "Voici deux chattons {kitten} rares",
-                            "Voici plusieurs chattons {kitten} rares",
-                        ],
-                    ],
-                ],
-            ],
-        )
-    ],
-)
-def test_book_add(fixture_book, messages, expected, request):
-    book = request.getfixturevalue(fixture_book)
-    book.add("test", messages)
-    for msg_id, msg_main, msg_variants in expected:
-        assert book.get(msg_id).get_principal() == msg_main
-        for index, msg_variant in enumerate(msg_variants):
-            assert book.get(msg_id).get_variant(index + 1) == msg_variant
-
-
-@pytest.mark.parametrize(
-    "fixture_book, domain, messages, expected",
-    [
-        (
-            "fr_fr_book",
-            "animals",
-            [],
-            "Domain of message 'animals' is not compatible with this book domain 'test'",
-        ),
-        (
-            "fr_fr_book",
-            "test",
-            [
-                Message(
-                    id="1000",
-                    default="Voici un chiot",
-                    options={
-                        1: "Voici un joli {puppy}",
-                        2: "Voici un chiot {puppy} rare",
-                        3: "Voici un chiot {puppy} de la région {region}",
-                    },
-                    default_plurals={
-                        1: "Voici des chiots",
-                        2: "Voici deux chiots",
-                    },
-                    options_plurals={
-                        1: {
-                            1: "Voici de jolis chiots {puppy}",
-                            2: "Voici deux beaux chiots {puppy}",
-                        },
-                        2: {
-                            1: "Voici des chiots {puppy} rares",
-                            2: "Voici deux chiots {puppy} rares",
-                            3: "Voici plusieurs chiots {puppy} rares",
-                        },
-                        3: {
-                            1: "Voici des chiots {puppy} de la région {region}",
-                            2: "Voici deux chiots {puppy} de la région {region}",
-                        },
-                    },
-                    metadata={
-                        "version": "0.1.0",
-                        "language": "fr-BE",
-                        "location": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Message sur des chiots"],
-                        "count": {"singular": 3, "plurals": [2, 3, 2]},
-                    },
-                )
-            ],
-            "Language of message (1000 : 'fr-BE') is not compatible with this book language ('fr-FR')",
-        ),
-        (
-            "fr_fr_book",
-            "test",
-            [
-                Message(
-                    id="1100",
-                    default="Voici un chiot",
-                    options={
-                        1: "Voici un joli {puppy}",
-                        2: "Voici un chiot {puppy} rare",
-                        3: "Voici un chiot {puppy} de la région {region}",
-                    },
-                    default_plurals={
-                        1: "Voici des chiots",
-                        2: "Voici deux chiots",
-                    },
-                    options_plurals={
-                        1: {
-                            1: "Voici de jolis chiots {puppy}",
-                            2: "Voici deux beaux chiots {puppy}",
-                        },
-                        2: {
-                            1: "Voici des chiots {puppy} rares",
-                            2: "Voici deux chiots {puppy} rares",
-                            3: "Voici plusieurs chiots {puppy} rares",
-                        },
-                        3: {
-                            1: "Voici des chiots {puppy} de la région {region}",
-                            2: "Voici deux chiots {puppy} de la région {region}",
-                        },
-                    },
-                    metadata={
-                        "version": "0.1.0",
-                        "language": "fr-FR",
-                        "location": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Message sur des chiots"],
-                        "count": {"singular": 3, "plurals": [2, 3, 2]},
-                    },
-                )
-            ],
-            "Message with id (1100) is already present in this book",
-        ),
-    ],
-)
-def test_book_add_failed(fixture_book, domain, messages, expected, request):
-    book = request.getfixturevalue(fixture_book)
-    with pytest.raises(ValueError, match=re.escape(expected)):
-        book.add(domain, messages)
-
-
-@pytest.mark.parametrize(
-    "fixture_book, messages_id, expected",
-    [
-        ("fr_fr_book", ["1100"], 9),
-        ("fr_fr_book", ["1100", "1101"], 8),
-        ("en_gb_book", ["1102"], 9),
-        ("en_gb_book", ["1102", "1103"], 8),
-        ("fr_fr_book", ["1100", "1101", "1104"], 7),
-        ("en_us_book", ["1105"], 9),
-        ("it_it_book", ["1106"], 9),
-        ("it_it_book", ["1106", "1107"], 8),
-        ("en_us_book", ["1105", "1108"], 8),
-        ("en_us_book", ["1105", "1108", "1109"], 7),
-        ("en_us_book", ["1105", "1100", "1108", "1104", "1109", "1102"], 4),
-    ],
-)
-def test_book_remove(fixture_book, messages_id, expected, request):
-    book = request.getfixturevalue(fixture_book)
-    for message_id in messages_id:
-        book.remove(message_id)
-        assert book.get(message_id) is None
-    assert book.metadata[["count", "messages"]] == expected
-
-
-def test_book_remove_failed(fr_fr_book):
-    with pytest.raises(
-        ValueError, match=re.escape("Message identifier 1000 is not in this book")
-    ):
-        fr_fr_book.remove("1000")
-
-
-# New tests for enhanced metadata and statistics in Book
-@pytest.mark.parametrize(
-    "fixture_book", ["fr_fr_book", "en_us_book", "en_gb_book", "it_it_book"]
-)
-def test_book_metadata_defaults_and_language_domain(fixture_book, request):
-    book = request.getfixturevalue(fixture_book)
-    # Core attributes now stored on instance
-    assert isinstance(book.language, str)
-    assert isinstance(book.domain, str)
-    assert isinstance(book.format, str)
-    # These keys should NOT be in metadata anymore
-    assert not book.metadata.is_key("language")
-    assert not book.metadata.is_key("domain")
-    assert not book.metadata.is_key("format")
-    # Default values for remaining metadata
-    assert book.metadata.get("project_id_version", None) == "i18n-tools 1.0"
-    assert book.metadata.get("report_msgid_bugs_to", None) == "bugs@example.com"
-    assert book.metadata.get("pot_creation_date", None) == ""
-    assert book.metadata.get("language_team", None) == ""
-    assert book.metadata.get("header_comment", None) == ""
-    # Statistics exist and initialized or computed
-    assert book.metadata.dict_paths().__contains__(
-        ["statistics", "total_messages"]
-    ) and isinstance(book.metadata[["statistics", "total_messages"]], int)
-    assert book.metadata.dict_paths().__contains__(
-        ["statistics", "total_words"]
-    ) and isinstance(book.metadata[["statistics", "total_words"]], int)
-    # Count backward compatibility
-    assert book.metadata[["count", "messages"]] == len(book.messages)
-
-
-def _make_simple_message(lang: str) -> Message:
-    return Message(
-        id="tmp1",
-        default="Hello world",
-        options={1: "Hello {who}"},
-        default_plurals={1: "Hello worlds"},
-        options_plurals={1: {1: "Hello {who}s"}},
-        metadata={
-            "version": "0.1.0",
-            "language": lang,
-            "location": [],
-            "flags": ["python-format"],
-            "user_comments": [],
-            "count": {"singular": 1, "plurals": [1]},
-        },
-    )
-
-
-@pytest.mark.parametrize(
-    "fixture_book,lang",
-    [
-        ("fr_fr_book", "fr-FR"),
-        ("en_us_book", "en-US"),
-        ("en_gb_book", "en-GB"),
-        ("it_it_book", "it-IT"),
-    ],
-)
-def test_book_statistics_update_on_add_and_remove(fixture_book, lang, request):
-    book = request.getfixturevalue(fixture_book)
-    initial_msgs = book.metadata[["statistics", "total_messages"]]
-    initial_words = book.metadata[["statistics", "total_words"]]
-
-    # Add a simple message and verify stats updated
-    msg = _make_simple_message(lang)
-    book.add(book.domain, [msg])
-    assert book.metadata[["statistics", "total_messages"]] == initial_msgs + 1
-    # The delta words should equal counts from msg strings
-    # default (2 words) + default_plural (2) + option(2) + option_plural(2) = 8 words
-    assert book.metadata[["statistics", "total_words"]] == initial_words + 8
-
-    # Remove and verify rollback
-    book.remove(msg.id)
-    assert book.metadata[["statistics", "total_messages"]] == initial_msgs
-    assert book.metadata[["statistics", "total_words"]] == initial_words
-
-
-@pytest.mark.parametrize(
-    "key,value,expected_path,expected_value",
-    [
-        ("header_comment", "Global notes", ["header_comment"], "Global notes"),
-        ("header_comment", None, ["header_comment"], ""),
-        (["statistics", "total_words"], 1234, ["statistics", "total_words"], 1234),
-        (["statistics", "total_words"], None, ["statistics", "total_words"], 0),
-        ("custom_meta", {"a": 1}, ["custom_meta"], {"a": 1}),
-    ],
-)
-@pytest.mark.skip(reason="ndict_tools equality has be rewieved")
-@pytest.mark.parametrize("fixture_book", ["fr_fr_book"])  # one is enough for API checks
-def test_book_set_metadata_update_and_reset(
-    fixture_book, key, value, expected_path, expected_value, request
-):
-    book = request.getfixturevalue(fixture_book)
-    book.set_metadata(key, value)
-    # Access metadata using path semantics supported by StrictNestedDictionary
-    # For top-level keys, expected_path is [key]
-    if len(expected_path) == 1:
-        assert book.metadata[expected_path[0]] == expected_value
-    else:
-        assert book.metadata[expected_path] == expected_value
-
-
-@pytest.mark.parametrize(
-    "key,value,expected_exception",
-    [
-        (None, "x", KeyError),
-        ("does_not_exist", None, KeyError),
-        (["not", "there"], 42, KeyError),
-        (123, "x", TypeError),
-        ({"a": 1}, "x", TypeError),
-    ],
-)
-@pytest.mark.parametrize("fixture_book", ["fr_fr_book"])  # check failure scenarios
-def test_book_set_metadata_update_and_reset_failed(
-    fixture_book, key, value, expected_exception, request
-):
-    book = request.getfixturevalue(fixture_book)
-    with pytest.raises(expected_exception):
-        book.set_metadata(key, value)
-
-
-# --- New tests: getters/add/update/remove for language, domain, format ---
-
-
-@pytest.mark.parametrize(
-    "fixture_book, expected_lang, expected_domain, expected_format",
-    [
-        ("fr_fr_book", "fr-FR", "test", "json"),
-        ("en_us_book", "en-US", "test", "json"),
-    ],
-)
-def test_attribute_getters(
-    fixture_book, expected_lang, expected_domain, expected_format, request
-):
-    book = request.getfixturevalue(fixture_book)
-    assert book.get_language() == expected_lang
-    assert book.get_domain() == expected_domain
-    assert book.get_format() == expected_format
-
-
-def test_add_attribute_methods_fail_when_already_set(fr_fr_book):
-    # add_language when already set
-    with pytest.raises(ValueError, match="Language is already set for this book"):
-        fr_fr_book.add_language("fr")
-    # add_domain when already set
-    with pytest.raises(ValueError, match="Domain is already set for this book"):
-        fr_fr_book.add_domain("test")
-    # add_format when already set
-    with pytest.raises(ValueError, match="Format is already set for this book"):
-        fr_fr_book.add_format("json")
-
-
-def test_remove_attributes_then_add_again():
-    # create a minimal empty book
-    book = Book(domain="d", language="fr-FR")
-    # remove then add
-    book.remove_language()
-    assert book.language is None
-    book.add_language("fr")  # normalized to fr-FR
-    assert book.language == "fr"
-
-    book.remove_domain()
-    assert book.domain is None
-    book.add_domain("d2")
-    assert book.domain == "d2"
-
-    book.remove_format()
-    assert book.format is None
-    book.add_format("yaml")
-    assert book.format == "yaml"
-
-
-def test_update_language_success_on_empty_book():
-    book = Book(domain="d", language="fr-FR")
-    # No messages: update freely
-    book.update_language("fr")
-    assert book.language == "fr"  # normalization and same
-    book.update_language("en-us")
-    assert book.language == "en-US"
-
-
-def test_update_language_failure_on_mismatch(fr_fr_book, en_message):
-    # ensure en_message language mismatches fr-FR after normalization
-    assert en_message.metadata["language"] in ("en", "en-US", "en-GB")
-    # Try to update the book language to en-US while it contains fr-FR messages -> should fail
-    with pytest.raises(
-        ValueError,
-        match=r"Language of message \(.*\) is not compatible with updated book language \('en-US'\)",
-    ):
-        fr_fr_book.update_language("en-US")
-
-
-def test_update_domain_and_format_success(fr_fr_book):
-    fr_fr_book.update_domain("animals")
-    assert fr_fr_book.domain == "animals"
-    assert fr_fr_book.format == "json"
-    assert fr_fr_book.filename == "animals.json.i18t"
-    fr_fr_book.update_format("yaml")
-    assert fr_fr_book.format == "yaml"
-    assert fr_fr_book.filename == "animals.yaml.i18t"
-
-
-def test_save(fr_fr_book):
-    fr_fr_book.save("tmp")
+class TestBookSave:
+    def test_save(self, fr_fr_book):
+        fr_fr_book.save("tmp")

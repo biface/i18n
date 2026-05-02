@@ -11,7 +11,7 @@ from i18n_tools.models.repository import Repository
 
 
 @pytest.fixture(scope="class")
-def test_repository(tmp_class_repository):
+def repository_fixture(tmp_class_repository):
     return Repository(**tmp_class_repository[4])
 
 
@@ -151,51 +151,51 @@ class TestRepositoryInit:
 
 class TestRepositoryProperties:
 
-    def test_get_name(self, test_repository):
-        assert test_repository.name == "fsm-tools"
+    def test_get_name(self, repository_fixture):
+        assert repository_fixture.name == "fsm-tools"
 
-    def test_set_name(self, test_repository):
-        test_repository.name = "automata-tools"
-        assert test_repository.name == "automata-tools"
+    def test_set_name(self, repository_fixture):
+        repository_fixture.name = "automata-tools"
+        assert repository_fixture.name == "automata-tools"
 
-    def test_get_config(self, tmp_class_repository, test_repository):
+    def test_get_config(self, tmp_class_repository, repository_fixture):
         assert (
-            test_repository.config
+            repository_fixture.config
             == tmp_class_repository[0][0]
             + "/repository-test/fsm_tools/locales/_i18n_tools/i18n-tools.yaml"
         )
 
-    def test_set_config(self, tmp_class_repository, test_repository):
-        old_config = test_repository.config
-        old_config_path = test_repository[["paths", "config"]]
+    def test_set_config(self, tmp_class_repository, repository_fixture):
+        old_config = repository_fixture.config
+        old_config_path = repository_fixture[["paths", "config"]]
         new_config = (
             tmp_class_repository[0][0]
             + "/repository-test/fsm_tools/locales/_i18n_tools/i18n-tools.toml"
         )
-        test_repository.config = new_config
-        assert test_repository[["paths", "config"]] == old_config_path
-        assert test_repository[["paths", "settings"]] == "i18n-tools.toml"
-        test_repository.config = old_config
-        assert test_repository[["paths", "settings"]] == "i18n-tools.yaml"
+        repository_fixture.config = new_config
+        assert repository_fixture[["paths", "config"]] == old_config_path
+        assert repository_fixture[["paths", "settings"]] == "i18n-tools.toml"
+        repository_fixture.config = old_config
+        assert repository_fixture[["paths", "settings"]] == "i18n-tools.yaml"
 
-    def test_get_repository(self, tmp_class_repository, test_repository):
-        print(test_repository)
+    def test_get_repository(self, tmp_class_repository, repository_fixture):
+        print(repository_fixture)
         assert (
-            test_repository.repository
+            repository_fixture.repository
             == tmp_class_repository[0][0] + "/repository-test"
         )
 
-    def test_set_repository(self, tmp_module_repository, test_repository):
-        test_repository.repository = tmp_module_repository[0][0] + "/test-function"
+    def test_set_repository(self, tmp_module_repository, repository_fixture):
+        repository_fixture.repository = tmp_module_repository[0][0] + "/test-function"
         assert (
-            test_repository[["paths", "repository"]]
+            repository_fixture[["paths", "repository"]]
             == tmp_module_repository[0][0] + "/test-function"
         )
-        test_repository[["paths", "repository"]] = (
+        repository_fixture[["paths", "repository"]] = (
             tmp_module_repository[0][0] + "/repository-test"
         )
         assert (
-            test_repository[["paths", "repository"]]
+            repository_fixture[["paths", "repository"]]
             == tmp_module_repository[0][0] + "/repository-test"
         )
 
@@ -219,31 +219,31 @@ class TestRepositoryProperties:
             ),
         ],
     )
-    def test_set_repository_failed(self, test_repository, path, error, error_msg):
+    def test_set_repository_failed(self, repository_fixture, path, error, error_msg):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.repository = path
+            repository_fixture.repository = path
 
-    def test_get_creation_date(self, test_repository):
-        assert test_repository.creation_date == "2024-08-16 14:00"
+    def test_get_creation_date(self, repository_fixture):
+        assert repository_fixture.creation_date == "2024-08-16 14:00"
 
-    def test_get_updated_date(self, test_repository):
-        assert test_repository.updated_date == "2025-09-14 14:54"
+    def test_get_updated_date(self, repository_fixture):
+        assert repository_fixture.updated_date == "2025-09-14 14:54"
 
-    def test_set_updated_date(self, test_repository):
-        test_repository.updated_date = "2025-09-14"
-        assert test_repository.updated_date == "2025-09-14 00:00"
-        test_repository.updated_date = "2025-09-14 15:01"
-        assert test_repository.updated_date == "2025-09-14 15:01"
-        test_repository.updated_date = "2025-09-14 15:02:34"
-        assert test_repository.updated_date == "2025-09-14 15:02"
-        assert test_repository.creation_date == "2024-08-16 14:00"
+    def test_set_updated_date(self, repository_fixture):
+        repository_fixture.updated_date = "2025-09-14"
+        assert repository_fixture.updated_date == "2025-09-14 00:00"
+        repository_fixture.updated_date = "2025-09-14 15:01"
+        assert repository_fixture.updated_date == "2025-09-14 15:01"
+        repository_fixture.updated_date = "2025-09-14 15:02:34"
+        assert repository_fixture.updated_date == "2025-09-14 15:02"
+        assert repository_fixture.creation_date == "2024-08-16 14:00"
         with pytest.raises(
             ValueError,
             match=re.escape(
                 "updated_date must be a string representing a date/time in ISO format or '%Y-%m-%d %H:%M[:%S]'"
             ),
         ):
-            test_repository.updated_date = "14/09/2025"
+            repository_fixture.updated_date = "14/09/2025"
 
     @pytest.mark.parametrize(
         "module",
@@ -255,11 +255,11 @@ class TestRepositoryProperties:
             "django-fsm_tools/context",
         ],
     )
-    def test_get_modules(self, test_repository, module):
-        assert module in test_repository.modules
+    def test_get_modules(self, repository_fixture, module):
+        assert module in repository_fixture.modules
 
-    def test_set_modules(self, test_repository):
-        test_repository.modules = [
+    def test_set_modules(self, repository_fixture):
+        repository_fixture.modules = [
             "fsm_tools",
             "fsm_tools/lba",
             "fsm_tools/turing",
@@ -267,7 +267,7 @@ class TestRepositoryProperties:
             "django-fsm_tools",
             "django-fsm_tools/context",
         ]
-        assert "fsm_tools/pda" in test_repository[["paths", "modules"]]
+        assert "fsm_tools/pda" in repository_fixture[["paths", "modules"]]
 
     @pytest.mark.parametrize(
         "module, domains",
@@ -278,14 +278,14 @@ class TestRepositoryProperties:
             ("django-fsm_tools", ["usage", "information", "error"]),
         ],
     )
-    def test_get_domains(self, test_repository, module, domains):
-        assert test_repository.domains[module] == domains
+    def test_get_domains(self, repository_fixture, module, domains):
+        assert repository_fixture.domains[module] == domains
 
-    def test_set_domains(self, test_repository):
-        assert len(test_repository.domains) == 5
-        test_repository["domains"] = test_repository._new_section({})
-        assert len(test_repository["domains"]) == 0
-        test_repository.domains = {
+    def test_set_domains(self, repository_fixture):
+        assert len(repository_fixture.domains) == 5
+        repository_fixture["domains"] = repository_fixture._new_section({})
+        assert len(repository_fixture["domains"]) == 0
+        repository_fixture.domains = {
             "fsm_tools": ["usage", "model"],
             "fsm_tools/lba": ["information", "error"],
             "fsm_tools/turing": ["information", "error"],
@@ -293,7 +293,7 @@ class TestRepositoryProperties:
             "django-fsm_tools": ["usage", "information", "error"],
             "django-fsm_tools/context": ["usage", "information", "error", "output"],
         }
-        assert len(test_repository["domains"]) == 6
+        assert len(repository_fixture["domains"]) == 6
 
     @pytest.mark.parametrize(
         "module, domain, error_msg",
@@ -306,9 +306,9 @@ class TestRepositoryProperties:
             ("fsm_tools/fsm", "information", "Module fsm_tools/fsm does not exist"),
         ],
     )
-    def test_set_domains_failed(self, test_repository, module, domain, error_msg):
+    def test_set_domains_failed(self, repository_fixture, module, domain, error_msg):
         with pytest.raises(ValueError, match=re.escape(error_msg)):
-            test_repository.domains = {module: [domain]}
+            repository_fixture.domains = {module: [domain]}
 
     @pytest.mark.parametrize(
         "module, domains",
@@ -320,15 +320,15 @@ class TestRepositoryProperties:
             ("django-fsm_tools", ["usage", "information", "error"]),
         ],
     )
-    def test_control_domain(self, test_repository, module, domains):
-        assert test_repository.domains[module] == domains
+    def test_control_domain(self, repository_fixture, module, domains):
+        assert repository_fixture.domains[module] == domains
 
     @pytest.mark.parametrize(
         "fallback, languages", [("fr", ["fr-FR"]), ("en", ["en-US", "en-GB"])]
     )
-    def test_get_hierarchy(self, test_repository, fallback, languages):
+    def test_get_hierarchy(self, repository_fixture, fallback, languages):
         for lang in languages:
-            assert lang in test_repository.hierarchy[fallback]
+            assert lang in repository_fixture.hierarchy[fallback]
 
     @pytest.mark.parametrize(
         "hierarchy, expected",
@@ -340,11 +340,11 @@ class TestRepositoryProperties:
             ),
         ],
     )
-    def test_set_hierarchy(self, test_repository, hierarchy, expected):
-        test_repository.hierarchy = hierarchy
+    def test_set_hierarchy(self, repository_fixture, hierarchy, expected):
+        repository_fixture.hierarchy = hierarchy
         for fallback, l_lang in expected:
             for lang in l_lang:
-                assert lang in test_repository.hierarchy[fallback]
+                assert lang in repository_fixture.hierarchy[fallback]
 
     @pytest.mark.parametrize(
         "hierarchy, error_msg",
@@ -360,9 +360,9 @@ class TestRepositoryProperties:
             ),
         ],
     )
-    def test_set_hierarchy_failed(self, test_repository, hierarchy, error_msg):
+    def test_set_hierarchy_failed(self, repository_fixture, hierarchy, error_msg):
         with pytest.raises((TypeError, ValueError), match=re.escape(error_msg)):
-            test_repository.hierarchy = hierarchy
+            repository_fixture.hierarchy = hierarchy
 
     @pytest.mark.parametrize(
         "key, values",
@@ -385,15 +385,15 @@ class TestRepositoryProperties:
             ),
         ],
     )
-    def test_get_authors(self, test_repository, key, values):
-        print(test_repository["paths"])
+    def test_get_authors(self, repository_fixture, key, values):
+        print(repository_fixture["paths"])
         for index, value in values:
-            assert test_repository.authors[key][index] == value
+            assert repository_fixture.authors[key][index] == value
 
-    def test_set_authors(self, test_repository):
+    def test_set_authors(self, repository_fixture):
         uuid_1 = "c64673e4-5d7d-4798-a22f-d1ea7cc807c1"
         uuid_2 = "00b482a7-9ace-489c-8c48-6a8ec48d6876"
-        test_repository.authors = {
+        repository_fixture.authors = {
             uuid_1: {
                 "email": "jean@dupond.com",
                 "first_name": "Jean",
@@ -409,17 +409,17 @@ class TestRepositoryProperties:
                 "url": "",
             },
         }
-        assert test_repository[["authors", uuid_1, "email"]] == "jean@dupond.com"
-        assert test_repository[["authors", uuid_2, "languages"]] == ["en"]
+        assert repository_fixture[["authors", uuid_1, "email"]] == "jean@dupond.com"
+        assert repository_fixture[["authors", uuid_2, "languages"]] == ["en"]
 
-    def test_set_authors_failed(self, test_repository):
+    def test_set_authors_failed(self, repository_fixture):
         uuid_1 = "c64673e4-5d7d-4798-a22f-d1ea7cc807c1"
         uuid_2 = "00b482a7-9ace-489c-8c48-6a8ec48d6876"
         with pytest.raises(
             TypeError,
             match=re.escape("authors must be a dictionary, not <class 'list'>"),
         ):
-            test_repository.authors = [
+            repository_fixture.authors = [
                 uuid_1,
                 {
                     "email": "jean@dupond.com",
@@ -449,14 +449,14 @@ class TestRepositoryProperties:
             (["technical", "api"], [("key", "your_api_key"), ("request_limit", 10000)]),
         ],
     )
-    def test_get_translators(self, test_repository, path, values):
-        d = test_repository.translators["GoogleTranslate"]
+    def test_get_translators(self, repository_fixture, path, values):
+        d = repository_fixture.translators["GoogleTranslate"]
         assert isinstance(d[path], StrictNestedDictionary)
         for key, value in values:
             assert d[path][key] == value
 
-    def test_set_translators(self, test_repository):
-        test_repository.translators = {
+    def test_set_translators(self, repository_fixture):
+        repository_fixture.translators = {
             "GoogleTranslate": {
                 "details": {
                     "name": "GoogleTranslate",
@@ -498,14 +498,14 @@ class TestRepositoryProperties:
                 },
             },
         }
-        assert len(test_repository.translators) == 2
+        assert len(repository_fixture.translators) == 2
 
-    def test_set_translators_failed(self, test_repository):
+    def test_set_translators_failed(self, repository_fixture):
         with pytest.raises(
             TypeError,
             match=re.escape("translators must be a dictionary, not <class 'list'>"),
         ):
-            test_repository.translators = [
+            repository_fixture.translators = [
                 (
                     "GoogleTranslate",
                     {
@@ -560,9 +560,9 @@ class TestRepositoryProperties:
 
 class TestRepositoryMethods:
 
-    def test_add_module(self, test_repository):
-        test_repository.add_module("fsm_tools/pda")
-        assert "fsm_tools/pda" in test_repository.modules
+    def test_add_module(self, repository_fixture):
+        repository_fixture.add_module("fsm_tools/pda")
+        assert "fsm_tools/pda" in repository_fixture.modules
 
     @pytest.mark.parametrize(
         "module, error, error_msg",
@@ -580,21 +580,21 @@ class TestRepositoryMethods:
             ("fsm_tools/pda", ValueError, "Module fsm_tools/pda already exists"),
         ],
     )
-    def test_add_modules_failed(self, test_repository, module, error, error_msg):
+    def test_add_modules_failed(self, repository_fixture, module, error, error_msg):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_module(module)
+            repository_fixture.add_module(module)
 
-    def test_remove_module(self, test_repository):
-        test_repository.remove_module("fsm_tools/pda")
-        assert "fsm_tools/pda" not in test_repository.modules
-        assert "fsm_tools/pda" not in test_repository["domains"].keys()
+    def test_remove_module(self, repository_fixture):
+        repository_fixture.remove_module("fsm_tools/pda")
+        assert "fsm_tools/pda" not in repository_fixture.modules
+        assert "fsm_tools/pda" not in repository_fixture["domains"].keys()
 
-    def test_remove_modules_failed(self, test_repository):
+    def test_remove_modules_failed(self, repository_fixture):
         with pytest.raises(
             ValueError, match=re.escape("Module fsm_tools/pda does not exist")
         ):
-            test_repository.remove_module("fsm_tools/pda")
-        test_repository.add_module("fsm_tools/pda")
+            repository_fixture.remove_module("fsm_tools/pda")
+        repository_fixture.add_module("fsm_tools/pda")
 
     @pytest.mark.parametrize(
         "module, domain, expected",
@@ -604,10 +604,10 @@ class TestRepositoryMethods:
             ("django-fsm_tools/context", "information", ["information", "error"]),
         ],
     )
-    def test_add_domain(self, test_repository, module, domain, expected):
-        test_repository.add_domain(module, domain)
+    def test_add_domain(self, repository_fixture, module, domain, expected):
+        repository_fixture.add_domain(module, domain)
         for d in expected:
-            assert d in test_repository.domains[module]
+            assert d in repository_fixture.domains[module]
 
     @pytest.mark.parametrize(
         "module, domain, error_msg",
@@ -625,9 +625,9 @@ class TestRepositoryMethods:
             ("fsm_tools/fsm", "error", "Module fsm_tools/fsm does not exist"),
         ],
     )
-    def test_add_domain_failed(self, test_repository, module, domain, error_msg):
+    def test_add_domain_failed(self, repository_fixture, module, domain, error_msg):
         with pytest.raises(ValueError, match=re.escape(error_msg)):
-            test_repository.add_domain(module, domain)
+            repository_fixture.add_domain(module, domain)
 
     @pytest.mark.parametrize(
         "module, domain, expected",
@@ -637,10 +637,10 @@ class TestRepositoryMethods:
             ("django-fsm_tools/context", "output", ["usage", "information"]),
         ],
     )
-    def test_remove_domain(self, test_repository, module, domain, expected):
-        test_repository.remove_domain(module, domain)
+    def test_remove_domain(self, repository_fixture, module, domain, expected):
+        repository_fixture.remove_domain(module, domain)
         for domain in expected:
-            assert domain in test_repository[["domains", module]]
+            assert domain in repository_fixture[["domains", module]]
 
     @pytest.mark.parametrize(
         "module, domain, error_msg",
@@ -663,9 +663,9 @@ class TestRepositoryMethods:
             ("fsm_tools/fsm", "information", "Module fsm_tools/fsm does not exist"),
         ],
     )
-    def test_remove_domain_failed(self, test_repository, module, domain, error_msg):
+    def test_remove_domain_failed(self, repository_fixture, module, domain, error_msg):
         with pytest.raises(ValueError, match=re.escape(error_msg)):
-            test_repository.remove_domain(module, domain)
+            repository_fixture.remove_domain(module, domain)
 
     @pytest.mark.parametrize(
         "fallback, languages, expected",
@@ -676,9 +676,9 @@ class TestRepositoryMethods:
             ("se", "se-SE", ["se-FI", "se-NO", "se-SE"]),
         ],
     )
-    def test_add_hierarchy(self, test_repository, fallback, languages, expected):
-        test_repository.add_hierarchy(fallback, languages)
-        assert test_repository[["languages", "hierarchy", fallback]] == expected
+    def test_add_hierarchy(self, repository_fixture, fallback, languages, expected):
+        repository_fixture.add_hierarchy(fallback, languages)
+        assert repository_fixture[["languages", "hierarchy", fallback]] == expected
 
     @pytest.mark.parametrize(
         "fallback, languages, error, error_msg",
@@ -722,10 +722,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_add_hierarchy_failed(
-        self, test_repository, fallback, languages, error, error_msg
+        self, repository_fixture, fallback, languages, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_hierarchy(fallback, languages)
+            repository_fixture.add_hierarchy(fallback, languages)
 
     @pytest.mark.parametrize(
         "fallback, language, expected",
@@ -736,14 +736,14 @@ class TestRepositoryMethods:
             ("se", "se-SE", ["se-FI", "se-NO"]),
         ],
     )
-    def test_remove_hierarchy(self, test_repository, fallback, language, expected):
-        test_repository.remove_hierarchy(fallback, language)
-        assert test_repository[["languages", "hierarchy", fallback]] == expected
+    def test_remove_hierarchy(self, repository_fixture, fallback, language, expected):
+        repository_fixture.remove_hierarchy(fallback, language)
+        assert repository_fixture[["languages", "hierarchy", fallback]] == expected
 
-    def test_remove_empty_fr(self, test_repository):
-        assert test_repository[["languages", "hierarchy", "fr"]] == []
-        test_repository.remove_hierarchy("fr", None)
-        assert "fr" not in test_repository[["languages", "hierarchy"]].keys()
+    def test_remove_empty_fr(self, repository_fixture):
+        assert repository_fixture[["languages", "hierarchy", "fr"]] == []
+        repository_fixture.remove_hierarchy("fr", None)
+        assert "fr" not in repository_fixture[["languages", "hierarchy"]].keys()
 
     @pytest.mark.parametrize(
         "fallback, language, error_msg",
@@ -754,10 +754,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_remove_hierarchy_failed(
-        self, test_repository, fallback, language, error_msg
+        self, repository_fixture, fallback, language, error_msg
     ):
         with pytest.raises(ValueError, match=re.escape(error_msg)):
-            test_repository.remove_hierarchy(fallback, language)
+            repository_fixture.remove_hierarchy(fallback, language)
 
     @pytest.mark.parametrize(
         "fallback, languages, expected",
@@ -767,9 +767,9 @@ class TestRepositoryMethods:
             ("se", ["se-FI", "se-NO"], ["se-FI", "se-NO"]),
         ],
     )
-    def test_update_hierarchy(self, test_repository, fallback, languages, expected):
-        test_repository.update_hierarchy(fallback, languages)
-        assert test_repository[["languages", "hierarchy", fallback]] == expected
+    def test_update_hierarchy(self, repository_fixture, fallback, languages, expected):
+        repository_fixture.update_hierarchy(fallback, languages)
+        assert repository_fixture[["languages", "hierarchy", fallback]] == expected
 
     @pytest.mark.parametrize(
         "fallback, languages, error, error_msg",
@@ -807,10 +807,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_update_hierarchy_failed(
-        self, test_repository, fallback, languages, error, error_msg
+        self, repository_fixture, fallback, languages, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.update_hierarchy(fallback, languages)
+            repository_fixture.update_hierarchy(fallback, languages)
 
     @pytest.mark.parametrize(
         "author_id, auther_desc, expected",
@@ -849,10 +849,10 @@ class TestRepositoryMethods:
             ),
         ],
     )
-    def test_add_author(self, test_repository, author_id, auther_desc, expected):
-        test_repository.add_author(author_id, auther_desc)
+    def test_add_author(self, repository_fixture, author_id, auther_desc, expected):
+        repository_fixture.add_author(author_id, auther_desc)
         for key, value in expected:
-            assert test_repository[["authors", author_id, key]] == value
+            assert repository_fixture[["authors", author_id, key]] == value
 
     @pytest.mark.parametrize(
         "author_id, auther_desc, error, error_msg",
@@ -896,10 +896,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_add_author_id_failed(
-        self, test_repository, author_id, auther_desc, error, error_msg
+        self, repository_fixture, author_id, auther_desc, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_author(author_id, auther_desc)
+            repository_fixture.add_author(author_id, auther_desc)
 
     @pytest.mark.parametrize(
         "author_id, auther_desc, error, error_msg",
@@ -957,10 +957,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_add_author_payload_failed(
-        self, test_repository, author_id, auther_desc, error, error_msg
+        self, repository_fixture, author_id, auther_desc, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_author(author_id, auther_desc)
+            repository_fixture.add_author(author_id, auther_desc)
 
     @pytest.mark.parametrize(
         "author_id, auther_desc, error, error_msg",
@@ -992,10 +992,10 @@ class TestRepositoryMethods:
         ],
     )
     def test_add_author_non_existant_failed(
-        self, test_repository, author_id, auther_desc, error, error_msg
+        self, repository_fixture, author_id, auther_desc, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_author(author_id, auther_desc)
+            repository_fixture.add_author(author_id, auther_desc)
 
     @pytest.mark.parametrize(
         "author_id, auther_desc, expected",
@@ -1037,19 +1037,19 @@ class TestRepositoryMethods:
             ),
         ],
     )
-    def test_update_author(self, test_repository, author_id, auther_desc, expected):
-        test_repository.update_author(author_id, auther_desc)
+    def test_update_author(self, repository_fixture, author_id, auther_desc, expected):
+        repository_fixture.update_author(author_id, auther_desc)
         for key, value in expected:
-            assert test_repository[["authors", author_id, key]] == value
+            assert repository_fixture[["authors", author_id, key]] == value
 
-    def test_update_author_existant_failed(self, test_repository):
+    def test_update_author_existant_failed(self, repository_fixture):
         with pytest.raises(
             ValueError,
             match=re.escape(
                 "Author '4b4bbb92-5fa4-4aa4-8c14-84409357bce7' does not exist"
             ),
         ):
-            test_repository.update_author(
+            repository_fixture.update_author(
                 "4b4bbb92-5fa4-4aa4-8c14-84409357bce7", {"last_name": "Dupont"}
             )
 
@@ -1077,40 +1077,40 @@ class TestRepositoryMethods:
         ],
     )
     def test_update_author_payload_failed(
-        self, test_repository, author_id, author_desc, error, error_msg
+        self, repository_fixture, author_id, author_desc, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.update_author(author_id, author_desc)
+            repository_fixture.update_author(author_id, author_desc)
 
-    def test_remove_author(self, test_repository):
-        assert len(test_repository.authors) == 4
-        test_repository.remove_author("54d961ad-59dd-41d0-899a-d7ea58170547")
-        assert len(test_repository.authors) == 3
+    def test_remove_author(self, repository_fixture):
+        assert len(repository_fixture.authors) == 4
+        repository_fixture.remove_author("54d961ad-59dd-41d0-899a-d7ea58170547")
+        assert len(repository_fixture.authors) == 3
 
-    def test_remove_repository(self, test_repository):
-        print(repr(test_repository.repository))
-        assert len(test_repository.repository) != 0
-        test_repository.remove_repository()
-        assert len(test_repository.repository) == 0
+    def test_remove_repository(self, repository_fixture):
+        print(repr(repository_fixture.repository))
+        assert len(repository_fixture.repository) != 0
+        repository_fixture.remove_repository()
+        assert len(repository_fixture.repository) == 0
 
-    def test_remove_repository_failed(self, test_repository):
+    def test_remove_repository_failed(self, repository_fixture):
         with pytest.raises(
             ValueError, match=re.escape("Repository path is already empty")
         ):
-            test_repository.remove_repository()
+            repository_fixture.remove_repository()
 
-    def test_add_repository(self, tmp_class_repository, test_repository):
-        test_repository.add_repository(tmp_class_repository[1][0])
-        assert test_repository.repository is not None
+    def test_add_repository(self, tmp_class_repository, repository_fixture):
+        repository_fixture.add_repository(tmp_class_repository[1][0])
+        assert repository_fixture.repository is not None
 
-    def test_add_repository_failed(self, tmp_class_repository, test_repository):
+    def test_add_repository_failed(self, tmp_class_repository, repository_fixture):
         with pytest.raises(ValueError, match=re.escape("Repository path already set")):
-            test_repository.add_repository(tmp_class_repository[1][0])
+            repository_fixture.add_repository(tmp_class_repository[1][0])
 
-    def test_update_repository(self, tmp_class_repository, test_repository):
-        test_repository.update_repository(tmp_class_repository[2][0])
-        print(test_repository.repository)
-        assert test_repository.repository is not None
+    def test_update_repository(self, tmp_class_repository, repository_fixture):
+        repository_fixture.update_repository(tmp_class_repository[2][0])
+        print(repository_fixture.repository)
+        assert repository_fixture.repository is not None
 
     @pytest.mark.parametrize(
         "false_path, error_msg",
@@ -1125,9 +1125,9 @@ class TestRepositoryMethods:
             ),
         ],
     )
-    def test_update_repository_failed(self, test_repository, false_path, error_msg):
+    def test_update_repository_failed(self, repository_fixture, false_path, error_msg):
         with pytest.raises(FileNotFoundError, match=re.escape(error_msg)):
-            test_repository.update_repository(false_path)
+            repository_fixture.update_repository(false_path)
 
     @pytest.mark.parametrize(
         "translator_name, content, expected",
@@ -1171,11 +1171,13 @@ class TestRepositoryMethods:
             )
         ],
     )
-    def test_add_translator(self, test_repository, translator_name, content, expected):
-        test_repository.add_translator(translator_name, content)
+    def test_add_translator(
+        self, repository_fixture, translator_name, content, expected
+    ):
+        repository_fixture.add_translator(translator_name, content)
         for path, values in expected:
             for key, value in values:
-                assert test_repository.translators[path][key] == value
+                assert repository_fixture.translators[path][key] == value
 
     @pytest.mark.parametrize(
         "translator_name, content, error, error_msg",
@@ -1842,46 +1844,49 @@ class TestRepositoryMethods:
         ],
     )
     def test_add_translator_failed(
-        self, test_repository, translator_name, content, error, error_msg
+        self, repository_fixture, translator_name, content, error, error_msg
     ):
         with pytest.raises(error, match=re.escape(error_msg)):
-            test_repository.add_translator(translator_name, content)
+            repository_fixture.add_translator(translator_name, content)
 
 
 class TestRepositoryCleanModules:
 
-    def test_clean_modules_control(self, test_repository):
-        assert len(test_repository.modules) != 0
-        assert len(test_repository.domains) != 0
+    def test_clean_modules_control(self, repository_fixture):
+        assert len(repository_fixture.modules) != 0
+        assert len(repository_fixture.domains) != 0
 
-    def test_clean_modules(self, test_repository):
-        test_repository.clean_modules()
-        assert len(test_repository[["paths", "modules"]]) == 0
-        assert len(test_repository["domains"]) == 0
+    def test_clean_modules(self, repository_fixture):
+        repository_fixture.clean_modules()
+        assert len(repository_fixture[["paths", "modules"]]) == 0
+        assert len(repository_fixture["domains"]) == 0
 
 
 class TestRepositoryCleanDomains:
 
-    def test_clean_domains_control(self, test_repository):
-        assert len(test_repository.domains) != 0
-        assert len(test_repository.modules) != 0
+    def test_clean_domains_control(self, repository_fixture):
+        assert len(repository_fixture.domains) != 0
+        assert len(repository_fixture.modules) != 0
 
-    def test_clean_domains(self, test_repository):
-        test_repository.clean_domains()
-        assert len(test_repository["domains"]) == 0
-        assert len(test_repository[["paths", "modules"]]) != 0
+    def test_clean_domains(self, repository_fixture):
+        repository_fixture.clean_domains()
+        assert len(repository_fixture["domains"]) == 0
+        assert len(repository_fixture[["paths", "modules"]]) != 0
 
 
 class TestRepositoryCleanHierarchy:
 
-    def test_clean_hierarchy_control(self, test_repository):
-        assert test_repository[["languages", "hierarchy", "fr"]] == ["fr-FR"]
-        assert test_repository[["languages", "hierarchy", "en"]] == ["en-US", "en-GB"]
-        assert len(test_repository[["languages", "hierarchy"]]) == 2
+    def test_clean_hierarchy_control(self, repository_fixture):
+        assert repository_fixture[["languages", "hierarchy", "fr"]] == ["fr-FR"]
+        assert repository_fixture[["languages", "hierarchy", "en"]] == [
+            "en-US",
+            "en-GB",
+        ]
+        assert len(repository_fixture[["languages", "hierarchy"]]) == 2
 
-    def test_clean_hierarchy(self, test_repository):
-        test_repository.clean_hierarchy()
-        assert len(test_repository[["languages", "hierarchy"]]) == 0
+    def test_clean_hierarchy(self, repository_fixture):
+        repository_fixture.clean_hierarchy()
+        assert len(repository_fixture[["languages", "hierarchy"]]) == 0
 
 
 class TestRepositoryCleanAuthors:
@@ -1909,31 +1914,31 @@ class TestRepositoryCleanAuthors:
             ),
         ],
     )
-    def test_clean_authors_control(self, test_repository, author_id, expected):
-        assert len(test_repository["authors"]) == 2
+    def test_clean_authors_control(self, repository_fixture, author_id, expected):
+        assert len(repository_fixture["authors"]) == 2
         for key, value in expected:
-            assert test_repository[["authors", author_id, key]] == value
+            assert repository_fixture[["authors", author_id, key]] == value
 
-    def test_clean_authors(self, test_repository):
-        test_repository.clean_authors()
-        assert len(test_repository["authors"]) == 0
+    def test_clean_authors(self, repository_fixture):
+        repository_fixture.clean_authors()
+        assert len(repository_fixture["authors"]) == 0
 
 
 class TestRepositoryCleanRepository:
-    def test_clean_repository_control(self, test_repository, tmp_class_repository):
-        assert len(test_repository.repository) != 0
-        assert tmp_class_repository[2][0] in test_repository.leaves()
+    def test_clean_repository_control(self, repository_fixture, tmp_class_repository):
+        assert len(repository_fixture.repository) != 0
+        assert tmp_class_repository[2][0] in repository_fixture.leaves()
 
-    def test_clean_repository(self, test_repository):
-        test_repository.clean_repository()
-        assert len(test_repository.repository) == 0
+    def test_clean_repository(self, repository_fixture):
+        repository_fixture.clean_repository()
+        assert len(repository_fixture.repository) == 0
 
 
 class TestRepositoryCleanTranslator:
-    def test_clean_translator_control(self, test_repository):
-        assert len(test_repository.translators) != 0
-        assert test_repository.is_key("GoogleTranslate")
+    def test_clean_translator_control(self, repository_fixture):
+        assert len(repository_fixture.translators) != 0
+        assert repository_fixture.is_key("GoogleTranslate")
 
-    def test_clean_translator(self, test_repository):
-        test_repository.clean_translators()
-        assert len(test_repository.translators) == 0
+    def test_clean_translator(self, repository_fixture):
+        repository_fixture.clean_translators()
+        assert len(repository_fixture.translators) == 0
