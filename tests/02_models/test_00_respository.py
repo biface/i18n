@@ -560,6 +560,10 @@ class TestRepositoryProperties:
 
 class TestRepositoryMethods:
 
+    @pytest.fixture(autouse=True)
+    def _patches(self, patch_validate_api_url, patch_validate_email):
+        pass
+
     def test_add_module(self, repository_fixture):
         repository_fixture.add_module("fsm_tools/pda")
         assert "fsm_tools/pda" in repository_fixture.modules

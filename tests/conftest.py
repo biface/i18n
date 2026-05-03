@@ -365,7 +365,7 @@ def mock_validate_email(email):
     return {"email": email}
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def patch_validate_api_url(is_main_branch):
     """
     Conditionally patches the validate_api_url function based on the Git branch.
@@ -397,7 +397,7 @@ def patch_validate_api_url(is_main_branch):
             yield
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def patch_validate_email(is_main_branch):
     """
     Conditionally patches the validate_email function based on the Git branch.
