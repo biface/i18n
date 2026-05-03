@@ -51,7 +51,6 @@ from .utils import (
 )
 
 
-
 def _update_json_translations(existing_translations: Dict, translation_data: Dict):
     """
     Update translations in JSON with new data.

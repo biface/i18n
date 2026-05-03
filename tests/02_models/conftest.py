@@ -1,4 +1,8 @@
+import copy
+import os
+
 import pytest
+from helpers import copy_and_update_repository
 
 from i18n_tools.models import Message as MessageModel
 from i18n_tools.models.corpus import Book, Message
@@ -1534,3 +1538,36 @@ def en_gb_book(en_gb_messages):
 @pytest.fixture()
 def it_it_book(it_it_messages):
     return Book(list(it_it_messages.values()), domain="test", language="it-IT")
+
+
+@pytest.fixture(scope="class")
+def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
+    tmp_path = tmp_path_factory.mktemp("class-factory")
+    destination_package = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "package"
+    )
+    destination_application = copy_and_update_repository(
+        root_conf_test, tmp_path, conf_tests, "application"
+    )
+
+    other = tmp_path / conf_tests["repository"]["other"]
+    os.makedirs(other, exist_ok=True)
+
+    # Work on a deep copy to avoid mutating the session-scoped conf_tests data
+    repository_class = copy.deepcopy(conf_tests["repository-content"])
+    repository_class["paths"]["root"] = str(destination_application)
+    repository_class["paths"]["repository"] = str(destination_application)
+    repository_class["paths"]["config"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools"
+    )
+    repository_class["paths"]["backup"] = str(
+        destination_application / "fsm_tools" / "locales" / "_i18n_tools" / "backup"
+    )
+
+    return [
+        [str(tmp_path), tmp_path],
+        [str(destination_package), destination_package],
+        [str(destination_application), destination_application],
+        [str(other), other],
+        repository_class,
+    ]

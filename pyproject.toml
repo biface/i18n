@@ -140,3 +140,9 @@ line_length = 88
 known_first_party = "src"
 multi_line_output = 3
 include_trailing_comma = true
+
+[tool.pytest.ini_options]
+markers = [
+    "network: mark test as requiring real network access (skipped automatically on non-master branches)",
+    "timeout: mark test as making slow network calls (delays)",
+]

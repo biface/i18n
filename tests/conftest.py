@@ -1,7 +1,20 @@
+# ---------------------------------------------------------------------------
+# TEST EXECUTION ORDER — MANDATORY
+#
+# The Config class uses patterns.Singleton: only one instance exists per
+# pytest process. Directory prefixes enforce the required execution order:
+#
+#   00_api, 00_locale  → no Config dependency
+#   01_loader          → initializes the Singleton
+#   02_models          → no Config dependency
+#   09_config          → inherits the Singleton from 01_loader
+#
+# Changing this order will cause failures in 09_config (54 tests).
+# ---------------------------------------------------------------------------
+
 import copy
 import locale as _locale
 import os
-import shutil
 import subprocess
 from pathlib import Path
 from unittest import mock
@@ -9,32 +22,9 @@ from unittest import mock
 import pytest
 import yaml
 from email_validator import EmailNotValidError
+from helpers import copy_and_update_repository
 
-from i18n_tools.api import validate_api_url
 from i18n_tools.config import Config
-
-# ---------------------------------------------------------------------------
-# Locale-aware error messages for mocks — extend with new language keys as needed.
-# ---------------------------------------------------------------------------
-
-_MOCK_ERRORS: dict = {
-    "timeout": {
-        "fr": "Le délai de connexion a expiré.",
-        "en": "Connection timed out.",
-    },
-    "connection": {
-        "fr": "Impossible de se connecter au serveur.",
-        "en": "Unable to connect to server.",
-    },
-}
-
-
-def _mock_error(key: str) -> str:
-    """Return the locale-appropriate mock error message for *key*."""
-    lang, _ = _locale.getdefaultlocale()
-    lang_code = (lang or "en")[:2]
-    messages = _MOCK_ERRORS[key]
-    return messages.get(lang_code, messages["en"])
 
 
 @pytest.fixture(scope="session")
@@ -54,72 +44,6 @@ def conf_tests(root_conf_test) -> dict:
     config_path = root_conf_test / "parametrize.yaml"
     with open(config_path, "r") as file:
         return yaml.safe_load(file)
-
-
-@pytest.fixture(scope="function")
-def tmp_repository(root_conf_test, conf_tests, tmp_path) -> list:
-    repository_config = conf_tests["repository"]
-    files_config = conf_tests["files"]
-
-    temp_path = tmp_path / conf_tests["setup"]["paths"]["application"]["base"]
-    locales_dir = temp_path / "locales"
-    locales_dir.mkdir(parents=True, exist_ok=True)
-
-    config_yaml = temp_path / files_config["yaml"]
-    config_toml = temp_path / files_config["toml"]
-    config_err_yaml = temp_path / files_config["err_yaml"]
-
-    valid_repository_conf = (
-        root_conf_test
-        / repository_config["locale"]
-        / repository_config["configuration"]["valid"]
-    )
-    error_repository_conf = (
-        root_conf_test
-        / repository_config["locale"]
-        / repository_config["configuration"]["error"]
-    )
-
-    with open(valid_repository_conf, "r", encoding="utf-8") as f:
-        config_content = f.read()
-        config_yaml.write_text(config_content)
-
-    with open(error_repository_conf, "r", encoding="utf-8") as f:
-        err_content = f.read()
-        config_err_yaml.write_text(err_content)
-
-    return [
-        temp_path,
-        locales_dir,
-        temp_path.parent,
-        config_yaml,
-        config_toml,
-        config_content,
-        err_content,
-    ]
-
-
-def update_tmp_repository(key, root_dir, test_dir_conf):
-    config_file = root_dir / test_dir_conf["config"] / test_dir_conf["settings"]
-    with open(config_file, "r", encoding="utf-8") as f:
-        data = yaml.safe_load(f)
-
-    data[key]["paths"]["root"] = str(root_dir) + "/" + test_dir_conf["root"]
-    data[key]["paths"]["repository"] = str(root_dir) + "/" + test_dir_conf["repository"]
-    data[key]["paths"]["config"] = str(root_dir) + "/" + test_dir_conf["config"]
-    data[key]["paths"]["settings"] = test_dir_conf["settings"]
-
-    with open(config_file, "w", encoding="utf-8") as f:
-        yaml.dump(data, f)
-
-
-def copy_and_update_repository(root_conf_test, tmp_path, conf_tests, key):
-    conf = conf_tests["repository"][key]
-    source = root_conf_test / conf_tests["configuration"][key]
-    destination = tmp_path / conf["root"]
-    shutil.copytree(source, destination)
-    update_tmp_repository(key, tmp_path, conf)
-    return destination
 
 
 def config_data(config_path_test, config_file_test):
@@ -151,39 +75,6 @@ def tmp_function_repository(root_conf_test, conf_tests, tmp_path) -> list:
             str(destination_application / "fsm_tools" / "locales" / "_i18n_tools"),
             "i18n-tools.yaml",
         ),
-    ]
-
-
-@pytest.fixture(scope="class")
-def tmp_class_repository(root_conf_test, conf_tests, tmp_path_factory) -> list:
-    tmp_path = tmp_path_factory.mktemp("class-factory")
-    destination_package = copy_and_update_repository(
-        root_conf_test, tmp_path, conf_tests, "package"
-    )
-    destination_application = copy_and_update_repository(
-        root_conf_test, tmp_path, conf_tests, "application"
-    )
-
-    other = tmp_path / conf_tests["repository"]["other"]
-    os.makedirs(other, exist_ok=True)
-
-    # Work on a deep copy to avoid mutating the session-scoped conf_tests data
-    repository_class = copy.deepcopy(conf_tests["repository-content"])
-    repository_class["paths"]["root"] = str(destination_application)
-    repository_class["paths"]["repository"] = str(destination_application)
-    repository_class["paths"]["config"] = str(
-        destination_application / "fsm_tools" / "locales" / "_i18n_tools"
-    )
-    repository_class["paths"]["backup"] = str(
-        destination_application / "fsm_tools" / "locales" / "_i18n_tools" / "backup"
-    )
-
-    return [
-        [str(tmp_path), tmp_path],
-        [str(destination_package), destination_package],
-        [str(destination_application), destination_application],
-        [str(other), other],
-        repository_class,
     ]
 
 
@@ -271,8 +162,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     Simulates the validate_api_url function by returning predefined responses for various scenarios.
 
     The function uses hardcoded responses for specific URLs to mock behaviors like valid responses,
-    errors, or connection timeouts. Error messages are locale-aware via _mock_error() so that
-    assertions using _MOCK_ERRORS remain consistent across development environments.
+    errors, or connection timeouts. Error messages are always in English (DD-35), consistent with api.py.
 
     Args:
         url (str): The URL to validate.
@@ -288,88 +178,150 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     simulated_responses = {
         # Valid cases
         "https://jsonplaceholder.typicode.com/posts": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://httpbin.org/get": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://api.github.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://httpbin.org/status/204": {
-            "url": url, "is_alive": True, "status_code": 204, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 204,
+            "error": None,
         },
         "https://httpbin.org/status/401": {
-            "url": url, "is_alive": True, "status_code": 401, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 401,
+            "error": None,
         },
         "https://httpbin.org/status/403": {
-            "url": url, "is_alive": True, "status_code": 403, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 403,
+            "error": None,
         },
         "https://httpbin.org/status/405": {
-            "url": url, "is_alive": True, "status_code": 405, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 405,
+            "error": None,
         },
         "https://httpbin.org/status/429": {
-            "url": url, "is_alive": True, "status_code": 429, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 429,
+            "error": None,
         },
         "https://httpbin.org/status/500": {
-            "url": url, "is_alive": True, "status_code": 500, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 500,
+            "error": None,
         },
         # URLs used in translator tests
         "https://dupont.org": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://dupont.com": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": _mock_error("connection"),  # locale-aware — connection error
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Unable to connect to server.",  # DD-35: always English
         },
         "https://joe.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://doe.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
-        # Simulating delays — locale-aware timeout message
+        # Simulating delays — DD-35: always English
         "https://httpbin.org/delay/10": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": _mock_error("timeout") if timeout < 10 else None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Connection timed out." if timeout < 10 else None,
         },
         "https://httpbin.org/delay/15": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": _mock_error("timeout") if timeout < 15 else None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Connection timed out." if timeout < 15 else None,
         },
         "https://httpbin.org/delay/25": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": _mock_error("timeout") if timeout < 25 else None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Connection timed out." if timeout < 25 else None,
         },
         # Error cases
         "invalid_url": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": "URL 'invalid_url' is not a valid format.",  # hardcoded English in api.py
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "URL 'invalid_url' is not a valid format.",
         },
         "ftp://example.com": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": "No connection adapters were found for 'ftp://example.com'.",  # str(e) from requests
         },
         "http://": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests — always English
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Invalid URL 'http://': No host supplied",  # str(e) from requests
         },
         "https://": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests — always English
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Invalid URL 'https://': No host supplied",  # str(e) from requests
         },
         "https://thisurldoesnotexist12345.com": {
-            "url": url, "is_alive": False, "status_code": None,
-            "error": _mock_error("connection"),  # locale-aware
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
+            "error": "Unable to connect to server.",  # DD-35: always English
         },
         "https://www.deepl.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://translate.google.com": {
-            "url": url, "is_alive": True, "status_code": 200, "error": None,
+            "url": url,
+            "is_alive": True,
+            "status_code": 200,
+            "error": None,
         },
         "https://www_unvalide_url": {
-            "url": url, "is_alive": False, "status_code": None,
+            "url": url,
+            "is_alive": False,
+            "status_code": None,
             "error": "URL 'https://www_unvalide_url' is not a valid format.",
         },
     }
@@ -413,7 +365,7 @@ def mock_validate_email(email):
     return {"email": email}
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def patch_validate_api_url(is_main_branch):
     """
     Conditionally patches the validate_api_url function based on the Git branch.
@@ -440,11 +392,12 @@ def patch_validate_api_url(is_main_branch):
         ), mock.patch(
             "i18n_tools.config.validate_api_url", mock_validate_api_url
         ), mock.patch(
-            "i18n_tools.models.repository.validate_api_url", mock_validate_api_url):
+            "i18n_tools.models.repository.validate_api_url", mock_validate_api_url
+        ):
             yield
 
 
-@pytest.fixture(scope="function", autouse=True)
+@pytest.fixture(scope="function")
 def patch_validate_email(is_main_branch):
     """
     Conditionally patches the validate_email function based on the Git branch.

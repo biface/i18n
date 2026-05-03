@@ -14,11 +14,15 @@ import validators
 
 def validate_api_url(url: str, timeout: int = 5) -> dict:
     """
-    Valide un lien en vérifiant son format et sa disponibilité.
+    Validates a URL by checking its format and availability.
 
-    :param url: L'URL à valider.
-    :param timeout: Temps d'attente maximum pour la réponse du serveur (en secondes).
-    :return: Un dictionnaire contenant le statut de validation et des détails sur l'URL.
+    Error messages are always in English (DD-35). When i18n-tools reaches a stable
+    version, this function will use the package's own locale mechanism to produce
+    locale-aware messages.
+
+    :param url: The URL to validate.
+    :param timeout: Maximum wait time for the server response (in seconds).
+    :return: A dictionary containing the validation status and details about the URL.
     """
     result = {
         "url": url,
@@ -27,31 +31,29 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
         "error": None,
     }
 
-    # Validation du format de l'URL
+    # Validate URL format — message is already English (uses validators library)
     if not validators.url(url):
         result["error"] = f"URL '{url}' is not a valid format."
         return result
 
-    # Vérification de l'accessibilité de l'URL
+    # Check URL accessibility
     try:
         response = requests.get(url, timeout=timeout)
         result["status_code"] = response.status_code
 
-        # Vérifier si le serveur est vivant malgré des codes d'erreur spécifiques
+        # Server is alive despite specific error codes
         if response.status_code in {401, 403, 405, 429, 500}:
             result["is_alive"] = (
-                True  # Le serveur est vivant mais un accès correct nécessite des ajustements
+                True  # Server alive but correct access needs adjustment
             )
         elif 200 <= response.status_code < 300:
-            result["is_alive"] = (
-                True  # Le serveur est accessible et répond correctement
-            )
+            result["is_alive"] = True  # Server accessible and responding correctly
         else:
-            result["error"] = f"Code de statut inattendu: {response.status_code}"
+            result["error"] = f"Unexpected status code: {response.status_code}"
     except requests.exceptions.Timeout:
-        result["error"] = "Le délai de connexion a expiré."
+        result["error"] = "Connection timed out."
     except requests.exceptions.ConnectionError:
-        result["error"] = "Impossible de se connecter au serveur."
+        result["error"] = "Unable to connect to server."
     except requests.exceptions.RequestException as e:
         result["error"] = str(e)
 

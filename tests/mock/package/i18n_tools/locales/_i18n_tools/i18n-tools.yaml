@@ -3,9 +3,9 @@ package:
   authors:
     51e7a015-d78e-4bdc-abb9-6ce43e8ce2c4:
       email: mike.l.fakeuphead@gmail.com
-      first_name: "Micha\xEBl"
+      first_name: "Michaël"
       languages: [ "en", "fr", "fr-FR" ]
-      last_name: "Fecq-Heupe H\xE8de"
+      last_name: "Fecq-Heupe Hède"
       url: ''
   domains:
     "i18n_tools":
@@ -27,14 +27,15 @@ package:
         - fr-FR
     source: 'fr-FR'
   paths:
-    config: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/i18n_tools/locales/_i18n_tools
-    backup: ''
+    # Overwritten at runtime by update_tmp_repository() — never used as-is
+    config: ""
+    backup: ""
+    repository: ""
+    root: ""
+    settings: i18n-tools.yaml
     modules:
       - i18n_tools
       - i18n_tools/loaders
-    repository: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/
-    root: /home/fabricemoutte/Personnel/dev/python/i18n/tests/mock/package/
-    settings: i18n-tools.yaml
   translators: { }
   details:
     description: 'This package is build to implement extensive usage of translations and being compatible with i18n and i18next format'
