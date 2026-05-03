@@ -18,6 +18,7 @@ def get_validate_api_url(use_real_network_resources):
     return _mock
 
 
+@pytest.mark.network
 class TestValidateApiUrl:
     @pytest.mark.parametrize(
         "url,expected",
@@ -116,8 +117,9 @@ class TestValidateApiUrl:
             assert result["error"] == expected["error"]
 
 
+@pytest.mark.network
+@pytest.mark.timeout
 class TestValidateApiUrlTimeouts:
-    @pytest.mark.network
     @pytest.mark.parametrize(
         "url,timeout,expected",
         [
@@ -166,6 +168,7 @@ class TestValidateApiUrlTimeouts:
         assert result["error"] == expected["error"]
 
 
+@pytest.mark.network
 class TestValidateApiUrlDirect:
     @pytest.mark.parametrize(
         "url,expected",
