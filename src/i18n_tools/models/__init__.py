@@ -1,2 +1,2 @@
-from .corpus import Corpus, Message
+from .corpus import Book, Corpus, Encyclopaedia, FallbackBook, Message
 from .repository import Repository

@@ -22,6 +22,7 @@ from i18n_tools.loaders.utils import (
     _create_gzip,
     _detect_format,
     _load_json,
+    _save_by_format,
     _save_json,
 )
 
@@ -178,6 +179,45 @@ def load_book(file_path: str) -> Dict[str, Any]:
             continue
         result[msgid] = {"messages": matrix, "metadata": {}}
     return result
+
+
+def save_book(book: Any, file_path: str) -> None:
+    """
+    Serialize a Book to a .i18t file.
+
+    The serialisation format (JSON or YAML) is detected from the file
+    extension. The structure written to disk follows the native .i18t format::
+
+        {
+            "metadata": { ... },
+            "<msgid>": { "messages": [...], "metadata": { ... } },
+            ...
+        }
+
+    :param book: The Book instance to persist.
+    :type book: Book
+    :param file_path: Full path (directory + filename) of the target .i18t file.
+    :type file_path: str
+    :raises FileNotFoundError: If the parent directory does not exist.
+
+    References
+    ----------
+    - biface/i18n#42 : strict separation models / loaders (DD-06)
+    - biface/i18n#46 : loader ↔ models bridge and native serialisation (DD-15, DD-16)
+    - biface/i18n#56 : .i18t naming convention and format detection (DD-34)
+    - biface/i18n#57 : Book.save() persistence
+    """
+    from i18n_tools.converter import message_to_i18n_tools_format
+
+    fmt = _detect_format(file_path)
+    data: Dict[str, Any] = {"metadata": book.metadata.to_dict()}
+    for msg in book.messages.values():
+        # load_locale_json / check_json_integrity expect each entry to be
+        # the raw messages matrix (a list of lists), not the full
+        # {"messages": ..., "metadata": ...} dict produced by
+        # message_to_i18n_tools_format.  We extract only the "messages" key.
+        data[msg.id] = message_to_i18n_tools_format(msg)["messages"]
+    _save_by_format(file_path, data, fmt)
 
 
 def aggregate_locale_json(
