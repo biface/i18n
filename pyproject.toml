@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "i18n-tools"
-version = "0.0.1"
+version = "0.3.0"
 authors = [
     { name = "biface" }
 ]
@@ -21,7 +21,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "ndict-tools>=0.6.0",
+    "ndict-tools>=1.2.0",
     "babel"
 ]
 
