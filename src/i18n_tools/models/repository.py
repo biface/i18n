@@ -356,7 +356,7 @@ class Repository(StrictNestedDictionary):
 
     def _apply_args(self, args) -> None:
         for path, value in args:
-            if not (isinstance(path, list) and path in self.dict_paths()) and not (
+            if not (isinstance(path, list) and path in self.paths()) and not (
                 isinstance(path, str) and self.is_key(path)
             ):
                 raise KeyError(f"{path} is not a valid path or key")
@@ -879,7 +879,7 @@ class Repository(StrictNestedDictionary):
         :raises ValueError: If the value already exist in the repository or the parameter is empty.
         """
 
-        if not self.dict_paths().__contains__(path):
+        if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
         if type(value) != type(self[path]):
@@ -906,7 +906,7 @@ class Repository(StrictNestedDictionary):
         :raises TypeError: If the value type differs from the existing value type.
         :raises ValueError: If the current value is empty (use add_value instead).
         """
-        if not self.dict_paths().__contains__(path):
+        if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
         if type(value) != type(self[path]):
@@ -934,7 +934,7 @@ class Repository(StrictNestedDictionary):
         :raises KeyError: If the path does not exist in the repository.
         :raises ValueError: If the value is already empty.
         """
-        if not self.dict_paths().__contains__(path):
+        if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
         current = self[path]
@@ -974,7 +974,7 @@ class Repository(StrictNestedDictionary):
         :rtype: None
         :raises KeyError: If the path does not exist in the repository.
         """
-        if not self.dict_paths().__contains__(path):
+        if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
         current = self[path]

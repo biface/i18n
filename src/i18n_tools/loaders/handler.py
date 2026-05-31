@@ -187,7 +187,7 @@ def create_template(
             msgid_bugs_address=repository[["details", "report-bugs-to"]],
             fuzzy=(
                 bool(repository[["details", "flags", "fuzzy"]])
-                if ["details", "flags", "fuzzy"] in repository.dict_paths()
+                if ["details", "flags", "fuzzy"] in repository.paths()
                 else True
             ),
         )
