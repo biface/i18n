@@ -360,7 +360,7 @@ class TestMessageGetMetadata:
             (
                 "fr_message",
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "fr-FR",
                     "location": [],
                     "flags": ["python-format"],
@@ -372,7 +372,7 @@ class TestMessageGetMetadata:
             (
                 "empty_message",
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "",
                     "location": [],
                     "flags": ["python-format"],
@@ -384,7 +384,7 @@ class TestMessageGetMetadata:
             (
                 "en_message",
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "en",
                     "location": [],
                     "flags": ["python-format"],
@@ -403,19 +403,19 @@ class TestMessageGetMetadata:
     @pytest.mark.parametrize(
         "fixture_name, path, expected",
         [
-            ("fr_message", "version", "0.1.0"),
+            ("fr_message", "version", __version__),
             ("fr_message", "language", "fr-FR"),
             ("fr_message", "flags", ["python-format"]),
             ("fr_message", "count", {"singular": 3, "plurals": [2, 2, 2]}),
             ("fr_message", ["count", "singular"], 3),
             ("fr_message", ["count", "plurals"], [2, 2, 2]),
-            ("empty_message", "version", "0.1.0"),
+            ("empty_message", "version", __version__),
             ("empty_message", "language", ""),
             ("empty_message", "flags", ["python-format"]),
             ("empty_message", "count", {"singular": 0, "plurals": [0]}),
             ("empty_message", ["count", "singular"], 0),
             ("empty_message", ["count", "plurals"], [0]),
-            ("en_message", "version", "0.1.0"),
+            ("en_message", "version", __version__),
             ("en_message", "language", "en"),
             ("en_message", "flags", ["python-format"]),
             ("en_message", "count", {"singular": 3, "plurals": [2, 2, 2]}),
@@ -2388,7 +2388,7 @@ class TestMessageUpdateMetadata:
                 [],
                 {"location": [("file.txt", 126)], "language": "en-GB"},
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "en-GB",
                     "location": [("file.txt", 126)],
                     "flags": ["python-format"],
@@ -2405,7 +2405,7 @@ class TestMessageUpdateMetadata:
                 [[["location"], [("file.txt", 126)]], [["language"], "en-GB"]],
                 {},
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "en-GB",
                     "location": [("file.txt", 126)],
                     "flags": ["python-format"],
@@ -2476,12 +2476,12 @@ class TestMessageUpdateMetadata:
             (
                 (),
                 {
-                    "version": "0.1.0",
+                    "version": __version__,
                     "language": "fr-FR",
                     "location": [("file.py", 132)],
                     "user_comments": ["A test for metadata"],
                 },
-                "The value (0.1.0) is already stored in the path '[version]'",
+                f"The value ({__version__}) is already stored in the path '[version]'",
             ),
             (
                 [],
@@ -3234,7 +3234,7 @@ class TestMessageFormat:
                         ["Bonjour tout le monde", "Mesdames", "Messieurs"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "language": "fr-FR",
                         "locations": [],
                         "flags": ["python-format"],
@@ -3256,7 +3256,7 @@ class TestMessageFormat:
                         ["Hi everyone", "Ladies", "Gentlemen"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "language": "en",
                         "locations": [],
                         "flags": ["python-format"],
@@ -3285,7 +3285,7 @@ class TestMessageFormat:
                         ["Bonjour tout le monde", "Mesdames", "Messieurs"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "locations": [],
                         "flags": ["python-format"],
                         "user_comments": [
@@ -3306,7 +3306,7 @@ class TestMessageFormat:
                         ["Hi everyone", "Ladies", "Gentlemen"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "locations": [],
                         "flags": ["python-format"],
                         "user_comments": ["Greeting message to one or more..."],
@@ -3325,7 +3325,7 @@ class TestMessageFormat:
                         ["Bonjour tout le monde", "Mesdames", "Messieurs"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "language": "fr-FR",
                         "locations": [],
                         "flags": ["python-format"],
@@ -3351,7 +3351,7 @@ class TestMessageFormat:
                         ["Hi everyone", "Ladies", "Gentlemen"],
                     ],
                     "metadata": {
-                        "version": "0.1.0",
+                        "version": __version__,
                         "language": "en",
                         "locations": [],
                         "flags": ["python-format"],
@@ -3448,7 +3448,7 @@ class TestMessageEquality:
             options_plurals={1: {1: "Hi {name}s"}},
             context="greet",
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en",
                 "location": [],
                 "flags": ["python-format"],
@@ -3464,7 +3464,7 @@ class TestMessageEquality:
             options_plurals={1: {1: "Hi {name}s"}},
             context="greet",
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en",
                 "location": [],
                 "flags": ["python-format"],
@@ -3607,7 +3607,7 @@ class TestMessageCreation:
     )
     def test_metadata_version(self, fixture_name, request):
         message = request.getfixturevalue(fixture_name)
-        assert message.metadata["version"] == "0.1.0"
+        assert message.metadata["version"] == __version__
 
     @pytest.mark.parametrize(
         "fixture_name, expect",

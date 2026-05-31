@@ -7,6 +7,7 @@ import re
 
 import pytest
 
+from i18n_tools import __version__
 from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.models.corpus import Book, Message
 
@@ -31,7 +32,7 @@ def _make_simple_message(lang: str) -> Message:
         default_plurals={1: "Hello worlds"},
         options_plurals={1: {1: "Hello {who}s"}},
         metadata={
-            "version": "0.1.0",
+            "version": __version__,
             "language": lang,
             "location": [],
             "flags": ["python-format"],
@@ -210,7 +211,7 @@ class TestBookAdd:
                             },
                         },
                         metadata={
-                            "version": "0.1.0",
+                            "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
@@ -246,7 +247,7 @@ class TestBookAdd:
                             },
                         },
                         metadata={
-                            "version": "0.1.0",
+                            "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
@@ -352,7 +353,7 @@ class TestBookAdd:
                             },
                         },
                         metadata={
-                            "version": "0.1.0",
+                            "version": __version__,
                             "language": "fr-BE",
                             "location": [],
                             "flags": ["python-format"],
@@ -395,7 +396,7 @@ class TestBookAdd:
                             },
                         },
                         metadata={
-                            "version": "0.1.0",
+                            "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
@@ -466,10 +467,10 @@ class TestBookMetadata:
         assert book.metadata.get("language_team", None) == ""
         assert book.metadata.get("header_comment", None) == ""
         # Statistics exist and initialized or computed
-        assert book.metadata.dict_paths().__contains__(
+        assert book.metadata.paths().__contains__(
             ["statistics", "total_messages"]
         ) and isinstance(book.metadata[["statistics", "total_messages"]], int)
-        assert book.metadata.dict_paths().__contains__(
+        assert book.metadata.paths().__contains__(
             ["statistics", "total_words"]
         ) and isinstance(book.metadata[["statistics", "total_words"]], int)
         # Count backward compatibility
@@ -669,5 +670,43 @@ class TestBookLoad:
 
 
 class TestBookSave:
-    def test_save(self, fr_fr_book):
-        fr_fr_book.save("tmp")
+    def test_save(self, fr_fr_book, tmp_path):
+        """Book.save() writes a readable .i18t file (round-trip check).
+
+        References
+        ----------
+        - biface/i18n#57 : Book.save() persistence (DD-06, DD-15, DD-16)
+        """
+        fr_fr_book.save(str(tmp_path))
+        saved_file = tmp_path / fr_fr_book.filename
+        assert saved_file.exists()
+
+    def test_save_file_not_found(self, fr_fr_book):
+        """Book.save() raises FileNotFoundError if the directory does not exist.
+
+        References
+        ----------
+        - biface/i18n#57 : Book.save() persistence
+        """
+        with pytest.raises(FileNotFoundError):
+            fr_fr_book.save("/nonexistent/directory")
+
+    def test_save_round_trip(self, fr_fr_book, tmp_path):
+        """load() after save() produces a Book with the same message ids.
+
+        References
+        ----------
+        - biface/i18n#57 : Book.save() persistence (DD-06, DD-15, DD-16)
+        """
+        from i18n_tools.models.corpus import Book
+
+        fr_fr_book.save(str(tmp_path))
+
+        reloaded = Book(
+            domain=fr_fr_book.domain,
+            language=fr_fr_book.language,
+            format=fr_fr_book.format,
+        )
+        reloaded.load(str(tmp_path))
+
+        assert set(reloaded.messages.keys()) == set(fr_fr_book.messages.keys())

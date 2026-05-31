@@ -4,6 +4,7 @@ import os
 import pytest
 from helpers import copy_and_update_repository
 
+from i18n_tools import __version__
 from i18n_tools.models import Message as MessageModel
 from i18n_tools.models.corpus import Book, Message
 
@@ -23,7 +24,7 @@ def fr_message():
             2: {1: "Bonjour Messieurs", 2: "Messieurs"},
         },
         metadata={
-            "version": "0.1.0",
+            "version": __version__,
             "language": "fr-FR",
             "location": [],
             "flags": ["python-format"],
@@ -49,7 +50,7 @@ def en_message():
             2: {1: "Hi everyone", 2: "Gentlemen"},
         },
         metadata={
-            "version": "0.1.0",
+            "version": __version__,
             "language": "en",
             "location": [],
             "flags": ["python-format"],
@@ -104,7 +105,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -140,7 +141,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -175,7 +176,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -211,7 +212,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -248,7 +249,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -284,7 +285,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -319,7 +320,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -355,7 +356,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -389,7 +390,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -425,7 +426,7 @@ def fr_fr_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "fr-FR",
                 "location": [],
                 "flags": ["python-format"],
@@ -467,7 +468,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -503,7 +504,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -538,7 +539,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -574,7 +575,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -609,7 +610,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -645,7 +646,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -680,7 +681,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -716,7 +717,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -748,7 +749,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -784,7 +785,7 @@ def en_us_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-US",
                 "location": [],
                 "flags": ["python-format"],
@@ -826,7 +827,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -862,7 +863,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -897,7 +898,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -933,7 +934,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -968,7 +969,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1004,7 +1005,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1039,7 +1040,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1075,7 +1076,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1107,7 +1108,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1143,7 +1144,7 @@ def en_gb_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "en-GB",
                 "location": [],
                 "flags": ["python-format"],
@@ -1185,7 +1186,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1221,7 +1222,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1256,7 +1257,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1292,7 +1293,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1329,7 +1330,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1365,7 +1366,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1400,7 +1401,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1436,7 +1437,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1473,7 +1474,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
@@ -1509,7 +1510,7 @@ def it_it_messages():
                 },
             },
             metadata={
-                "version": "0.1.0",
+                "version": __version__,
                 "language": "it-IT",
                 "location": [],
                 "flags": ["python-format"],
