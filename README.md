@@ -67,7 +67,7 @@ The project follows a progression by deliverable value. Each version is independ
 
 ### License
 
-See the [license.md](license.md) file.
+See the [license.md](LICENSE.md) file.
 
 ---
 
