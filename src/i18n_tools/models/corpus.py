@@ -11,8 +11,8 @@ from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
     message_to_i18n_tools_format,
 )
+from i18n_tools.loaders.loader import build_book_filename
 from i18n_tools.loaders.loader import load_book as _load_book
-from i18n_tools.loaders.utils import _validate_translation_format
 from i18n_tools.locale import normalize_language_tag
 
 
@@ -1803,7 +1803,9 @@ class Book:
         self.messages = StrictNestedDictionary()
 
         # Core metadata for naming and storage format
-        self.format = kwargs.pop("format", "json")
+        self.format, self.filename = build_book_filename(
+            self.domain, kwargs.pop("format", None)
+        )
 
         # Build metadata dictionary (without language, domain, format)
         self.metadata = StrictNestedDictionary(
@@ -1837,8 +1839,6 @@ class Book:
         self.metadata[["count", "messages"]] = len(self.messages)
         # Compute statistics based on current messages
         self._compute_statistics()
-        # Set filename
-        self.__set_filename()
 
     # --- Attribute management for language, domain, and format ---
     def __set_filename(self) -> None:
@@ -1904,14 +1904,11 @@ class Book:
         if getattr(self, "format", None) is not None:
             raise ValueError("Format is already set for this book")
 
-        # Validate using shared loader utils
-        self.format = _validate_translation_format(fmt)
-        self.__set_filename()
+        self.format, self.filename = build_book_filename(self.domain, fmt)
 
     def update_format(self, fmt: TranslationFileFormat) -> None:
         """Update the format hint."""
-        self.format = _validate_translation_format(fmt)
-        self.__set_filename()
+        self.format, self.filename = build_book_filename(self.domain, fmt)
 
     def remove_format(self) -> None:
         """Unset the format hint."""
