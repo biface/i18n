@@ -19,12 +19,12 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools.__static__ import (
     I18N_TOOLS_BACKUP,
     I18N_TOOLS_CONFIG,
+    I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
 )
 from i18n_tools.locale import get_all_languages
 
-from .. import I18N_TOOLS_LOCALE
 from .handler import (
     _verify_available_languages,
     _verify_paths_and_modules,

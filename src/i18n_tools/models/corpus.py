@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools import __version__
+from i18n_tools import __static__
 from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
@@ -35,7 +35,7 @@ def _check_index_dict(dictionary: Dict[int, str]) -> bool:
 def _build_empty_metadata() -> StrictNestedDictionary:
     return StrictNestedDictionary(
         {
-            "version": __version__,
+            "version": __static__.__version__,
             "language": "",
             "location": [],
             "flags": ["python-format"],
