@@ -201,26 +201,25 @@ def create_template(
     :param domain: The domain name.
     :type domain: str
     """
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            I18N_TOOLS_TEMPLATE,
-        )
-        catalog = Catalog(
-            project=repository[["details", "name"]],
-            version=repository[["details", "version"]],
-            copyright_holder=f"i18n-tools ({__static__.__version__}) builder",
-            msgid_bugs_address=repository[["details", "report-bugs-to"]],
-            fuzzy=(
-                bool(repository[["details", "flags", "fuzzy"]])
-                if ["details", "flags", "fuzzy"] in repository.paths()
-                else True
-            ),
-        )
-        catalog.header_comment = f"""
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        I18N_TOOLS_TEMPLATE,
+    )
+    catalog = Catalog(
+        project=repository[["details", "name"]],
+        version=repository[["details", "version"]],
+        copyright_holder=f"i18n-tools ({__static__.__version__}) builder",
+        msgid_bugs_address=repository[["details", "report-bugs-to"]],
+        fuzzy=(
+            bool(repository[["details", "flags", "fuzzy"]])
+            if ["details", "flags", "fuzzy"] in repository.paths()
+            else True
+        ),
+    )
+    catalog.header_comment = f"""
 # This POT file is generated for PROJECT project.
 # By ORGANIZATION and is dedicated to {domain} domain
 # of translations in {module} module of PROJECT project.
@@ -234,40 +233,37 @@ def create_template(
 # This file is distributed under the same license as the PROJECT
 # project.
 """
-        catalog.domain = domain
-        catalog.mime_headers = [
-            (
-                "Project-Id-Version",
-                f"{repository[['details', 'name']]} {repository[['details', 'version']]}",
-            ),
-            ("Report-Msgid-Bugs-To", repository[["details", "report-bugs-to"]]),
-            ("POT-Creation-Date", repository[["details", "creation_date"]]),
-            ("PO-Revision-Date", "YEAR-MO-DA HO:MI+ZONE"),
-            ("Last-Translator", ""),
-            ("Language-Team", repository[["details", "language_team"]]),
-            ("Language", ""),
-            ("MIME-Version", "1.0"),
-            (
-                "Content-Type",
-                f"{repository[['details', 'content_type']]}; charset=utf-8",
-            ),
-            ("Content-Transfer-Encoding", "8bit"),
-            (
-                "Generated-By",
-                f"i18n-tools ({__static__.__version__}) using Babel ({babel_version})",
-            ),
-        ]
+    catalog.domain = domain
+    catalog.mime_headers = [
+        (
+            "Project-Id-Version",
+            f"{repository[['details', 'name']]} {repository[['details', 'version']]}",
+        ),
+        ("Report-Msgid-Bugs-To", repository[["details", "report-bugs-to"]]),
+        ("POT-Creation-Date", repository[["details", "creation_date"]]),
+        ("PO-Revision-Date", "YEAR-MO-DA HO:MI+ZONE"),
+        ("Last-Translator", ""),
+        ("Language-Team", repository[["details", "language_team"]]),
+        ("Language", ""),
+        ("MIME-Version", "1.0"),
+        (
+            "Content-Type",
+            f"{repository[['details', 'content_type']]}; charset=utf-8",
+        ),
+        ("Content-Transfer-Encoding", "8bit"),
+        (
+            "Generated-By",
+            f"i18n-tools ({__static__.__version__}) using Babel ({babel_version})",
+        ),
+    ]
 
-        template_file = path + f"/{domain}.pot"
-        if not _exist_path(template_file):
-            _save_text(template_file, catalog)
-        else:
-            raise FileExistsError(
-                f"The path '{template_file}' already exists. You cannot overwrite it."
-            )
-
-    except Exception as e:
-        raise e
+    template_file = path + f"/{domain}.pot"
+    if not _exist_path(template_file):
+        _save_text(template_file, catalog)
+    else:
+        raise FileExistsError(
+            f"The path '{template_file}' already exists. You cannot overwrite it."
+        )
 
 
 def create_catalog(
@@ -289,28 +285,25 @@ def create_catalog(
     :type domain: str
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    catalog = fetch_template(repository, module, domain)
+    catalog_path = path + f"/{domain}.po"
+    catalog.locale = Locale.parse(language, sep="-")
+    catalog.domain = domain
+    if not _exist_path(catalog_path):
+        _save_text(catalog_path, catalog)
+        _convert_catalog(catalog_path)
+    else:
+        raise FileExistsError(
+            f"The path '{catalog_path}' already exists. You cannot overwrite it"
         )
-        catalog = fetch_template(repository, module, domain)
-        catalog_path = path + f"/{domain}.po"
-        catalog.locale = Locale.parse(language, sep="-")
-        catalog.domain = domain
-        if not _exist_path(catalog_path):
-            _save_text(catalog_path, catalog)
-            _convert_catalog(catalog_path)
-        else:
-            raise FileExistsError(
-                f"The path '{catalog_path}' already exists. You cannot overwrite it"
-            )
-    except Exception as e:
-        raise e
 
 
 def create_dictionary(
@@ -335,26 +328,23 @@ def create_dictionary(
     :param domain: The domain name.
     :type domain: str
     """
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    # Default behavior remains JSON when fmt is None
+    dictionary_path = _build_dictionary_path(path, domain, fmt)
+    _fmt = _validate_translation_format(fmt)
+    if not _exist_path(dictionary_path):
+        _save_by_format(dictionary_path, {}, _fmt)
+    else:
+        raise FileExistsError(
+            f"The path '{dictionary_path}' already exists. You cannot overwrite it"
         )
-        # Default behavior remains JSON when fmt is None
-        dictionary_path = _build_dictionary_path(path, domain, fmt)
-        _fmt = _validate_translation_format(fmt)
-        if not _exist_path(dictionary_path):
-            _save_by_format(dictionary_path, {}, _fmt)
-        else:
-            raise FileExistsError(
-                f"The path '{dictionary_path}' already exists. You cannot overwrite it"
-            )
-    except Exception as e:
-        raise e
 
 
 # Read operations
@@ -378,20 +368,17 @@ def fetch_template(
     :rtype: str
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            I18N_TOOLS_TEMPLATE,
-        )
-        template_file = path + f"/{domain}.pot"
-        catalog = _load_text(template_file)
-        catalog.domain = domain
-        catalog.copyright_holder = "i18n-tools builder"
-    except Exception as e:
-        raise e
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        I18N_TOOLS_TEMPLATE,
+    )
+    template_file = path + f"/{domain}.pot"
+    catalog = _load_text(template_file)
+    catalog.domain = domain
+    catalog.copyright_holder = "i18n-tools builder"
 
     return catalog
 
@@ -415,21 +402,18 @@ def fetch_catalog(
     :return: The translation catalog.
     :rtype: Catalog
     """
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
-        )
-        catalog_path = path + f"/{domain}.po"
-        catalog = _load_text(catalog_path)
-        catalog.domain = domain
-        catalog.copyright_holder = "i18n-tools builder"
-    except Exception as e:
-        raise e
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    catalog_path = path + f"/{domain}.po"
+    catalog = _load_text(catalog_path)
+    catalog.domain = domain
+    catalog.copyright_holder = "i18n-tools builder"
 
     return catalog
 
@@ -458,20 +442,17 @@ def fetch_dictionary(
     :rtype: Dict[str, Any]
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
-        )
-        dictionary_path = _build_dictionary_path(path, domain, fmt)
-        _fmt = _validate_translation_format(fmt)
-        dictionary = _load_by_format(dictionary_path, _fmt)
-    except Exception as e:
-        raise e
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    dictionary_path = _build_dictionary_path(path, domain, fmt)
+    _fmt = _validate_translation_format(fmt)
+    dictionary = _load_by_format(dictionary_path, _fmt)
 
     return dictionary
 
@@ -506,54 +487,50 @@ def update_catalog(
 
     # TODO: Must update template file as well
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
-        )
-        catalog_path = path + f"/{domain}.po"
-        catalog = _load_text(catalog_path)
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    catalog_path = path + f"/{domain}.po"
+    catalog = _load_text(catalog_path)
 
-        for key, value in data.items():
-            if isinstance(value, dict):
-                # Handle pluralizable messages
-                string_value = value.get("string", "")
+    for key, value in data.items():
+        if isinstance(value, dict):
+            # Handle pluralizable messages
+            string_value = value.get("string", "")
 
-                # If the key is a tuple/list (pluralizable) and the string is not,
-                # convert the string to a tuple with appropriate number of elements
-                if isinstance(key, (tuple, list)) and not isinstance(
-                    string_value, (tuple, list)
-                ):
-                    # For pluralizable messages, string should be a tuple/list
-                    # with the same number of elements as the key
-                    if string_value:
-                        # If we have a string, use it as the first element (singular form)
-                        # and add empty strings for the plural forms
-                        string_value = tuple([string_value] + [""] * (len(key) - 1))
-                    else:
-                        # If we don't have a string, create a tuple with empty strings
-                        string_value = tuple([""] * len(key))
+            # If the key is a tuple/list (pluralizable) and the string is not,
+            # convert the string to a tuple with appropriate number of elements
+            if isinstance(key, (tuple, list)) and not isinstance(
+                string_value, (tuple, list)
+            ):
+                # For pluralizable messages, string should be a tuple/list
+                # with the same number of elements as the key
+                if string_value:
+                    # If we have a string, use it as the first element (singular form)
+                    # and add empty strings for the plural forms
+                    string_value = tuple([string_value] + [""] * (len(key) - 1))
+                else:
+                    # If we don't have a string, create a tuple with empty strings
+                    string_value = tuple([""] * len(key))
 
-                message = catalog.add(
-                    id=key,
-                    string=string_value,
-                    locations=value.get("locations", ()),
-                    previous_id=value.get("previous_id", ""),
-                    flags=["python-format"],
-                )
+            message = catalog.add(
+                id=key,
+                string=string_value,
+                locations=value.get("locations", ()),
+                previous_id=value.get("previous_id", ""),
+                flags=["python-format"],
+            )
 
-            else:
-                raise ValueError(f"{value} is not a dictionary")
+        else:
+            raise ValueError(f"{value} is not a dictionary")
 
-        _save_text(catalog_path, catalog)
-        _convert_catalog(catalog_path)
-
-    except Exception as e:
-        raise e
+    _save_text(catalog_path, catalog)
+    _convert_catalog(catalog_path)
 
 
 def update_dictionary(
@@ -581,31 +558,27 @@ def update_dictionary(
     :type data: Dict[str, Any]
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    dictionary_path = _build_dictionary_path(path, domain, fmt)
+    _fmt = _validate_translation_format(fmt)
+    dictionary = _load_by_format(dictionary_path, _fmt)
+
+    if not check_json_integrity(data):
+        raise ValueError(
+            f"The dictionary {data} is not compatible with i18n-tools translations"
         )
-        dictionary_path = _build_dictionary_path(path, domain, fmt)
-        _fmt = _validate_translation_format(fmt)
-        dictionary = _load_by_format(dictionary_path, _fmt)
 
-        if not check_json_integrity(data):
-            raise ValueError(
-                f"The dictionary {data} is not compatible with i18n-tools translations"
-            )
+    for key, item in data.items():
+        dictionary[key] = item
 
-        for key, item in data.items():
-            dictionary[key] = item
-
-        _save_by_format(dictionary_path, dictionary, _fmt)
-
-    except Exception as e:
-        raise e
+    _save_by_format(dictionary_path, dictionary, _fmt)
 
 
 def dump_dictionary(
@@ -633,27 +606,23 @@ def dump_dictionary(
     :type data: Dict[str, Any]
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    dictionary_path = _build_dictionary_path(path, domain, fmt)
+    _fmt = _validate_translation_format(fmt)
+
+    if not check_json_integrity(data):
+        raise ValueError(
+            f"The dictionary {data} is not compatible with i18n-tools translations"
         )
-        dictionary_path = _build_dictionary_path(path, domain, fmt)
-        _fmt = _validate_translation_format(fmt)
 
-        if not check_json_integrity(data):
-            raise ValueError(
-                f"The dictionary {data} is not compatible with i18n-tools translations"
-            )
-
-        _save_by_format(dictionary_path, data, _fmt)
-
-    except Exception as e:
-        raise e
+    _save_by_format(dictionary_path, data, _fmt)
 
 
 # Delete operations
@@ -676,18 +645,15 @@ def remove_template(
     :raises FileNotFoundError: If the template file does not exist.
     """
 
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            I18N_TOOLS_TEMPLATE,
-        )
-        template_path = path + f"/{domain}.pot"
-        _remove_file(template_path)
-    except Exception as e:
-        raise e
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        I18N_TOOLS_TEMPLATE,
+    )
+    template_path = path + f"/{domain}.pot"
+    _remove_file(template_path)
 
 
 def remove_catalog(
@@ -709,20 +675,17 @@ def remove_catalog(
     :raises FileNotFoundError: If the catalog or machine file does not exist.
     """
 
-    try:
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
-        )
-        catalog_path = path + f"/{domain}.po"
-        machine_path = path + f"/{domain}.mo"
-        _remove_file(catalog_path)
-        _remove_file(machine_path)
-    except Exception as e:
-        raise e
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    catalog_path = path + f"/{domain}.po"
+    machine_path = path + f"/{domain}.mo"
+    _remove_file(catalog_path)
+    _remove_file(machine_path)
 
 
 def remove_dictionary(
@@ -747,19 +710,16 @@ def remove_dictionary(
     :type domain: str
     :raises FileNotFoundError: If the dictionary file does not exist.
     """
-    try:
-        _check_domains(repository, module, [domain])
-        path = build_path(
-            repository[["paths", "repository"]],
-            module,
-            I18N_TOOLS_LOCALE,
-            language,
-            I18N_TOOLS_MESSAGES,
-        )
-        dictionary_path = _build_dictionary_path(path, domain, fmt)
-        _remove_file(dictionary_path)
-    except Exception as e:
-        raise e
+    _check_domains(repository, module, [domain])
+    path = build_path(
+        repository[["paths", "repository"]],
+        module,
+        I18N_TOOLS_LOCALE,
+        language,
+        I18N_TOOLS_MESSAGES,
+    )
+    dictionary_path = _build_dictionary_path(path, domain, fmt)
+    _remove_file(dictionary_path)
 
 
 # Managing configuration files
@@ -937,17 +897,11 @@ def _verify_target_domain(
     :type target_domain: str.
     :return: Nothing
     :rtype: None
-    :raises ValueError: If any domain is not registered in the repository.
+    :raises ValueError: If the target module or the target domain is not
+                         registered in the repository.
     """
-    try:
-        _verify_target_module(repository, target_module)
-        if target_domain not in repository[["domains", target_module]]:
-            raise IndexError(
-                f"The target domain '{target_domain}' is not registered in the repository"
-            )
-    except IndexError as e:
-        raise e
-    except Exception as e:
+    _verify_target_module(repository, target_module)
+    if target_domain not in repository[["domains", target_module]]:
         raise ValueError(
-            f"The target module '{target_module}' is not registered in the repository"
+            f"The target domain '{target_domain}' is not registered in the repository"
         )
