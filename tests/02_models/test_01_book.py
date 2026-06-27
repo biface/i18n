@@ -596,6 +596,23 @@ class TestBookAttributes:
         book.add_format("yaml")
         assert book.format == "yaml"
 
+    def test_constructor_and_setters_validate_format_consistently(self):
+        """biface/i18n#66 — before this fix, Book(format=...) accepted any
+        value silently (no call to the format validator), while
+        add_format()/update_format() raised ValueError on the same input.
+        All three now go through build_book_filename() and must behave
+        identically."""
+        with pytest.raises(ValueError, match="Unknown format 'banana'"):
+            Book(domain="d", language="fr-FR", format="banana")
+
+        book = Book(domain="d", language="fr-FR")
+        with pytest.raises(ValueError, match="Unknown format 'banana'"):
+            book.update_format("banana")
+
+        book.remove_format()
+        with pytest.raises(ValueError, match="Unknown format 'banana'"):
+            book.add_format("banana")
+
 
 class TestBookUpdate:
     def test_update_language_success_on_empty_book(self):
