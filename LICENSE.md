@@ -1,6 +1,6 @@
 CeCILL-C License
 
-**[Version française](licence.md)**
+**[Version française](LICENCE.md)**
 
 ---
 
