@@ -13,6 +13,7 @@ Key Responsibilities:
 from pathlib import Path
 from typing import Dict
 
+from .__static__ import I18N_TOOLS_TEMPLATE
 from .loaders.utils import _create_empty_file, _create_empty_json
 from .locale import validate_and_normalize_language_tags
 
@@ -47,20 +48,25 @@ def check_repository(tld: str, domains: Dict, languages: Dict):
         locales_path.mkdir(parents=True, exist_ok=True)
 
         for domain in domain_list:
+            # .pot is a per-domain template, shared across all languages
+            # (DD-12, repository.rst) — created once in templates/, not
+            # duplicated inside each language's LC_MESSAGES/.
+            templates_path = locales_path / I18N_TOOLS_TEMPLATE
+            templates_path.mkdir(parents=True, exist_ok=True)
+            pot_file = templates_path / f"{domain}.pot"
+            if not pot_file.exists():
+                _create_empty_file(str(pot_file))
+
             for lang in validated_languages:
                 lang_path = locales_path / lang / "LC_MESSAGES"
                 lang_path.mkdir(parents=True, exist_ok=True)
 
-                # Create .json, .pot, and .po files
+                # Create .json and .po files
                 json_file = lang_path / f"{domain}.json"
-                pot_file = lang_path / f"{domain}.pot"
                 po_file = lang_path / f"{domain}.po"
 
                 if not json_file.exists():
                     _create_empty_json(str(json_file))
-
-                if not pot_file.exists():
-                    _create_empty_file(str(pot_file))
 
                 if not po_file.exists():
                     _create_empty_file(str(po_file))
