@@ -8,7 +8,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
-## [Unreleased] — v0.4.x — Quality, coverage & documentation
+## v0.4.0 — Quality, coverage & documentation (2026-06-27)
 
 ### 🐛 Bug Fixes
 - `Repository.add_value()`: the guard `value is not None or not value` was a
@@ -78,6 +78,16 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   (FR), matching the README split.
 - Same correction applied to `CODE_OF_CONDUCT.md` / `CODE_DE_CONDUITE.md`
   (referenced `ndict-tools`).
+- Sphinx/Furo documentation initialised (DD-33): theme switched to Furo,
+  `Makefile`/`make.bat` added (were missing), `format.rst`/
+  `repository.rst` confirmed correctly migrated. Fixed a regression where
+  several `.rst` files still referenced functions removed earlier in this
+  same milestone (#67/#68); fixed broken cross-references pointing at
+  nonexistent or wrongly-named pages; fixed malformed RST in two
+  docstrings (`Repository`, `load_locale_json`) that broke the build.
+  `cd docs && make html` now succeeds with zero warnings. (#34)
+- GitHub Pages deployment and `sphinx-multiversion` deliberately deferred
+  to v0.6.x / v1.0.0 respectively — not part of this release.
 
 ---
 

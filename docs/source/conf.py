@@ -12,7 +12,7 @@ import sys
 project = 'i18n-tools'
 copyright = '2025, biface'
 author = 'biface'
-release = '0.1.0'
+release = '0.4.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
