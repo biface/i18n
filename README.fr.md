@@ -67,7 +67,7 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 
 ### Licence
 
-Voir le fichier [licence.md](licence.md).
+Voir le fichier [licence.md](LICENCE.md).
 
 ---
 
