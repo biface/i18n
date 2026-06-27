@@ -48,4 +48,4 @@ Why Use i18n-tools?
 
 If your application requires **dynamic, context-sensitive messages** or **non-standard plural rules**, **i18n-tools** provides the flexibility and control needed to deliver a polished user experience across languages.
 
-For more details, see the :doc:`Overview <index>` or dive into the :doc:`Getting Started <install>` guide.
+For more details, see the :doc:`Overview <index>` or dive into the :doc:`Getting Started <getting_started>` guide.
