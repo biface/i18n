@@ -8,6 +8,17 @@ import os
 from pathlib import Path
 from typing import Literal
 
+__version__ = "0.3.0"
+"""
+This variable stores the package version. It lives here (rather than in
+``__init__.py``) so that internal modules can depend on it without creating
+a circular import back through the package root. Internal consumers should
+import this module (``from i18n_tools import __static__``) and read
+``__static__.__version__`` rather than copy-importing the name, so that an
+override made after import time (``i18n_tools.__static__.__version__ = ...``)
+remains visible everywhere consistently.
+"""
+
 I18N_TRANSLATION_FORMAT = {"json", "yaml"}
 """
 This format defines the set of standard storage files for translations

@@ -19,7 +19,7 @@ from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
 # import i18n_tools
-from i18n_tools import __version__ as i18n_tools_version
+from i18n_tools import __static__
 
 from ..__static__ import (
     I18N_TOOLS_CONFIG,
@@ -183,7 +183,7 @@ def create_template(
         catalog = Catalog(
             project=repository[["details", "name"]],
             version=repository[["details", "version"]],
-            copyright_holder=f"i18n-tools ({i18n_tools_version}) builder",
+            copyright_holder=f"i18n-tools ({__static__.__version__}) builder",
             msgid_bugs_address=repository[["details", "report-bugs-to"]],
             fuzzy=(
                 bool(repository[["details", "flags", "fuzzy"]])
@@ -225,7 +225,7 @@ def create_template(
             ("Content-Transfer-Encoding", "8bit"),
             (
                 "Generated-By",
-                f"i18n-tools ({i18n_tools_version}) using Babel ({babel_version})",
+                f"i18n-tools ({__static__.__version__}) using Babel ({babel_version})",
             ),
         ]
 
