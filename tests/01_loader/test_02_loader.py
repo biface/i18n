@@ -779,7 +779,7 @@ class TestVerifyRepository:
                 "fsm_tools/turing",
                 "model",
                 False,
-                IndexError,
+                ValueError,
                 "The target domain 'model' is not registered in the repository",
             ),
             (
@@ -787,7 +787,7 @@ class TestVerifyRepository:
                 "information",
                 False,
                 ValueError,
-                "The target module 'fsm-tools/turing' is not registered in the repository",
+                "The target module fsm-tools/turing is not registered in the repository",
             ),
         ],
     )
@@ -994,7 +994,7 @@ class TestTranslationSet:
                 ValueError,
                 None,
             ),
-            ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+            ("fsm_tools", "usages", {}, False, [], ValueError, ""),
         ],
     )
     def tests_add_translation_set(
@@ -1137,7 +1137,7 @@ class TestTranslationSet:
                 None,
                 None,
             ),
-            ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+            ("fsm_tools", "usages", {}, False, [], ValueError, ""),
             (
                 "fsm_tools",
                 "usage",
@@ -1211,7 +1211,7 @@ class TestTranslationSet:
                 None,
                 None,
             ),
-            ("fsm_tools", "usages", {}, False, [], IndexError, ""),
+            ("fsm_tools", "usages", {}, False, [], ValueError, ""),
         ],
     )
     def tests_remove_translation_set(
