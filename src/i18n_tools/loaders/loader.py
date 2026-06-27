@@ -28,7 +28,7 @@ from i18n_tools.loaders.utils import (
 def load_locale_json(file_path: str) -> Dict[str, Any]:
     """
     This function load a JSON file in the locales repository and containing i18next data. The structure of this
-    dictionary is as follows:
+    dictionary is as follows::
 
         {
             "msgid_001": [
