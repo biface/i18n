@@ -41,10 +41,14 @@ test = [
     "isort",
     "bandit"
 ]
+docs = [
+    "Sphinx",
+    "furo"
+]
 
 [tool.tox]
 minversion = "3.24.5"
-envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "ci"]
+envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "ci", "docs"]
 
 [tool.tox.testenv]
 setenv = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
@@ -96,6 +100,16 @@ commands = [
 description = "Run security analysis with bandit"
 deps = ["bandit"]
 commands = ["bandit -r src"]
+
+[tool.tox.testenv.docs]
+description = "Build Sphinx documentation (warnings treated as errors)"
+deps = [
+    "Sphinx",
+    "furo"
+]
+commands = [
+    "sphinx-build -b html docs/source docs/build/html -W"
+]
 
 [tool.tox.testenv.local]
 description = "Run fix, lint, bandit, and coverage in sequence"

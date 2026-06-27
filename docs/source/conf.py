@@ -28,7 +28,6 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
-    'sphinx_rtd_theme',
     # contributions
 ]
 
@@ -40,11 +39,7 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_theme_options = {
-    'navigation_depth': 4,
-    'collapse_navigation': False,
-}
+html_theme = 'furo'
 
 html_use_index = True
 html_search_language = 'en'
