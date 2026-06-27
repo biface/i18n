@@ -11,119 +11,18 @@ managing `.pot` files for translation projects.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
-from babel.messages.catalog import Catalog
-from babel.messages.mofile import read_mo, write_mo
-from babel.messages.pofile import read_po, write_po
-
+from i18n_tools.loaders.handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders.handler import check_json_integrity
 from i18n_tools.loaders.utils import (
     _create_gzip,
     _detect_format,
+    _load_by_format,
     _load_json,
     _save_by_format,
     _save_json,
 )
-
-
-def _load_po(file_path: str) -> Catalog:
-    """
-    Load a PO file and return its content as a Babel Catalog.
-    :param file_path: Path to the PO file.
-    :type file_path: str
-    :return: Babel Catalog object.
-    :rtype: Catalog
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "r", encoding="utf-8") as po_file:
-            return read_po(po_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_po(file_path: str, po_data: Catalog) -> None:
-    """
-    Save a PO file using Babel.
-    :param file_path: Path to the PO file.
-    :type file_path: str
-    :param po_data: Babel Catalog object.
-    :type po_data: Catalog
-    :return: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "r", encoding="utf-8") as po_file:
-            write_po(po_file, po_data)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _load_pot(file_path: str) -> Catalog:
-    """
-    Load a POT file and return its content as a Babel Catalog.
-    :param file_path: Path to the POT file.
-    :type file_path: str
-    :return: Babel Catalog object.
-    :rtype: Catalog
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "r", encoding="utf-8") as pot_file:
-            return read_po(pot_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_pot(file_path: str, pot_data: Catalog) -> None:
-    """
-    Save a POT file using Babel.
-    :param file_path: Path to the POT file.
-    :type file_path: str
-    :param pot_data: Babel Catalog object.
-    :type pot_data: Catalog
-    :return: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "w", encoding="utf-8") as pot_file:
-            write_po(pot_file, pot_data)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _load_mo(file_path: str) -> Catalog:
-    """
-    Load a MO file and return its content as a Babel Catalog.
-    :param file_path: Path to the MO file.
-    :type file_path: str
-    :return: Babel Catalog object.
-    :rtype: Catalog
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "rb") as mo_file:
-            return read_mo(mo_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
-
-
-def _save_mo(file_path: str, mo_data: Catalog) -> None:
-    """
-    Save a MO file using Babel.
-    :param file_path: Path to the MO file.
-    :type file_path: str
-    :param mo_data: Babel Catalog object.
-    :type mo_data: Catalog
-    :return: None
-    :raises FileNotFoundError: File not found.
-    """
-    try:
-        with open(file_path, "wb") as mo_file:
-            write_mo(mo_file, mo_data)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
 
 
 def load_locale_json(file_path: str) -> Dict[str, Any]:
@@ -161,8 +60,9 @@ def load_book(file_path: str) -> Dict[str, Any]:
     """
     Load a .i18t dictionary file and return its contents as a filtered dict (DD-15, DD-16, DD-34).
 
-    The serialisation format is detected from the file extension (DD-34).
-    The reserved keys ``.i18n_tools`` and ``metadata`` are silently ignored.
+    The serialisation format is detected from the file extension (DD-34),
+    symmetrically to :func:`save_book`. The reserved keys ``.i18n_tools``
+    and ``metadata`` are silently ignored.
 
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
@@ -172,7 +72,10 @@ def load_book(file_path: str) -> Dict[str, Any]:
     :raises FileNotFoundError: If the file does not exist.
     :raises ValueError: If the file fails the integrity check.
     """
-    data = load_locale_json(file_path)
+    fmt = _detect_format(file_path)
+    data = _load_by_format(file_path, fmt)
+    if not check_json_integrity(data):
+        raise ValueError(f"Integrity check failed for file: {file_path}")
     result = {}
     for msgid, matrix in data.items():
         if msgid in (".i18n_tools", "metadata"):
@@ -266,20 +169,6 @@ def aggregate_locale_json(
     return aggregated_data
 
 
-def load_locale_po(file_path: str) -> Catalog:
-    """
-    Public interface to load a PO locale file with integrity check.
-
-    :param file_path: Path to the PO locale file.
-    :type file_path: str
-    :return: Babel Catalog object.
-    :rtype: Catalog
-    :raises FileNotFoundError: If the file is not found.
-    :raises ValueError: If the file is not a valid PO file or fails the integrity check.
-    """
-    return _load_po(file_path)
-
-
 def save_locale_json(file_path: str, data: Dict[str, Any]) -> None:
     """
     Save data to a JSON locale file.
@@ -328,21 +217,21 @@ def save_aggregated_locale_json(
         module_json_path.unlink()
 
 
-def save_locale_po(file_path: str, po_data: Catalog) -> None:
+def build_book_filename(domain: str, fmt: Union[str, None] = None) -> Tuple[str, str]:
     """
-    The public interface to _save_po
-    :param file_path:
-    :param po_data:
-    :return:
-    """
-    _save_po(file_path, po_data)
+    Pass-through to :func:`i18n_tools.loaders.handler.build_book_filename`.
 
+    Kept here so that `Book` (`models/corpus.py`) only ever talks to
+    `loader.py`, consistent with the existing `load_book`/`save_book`
+    pattern (DD-06, DD-08) — never directly to `handler.py`.
 
-def save_locale_pot(file_path: str, po_data: Catalog) -> None:
+    :param domain: The translation domain name.
+    :type domain: str
+    :param fmt: The desired storage format ("json" or "yaml"). Defaults to
+                "json" if ``None``.
+    :type fmt: Union[str, None]
+    :return: A ``(format, filename)`` tuple.
+    :rtype: Tuple[str, str]
+    :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
-    The public interface to _save_pot
-    :param file_path:
-    :param po_data:
-    :return:
-    """
-    _save_pot(file_path, po_data)
+    return _build_book_filename(domain, fmt)
