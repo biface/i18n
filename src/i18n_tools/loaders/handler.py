@@ -579,33 +579,6 @@ def update_dictionary(
         raise e
 
 
-def dump_catalog(
-    repository: StrictNestedDictionary,
-    module: str,
-    language: str,
-    domain: str,
-    data: Dict[any, Dict[str, str]],
-) -> None:
-    """
-    Dump the translation catalog for a given language and domain.
-
-    This function saves the provided translation catalog to the specified .po file
-    and updates the corresponding .mo file.
-
-    :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
-    :param module: The module path.
-    :type module: str
-    :param language: The language code.
-    :type language: str
-    :param domain: The domain name.
-    :type domain: str
-    :param data: An adapted translation dictionary.
-    :type data: Dict[str, Dict[str, str]]
-    """
-    pass
-
-
 def dump_dictionary(
     repository: StrictNestedDictionary,
     module: str,
