@@ -387,12 +387,12 @@ def patch_validate_api_url(is_main_branch):
     else:
         # On other branches, use the mock function
         # Patch both the direct import in api module and the import in config module
-        with mock.patch(
-            "i18n_tools.api.validate_api_url", mock_validate_api_url
-        ), mock.patch(
-            "i18n_tools.config.validate_api_url", mock_validate_api_url
-        ), mock.patch(
-            "i18n_tools.models.repository.validate_api_url", mock_validate_api_url
+        with (
+            mock.patch("i18n_tools.api.validate_api_url", mock_validate_api_url),
+            mock.patch("i18n_tools.config.validate_api_url", mock_validate_api_url),
+            mock.patch(
+                "i18n_tools.models.repository.validate_api_url", mock_validate_api_url
+            ),
         ):
             yield
 
@@ -419,7 +419,8 @@ def patch_validate_email(is_main_branch):
     else:
         # On other branches, use the mock function
         # Patch both the direct import in email_validator module and the import in config module
-        with mock.patch(
-            "email_validator.validate_email", mock_validate_email
-        ), mock.patch("i18n_tools.config.validate_email", mock_validate_email):
+        with (
+            mock.patch("email_validator.validate_email", mock_validate_email),
+            mock.patch("i18n_tools.config.validate_email", mock_validate_email),
+        ):
             yield

@@ -26,9 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/biface/ndt"
-Repository = "https://github.com/biface/ndt.git"
-Issues = "https://github.com/biface/ndt/issues"
+Homepage = "https://github.com/biface/i18n"
+Repository = "https://github.com/biface/i18n.git"
+Issues = "https://github.com/biface/i18n/issues"
 
 [project.optional-dependencies]
 test = [
@@ -53,7 +53,6 @@ deps = [
     "langcodes",
     "babel",
     "PyYAML",
-    "ndict-tools",
     "toml",
     "polib",
     "pytest",
@@ -105,7 +104,6 @@ deps = [
     "langcodes",
     "babel",
     "PyYAML",
-    "ndict-tools",
     "toml",
     "polib",
     "pytest",
