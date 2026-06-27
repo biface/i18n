@@ -261,8 +261,6 @@ def _ensure_domain_presence(
 
 class Repository(StrictNestedDictionary):
     """
-    Repository
-    ----------
     High-level, structured container describing an i18n repository.
 
     The repository is split into several top-level sections:
