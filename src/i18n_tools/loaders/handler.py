@@ -122,6 +122,35 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     return str(cleaned_path)
 
 
+def build_book_filename(
+    domain: str, fmt: Optional[TranslationFileFormat] = None
+) -> Tuple[TranslationFileFormat, str]:
+    """
+    Resolve the storage format (default + validation) and the corresponding
+    `.i18t` filename for a translation domain, without requiring a `Book`
+    instance.
+
+    This is the single place where the default-format and filename-building
+    rules for a translation dictionary are applied — used by `Book`
+    (via `loader.py`, never imported here directly, DD-06) to keep its own
+    format default/validation consistent across its constructor and its
+    `add_format()`/`update_format()` methods, and reusable from `core.py`,
+    `sync.py`, or a future CLI without constructing a `Book` first.
+
+    :param domain: The translation domain name.
+    :type domain: str
+    :param fmt: The desired storage format ("json" or "yaml"). Defaults to
+                "json" if ``None``.
+    :type fmt: Optional[TranslationFileFormat]
+    :return: A ``(format, filename)`` tuple, e.g. ``("json", "messages.json.i18t")``.
+    :rtype: Tuple[TranslationFileFormat, str]
+    :raises ValueError: If ``fmt`` is not a recognised translation format.
+    """
+    _fmt = _validate_translation_format(fmt)
+    filename = f"{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+    return _fmt, filename
+
+
 def file_exists(file_path: str) -> bool:
     """
     Checks if a file exists at the given path.
