@@ -1946,3 +1946,93 @@ class TestRepositoryCleanTranslator:
     def test_clean_translator(self, repository_fixture):
         repository_fixture.clean_translators()
         assert len(repository_fixture.translators) == 0
+
+
+class TestRepositoryAddUpdateRemoveCleanValue:
+    """biface/i18n#29 — add_value()'s guard was a tautology
+    (`value is not None or not value` is always True), so the condition
+    reduced to `not self[path]`: it always raised on a genuinely empty
+    path (add_value could never succeed in its intended case) and always
+    silently overwrote an already-set path, including with None/"" — the
+    bug reported in #29.
+
+    No test previously covered add_value/remove_value/clean_value despite
+    #24 ("Repository has no tests") being marked closed.
+    """
+
+    def test_add_value_succeeds_on_empty_path(self, repository_fixture):
+        path = ["paths", "config"]
+        repository_fixture.remove_value(path)  # ensure empty first
+        assert repository_fixture[path] == ""
+
+        repository_fixture.add_value(path, "restored-config-path")
+        assert repository_fixture[path] == "restored-config-path"
+
+    def test_add_value_rejects_empty_or_none_on_empty_path(self, repository_fixture):
+        path = ["paths", "config"]
+        repository_fixture.remove_value(path)
+        assert repository_fixture[path] == ""
+
+        with pytest.raises(ValueError, match=re.escape(f"{path} is not empty")):
+            repository_fixture.add_value(path, "")
+
+    def test_add_value_rejects_when_path_already_set(self, repository_fixture):
+        path = ["paths", "backup"]
+        assert repository_fixture[path]  # sanity: starts non-empty
+
+        # Before the fix: this silently overwrote the existing value with
+        # "" — the bug from #29. It must now raise instead.
+        original = repository_fixture[path]
+        with pytest.raises(ValueError, match=re.escape(f"{path} is not empty")):
+            repository_fixture.add_value(path, "")
+        assert repository_fixture[path] == original  # untouched
+
+        with pytest.raises(ValueError, match=re.escape(f"{path} is not empty")):
+            repository_fixture.add_value(path, "some-other-value")
+        assert repository_fixture[path] == original  # still untouched
+
+    def test_update_value_requires_existing_value(self, repository_fixture):
+        path = ["paths", "root"]
+        original = repository_fixture[path]
+        assert original
+
+        repository_fixture.update_value(path, "updated-root-path")
+        assert repository_fixture[path] == "updated-root-path"
+
+        repository_fixture.remove_value(path)
+        with pytest.raises(
+            ValueError, match=re.escape(f"Cannot update empty value at {path}")
+        ):
+            repository_fixture.update_value(path, "anything")
+
+        # restore for any later test relying on this class-scoped fixture
+        repository_fixture.add_value(path, original)
+
+    def test_remove_value_then_rejects_on_already_empty(self, repository_fixture):
+        path = ["languages", "fallback"]
+        original = repository_fixture[path]
+        assert original
+
+        repository_fixture.remove_value(path)
+        assert repository_fixture[path] == ""
+
+        with pytest.raises(ValueError, match=re.escape(f"{path} is already empty")):
+            repository_fixture.remove_value(path)
+
+        repository_fixture.add_value(path, original)
+
+    def test_clean_value_resets_regardless_of_current_state(self, repository_fixture):
+        path = ["languages", "fallback"]
+        original = repository_fixture[path]
+        assert original
+
+        # clean_value works even though the path is currently non-empty —
+        # unlike remove_value, it has no "already empty" guard.
+        repository_fixture.clean_value(path)
+        assert repository_fixture[path] == ""
+
+        # and again on an already-empty path, without raising
+        repository_fixture.clean_value(path)
+        assert repository_fixture[path] == ""
+
+        repository_fixture.add_value(path, original)
