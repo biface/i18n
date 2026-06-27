@@ -4,13 +4,13 @@ Handler module
 .. automodule:: i18n_tools.loaders.handler
 
     .. autofunction:: build_path
+    .. autofunction:: build_book_filename
     .. autofunction:: build_translation_lang_files
     .. autofunction:: check_json_integrity
     .. autofunction:: create_catalog
     .. autofunction:: create_dictionary
     .. autofunction:: create_directory
     .. autofunction:: create_template
-    .. autofunction:: dump_catalog
     .. autofunction:: dump_dictionary
     .. autofunction:: fetch_catalog
     .. autofunction:: fetch_dictionary

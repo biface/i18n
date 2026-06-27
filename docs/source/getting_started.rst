@@ -65,16 +65,19 @@ Quick Start
 Next Steps
 ----------
 
-- Explore the :doc:`Core Concepts <org>` to understand the proprietary format.
-- Learn how to use the :doc:`CLI and GUI <tutorials/cli_usage>` for advanced workflows.
-- Check out the :doc:`API Reference <api>` for programmatic usage.
+- Explore the :doc:`Core Concepts <concept/index>` to understand the proprietary format.
+- Check out the :doc:`API Reference <api/index>` for programmatic usage.
+
+.. todo::
+   Once a CLI/GUI exists (targeted v1.0.0+, DD-30) and the advanced
+   configuration guide is written, re-add links to them here.
 
 ---
 
 Troubleshooting
----------------
+----------------
 
 - **Installation Issues**: Ensure your Python environment is correctly set up.
 - **Command Not Found**: Verify that the ``i18n-tools`` executable is in your system's PATH.
 
-For more help, visit the :doc:`FAQ <usage_guides/advanced_configuration>` or open an issue on the project repository.
+For more help, open an issue on the project repository.

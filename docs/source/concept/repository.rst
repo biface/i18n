@@ -121,11 +121,11 @@ Key Directories and Files
 
 4. **<module_3>/package_1, <module_3>/package_2, .../**: Subdirectories within a module that represent different packages. Each package directory contains its own ``locales`` directory and an ``_i18n_tools`` directory for metadata.
 
-5. **locales/** (:doc:`I18N_TOOLS_LOCALE <api/constant>`) : This directory, within each module or package directory, contains the ``templates`` directory and language-specific subdirectories.
+5. **locales/** (:ref:`I18N_TOOLS_LOCALE <I18N_TOOLS_LOCALE>`) : This directory, within each module or package directory, contains the ``templates`` directory and language-specific subdirectories.
 
 6. **domain..._name_aggregated.json**: A JSON file at the base of each ``locales`` directory that aggregates metadata for the domain across all language codes. The "_aggregated" suffix helps differentiate it from other metadata files.
 
-7. **templates/** (:doc:`I18N_TOOLS_TEMPLATE <api/constant>`): This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
+7. **templates/** (:ref:`I18N_TOOLS_TEMPLATE <I18N_TOOLS_TEMPLATE>`): This directory contains the Portable Object Template (POT) files and JSON metadata files that serve as templates for translations. Each module or package has its own POT file named ``<domain-name>.pot`` and a corresponding JSON metadata file named ``<domain-name>.json``.
 
 8. **<language_code>/**: A directory for each language supported by the application within the ``locales`` directory. The language code follows the `IETF language tag <https://en.wikipedia.org/wiki/IETF_language_tag>`_ format (e.g., ``fr`` for French, ``de`` for German).
 
