@@ -65,11 +65,8 @@ def _create_empty_file(file_path: Union[Path, str]) -> None:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "w", encoding="utf-8") as empty_file:
-            empty_file.write("")
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "w", encoding="utf-8") as empty_file:
+        empty_file.write("")
 
 
 def _create_directory(file_path: Union[Path, str]) -> None:
@@ -106,11 +103,8 @@ def _create_empty_json(file_path: Union[Path, str]) -> None:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "w", encoding="utf-8") as json_file:
-            json.dump({}, json_file, ensure_ascii=False, indent=4)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "w", encoding="utf-8") as json_file:
+        json.dump({}, json_file, ensure_ascii=False, indent=4)
 
 
 def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
@@ -126,11 +120,8 @@ def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as json_file:
-            return json.load(json_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "r", encoding="utf-8") as json_file:
+        return json.load(json_file)
 
 
 def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
@@ -147,11 +138,8 @@ def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "w", encoding="utf-8") as json_file:
-            json.dump(data, json_file, ensure_ascii=False, indent=4)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "w", encoding="utf-8") as json_file:
+        json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 
 def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
@@ -162,11 +150,8 @@ def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
     """
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as yaml_file:
-            return yaml.load(yaml_file, Loader=yaml.SafeLoader)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "r", encoding="utf-8") as yaml_file:
+        return yaml.load(yaml_file, Loader=yaml.SafeLoader)
 
 
 def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
@@ -178,11 +163,8 @@ def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     """
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "w", encoding="utf-8") as yaml_file:
-            yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "w", encoding="utf-8") as yaml_file:
+        yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
 
 
 def _validate_translation_format(
@@ -245,11 +227,8 @@ def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
     """
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as toml_file:
-            return toml.load(toml_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "r", encoding="utf-8") as toml_file:
+        return toml.load(toml_file)
 
 
 def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
@@ -260,11 +239,8 @@ def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
     :return:
     """
     file_path = __check_path(file_path)
-    try:
-        with open(file_path, "w", encoding="utf-8") as toml_file:
-            toml.dump(data, toml_file)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "w", encoding="utf-8") as toml_file:
+        toml.dump(data, toml_file)
 
 
 # PO file handling with polib
@@ -283,11 +259,8 @@ def _load_text(file_path: Union[Path, str]) -> Catalog:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as po_file:
-            return read_po(po_file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f'File "{file_path}" not found.')
+    with open(file_path, "r", encoding="utf-8") as po_file:
+        return read_po(po_file)
 
 
 def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
@@ -303,11 +276,8 @@ def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "wb") as po_file:
-            write_po(po_file, catalog, sort_output=True, include_previous=False)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "wb") as po_file:
+        write_po(po_file, catalog, sort_output=True, include_previous=False)
 
 
 # MO file handling with polib
@@ -326,11 +296,8 @@ def _load_machine(file_path: Union[Path, str]) -> Catalog:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "rb") as mo_file:
-            return read_mo(mo_file)
-    except FileNotFoundError:
-        raise FileNotFoundError(f'File "{file_path}" not found.')
+    with open(file_path, "rb") as mo_file:
+        return read_mo(mo_file)
 
 
 def _save_machine(file_path: Union[Path, str], catalog: Catalog) -> None:
@@ -346,11 +313,8 @@ def _save_machine(file_path: Union[Path, str], catalog: Catalog) -> None:
 
     file_path = __check_path(file_path)
 
-    try:
-        with open(file_path, "wb") as mo_file:
-            write_mo(mo_file, catalog)
-    except Exception as exception:
-        raise FileNotFoundError(f'File "{file_path}" not found.') from exception
+    with open(file_path, "wb") as mo_file:
+        write_mo(mo_file, catalog)
 
 
 def _convert_catalog(file_path: Union[Path, str]) -> None:
@@ -359,20 +323,14 @@ def _convert_catalog(file_path: Union[Path, str]) -> None:
 
     :param file_path: Path to the PO file.
     :type file_path: str
-    :raises IOError: If there is an error writing the file.
     """
 
     file_path = __check_path(file_path)
 
-    try:
-        catalog = _load_text(file_path)
-        mo_file_path = file_path.with_suffix(".mo")
-        with open(mo_file_path, "wb") as mo_file:
-            write_mo(mo_file, catalog)
-    except Exception as exception:
-        raise IOError(
-            f'Error converting file "{file_path}" to MO format.'
-        ) from exception
+    catalog = _load_text(file_path)
+    mo_file_path = file_path.with_suffix(".mo")
+    with open(mo_file_path, "wb") as mo_file:
+        write_mo(mo_file, catalog)
 
 
 # Configuration file load and save
@@ -384,56 +342,47 @@ def _load_config_file(config_path: Union[Path, str]) -> dict:
 
     :param config_path: Path to the configuration file.
     :raises ValueError: If the file format is unsupported.
-    :raises Exception: For errors during loading.
+    :raises FileNotFoundError: If the file does not exist.
     :return: The configuration content as a dictionary.
     """
 
     config_path = __check_path(config_path)
     [file_extension] = config_path.suffixes
 
-    try:
-        if not __check_config_extension(file_extension):
-            raise ValueError(f"Unsupported configuration file format: {file_extension}")
-        else:
-            with open(config_path, "r", encoding="utf-8") as file:
-                if file_extension == ".yaml":
-                    return yaml.safe_load(file)
-                elif file_extension == ".toml":
-                    return toml.load(file)
-                elif file_extension == ".json":
-                    return json.load(file)
-    except Exception as e:
-        raise Exception(f"Error loading configuration file: {config_path}. {e}")
+    if not __check_config_extension(file_extension):
+        raise ValueError(f"Unsupported configuration file format: {file_extension}")
+
+    with open(config_path, "r", encoding="utf-8") as file:
+        if file_extension in {".yaml", ".yml"}:
+            return yaml.safe_load(file)
+        elif file_extension == ".toml":
+            return toml.load(file)
+        elif file_extension == ".json":
+            return json.load(file)
 
 
 def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
     """
-    Helper function to load the configuration file based on its extension.
+    Helper function to save the configuration file based on its extension.
 
     :param config_path: Path to the configuration file.
     :raises ValueError: If the file format is unsupported.
-    :raises Exception: For errors during loading.
-    :return: The configuration content as a dictionary.
+    :return: None
     """
 
     config_path = __check_path(config_path)
     [file_extension] = config_path.suffixes
 
-    try:
-        if not __check_config_extension(file_extension):
-            raise ValueError(f"Unsupported configuration file format: {file_extension}")
-        else:
-            with open(config_path, "w", encoding="utf-8") as cf:
-                if file_extension == ".json":
-                    json.dump(data, cf, indent=4)
-                elif file_extension in {".yaml", ".yml"}:
-                    yaml.safe_dump(data, cf, default_flow_style=False)
-                elif file_extension == ".toml":
-                    toml.dump(data, cf)
-    except ValueError as uff:
-        raise uff
-    except Exception as e:
-        raise Exception(f"Error saving configuration file: {config_path}. {e}")
+    if not __check_config_extension(file_extension):
+        raise ValueError(f"Unsupported configuration file format: {file_extension}")
+
+    with open(config_path, "w", encoding="utf-8") as cf:
+        if file_extension == ".json":
+            json.dump(data, cf, indent=4)
+        elif file_extension in {".yaml", ".yml"}:
+            yaml.safe_dump(data, cf, default_flow_style=False)
+        elif file_extension == ".toml":
+            toml.dump(data, cf)
 
 
 # Utility functions
@@ -654,14 +603,11 @@ def _check_domains(
     :rtype: bool
     :raises: ValueError
     """
-    try:
-        _check_module(repository, [module])
-        for domain in domain_list:
-            if domain not in repository[["domains", module]]:
-                raise ValueError(
-                    f"Domain {domain} not found in repository : {repository[['domains', module]]}"
-                )
-    except ValueError as e:
-        raise e
+    _check_module(repository, [module])
+    for domain in domain_list:
+        if domain not in repository[["domains", module]]:
+            raise ValueError(
+                f"Domain {domain} not found in repository : {repository[['domains', module]]}"
+            )
 
     return True

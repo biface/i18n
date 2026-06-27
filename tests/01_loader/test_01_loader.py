@@ -160,6 +160,15 @@ class TestJsonOperations:
         with pytest.raises(FileNotFoundError):
             _load_json("/nonexistent/path")
 
+    def test_load_json_malformed_content_raises_json_decode_error(self, tmp_path):
+        """biface/i18n#26 — before this fix, a malformed-but-present JSON
+        file was mislabelled as FileNotFoundError (everything was caught
+        and masked). It must now surface as json.JSONDecodeError."""
+        corrupt_file = tmp_path / "corrupt.json"
+        corrupt_file.write_text("{not valid json at all", encoding="utf-8")
+        with pytest.raises(json.JSONDecodeError):
+            _load_json(str(corrupt_file))
+
     def test_save_json(self, json_test_file):
         data = {"key": "new value"}
         _save_json(json_test_file, data)
@@ -506,6 +515,26 @@ class TestConfigFileOperations:
         with pytest.raises(Exception):
             _load_config_file("non-existent-path/i18n-tools.json")
             _save_config_file("non-existent-path/i18n-tools.json", {})
+
+    def test_load_config_file_yml_extension(self, tmp_path):
+        """biface/i18n#26 — .yml is accepted by __check_config_extension()
+        but _load_config_file()'s if/elif only matched ".yaml", silently
+        falling through and returning None. _save_config_file() already
+        handled ".yml" correctly; _load_config_file() must match it."""
+        config_file = tmp_path / "config.yml"
+        config_file.write_text("key: value\n", encoding="utf-8")
+        result = _load_config_file(config_file)
+        assert result == {"key": "value"}
+
+    def test_load_config_file_malformed_content_raises_specific_error(self, tmp_path):
+        """biface/i18n#26 — well-formed extension, malformed content. Before
+        this fix, json.JSONDecodeError was caught and masked as a bare
+        Exception with a generic message. The specific, actionable
+        exception must now surface."""
+        config_file = tmp_path / "config.json"
+        config_file.write_text("{not valid json", encoding="utf-8")
+        with pytest.raises(json.JSONDecodeError):
+            _load_config_file(config_file)
 
 
 class TestRemoveFile:
