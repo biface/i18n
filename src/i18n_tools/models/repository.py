@@ -885,7 +885,7 @@ class Repository(StrictNestedDictionary):
         if type(value) != type(self[path]):
             raise TypeError(f"type of {value} must be {type(self[path])}")
 
-        if not self[path] and (value is not None or not value):
+        if self[path] or not value:
             raise ValueError(
                 f"Value '{value}' is not a valid value or {path} is not empty."
             )
