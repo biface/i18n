@@ -920,6 +920,36 @@ class Repository(StrictNestedDictionary):
 
         self[path] = value
 
+    def _empty_value_for(self, current: Any) -> Any:
+        """
+        Compute the empty/default placeholder value matching the type of
+        ``current``. Shared by :meth:`remove_value` and :meth:`clean_value`
+        (biface/i18n#28) — both reset a value to its type-appropriate empty
+        default, differing only in whether the current value is required
+        to be non-empty first.
+
+        :param current: The current value whose type determines the default.
+        :type current: Any
+        :return: An empty placeholder of the same type as ``current``
+                 (``None`` for unrecognised types).
+        :rtype: Any
+        """
+        if isinstance(current, StrictNestedDictionary):
+            return self._new_section({})
+        elif isinstance(current, dict):
+            return {}
+        elif isinstance(current, list):
+            return []
+        elif isinstance(current, str):
+            return ""
+        elif isinstance(current, bool):
+            return False
+        elif isinstance(current, int):
+            return 0
+        elif isinstance(current, float):
+            return 0.0
+        return None
+
     def remove_value(self, path: list[str]) -> None:
         """
         Remove a value from the repository by resetting it to its empty/default value.
@@ -942,26 +972,7 @@ class Repository(StrictNestedDictionary):
         if not current:
             raise ValueError(f"Value at {path} is already empty.")
 
-        # Compute an empty/default value according to current type
-        if isinstance(current, StrictNestedDictionary):
-            empty_val = self._new_section({})
-        elif isinstance(current, dict):
-            empty_val = {}
-        elif isinstance(current, list):
-            empty_val = []
-        elif isinstance(current, str):
-            empty_val = ""
-        elif isinstance(current, bool):
-            empty_val = False
-        elif isinstance(current, int):
-            empty_val = 0
-        elif isinstance(current, float):
-            empty_val = 0.0
-        else:
-            # Fallback to None for unknown types
-            empty_val = None
-
-        self[path] = empty_val
+        self[path] = self._empty_value_for(current)
 
     def clean_value(self, path: list[str]) -> None:
         """
@@ -977,22 +988,4 @@ class Repository(StrictNestedDictionary):
         if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
-        current = self[path]
-        if isinstance(current, StrictNestedDictionary):
-            empty_val = self._new_section({})
-        elif isinstance(current, dict):
-            empty_val = {}
-        elif isinstance(current, list):
-            empty_val = []
-        elif isinstance(current, str):
-            empty_val = ""
-        elif isinstance(current, bool):
-            empty_val = False
-        elif isinstance(current, int):
-            empty_val = 0
-        elif isinstance(current, float):
-            empty_val = 0.0
-        else:
-            empty_val = None
-
-        self[path] = empty_val
+        self[path] = self._empty_value_for(self[path])
