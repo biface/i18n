@@ -1043,7 +1043,7 @@ class TestConfigTranslators:
                 "application",
                 {
                     "name": "Translator3",
-                    "url": "https://doe.com",
+                    "url": "https://httpbingo.org/get",
                     "status": "private",
                     "api_key": "apikey456",
                     "supported_languages": ["fr", "en", "ga", "it"],

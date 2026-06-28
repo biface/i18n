@@ -28,7 +28,7 @@ class TestValidateApiUrl:
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
-                "https://httpbin.org/get",
+                "https://httpbingo.org/get",
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
@@ -36,11 +36,11 @@ class TestValidateApiUrl:
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
-                "https://httpbin.org/status/204",
+                "https://httpbingo.org/status/204",
                 {"is_alive": True, "status_code": 204, "error": None},
             ),
             (
-                "https://httpbin.org/status/401",
+                "https://httpbingo.org/status/401",
                 {"is_alive": True, "status_code": 401, "error": None},
             ),
         ],
@@ -124,7 +124,7 @@ class TestValidateApiUrlTimeouts:
         "url,timeout,expected",
         [
             (
-                "https://httpbin.org/delay/10",
+                "https://httpbingo.org/delay/10",
                 5,
                 {
                     "is_alive": False,
@@ -133,7 +133,7 @@ class TestValidateApiUrlTimeouts:
                 },
             ),
             (
-                "https://httpbin.org/delay/15",
+                "https://httpbingo.org/delay/6",
                 5,
                 {
                     "is_alive": False,
@@ -142,7 +142,7 @@ class TestValidateApiUrlTimeouts:
                 },
             ),
             (
-                "https://httpbin.org/delay/25",
+                "https://httpbingo.org/delay/8",
                 5,
                 {
                     "is_alive": False,
@@ -158,7 +158,7 @@ class TestValidateApiUrlTimeouts:
         """
         Tests validate_api_url with URLs simulating timeouts.
 
-        Decorated @pytest.mark.network — runs on master only (real httpbin.org calls).
+        Decorated @pytest.mark.network — runs on master only (real httpbingo.org calls).
         On dev branches, patch_validate_api_url intercepts the call via the mock.
         Error message is always English (DD-35).
         """
