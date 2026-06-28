@@ -197,8 +197,10 @@ class Config(metaclass=Singleton):
         else:
             self.application = _setup_configuration()
 
-        # TODO(ndict-tools-v1.2.0): replace direct StrictNestedDictionary({}) construction
-        # with Repository delegation once ndict-tools v1.2.0 is available. See #17 on GitHub.
+        # _email_index spans both self.package and self.application — it is
+        # config-level cross-repository state, not data modelled by a single
+        # Repository instance, so it intentionally stays a plain
+        # StrictNestedDictionary rather than being delegated (DD-NN).
         self._email_index = StrictNestedDictionary({})
         self._current_config = "application"
 
@@ -528,18 +530,16 @@ class Config(metaclass=Singleton):
                     author = self.application[["authors", existing_uuid]]
         else:
             author_id = str(uuid4())
-            author = StrictNestedDictionary(
-                {
-                    "first_name": first_name,
-                    "last_name": last_name,
-                    "email": email,
-                    "url": url,
-                    "languages": normalized_languages,
-                }
-            )
+            author = {
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "url": url,
+                "languages": normalized_languages,
+            }
             self._email_index[email] = author_id
 
-        self.__getattribute__(self._current_config)[["authors", author_id]] = author
+        self.__getattribute__(self._current_config).add_author(author_id, author)
 
     def get_author(self, index: str) -> Optional[dict]:
         """
@@ -714,9 +714,7 @@ class Config(metaclass=Singleton):
             raise KeyError(f"Translator '{name}' already exists.")
 
         # 4. Add the translator to the dictionary
-        current_repository["translators"][name] = StrictNestedDictionary(
-            translator_data
-        )
+        current_repository.add_translator(name, translator_data)
 
     def get_translator(self, name: str) -> StrictNestedDictionary:
         """
@@ -808,12 +806,8 @@ class Config(metaclass=Singleton):
             translators.pop(name)
 
             # Ensure the translators dictionary remains a valid empty dictionary if no translators remain
-            # TODO(ndict-tools-v1.2.0): replace direct StrictNestedDictionary({}) construction
-            # with Repository delegation once ndict-tools v1.2.0 is available. See #17.
             if not translators:
-                self.__getattribute__(self._current_config)["translators"] = (
-                    StrictNestedDictionary({})
-                )
+                self.__getattribute__(self._current_config).clean_translators()
 
             return True
 
