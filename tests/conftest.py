@@ -183,7 +183,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        "https://httpbin.org/get": {
+        "https://httpbingo.org/get": {
             "url": url,
             "is_alive": True,
             "status_code": 200,
@@ -195,37 +195,37 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        "https://httpbin.org/status/204": {
+        "https://httpbingo.org/status/204": {
             "url": url,
             "is_alive": True,
             "status_code": 204,
             "error": None,
         },
-        "https://httpbin.org/status/401": {
+        "https://httpbingo.org/status/401": {
             "url": url,
             "is_alive": True,
             "status_code": 401,
             "error": None,
         },
-        "https://httpbin.org/status/403": {
+        "https://httpbingo.org/status/403": {
             "url": url,
             "is_alive": True,
             "status_code": 403,
             "error": None,
         },
-        "https://httpbin.org/status/405": {
+        "https://httpbingo.org/status/405": {
             "url": url,
             "is_alive": True,
             "status_code": 405,
             "error": None,
         },
-        "https://httpbin.org/status/429": {
+        "https://httpbingo.org/status/429": {
             "url": url,
             "is_alive": True,
             "status_code": 429,
             "error": None,
         },
-        "https://httpbin.org/status/500": {
+        "https://httpbingo.org/status/500": {
             "url": url,
             "is_alive": True,
             "status_code": 500,
@@ -250,26 +250,21 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
             "status_code": 200,
             "error": None,
         },
-        "https://doe.com": {
-            "url": url,
-            "is_alive": True,
-            "status_code": 200,
-            "error": None,
-        },
-        # Simulating delays — DD-35: always English
-        "https://httpbin.org/delay/10": {
+        # "https://httpbingo.org/get" reused for the Translator3 case below
+        # (was "https://doe.com", drifted to a real 404 — see test_config.py).
+        "https://httpbingo.org/delay/10": {
             "url": url,
             "is_alive": False,
             "status_code": None,
             "error": "Connection timed out." if timeout < 10 else None,
         },
-        "https://httpbin.org/delay/15": {
+        "https://httpbingo.org/delay/6": {
             "url": url,
             "is_alive": False,
             "status_code": None,
             "error": "Connection timed out." if timeout < 15 else None,
         },
-        "https://httpbin.org/delay/25": {
+        "https://httpbingo.org/delay/8": {
             "url": url,
             "is_alive": False,
             "status_code": None,
@@ -390,9 +385,6 @@ def patch_validate_api_url(is_main_branch):
         with (
             mock.patch("i18n_tools.api.validate_api_url", mock_validate_api_url),
             mock.patch("i18n_tools.config.validate_api_url", mock_validate_api_url),
-            mock.patch(
-                "i18n_tools.models.repository.validate_api_url", mock_validate_api_url
-            ),
         ):
             yield
 
