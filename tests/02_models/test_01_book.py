@@ -515,7 +515,6 @@ class TestBookMetadata:
             ("custom_meta", {"a": 1}, ["custom_meta"], {"a": 1}),
         ],
     )
-    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
     @pytest.mark.parametrize(
         "fixture_book", ["fr_fr_book"]
     )  # one is enough for API checks

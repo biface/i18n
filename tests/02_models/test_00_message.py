@@ -423,7 +423,6 @@ class TestMessageGetMetadata:
             ("en_message", ["count", "plurals"], [2, 2, 2]),
         ],
     )
-    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
     def test_message_get_metadata(self, fixture_name, path, expected, request) -> None:
         message = request.getfixturevalue(fixture_name)
         assert message.get_metadata(path) == expected
@@ -576,7 +575,6 @@ class TestMessageAdd:
             ),
         ],
     )
-    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
     def test_message_add_message(
         self, fixture_name, options, expected, request
     ) -> None:
@@ -1193,7 +1191,6 @@ class TestMessageAddSegment:
             ),
         ],
     )
-    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
     def test_message_add_options_plurals_segment(
         self, empty_message, options, alt_index, additional, expected
     ) -> None:
@@ -1642,7 +1639,6 @@ class TestMessageUpdate:
             ),
         ],
     )
-    @pytest.mark.skip(reason="ndict_tools equality has be rewieved")
     def test_message_update_message(self, options, expected) -> None:
         message = Message("1001", "A test for update message")
         message.update_message(**options)
