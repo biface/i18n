@@ -37,8 +37,8 @@ from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
 
-from ..api import validate_api_url
-from ..loaders.handler import file_exists, is_absolute_path, normalize_module_identifier
+from ..api import validate_url_format
+from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_languages_hierarchy
 
 # Shared default setup to avoid repetition
@@ -125,8 +125,10 @@ def _validate_translator_payload(translator: dict) -> None:
         raise TypeError("Translator[['details', 'status']] must be a string")
     if not isinstance(details.get("url"), str):
         raise TypeError("Translator[['details', 'url']] must be a string")
-    # validate URL via shared API helper
-    result = validate_api_url(details.get("url"))
+    # Structural validation only — no network call (KI-01, DD-NN).
+    # The real availability check (api.validate_api_url) is invoked
+    # explicitly elsewhere (Config/CLI), never from this synchronous path.
+    result = validate_url_format(details.get("url"))
     if result.get("error"):
         raise ValueError(result["error"])
 
