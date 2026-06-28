@@ -124,6 +124,7 @@ from .__static__ import (
 from .api import validate_api_url
 from .loaders.handler import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
+from .models.author import Authors
 from .models.repository import Repository
 from .patterns import Singleton
 
@@ -140,9 +141,6 @@ class Config(metaclass=Singleton):
         package (StrictNestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
 
         application (StrictNestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
-
-        _email_index (StrictNestedDictionary):
-            An internal index for tracking authors by email address.
 
         _current_config (str): store the current configuration to manage.
     """
@@ -197,11 +195,6 @@ class Config(metaclass=Singleton):
         else:
             self.application = _setup_configuration()
 
-        # _email_index spans both self.package and self.application — it is
-        # config-level cross-repository state, not data modelled by a single
-        # Repository instance, so it intentionally stays a plain
-        # StrictNestedDictionary rather than being delegated (DD-NN).
-        self._email_index = StrictNestedDictionary({})
         self._current_config = "application"
 
     def load(self):
@@ -227,17 +220,6 @@ class Config(metaclass=Singleton):
                 current_config[key].update(value)
             else:
                 raise AttributeError(f"Unknown configuration key '{key}' in setup.")
-
-        # Rebuild email index
-
-        self._email_index.update(
-            {
-                author_data["email"]: author_id
-                for author_id, author_data in self.__getattribute__(
-                    self._current_config
-                )["authors"].items()
-            }
-        )
 
     def save(self) -> None:
         """
@@ -513,21 +495,23 @@ class Config(metaclass=Singleton):
         except Exception as e:
             raise e
 
-        if email in self._email_index:
-            existing_uuid = self._email_index[email]
-            if (
-                existing_uuid
-                in self.__getattribute__(self._current_config)["authors"].keys()
-            ):
+        current_repository = self.__getattribute__(self._current_config)
+        other_repository = (
+            self.application if self._current_config == "package" else self.package
+        )
+
+        existing_uuid = Authors.get_id_by_email(
+            current_repository, email
+        ) or Authors.get_id_by_email(other_repository, email)
+
+        if existing_uuid:
+            if existing_uuid in current_repository["authors"].keys():
                 raise KeyError(
                     f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
                 )
             else:
                 author_id = existing_uuid
-                if self._current_config == "application":
-                    author = self.package[["authors", existing_uuid]]
-                else:
-                    author = self.application[["authors", existing_uuid]]
+                author = other_repository[["authors", existing_uuid]]
         else:
             author_id = str(uuid4())
             author = {
@@ -537,9 +521,8 @@ class Config(metaclass=Singleton):
                 "url": url,
                 "languages": normalized_languages,
             }
-            self._email_index[email] = author_id
 
-        self.__getattribute__(self._current_config).add_author(author_id, author)
+        current_repository.add_author(author_id, author)
 
     def get_author(self, index: str) -> Optional[dict]:
         """
@@ -574,7 +557,7 @@ class Config(metaclass=Singleton):
             raise ValueError(f"Invalid email format: {e}")
 
         # Search by email in the email index
-        author_id = self._email_index.get(index)
+        author_id = Authors.get_id_by_email(current_config, index)
         if author_id:
             return current_config[["authors", author_id]]
 
@@ -589,17 +572,14 @@ class Config(metaclass=Singleton):
         :return: True if the author was successfully removed, False if not found.
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         """
+        current_repository = self.__getattribute__(self._current_config)
+
         # Check if the input is a valid UUID
         try:
             uuid_obj = UUID(index)
             # Remove by UUID if it exists
-            if index in self.__getattribute__(self._current_config)["authors"]:
-                # Remove the author
-                author = self.__getattribute__(self._current_config)["authors"].pop(
-                    index
-                )
-                # Remove from the email index
-                self._email_index.pop(author["email"], None)
+            if index in current_repository["authors"]:
+                current_repository.remove_author(index)
                 return True
             else:
                 return False  # UUID not found
@@ -613,12 +593,10 @@ class Config(metaclass=Singleton):
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
-        # Search by email in the email index
-        author_id = self._email_index.get(index)
+        # Search by email
+        author_id = Authors.get_id_by_email(current_repository, index)
         if author_id:
-            # Remove the author and the email index entry
-            self.__getattribute__(self._current_config)["authors"].pop(author_id, None)
-            self._email_index.pop(index, None)
+            current_repository.remove_author(author_id)
             return True
 
         # If no match found, return False
@@ -781,15 +759,10 @@ class Config(metaclass=Singleton):
         # Validate updates against the existing translator structure
         validate_structure(existing_translator, updates)
 
-        # Apply the updates
-        def apply_updates(target: dict, source: dict):
-            for key, value in source.items():
-                if isinstance(value, dict):
-                    apply_updates(target[key], value)
-                else:
-                    target[key] = value
-
-        apply_updates(existing_translator, updates)
+        # Apply the updates — delegated to Repository.update_translator(), which
+        # re-validates structurally; harmless here since validate_structure()
+        # above already guarantees the updates are well-formed (DD-NN/#25).
+        current_repository.update_translator(name, updates)
 
     def remove_translator(self, name: str) -> bool:
         """
