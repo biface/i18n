@@ -37,199 +37,13 @@ from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
 
-from ..api import validate_url_format
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_languages_hierarchy
+from .author import Author, Authors
+from .translator import Translators
 
 # Shared default setup to avoid repetition
 _DEFAULT_SETUP = {"indent": 2}
-
-
-# --- Module-private helpers (factorized logic for authors/domains) ---
-
-
-def _validate_uuid4_string(value: str, name: str = "author_id") -> None:
-    """Validate that a value is a UUID4 string; raise consistent errors.
-
-    Keeps exact error messages used across Repository author helpers.
-    """
-    if not isinstance(value, str):
-        raise TypeError(f"{name} must be a string")
-    try:
-        parsed = UUID(value)
-    except ValueError:
-        raise ValueError(f"{name} must be a valid UUID4 string")
-    if parsed.version != 4:
-        raise ValueError(f"{name} must be a valid UUID4 string")
-
-
-def _ensure_author_exists(
-    repo: "Repository", author_id: str, should_exist: bool
-) -> None:
-    """Check presence of an author and raise ValueError with consistent message."""
-    exists = author_id in repo["authors"].keys()
-    if should_exist and not exists:
-        raise ValueError(f"Author '{author_id}' does not exist")
-    if not should_exist and exists:
-        raise ValueError(f"Author '{author_id}' already exists")
-
-
-def _validate_author_payload(author: dict) -> None:
-    """Validate the structure of an author mapping."""
-    if not isinstance(author, dict):
-        raise TypeError("author must be a dictionary")
-    required = {"first_name", "last_name", "email", "url", "languages"}
-    missing = required - set(author.keys())
-    if missing:
-        # keep list-like formatting as in original code (sorted list emitted)
-        raise KeyError(f"author is missing required keys: {sorted(missing)}")
-    if not isinstance(author.get("languages"), list):
-        raise TypeError("author['languages'] must be a list of strings")
-
-
-def _validate_translator_payload(translator: dict) -> None:
-    """Validate the structure of a translator mapping.
-
-    Expected nested structure and minimal type checks:
-      - details: { name: str, status: str, url: str }
-      - pricing: { cost_per_translation: float|int|None, payment_plan: str|None }
-      - technical:
-          api: { key: str, key_expiration: str|None|"", request_limit: int }
-          performance: { max_text_size: int, priority: int, success_rate: float|int }
-
-    Additionally validates details.url via validate_api_url and checks
-    key_expiration format YYYY-MM-DD when provided (non-empty).
-    """
-    if not isinstance(translator, dict):
-        raise TypeError("Translator must be a dictionary")
-
-    # Top-level required keys
-    top_required = {"details", "pricing", "technical"}
-    missing_top = top_required - set(translator.keys())
-    if missing_top:
-        raise KeyError(f"Translator is missing required keys: {sorted(missing_top)}")
-
-    # details validation
-    details = translator.get("details")
-    if not isinstance(details, dict):
-        raise TypeError("Translator['details'] must be a dictionary")
-    det_required = {"name", "status", "url"}
-    missing_det = det_required - set(details.keys())
-    if missing_det:
-        raise KeyError(
-            f"Translator['details'] is missing required keys: {sorted(missing_det)}"
-        )
-    if not isinstance(details.get("name"), str):
-        raise TypeError("Translator[['details', 'name']] must be a string")
-    if not isinstance(details.get("status"), str):
-        raise TypeError("Translator[['details', 'status']] must be a string")
-    if not isinstance(details.get("url"), str):
-        raise TypeError("Translator[['details', 'url']] must be a string")
-    # Structural validation only — no network call (KI-01, DD-NN).
-    # The real availability check (api.validate_api_url) is invoked
-    # explicitly elsewhere (Config/CLI), never from this synchronous path.
-    result = validate_url_format(details.get("url"))
-    if result.get("error"):
-        raise ValueError(result["error"])
-
-    # pricing validation
-    pricing = translator.get("pricing")
-    if not isinstance(pricing, dict):
-        raise TypeError("Translator['pricing'] must be a dictionary")
-    pr_required = {"cost_per_translation", "payment_plan"}
-    missing_pr = pr_required - set(pricing.keys())
-    if missing_pr:
-        raise KeyError(
-            f"Translator['pricing'] is missing required keys: {sorted(missing_pr)}"
-        )
-    cpt = pricing.get("cost_per_translation")
-    if cpt is not None and not isinstance(cpt, (int, float)):
-        raise TypeError(
-            "Translator[['pricing', 'cost_per_translation']] must be a number or None"
-        )
-    plan = pricing.get("payment_plan")
-    if plan is not None and not isinstance(plan, str):
-        raise TypeError(
-            "Translator[['pricing', 'payment_plan']] must be a string or None"
-        )
-
-    # technical validation
-    technical = translator.get("technical")
-    if not isinstance(technical, dict):
-        raise TypeError("Translator['technical'] must be a dictionary")
-    tech_required = {"api", "performance"}
-    missing_tech = tech_required - set(technical.keys())
-    if missing_tech:
-        raise KeyError(
-            f"Translator['technical'] is missing required keys: {sorted(missing_tech)}"
-        )
-
-    # technical.api
-    api = technical.get("api")
-    if not isinstance(api, dict):
-        raise TypeError("Translator[['technical', 'api']] must be a dictionary")
-    api_required = {"key", "key_expiration", "request_limit"}
-    missing_api = api_required - set(api.keys())
-    if missing_api:
-        raise KeyError(
-            f"Translator[['technical', 'api']] is missing required keys: {sorted(missing_api)}"
-        )
-    if not isinstance(api.get("key"), str):
-        raise TypeError("Translator[['technical', 'api', 'key']] must be a string")
-    key_exp = api.get("key_expiration")
-    if key_exp is not None and not isinstance(key_exp, str):
-        raise TypeError(
-            "Translator[['technical', 'api', 'key_expiration']] must be a string or None"
-        )
-    if isinstance(key_exp, str) and key_exp.strip():
-        try:
-            datetime.strptime(key_exp, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError(
-                "Translator[['technical', 'api', 'key_expiration']] must be in 'YYYY-MM-DD' format"
-            )
-    if not isinstance(api.get("request_limit"), int):
-        raise TypeError(
-            "Translator[['technical', 'api', 'request_limit']] must be an integer"
-        )
-
-    # technical.performance
-    perf = technical.get("performance")
-    if not isinstance(perf, dict):
-        raise TypeError("Translator[['technical', 'performance']] must be a dictionary")
-    perf_required = {"max_text_size", "priority", "success_rate"}
-    missing_perf = perf_required - set(perf.keys())
-    if missing_perf:
-        raise KeyError(
-            f"Translator[['technical', 'performance']] is missing required keys: {sorted(missing_perf)}"
-        )
-    if not isinstance(perf.get("max_text_size"), int):
-        raise TypeError(
-            "Translator[['technical', 'performance', 'max_text_size']] must be an integer"
-        )
-    if not isinstance(perf.get("priority"), int):
-        raise TypeError(
-            "Translator[['technical', 'performance', 'priority']] must be an integer"
-        )
-    sr = perf.get("success_rate")
-    if not isinstance(sr, (int, float)):
-        raise TypeError(
-            "Translator[['technical', 'performance', 'success_rate']] must be a number"
-        )
-
-
-def _apply_typed_updates(current: StrictNestedDictionary, updates: dict) -> None:
-    """Apply updates ensuring keys exist and types match current values."""
-    if not isinstance(updates, dict):
-        raise TypeError("updates must be a dictionary")
-    for k, v in updates.items():
-        if k not in current.keys():
-            raise KeyError(f"Key '{k}' is not a valid field for author")
-        if type(v) != type(current[k]):
-            raise TypeError(
-                f"Type mismatch for '{k}': expected {type(current[k])}, got {type(v)}"
-            )
-        current[k] = v
 
 
 # --- Domains helpers ---
@@ -727,36 +541,25 @@ class Repository(StrictNestedDictionary):
 
         This method mirrors the structure expected by Config.add_author outputs,
         but here you explicitly provide the identifier and the author mapping.
+        Delegates to Authors.add() (models/author.py, DD-NN).
         """
-        _validate_uuid4_string(author_id, "author_id")
-        _validate_author_payload(author)
-        _ensure_author_exists(self, author_id, should_exist=False)
-        # Ensure authors sub-dicts are StrictNestedDictionary for consistency
-        self[["authors", author_id]] = StrictNestedDictionary(
-            author, default_setup=_DEFAULT_SETUP
-        )
+        Authors.add(self, author_id, Author.from_dict(author))
 
     def remove_author(self, author_id: str) -> None:
-        """Remove an author by its identifier."""
-
-        _validate_uuid4_string(author_id, "author_id")
-        _ensure_author_exists(self, author_id, should_exist=True)
-        del self["authors"][author_id]
+        """Remove an author by its identifier. Delegates to Authors.remove()."""
+        Authors.remove(self, author_id)
 
     def update_author(self, author_id: str, updates: dict) -> None:
         """Update fields of an existing author with type checking.
 
-        Only existing keys can be updated and their types must match the current values.
+        Only existing keys can be updated and their types must match the
+        current values. Delegates to Authors.update().
         """
-
-        _validate_uuid4_string(author_id, "author_id")
-        _ensure_author_exists(self, author_id, should_exist=True)
-        current = self[["authors", author_id]]
-        _apply_typed_updates(current, updates)
+        Authors.update(self, author_id, updates)
 
     def clean_authors(self) -> None:
-        """Remove all authors."""
-        self["authors"] = self._new_section({})
+        """Remove all authors. Delegates to Authors.clean()."""
+        Authors.clean(self)
 
     # --- translators helpers ---
 
@@ -778,82 +581,28 @@ class Repository(StrictNestedDictionary):
         """Add a new translator entry.
 
         Mirrors add_author: caller provides the unique name and a dictionary
-        holding the translator data. Minimal validation is performed here; the
-        structure can later be updated with update_translator which enforces
-        type safety recursively.
+        holding the translator data. Delegates to Translators.add()
+        (models/translator.py, DD-NN).
         """
-        if not isinstance(name, str):
-            raise TypeError("Translator name must be a string")
-        if not isinstance(translator, dict):
-            raise TypeError("Translator content must be a dictionary")
-
-        # Validate translator payload structure (strict nested schema)
-        _validate_translator_payload(translator)
-
-        # Ensure translators section exists as a StrictNestedDictionary
-        if not isinstance(self["translators"], StrictNestedDictionary):
-            self["translators"] = self._new_section({})
-
-        # Check duplicates (align with authors helpers semantics)
-        if name in self["translators"].keys():
-            raise ValueError(f"Translator '{name}' already exists")
-
-        self[["translators", name]] = StrictNestedDictionary(
-            translator, default_setup=_DEFAULT_SETUP
-        )
+        Translators.add(self, name, translator)
 
     def update_translator(self, name: str, updates: dict) -> None:
         """
         Update an existing translator's details with structural validation.
 
         The provided updates must match the existing nested structure (keys and
-        value types). Unknown keys raise KeyError and type mismatches raise TypeError.
+        value types). Unknown keys raise KeyError and type mismatches raise
+        TypeError. Delegates to Translators.update().
         """
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
-        if not isinstance(updates, dict):
-            raise TypeError("updates must be a dictionary")
-
-        translators = self["translators"]
-        if name not in translators.keys():
-            raise ValueError(f"Translator '{name}' does not exist")
-
-        existing_translator = translators[name]
-
-        def validate_and_apply(target: dict, patch: dict, path: str = "") -> None:
-            for key, value in patch.items():
-                full_path = f"{path}.{key}" if path else key
-                if key not in target:
-                    raise KeyError(
-                        f"Key '{full_path}' is not a valid field for translator"
-                    )
-                if isinstance(target[key], dict):
-                    if not isinstance(value, dict):
-                        raise TypeError(
-                            f"Type mismatch for '{full_path}': expected dict, got {type(value)}"
-                        )
-                    validate_and_apply(target[key], value, full_path)
-                else:
-                    if type(value) != type(target[key]):
-                        raise TypeError(
-                            f"Type mismatch for '{full_path}': expected {type(target[key])}, got {type(value)}"
-                        )
-                    target[key] = value
-
-        validate_and_apply(existing_translator, updates)
+        Translators.update(self, name, updates)
 
     def remove_translator(self, name: str) -> None:
         """Remove a translator by its unique name.
 
-        Aligns with remove_author semantics: raises ValueError if the translator
-        does not exist.
+        Aligns with remove_author semantics: raises ValueError if the
+        translator does not exist. Delegates to Translators.remove().
         """
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
-        translators = self["translators"]
-        if name not in translators.keys():
-            raise ValueError(f"Translator '{name}' does not exist")
-        del translators[name]
+        Translators.remove(self, name)
 
     def clean_translators(self) -> None:
         """
@@ -862,7 +611,7 @@ class Repository(StrictNestedDictionary):
         :return: None
         :rtype: None
         """
-        self["translators"] = self._new_section({})
+        Translators.clean(self)
 
     def add_value(self, path: list[str], value: Any) -> None:
         """
