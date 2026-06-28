@@ -8,6 +8,73 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.5.0 — Architecture & layering hardening (2026-06-28)
+
+### 🐛 Bug Fixes
+- **KI-01** — `Repository.add_translator()` performed a real network call
+  (`api.validate_api_url()`) inside a synchronous, model-internal
+  validation path, causing CI to fail on `master` whenever the test
+  translator's URL was unreachable. Replaced with `validate_url_format()`
+  (syntax only, no network). (#70)
+- A second, independent occurrence of the same symptom was found in
+  `Config.add_translator()`'s own, legitimate `validate_api_url()` call —
+  not a defect, but its test fixture (`Translator3`, `https://doe.com`)
+  had drifted to a real `404` on the live internet since the test was
+  written. Updated to a known-stable endpoint (`https://httpbingo.org/get`).
+- `tests/00_api/test_00_api.py` network fixtures (`httpbin.org`) were
+  intermittently returning `503`/unexpected status codes due to upstream
+  flakiness, unrelated to any code change here. Switched to the
+  `httpbingo.org` mirror (Go port of the same service, same endpoint
+  shapes). `go-httpbin`'s `/delay` endpoint caps at 10s server-side
+  (`/delay/15`, `/delay/25` replaced with `/delay/6`, `/delay/8`).
+
+### 🔧 Maintenance
+- `loader.py` is now the sole bridge between `/models/` and the rest of
+  `/loaders/` (DD-06, DD-37): `handler.py`/`utils.py` are never imported
+  directly from `/models/`. Three new pass-throughs added
+  (`file_exists`, `is_absolute_path`, `normalize_module_identifier`),
+  mirroring the existing `build_book_filename` pattern. (#70)
+- `loaders/repository.py` retired — pre-DD-06 legacy with no production
+  callers. Its 8 functions (`create_module_archive`,
+  `restore_module_from_archive`, `build_repository`, `verify_repository`,
+  `aggregate_dictionaries`, `add_translation_set`, `update_translation_set`,
+  `remove_translation_set`) migrated into `loader.py`. (#69, #70)
+- `models/repository.py` no longer imports `..api` or `..loaders.handler`
+  directly — zero I/O performed by the model itself. (#70)
+- `models/author.py`, `models/translator.py` *(new)* — `Author`/`Authors`
+  and `Translator`/`Translators`, subclassing `StrictNestedDictionary`
+  like `Repository`. Construction, validation, and storage logic for
+  authors and translators moved here from `Repository`'s private helpers
+  and `Config`'s inline logic; `Repository`'s public CRUD API is
+  unchanged, delegating internally. (#17, #25)
+- `Config._email_index` removed entirely. Cross-config
+  (`package`/`application`) email lookup now queries both `Repository`
+  instances via `Authors.get_id_by_email()` — using `ndict-tools`'
+  `ancestors()` (a DFS value search) rather than a manual scan — with no
+  parallel index to keep in sync. `Config` holds no state of its own
+  beyond `_current_config`. (#17, #25)
+- `Config.add_author()`/`add_translator()`/`update_translator()`/
+  `remove_author()` keep their own pre-checks before delegating storage
+  mutation to `Repository`, so exception types/messages observed by
+  callers of `Config` are unchanged (transparent delegation). (#17, #25)
+- Version bumped to `0.5.0` (`pyproject.toml`, `__static__.py`).
+
+### 🧪 Tests
+- Five `@pytest.mark.skip(reason="ndict_tools equality has be rewieved")`
+  tests, frozen since before `ndict-tools` 1.2.0, unskipped — confirmed
+  passing with no rewrite needed. `==` between `StrictNestedDictionary`
+  and a plain `dict` compares by content (standard `dict` semantics), not
+  by the stricter `equal()` contract (exact class match).
+- Baseline: 1069 passed / 4 failed (KI-01) / 41 skipped → **1114 passed /
+  0 failed / 0 skipped**.
+
+### 📐 Design Decisions Recorded
+- DD-37 — Sealing `handler.py`/`utils.py` below `loader.py`; retiring
+  `loaders/repository.py`; removing I/O from `Repository`; introducing
+  `Author`/`Authors` and `Translator`/`Translators`. (#69, #70, #17, #25)
+
+---
+
 ## v0.4.0 — Quality, coverage & documentation (2026-06-27)
 
 ### 🐛 Bug Fixes

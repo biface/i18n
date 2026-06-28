@@ -1,6 +1,6 @@
 # Code of Conduct
 
-**[Version française disponible](CODE_DE_CONDUITE.md)**
+**[Version française disponible](CODE_OF_CONDUCT.fr.md)**
 
 ## Scope
 
