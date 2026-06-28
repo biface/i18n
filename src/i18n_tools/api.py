@@ -12,6 +12,24 @@ import requests
 import validators
 
 
+def validate_url_format(url: str) -> dict:
+    """
+    Validates the syntactic format of a URL — no network call.
+
+    Structural-only check intended for synchronous model methods that must
+    never perform I/O (e.g. Repository.add_translator()). The full
+    availability check remains validate_api_url(), to be invoked explicitly
+    and separately (DD-14c, DD-NN, KI-01).
+
+    :param url: The URL to validate.
+    :return: A dictionary with the URL and an error message if the format is invalid.
+    """
+    result = {"url": url, "error": None}
+    if not validators.url(url):
+        result["error"] = f"URL '{url}' is not a valid format."
+    return result
+
+
 def validate_api_url(url: str, timeout: int = 5) -> dict:
     """
     Validates a URL by checking its format and availability.
@@ -31,9 +49,10 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
         "error": None,
     }
 
-    # Validate URL format — message is already English (uses validators library)
-    if not validators.url(url):
-        result["error"] = f"URL '{url}' is not a valid format."
+    # Format check delegated to validate_url_format() — single source of truth
+    format_check = validate_url_format(url)
+    if format_check["error"]:
+        result["error"] = format_check["error"]
         return result
 
     # Check URL accessibility
