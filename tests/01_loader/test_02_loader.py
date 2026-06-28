@@ -25,7 +25,7 @@ from i18n_tools.loaders.handler import (
     update_catalog,
     update_dictionary,
 )
-from i18n_tools.loaders.repository import (
+from i18n_tools.loaders.loader import (
     _update_json_translations,
     add_translation_set,
     aggregate_dictionaries,
