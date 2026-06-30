@@ -1,0 +1,9 @@
+# Python version used to generate the coverage report
+# =====================================================
+#
+# One active version (first non-commented line).
+# Must match a version available locally.
+#
+# =====================================================
+
+py312

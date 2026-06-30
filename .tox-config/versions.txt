@@ -1,0 +1,17 @@
+# Python versions for sequential test execution
+# ==============================================
+#
+# Format:
+# - One version per line (e.g. py310, py311, py312)
+# - Empty lines and lines starting with # are ignored
+#
+# To add or remove a version, edit this file.
+# No need to modify tox.ini.
+#
+# ==============================================
+
+py310
+py311
+py312
+py313
+# py314 — experimental, excluded from local sequential run
