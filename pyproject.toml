@@ -1,13 +1,33 @@
-# Build systeme
+# =============================================================================
+# pyproject.toml — i18n-tools
+# =============================================================================
+# Build system, project metadata, runtime dependencies, optional extras,
+# and development dependency groups (PEP 735, managed by uv).
+#
+# Tool configuration (flake8, isort, pytest) is also consolidated here.
+# tox configuration lives in tox.ini (phase 1); merge planned for a later
+# cycle once the CI pipeline is stable.
+#
+# Dependency groups:
+#   uv sync --group dev    — full development toolchain (tox, quality, tests)
+#   uv sync --group docs   — Sphinx documentation build only
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Build system
+# -----------------------------------------------------------------------------
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# -----------------------------------------------------------------------------
+# Project metadata
+# -----------------------------------------------------------------------------
 [project]
 name = "i18n-tools"
 version = "0.5.0"
 authors = [
-    { name = "biface" }
+    { name = "biface" },
 ]
 description = "Toolbox to manage localized messages with json and gettext functions."
 readme = "README.md"
@@ -20,125 +40,73 @@ classifiers = [
     "Operating System :: OS Independent",
     "Topic :: Utilities",
 ]
+
+# -----------------------------------------------------------------------------
+# Runtime dependencies — required by any consumer of the package
+# -----------------------------------------------------------------------------
 dependencies = [
     "ndict-tools>=1.2.0",
-    "babel"
+    "babel",
+    "langcodes",        # IETF tag normalisation — locale.py (DD-14)
+    "email-validator",  # email validation — config.py
+    "toml",             # .toml file loading — loaders/utils.py
+    "PyYAML",           # .yaml / .i18t file loading — loaders/utils.py
+    "requests",         # HTTP calls — api.py (validate_api_url)
+    "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
 ]
 
+# -----------------------------------------------------------------------------
+# Project URLs
+# -----------------------------------------------------------------------------
 [project.urls]
-Homepage = "https://github.com/biface/i18n"
+Homepage   = "https://github.com/biface/i18n"
 Repository = "https://github.com/biface/i18n.git"
-Issues = "https://github.com/biface/i18n/issues"
+Issues     = "https://github.com/biface/i18n/issues"
 
+# -----------------------------------------------------------------------------
+# Optional extras — for consumers who want to run the test suite
+# without the full development toolchain
+# -----------------------------------------------------------------------------
 [project.optional-dependencies]
 test = [
     "pytest",
-    "coverage",
     "pytest-cov",
+]
+
+# -----------------------------------------------------------------------------
+# Development dependency groups (PEP 735) — managed exclusively by uv
+# Not installed when a user does `pip install i18n-tools`
+#
+# Usage:
+#   uv sync --group dev    → installs tox, quality tools, test runners
+#   uv sync --group docs   → installs Sphinx and theme
+#   uv sync --group dev --group docs  → both at once
+# -----------------------------------------------------------------------------
+[dependency-groups]
+dev = [
+    # tox orchestration
+    "tox>=4.0",
+    "tox-uv",
+    # test runners
+    "pytest",
+    "pytest-cov",
+    # quality — static analysis
+    "basedpyright",
+    # quality — linting and formatting
     "flake8",
-    "pylint",
     "black",
     "isort",
-    "bandit"
+    # quality — security
+    "bandit",
 ]
 docs = [
     "Sphinx",
-    "furo"
+    "furo",
 ]
 
-[tool.tox]
-minversion = "3.24.5"
-envlist = ["py39", "py310", "py311", "py312", "lint", "isort", "black", "fix", "coverage", "bandit", "local", "ci", "docs"]
-
-[tool.tox.testenv]
-setenv = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
-deps = [
-    "email-validator",
-    "langcodes",
-    "babel",
-    "PyYAML",
-    "toml",
-    "polib",
-    "pytest",
-    "pytest-cov"
-]
-commands = [
-    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
-]
-
-[tool.tox.testenv.lint]
-description = "Lint the code with flake8"
-deps = ["flake8"]
-commands = ["flake8 src tests"]
-
-[tool.tox.testenv.isort]
-description = "Check import sorting with isort"
-deps = ["isort"]
-commands = ["isort --check-only --diff src"]
-
-[tool.tox.testenv.black]
-description = "Check code formatting with black"
-deps = ["black"]
-commands = ["black --check src"]
-
-[tool.tox.testenv.fix]
-description = "Auto-fix formatting of package code (tests are excluded) issues using Black and isort"
-deps = ["black", "isort"]
-commands = [
-    "black src",
-    "isort src"
-]
-
-[tool.tox.testenv.coverage]
-description = "Generate code coverage report"
-deps = ["pytest", "pytest-cov"]
-commands = [
-    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
-]
-
-[tool.tox.testenv.bandit]
-description = "Run security analysis with bandit"
-deps = ["bandit"]
-commands = ["bandit -r src"]
-
-[tool.tox.testenv.docs]
-description = "Build Sphinx documentation (warnings treated as errors)"
-deps = [
-    "Sphinx",
-    "furo"
-]
-commands = [
-    "sphinx-build -b html docs/source docs/build/html -W"
-]
-
-[tool.tox.testenv.local]
-description = "Run fix, lint, bandit, and coverage in sequence"
-deps = [
-    "email-validator",
-    "langcodes",
-    "babel",
-    "PyYAML",
-    "toml",
-    "polib",
-    "pytest",
-    "pytest-cov"
-]
-commands = [
-    "black src tests",
-    "isort src tests",
-    "bandit -r src",
-    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
-]
-
-[tool.tox.testenv.ci]
-description = "Run checks (Black, isort, Bandit, pytest with coverage) for GitHub CI"
-deps = [
-    "pytest",
-    "pytest-cov"
-]
-commands = [
-    "pytest --cov=src --cov-report=term-missing --cov-report=xml:coverage/coverage.xml --cov-report=html:coverage/coverage_html tests"
-]
+# -----------------------------------------------------------------------------
+# Tool configuration
+# -----------------------------------------------------------------------------
 
 [tool.flake8]
 max-line-length = 88
@@ -149,12 +117,12 @@ exclude = [".tox", ".git", "__pycache__", "build", "dist"]
 [tool.isort]
 profile = "black"
 line_length = 88
-known_first_party = "src"
+known_first_party = "i18n_tools"
 multi_line_output = 3
 include_trailing_comma = true
 
 [tool.pytest.ini_options]
 markers = [
-    "network: mark test as requiring real network access (skipped automatically on non-master branches)",
-    "timeout: mark test as making slow network calls (delays)",
+    "network: mark test as requiring real network access (deactivated on dev branches)",
+    "timeout: mark test as making slow HTTP calls (excluded from CI)",
 ]
