@@ -18,7 +18,7 @@ something `Authors` enforces on its own.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
@@ -58,7 +58,7 @@ class Author(StrictNestedDictionary):
         self["languages"] = languages
 
     @classmethod
-    def from_payload(cls, data: dict) -> "Author":
+    def from_payload(cls, data: dict[str, Any]) -> "Author":
         """Validate and build an Author from a plain mapping.
 
         Preserves the exact validation contract previously enforced by
@@ -80,7 +80,7 @@ class Author(StrictNestedDictionary):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict, **class_options) -> "Author":
+    def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Author":
         """
         Override of _StackedDict.from_dict() — the recursive-construction
         hook documented in ndict-tools' Extending guide. Author's __init__
@@ -124,7 +124,9 @@ class Authors:
         del repository["authors"][author_id]
 
     @staticmethod
-    def update(repository: "Repository", author_id: str, updates: dict) -> None:
+    def update(
+        repository: "Repository", author_id: str, updates: dict[str, Any]
+    ) -> None:
         _validate_uuid4_string(author_id)
         if not isinstance(updates, dict):
             raise TypeError("updates must be a dictionary")
