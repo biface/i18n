@@ -8,9 +8,10 @@ Key Responsibilities:
 
 from __future__ import annotations
 
-from typing import Dict, List, Set
-
 import langcodes
+
+# from typing import Dict, List, Set
+
 
 
 def is_valid_language_tag(tag: str) -> bool:
@@ -49,7 +50,7 @@ def validate_and_normalize_language_tags(tags: list[str]) -> list[str]:
     return normalized_tags
 
 
-def get_all_languages(hierarchy: Dict[str, List[str]]) -> Set[str]:
+def get_all_languages(hierarchy: dict[str, list[str]]) -> set[str]:
     """
     Collect all unique languages from the hierarchy dictionary.
 

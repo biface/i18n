@@ -11,14 +11,16 @@ Key Responsibilities:
 """
 
 from pathlib import Path
-from typing import Dict
+from typing import Any
 
 from .__static__ import I18N_TOOLS_TEMPLATE
 from .loaders.utils import _create_empty_file, _create_empty_json
 from .locale import validate_and_normalize_language_tags
 
 
-def check_repository(tld: str, domains: Dict, languages: Dict):
+def check_repository(
+    tld: str, domains: dict[str, list[str]], languages: dict[str, Any]
+):
     """
     Checks and creates necessary files in the translation repository.
 
