@@ -14,7 +14,7 @@ import os
 import shutil
 import tarfile
 from pathlib import Path, PurePath, PurePosixPath
-from typing import Any, Dict, List, Union
+from typing import Any
 
 import toml
 import yaml
@@ -36,23 +36,23 @@ def __check_config_extension(ext: str) -> bool:
     return ext.lstrip(".").lower() in ["json", "yaml", "yml", "toml"]
 
 
-def __check_path(file_path: Union[Path, str]) -> Path:
+def __check_path(file_path: Path | str) -> Path:
     if isinstance(file_path, str):
         file_path = Path(file_path)
     return file_path
 
 
-def _exist_path(path: Union[Path, str]) -> bool:
+def _exist_path(path: Path | str) -> bool:
     path = __check_path(path)
     return path.exists()
 
 
-def _is_absolute_path(path: Union[Path, str]) -> bool:
+def _is_absolute_path(path: Path | str) -> bool:
     path = __check_path(path)
     return path.is_absolute()
 
 
-def _create_empty_file(file_path: Union[Path, str]) -> None:
+def _create_empty_file(file_path: Path | str) -> None:
     """
     Create an empty file.
 
@@ -69,7 +69,7 @@ def _create_empty_file(file_path: Union[Path, str]) -> None:
         empty_file.write("")
 
 
-def _create_directory(file_path: Union[Path, str]) -> None:
+def _create_directory(file_path: Path | str) -> None:
     """
     Create a directory.
 
@@ -90,7 +90,7 @@ def _create_directory(file_path: Union[Path, str]) -> None:
 # JSON load and save files
 
 
-def _create_empty_json(file_path: Union[Path, str]) -> None:
+def _create_empty_json(file_path: Path | str) -> None:
     """
     Create an empty JSON file without managing data structure and integrity and returns its content.
 
@@ -107,7 +107,7 @@ def _create_empty_json(file_path: Union[Path, str]) -> None:
         json.dump({}, json_file, ensure_ascii=False, indent=4)
 
 
-def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
+def _load_json(file_path: Path | str) -> dict[str, Any]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
 
@@ -124,7 +124,7 @@ def _load_json(file_path: Union[Path, str]) -> Dict[str, Any]:
         return json.load(json_file)
 
 
-def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
+def _save_json(file_path: Path | str, data: dict[str, Any]) -> None:
     """
     Save a JSON file without managing data structure and integrity and returns its content.
 
@@ -142,7 +142,7 @@ def _save_json(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 
-def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
+def _load_yaml(file_path: Path | str) -> dict[str, Any]:
     """
     Load a
     :param file_path:
@@ -154,7 +154,7 @@ def _load_yaml(file_path: Union[Path, str]) -> Dict[str, Any]:
         return yaml.load(yaml_file, Loader=yaml.SafeLoader)
 
 
-def _save_yaml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
+def _save_yaml(file_path: Path | str, data: dict[str, Any]) -> None:
     """
     Save a
     :param file_path:
@@ -182,8 +182,8 @@ def _validate_translation_format(
 
 
 def _load_by_format(
-    file_path: Union[Path, str], fmt: TranslationFileFormat
-) -> Dict[str, Any]:
+    file_path: Path | str, fmt: TranslationFileFormat
+) -> dict[str, Any]:
     """
     Load a dictionary file according to the given format (json|yaml).
     """
@@ -193,7 +193,7 @@ def _load_by_format(
 
 
 def _save_by_format(
-    file_path: Union[Path, str], data: Dict[str, Any], fmt: TranslationFileFormat
+    file_path: Path | str, data: dict[str, Any], fmt: TranslationFileFormat
 ) -> None:
     """
     Save a dictionary to a file according to the given format (json|yaml).
@@ -205,7 +205,7 @@ def _save_by_format(
 
 
 def _build_dictionary_path(
-    base_path: Union[Path, str], domain: str, fmt: TranslationFileFormat | None
+    base_path: Path | str, domain: str, fmt: TranslationFileFormat | None
 ) -> str:
     """
     Build the dictionary file path from a base directory, a domain and a format.
@@ -219,7 +219,7 @@ def _build_dictionary_path(
     return base + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
 
 
-def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
+def _load_toml(file_path: Path | str) -> dict[str, Any]:
     """
     Load a TOML file without managing data structure and returns its content.
     :param file_path:
@@ -231,7 +231,7 @@ def _load_toml(file_path: Union[Path, str]) -> Dict[str, Any]:
         return toml.load(toml_file)
 
 
-def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
+def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
     """
     Save a TOML file without managing data structure and returns its content.
     :param file_path:
@@ -246,7 +246,7 @@ def _save_toml(file_path: Union[Path, str], data: Dict[str, Any]) -> None:
 # PO file handling with polib
 
 
-def _load_text(file_path: Union[Path, str]) -> Catalog:
+def _load_text(file_path: Path | str) -> Catalog:
     """
     Load a catalog from a PO file using Babel.
 
@@ -263,7 +263,7 @@ def _load_text(file_path: Union[Path, str]) -> Catalog:
         return read_po(po_file)
 
 
-def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
+def _save_text(file_path: Path | str, catalog: Catalog) -> None:
     """
     Save a Catalog object to a PO file using Babel.
 
@@ -283,7 +283,7 @@ def _save_text(file_path: Union[Path, str], catalog: Catalog) -> None:
 # MO file handling with polib
 
 
-def _load_machine(file_path: Union[Path, str]) -> Catalog:
+def _load_machine(file_path: Path | str) -> Catalog:
     """
     Load a catalog from a MO file using Babel.
 
@@ -300,7 +300,7 @@ def _load_machine(file_path: Union[Path, str]) -> Catalog:
         return read_mo(mo_file)
 
 
-def _save_machine(file_path: Union[Path, str], catalog: Catalog) -> None:
+def _save_machine(file_path: Path | str, catalog: Catalog) -> None:
     """
     Save a POFile object to a MO file.
 
@@ -317,7 +317,7 @@ def _save_machine(file_path: Union[Path, str], catalog: Catalog) -> None:
         write_mo(mo_file, catalog)
 
 
-def _convert_catalog(file_path: Union[Path, str]) -> None:
+def _convert_catalog(file_path: Path | str) -> None:
     """
     Convert a PO catalog to a MO catalog using Babel.
 
@@ -336,7 +336,7 @@ def _convert_catalog(file_path: Union[Path, str]) -> None:
 # Configuration file load and save
 
 
-def _load_config_file(config_path: Union[Path, str]) -> dict:
+def _load_config_file(config_path: Path | str) -> dict:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -361,7 +361,7 @@ def _load_config_file(config_path: Union[Path, str]) -> dict:
             return json.load(file)
 
 
-def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
+def _save_config_file(config_path: Path | str, data: dict) -> None:
     """
     Helper function to save the configuration file based on its extension.
 
@@ -388,7 +388,7 @@ def _save_config_file(config_path: Union[Path, str], data: dict) -> None:
 # Utility functions
 
 
-def _build_path(base_path: Union[Path, str], *sub_dirs: str) -> Path:
+def _build_path(base_path: Path | str, *sub_dirs: str) -> Path:
     """
     Constructs a path by combining a base path with one or more subdirectories.
 
@@ -396,7 +396,7 @@ def _build_path(base_path: Union[Path, str], *sub_dirs: str) -> Path:
     resolving the final path as an absolute path.
 
     :param base_path: The starting path.
-    :type base_path: Union[Path, str]
+    :type base_path: Path | str
     :param sub_dirs: One or more subdirectory names to append to the base path.
     :type sub_dirs: str
     :return: The combined path as a Path object.
@@ -411,9 +411,9 @@ def _build_path(base_path: Union[Path, str], *sub_dirs: str) -> Path:
 
 
 def _create_tar_gz(
-    base_path: Union[Path, str],
+    base_path: Path | str,
     archive_name: str,
-    directory_to_archive: Union[Path, str],
+    directory_to_archive: Path | str,
 ) -> None:
     """
     Create an archive of a directory using tar.gz functions.
@@ -435,7 +435,7 @@ def _create_tar_gz(
         tar.add(directory_to_archive, arcname=directory_to_archive.name)
 
 
-def _create_gzip(file_path: Union[Path, str]) -> None:
+def _create_gzip(file_path: Path | str) -> None:
     """
     Create a compressed file using gzip functions.
 
@@ -452,19 +452,19 @@ def _create_gzip(file_path: Union[Path, str]) -> None:
 
 
 def _non_traversal_path(
-    root_path: str, module_list: List[str], members: List[tarfile.TarInfo]
-) -> List[tarfile.TarInfo]:
+    root_path: str, module_list: list[str], members: list[tarfile.TarInfo]
+) -> list[tarfile.TarInfo]:
     """
     Ensure the member paths are safe to be extracted by checking if they are within the expected module paths.
 
     :param root_path: The root path of the module path.
     :type root_path: str
     :param module_list: The list of modules to extract.
-    :type module_list: List[str]
+    :type module_list: list[str]
     :param members: The list of members to extract.
-    :type members: List[tarfile.TarInfo]
+    :type members: list[tarfile.TarInfo]
     :return: The safe paths for extraction.
-    :rtype: List[tarfile.TarInfo]
+    :rtype: list[tarfile.TarInfo]
     """
 
     # Convert root_path to a Path object and resolve it to an absolute path
@@ -494,7 +494,7 @@ def _non_traversal_path(
     return safe_paths
 
 
-def _remove_file(file_path: Union[Path, str]) -> None:
+def _remove_file(file_path: Path | str) -> None:
     """
     Remove a file from directory if it existe
 
@@ -509,14 +509,14 @@ def _remove_file(file_path: Union[Path, str]) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _detect_format(path: Union[Path, str]) -> TranslationFileFormat:
+def _detect_format(path: Path | str) -> TranslationFileFormat:
     """Detect serialisation format from file path extension (DD-34).
 
     Returns ``'yaml'`` if *path* ends with ``.yaml.i18t``,
     ``'json'`` otherwise.
 
     :param path: Path to a translation file.
-    :type path: Union[Path, str]
+    :type path: Path | str
     :return: Serialisation format identifier.
     :rtype: TranslationFileFormat
     """
@@ -566,14 +566,14 @@ def _normalize_module_identifier(path: str) -> str:
 # Other module specific and private tools
 
 
-def _check_module(repository: StrictNestedDictionary, module_list: List[str]) -> bool:
+def _check_module(repository: StrictNestedDictionary, module_list: list[str]) -> bool:
     """
     This function verifies that a module or a list of modules are defined in the repository.
 
     :param repository: data representing the translation repository.
     :type repository: StrictNestedDictionary
     :param module_list: The list of modules to verify.
-    :type module_list: List[str]
+    :type module_list: list[str]
     :return: True (if not raised)
     :rtype: bool
     :raises: ValueError
@@ -588,7 +588,7 @@ def _check_module(repository: StrictNestedDictionary, module_list: List[str]) ->
 
 
 def _check_domains(
-    repository: StrictNestedDictionary, module: str, domain_list: List[str]
+    repository: StrictNestedDictionary, module: str, domain_list: list[str]
 ) -> bool:
     """
     This function verifies that a domain or a list of domains are defined in the repository.
@@ -598,7 +598,7 @@ def _check_domains(
     :param module: The module containing domains.
     :type module: str
     :param domain_list: The list of domains to verify.
-    :type domain_list: List[str]
+    :type domain_list: list[str]
     :return: True
     :rtype: bool
     :raises: ValueError
