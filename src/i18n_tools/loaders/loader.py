@@ -23,7 +23,7 @@ objects required) or together with model instances (e.g. ``Book``,
 
 import tarfile
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 from ndict_tools import StrictNestedDictionary
 
@@ -75,7 +75,7 @@ from i18n_tools.loaders.utils import (
 from i18n_tools.locale import get_all_languages
 
 
-def load_locale_json(file_path: str) -> Dict[str, Any]:
+def load_locale_json(file_path: str) -> dict[str, Any]:
     """
     This function load a JSON file in the locales repository and containing i18next data. The structure of this
     dictionary is as follows::
@@ -106,7 +106,7 @@ def load_locale_json(file_path: str) -> Dict[str, Any]:
     return data
 
 
-def load_book(file_path: str) -> Dict[str, Any]:
+def load_book(file_path: str) -> dict[str, Any]:
     """
     Load a .i18t dictionary file and return its contents as a filtered dict (DD-15, DD-16, DD-34).
 
@@ -118,7 +118,7 @@ def load_book(file_path: str) -> Dict[str, Any]:
     :type file_path: str
     :return: Mapping of msgid to i18n_tools entry dict
              ``{"messages": matrix, "metadata": {}}``.
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     :raises FileNotFoundError: If the file does not exist.
     :raises ValueError: If the file fails the integrity check.
     """
@@ -163,7 +163,7 @@ def save_book(book: Any, file_path: str) -> None:
     from i18n_tools.converter import message_to_i18n_tools_format
 
     fmt = _detect_format(file_path)
-    data: Dict[str, Any] = {"metadata": book.metadata.to_dict()}
+    data: dict[str, Any] = {"metadata": book.metadata.to_dict()}
     for msg in book.messages.values():
         # load_locale_json / check_json_integrity expect each entry to be
         # the raw messages matrix (a list of lists), not the full
@@ -174,10 +174,10 @@ def save_book(book: Any, file_path: str) -> None:
 
 
 def aggregate_locale_json(
-    structure: Dict[str, Any],
-    domains: Dict[str, List[str]],
-    languages: Dict[str, List[str]],
-) -> Dict[str, Any]:
+    structure: dict[str, Any],
+    domains: dict[str, list[str]],
+    languages: dict[str, list[str]],
+) -> dict[str, Any]:
     """
     Aggregate JSON locale files based on the given structure, domains, and languages.
 
@@ -188,11 +188,11 @@ def aggregate_locale_json(
     duplicate (DD-NN, #69).
 
     :param structure: Dictionary containing 'base' path and list of 'modules'.
-    :type structure: Dict[str, Any]
+    :type structure: dict[str, Any]
     :param domains: Dictionary where keys are module names and values are lists of domains.
-    :type domains: Dict[str, List[str]]
+    :type domains: dict[str, list[str]]
     :param languages: Dictionary where keys are language codes and values are lists of regional variants.
-    :type languages: Dict[str, List[str]]
+    :type languages: dict[str, list[str]]
     :return: A consolidated dictionary of locale data.
     :rtype: dict
     """
@@ -225,7 +225,7 @@ def aggregate_locale_json(
     return aggregated_data
 
 
-def save_locale_json(file_path: str, data: Dict[str, Any]) -> None:
+def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
     """
     Save data to a JSON locale file.
 
@@ -239,7 +239,7 @@ def save_locale_json(file_path: str, data: Dict[str, Any]) -> None:
 
 
 def save_aggregated_locale_json(
-    aggregated_data: Dict[str, Any], base_path: str
+    aggregated_data: dict[str, Any], base_path: str
 ) -> None:
     """
     Save the aggregated locale JSON data as gzipped files for each domain in the locales directory,
@@ -277,7 +277,7 @@ def save_aggregated_locale_json(
         module_json_path.unlink()
 
 
-def build_book_filename(domain: str, fmt: Union[str, None] = None) -> Tuple[str, str]:
+def build_book_filename(domain: str, fmt: str | None = None) -> tuple[str, str]:
     """
     Pass-through to :func:`i18n_tools.loaders.handler.build_book_filename`.
 
@@ -289,9 +289,9 @@ def build_book_filename(domain: str, fmt: Union[str, None] = None) -> Tuple[str,
     :type domain: str
     :param fmt: The desired storage format ("json" or "yaml"). Defaults to
                 "json" if ``None``.
-    :type fmt: Union[str, None]
+    :type fmt: str | None
     :return: A ``(format, filename)`` tuple.
-    :rtype: Tuple[str, str]
+    :rtype: tuple[str, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
     return _build_book_filename(domain, fmt)
@@ -345,7 +345,9 @@ def normalize_module_identifier(path: str) -> str:
     return _normalize_module_identifier(path)
 
 
-def _update_json_translations(existing_translations: Dict, translation_data: Dict):
+def _update_json_translations(
+    existing_translations: dict[str, Any], translation_data: dict[str, Any]
+):
     """
     Update translations in JSON with new data.
 
@@ -636,7 +638,10 @@ def aggregate_dictionaries(
 
 
 def add_translation_set(
-    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary,
+    module: str,
+    domain: str,
+    translations: dict[str, Any],
 ):
     """
     Adds a translation set to the translation repository using JSON and PO files.
@@ -683,7 +688,10 @@ def add_translation_set(
 
 
 def update_translation_set(
-    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary,
+    module: str,
+    domain: str,
+    translations: dict[str, Any],
 ):
     """
     Updates existing translations in the translation repository using JSON and PO files.
@@ -734,7 +742,10 @@ def update_translation_set(
 
 
 def remove_translation_set(
-    repository: StrictNestedDictionary, module: str, domain: str, translations: Dict
+    repository: StrictNestedDictionary,
+    module: str,
+    domain: str,
+    translations: dict[str, Any],
 ):
     """
     Removes specified translations from the translation repository using JSON and PO files.
