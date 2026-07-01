@@ -113,11 +113,13 @@ pythonVersion = "3.10"
 pythonPlatform = "Linux"
 venvPath = "."
 venv = ".venv"
+stubPath = "stubs"
 reportMissingTypeStubs = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownParameterType = false
+reportAny = false
 
 [tool.flake8]
 max-line-length = 88
