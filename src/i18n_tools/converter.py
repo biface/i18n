@@ -180,7 +180,7 @@ Key Responsibilities:
 """
 
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
@@ -196,14 +196,14 @@ from i18n_tools.locale import get_all_languages
 # FIXME : Conversion to or from i18next and Catalog does not work well...
 
 
-def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
+def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
     """
     Convert a Babel Catalog to a unified format dictionary.
 
     :param catalog: Babel Catalog object
     :type catalog: Catalog
     :return: Dictionary in unified format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     unified = {}
     alternative_messages = {}
@@ -362,13 +362,13 @@ def catalog_to_unified_format(catalog: Catalog) -> Dict[str, Any]:
 
 
 def unified_format_to_catalog(
-    unified: Dict[str, Any], locale: str = None, domain: str = None
+    unified: dict[str, Any], locale: str = None, domain: str = None
 ) -> Catalog:
     """
     Convert a unified format dictionary to a Babel Catalog.
 
     :param unified: Dictionary in unified format
-    :type unified: Dict[str, Any]
+    :type unified: dict[str, Any]
     :param locale: Locale for the catalog
     :type locale: str
     :param domain: Domain for the catalog
@@ -544,14 +544,14 @@ def unified_format_to_catalog(
     return catalog
 
 
-def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
+def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
     """
     Convert i18next JSON format to unified format.
 
     :param i18next_data: Dictionary in i18next format
-    :type i18next_data: Dict[str, Any]
+    :type i18next_data: dict[str, Any]
     :return: Dictionary in unified format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     unified = {}
     alternative_messages = {}
@@ -689,17 +689,17 @@ def i18next_to_unified_format(i18next_data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def unified_format_to_i18next(
-    unified: Dict[str, Any], flatten: bool = True
-) -> Dict[str, Any]:
+    unified: dict[str, Any], flatten: bool = True
+) -> dict[str, Any]:
     """
     Convert unified format to i18next JSON format.
 
     :param unified: Dictionary in unified format
-    :type unified: Dict[str, Any]
+    :type unified: dict[str, Any]
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     i18next = {}
 
@@ -778,15 +778,15 @@ def unified_format_to_i18next(
 
 
 def i18n_tools_to_unified_format(
-    i18n_tools_data: Dict[str, Any],
-) -> Dict[str, Any]:
+    i18n_tools_data: dict[str, Any],
+) -> dict[str, Any]:
     """
     Convert i18n_tools JSON format to unified format.
 
     :param i18n_tools_data: Dictionary in i18n_tools format
-    :type i18n_tools_data: Dict[str, Any]
+    :type i18n_tools_data: dict[str, Any]
     :return: Dictionary in unified format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     unified = {}
 
@@ -895,14 +895,14 @@ def i18n_tools_to_unified_format(
     return unified
 
 
-def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
+def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
     """
     Convert unified format to i18n_tools JSON format.
 
     :param unified: Dictionary in unified format
-    :type unified: Dict[str, Any]
+    :type unified: dict[str, Any]
     :return: Dictionary in i18n_tools format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     i18n_tools = {}
 
@@ -974,13 +974,13 @@ def unified_format_to_i18n_tools(unified: Dict[str, Any]) -> Dict[str, Any]:
     return i18n_tools
 
 
-def message_to_i18n_tools_format(message) -> Dict[str, Any]:
+def message_to_i18n_tools_format(message) -> dict[str, Any]:
     """
     Convert a Message object directly to i18n_tools format without using unified format.
 
     :param message: A Message object
     :return: Dictionary in i18n_tools format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     # Start with the singular form and alternatives
     main_translation = message.default
@@ -1037,16 +1037,16 @@ def message_to_i18n_tools_format(message) -> Dict[str, Any]:
 
 
 def i18n_tools_format_to_message_dict(
-    i18n_tools_entry: Dict[str, Any],
-) -> Dict[str, Any]:
+    i18n_tools_entry: dict[str, Any],
+) -> dict[str, Any]:
     """
     Convert an i18n_tools format entry to a dictionary suitable for Message instantiation
     without using unified format.
 
     :param i18n_tools_entry: Dictionary in i18n_tools format
-    :type i18n_tools_entry: Dict[str, Any]
+    :type i18n_tools_entry: dict[str, Any]
     :return: Dictionary with Message constructor parameters
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     result = {
         "default": "",
@@ -1120,7 +1120,7 @@ def i18n_tools_format_to_message_dict(
 
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Convert a Babel Catalog directly to i18next JSON format.
 
@@ -1129,20 +1129,20 @@ def convert_catalog_to_i18next(
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     unified = catalog_to_unified_format(catalog)
     return unified_format_to_i18next(unified, flatten)
 
 
 def convert_i18next_to_catalog(
-    i18next_data: Dict[str, Any], locale: str = None, domain: str = None
+    i18next_data: dict[str, Any], locale: str = None, domain: str = None
 ) -> Catalog:
     """
     Convert i18next JSON format directly to a Babel Catalog.
 
     :param i18next_data: Dictionary in i18next format
-    :type i18next_data: Dict[str, Any]
+    :type i18next_data: dict[str, Any]
     :param locale: Locale for the catalog
     :type locale: str
     :param domain: Domain for the catalog
@@ -1154,27 +1154,27 @@ def convert_i18next_to_catalog(
     return unified_format_to_catalog(unified, locale, domain)
 
 
-def convert_catalog_to_i18n_tools(catalog: Catalog) -> Dict[str, List[List[str]]]:
+def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]]:
     """
     Convert a Babel Catalog directly to i18n_tools JSON format.
 
     :param catalog: Babel Catalog object
     :type catalog: Catalog
     :return: Dictionary in i18n_tools format
-    :rtype: Dict[str, List[List[str]]]
+    :rtype: dict[str, list[list[str]]]
     """
     unified = catalog_to_unified_format(catalog)
     return unified_format_to_i18n_tools(unified)
 
 
 def convert_i18n_tools_to_catalog(
-    i18n_tools_data: Dict[str, List[List[str]]], locale: str = None, domain: str = None
+    i18n_tools_data: dict[str, list[list[str]]], locale: str = None, domain: str = None
 ) -> Catalog:
     """
     Convert i18n_tools JSON format directly to a Babel Catalog.
 
     :param i18n_tools_data: Dictionary in i18n_tools format
-    :type i18n_tools_data: Dict[str, List[List[str]]]
+    :type i18n_tools_data: dict[str, list[list[str]]]
     :param locale: Locale for the catalog
     :type locale: str
     :param domain: Domain for the catalog
@@ -1191,32 +1191,32 @@ def convert_i18n_tools_to_catalog(
 
 
 def convert_i18next_to_i18n_tools(
-    i18next_data: Dict[str, Any],
-) -> Dict[str, List[List[str]]]:
+    i18next_data: dict[str, Any],
+) -> dict[str, list[list[str]]]:
     """
     Convert i18next JSON format directly to i18n_tools JSON format.
 
     :param i18next_data: Dictionary in i18next format
-    :type i18next_data: Dict[str, Any]
+    :type i18next_data: dict[str, Any]
     :return: Dictionary in i18n_tools format
-    :rtype: Dict[str, List[List[str]]]
+    :rtype: dict[str, list[list[str]]]
     """
     unified = i18next_to_unified_format(i18next_data)
     return unified_format_to_i18n_tools(unified)
 
 
 def convert_i18n_tools_to_i18next(
-    i18n_tools_data: Dict[str, List[List[str]]], flatten: bool = True
-) -> Dict[str, Any]:
+    i18n_tools_data: dict[str, list[list[str]]], flatten: bool = True
+) -> dict[str, Any]:
     """
     Convert i18n_tools JSON format directly to i18next JSON format.
 
     :param i18n_tools_data: Dictionary in i18n_tools format
-    :type i18n_tools_data: Dict[str, List[List[str]]]
+    :type i18n_tools_data: dict[str, list[list[str]]]
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     unified = i18n_tools_to_unified_format(i18n_tools_data)
     return unified_format_to_i18next(unified, flatten)
@@ -1231,7 +1231,7 @@ def convert_i18n_tools_to_i18next(
 
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Load a PO file and convert it to i18next JSON format.
 
@@ -1240,7 +1240,7 @@ def load_and_convert_po_to_i18next(
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
     catalog = _load_text(po_file_path)
     return convert_catalog_to_i18next(catalog, flatten)
