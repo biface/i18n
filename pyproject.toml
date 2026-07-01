@@ -108,6 +108,17 @@ docs = [
 # Tool configuration
 # -----------------------------------------------------------------------------
 
+[tool.basedpyright]
+pythonVersion = "3.10"
+pythonPlatform = "Linux"
+venvPath = "."
+venv = ".venv"
+reportMissingTypeStubs = false
+reportUnknownVariableType = false
+reportUnknownMemberType = false
+reportUnknownArgumentType = false
+reportUnknownParameterType = false
+
 [tool.flake8]
 max-line-length = 88
 ignore = ["E501"]
