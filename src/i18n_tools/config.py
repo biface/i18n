@@ -109,7 +109,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 from uuid import UUID, uuid4
 
 from email_validator import EmailNotValidError, validate_email
@@ -145,7 +145,7 @@ class Config(metaclass=Singleton):
         _current_config (str): store the current configuration to manage.
     """
 
-    def __init__(self, config_file: Optional[str] = None):
+    def __init__(self, config_file: str | None = None):
         """
         Initialize the configuration with default paths and settings.
 
@@ -158,7 +158,7 @@ class Config(metaclass=Singleton):
         """
 
         def _setup_configuration(
-            config_dir: Optional[str] = "", settings_file: Optional[str] = ""
+            config_dir: str | None = "", settings_file: str | None = ""
         ) -> StrictNestedDictionary:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
@@ -256,7 +256,7 @@ class Config(metaclass=Singleton):
         else:
             raise KeyError(f"Key '{key[0]}' not found.")
 
-    def set(self, path: Union[list[Any], str], value: Any, check: bool = True) -> None:
+    def set(self, path: list[Any] | str, value: Any, check: bool = True) -> None:
         """
         Set or update a configuration attribute or its nested keys.
 
@@ -342,7 +342,7 @@ class Config(metaclass=Singleton):
         repository_path: str,
         setting_file_ext: str,
         main_module: str,
-        additional_modules: Optional[List[str]] = None,
+        additional_modules: list[str] | None = None,
     ) -> None:
         """
         Set the application repository paths and modules with validation.
@@ -382,10 +382,10 @@ class Config(metaclass=Singleton):
 
     def update_repository(
         self,
-        root_path: Optional[str] = None,
-        setting_file_ext: Optional[str] = None,
+        root_path: str | None = None,
+        setting_file_ext: str | None = None,
         main_module: str = None,
-        modules: Optional[List[str]] = None,
+        modules: list[str] | None = None,
     ) -> None:
         """
         Update the application repository paths and modules with validation.
@@ -426,12 +426,12 @@ class Config(metaclass=Singleton):
 
     def add_details(
         self,
-        name: Optional[str] = None,
-        summary: Optional[str] = None,
-        description: Optional[str] = None,
-        version: Optional[str] = None,
-        content_type: Optional[str] = None,
-        copyright_holder: Optional[str] = None,
+        name: str | None = None,
+        summary: str | None = None,
+        description: str | None = None,
+        version: str | None = None,
+        content_type: str | None = None,
+        copyright_holder: str | None = None,
     ) -> None:
         """
         This function adds the details of the application to the configuration.
@@ -524,7 +524,7 @@ class Config(metaclass=Singleton):
 
         current_repository.add_author(author_id, author)
 
-    def get_author(self, index: str) -> Optional[dict]:
+    def get_author(self, index: str) -> dict[str, Any] | None:
         """
         Retrieve an author's details by UUID or email.
 
@@ -609,14 +609,14 @@ class Config(metaclass=Singleton):
         status: str,
         api_key: str,
         supported_languages: list,
-        translation_type: Optional[str] = None,
-        cost_per_translation: Optional[float] = None,
-        request_limit: Optional[int] = None,
-        key_expiration: Optional[str] = None,
-        priority: Optional[int] = None,
-        success_rate: Optional[float] = None,
-        max_text_size: Optional[int] = None,
-        payment_plan: Optional[str] = None,
+        translation_type: str | None = None,
+        cost_per_translation: float | None = None,
+        request_limit: int | None = None,
+        key_expiration: str | None = None,
+        priority: int | None = None,
+        success_rate: float | None = None,
+        max_text_size: int | None = None,
+        payment_plan: str | None = None,
     ) -> None:
         """
         Add a new translator to the configuration, organized in nested dictionaries under technical.
@@ -876,7 +876,7 @@ class Config(metaclass=Singleton):
 
         return False
 
-    def clean_domains(self, module: Optional[str] = None) -> None:
+    def clean_domains(self, module: str | None = None) -> None:
         """
         Resets domains for a specific module or all modules.
 
