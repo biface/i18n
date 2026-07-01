@@ -32,7 +32,7 @@ by other components (loaders, handlers, CLI) to manage i18n content.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
@@ -447,7 +447,7 @@ class Repository(StrictNestedDictionary):
         return self[["languages", "hierarchy"]]
 
     @hierarchy.setter
-    def hierarchy(self, value: Dict[str, str | List[str]]) -> None:
+    def hierarchy(self, value: dict[str, str | list[str]]) -> None:
 
         if not isinstance(value, dict):
             raise TypeError(f"hierarchy must be a dictionary, not {type(value)}")
