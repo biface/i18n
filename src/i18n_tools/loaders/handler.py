@@ -11,7 +11,7 @@ Key Responsibilities:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -64,7 +64,7 @@ def normalize_module_identifier(path: str) -> str:
     return _normalize_module_identifier(path)
 
 
-def check_json_integrity(data: Dict[str, Any]) -> bool:
+def check_json_integrity(data: dict[str, Any]) -> bool:
     """
     Check the integrity of the JSON locale data.
 
@@ -123,8 +123,8 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
 
 
 def build_book_filename(
-    domain: str, fmt: Optional[TranslationFileFormat] = None
-) -> Tuple[TranslationFileFormat, str]:
+    domain: str, fmt: TranslationFileFormat | None = None
+) -> tuple[TranslationFileFormat, str]:
     """
     Resolve the storage format (default + validation) and the corresponding
     `.i18t` filename for a translation domain, without requiring a `Book`
@@ -141,9 +141,9 @@ def build_book_filename(
     :type domain: str
     :param fmt: The desired storage format ("json" or "yaml"). Defaults to
                 "json" if ``None``.
-    :type fmt: Optional[TranslationFileFormat]
+    :type fmt: TranslationFileFormat | None
     :return: A ``(format, filename)`` tuple, e.g. ``("json", "messages.json.i18t")``.
-    :rtype: Tuple[TranslationFileFormat, str]
+    :rtype: tuple[TranslationFileFormat, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
     _fmt = _validate_translation_format(fmt)
@@ -311,7 +311,7 @@ def create_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: Optional[Union[str, None]] = None,
+    fmt: str | None = None,
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -423,8 +423,8 @@ def fetch_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: Optional[Union[str, None]] = None,
-) -> Dict[str, Any]:
+    fmt: str | None = None,
+) -> dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
 
@@ -439,7 +439,7 @@ def fetch_dictionary(
     :param domain: The domain name.
     :type domain: str
     :return: The translation dictionary.
-    :rtype: Dict[str, Any]
+    :rtype: dict[str, Any]
     """
 
     _check_domains(repository, module, [domain])
@@ -465,7 +465,7 @@ def update_catalog(
     module: str,
     language: str,
     domain: str,
-    data: Dict[any, Dict[str, str]],
+    data: dict[Any, dict[str, str]],
 ) -> None:
     """
     Updates the translation catalog for a given language and domain.
@@ -538,8 +538,8 @@ def update_dictionary(
     module: str,
     language: str,
     domain: str,
-    data: Dict[str, Any],
-    fmt: Optional[Union[str, None]] = None,
+    data: dict[str, Any],
+    fmt: str | None = None,
 ) -> None:
     """
     Updates the translation dictionary for a given language and domain.
@@ -555,7 +555,7 @@ def update_dictionary(
     :param domain: The domain name.
     :type domain: str
     :param data: The new translation dictionary.
-    :type data: Dict[str, Any]
+    :type data: dict[str, Any]
     """
 
     _check_domains(repository, module, [domain])
@@ -586,8 +586,8 @@ def dump_dictionary(
     module: str,
     language: str,
     domain: str,
-    data: Dict[str, Any],
-    fmt: Optional[Union[str, None]] = None,
+    data: dict[str, Any],
+    fmt: str | None = None,
 ) -> None:
     """
     Dump the translation dictionary for a given language and domain.
@@ -603,7 +603,7 @@ def dump_dictionary(
     :param domain: The domain name.
     :type domain: str
     :param data: The new translation dictionary.
-    :type data: Dict[str, Any]
+    :type data: dict[str, Any]
     """
 
     _check_domains(repository, module, [domain])
@@ -693,7 +693,7 @@ def remove_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: Optional[Union[str, None]] = None,
+    fmt: str | None = None,
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -785,7 +785,7 @@ def build_translation_lang_files(
     domain: str,
     lang: str,
     fmt: TranslationFileFormat | None = None,
-) -> Tuple[str, str, str]:
+) -> tuple[str, str, str]:
     """
     Build from repository TLD, path for translation files
 
@@ -849,7 +849,7 @@ def _verify_available_languages(
     Verify that languages in translation sets are registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
+    :type repository: dict[str, Any].
     :param languages: languages in translation set.
     :type languages: list[str].
     :return: Nothing
@@ -870,7 +870,7 @@ def _verify_target_module(
     Verify that a target module is registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
+    :type repository: dict[str, Any].
     :param target_module: module where translation should be located.
     :type target_module: str.
     :return: Nothing
@@ -890,7 +890,7 @@ def _verify_target_domain(
     Verify that a target domain is registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: Dict[str, Any].
+    :type repository: dict[str, Any].
     :param target_module: module where translation should be located.
     :type target_module: str.
     :param target_domain: domain of translation.
