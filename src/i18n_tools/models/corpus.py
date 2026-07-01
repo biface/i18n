@@ -1,7 +1,7 @@
 """ """
 
 import re
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Literal
 
 from ndict_tools import StrictNestedDictionary
 
@@ -16,12 +16,12 @@ from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
 
 
-def _check_index_dict(dictionary: Dict[int, str]) -> bool:
+def _check_index_dict(dictionary: dict[int, str]) -> bool:
     """
     Validate that dictionary keys are within the range [1, len(dictionary)].
 
     Args:
-        dictionary (Dict[int, str]): The dictionary to validate.
+        dictionary (dict[int, str]): The dictionary to validate.
 
     Returns:
         bool: True if all keys are within the valid range, False otherwise.
@@ -51,7 +51,7 @@ def _build_empty_metadata() -> StrictNestedDictionary:
     )
 
 
-def extract_variables(text: str) -> List[str]:
+def extract_variables(text: str) -> list[str]:
     """
     Extract variable names from a formatted string.
 
@@ -59,7 +59,7 @@ def extract_variables(text: str) -> List[str]:
         text (str): The formatted string.
 
     Returns:
-        List[str]: List of variable names.
+        list[str]: List of variable names.
     """
     # Find all {variable} patterns in the string
     pattern = r"\{([^{}]+)\}"
@@ -91,29 +91,29 @@ class Message:
 
         id (str): A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.
         default (str): The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.
-        options (Dict[int, str]): A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.
-        default_plurals (Dict[int, str]): A set of translations that account for different pluralization rules, accommodating languages with multiple plural forms.
-        options_plurals (Dict[int, Dict[int, str]]): Plural forms associated with alternative translations, providing comprehensive support for various linguistic pluralization requirements.
+        options (dict[int, str]): A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.
+        default_plurals (dict[int, str]): A set of translations that account for different pluralization rules, accommodating languages with multiple plural forms.
+        options_plurals (dict[int, dict[int, str]]): Plural forms associated with alternative translations, providing comprehensive support for various linguistic pluralization requirements.
         context (str): Additional information that clarifies the usage context of the message, helping to disambiguate messages with similar or identical text. It is maintained for compatibility with other format.
         metadata (StrictNestedDictionary): The metadata attribute of the Message class contains detailed information about the translation, aiding in its management and usage. The structure of the metadata is as follows:
 
             - version (str): Indicates the version of the metadata structure, allowing for future changes in format while maintaining backward compatibility.
             - language (str): Is the IETF Language Tag code used in the message. It is built with language code library.
             - location (List[Tuple[int, str]]): A list of source file locations where the message is used, including the file path and line number. This helps in tracking the usage of the message within the codebase.
-            - flags (List[str]): A set of indicators that provide additional information about the message, such as whether it is fuzzy or uses a specific format like Python-format.
+            - flags (list[str]): A set of indicators that provide additional information about the message, such as whether it is fuzzy or uses a specific format like Python-format.
             - comments (str): Notes or comments from translators, offering insights or additional context about the message.
-            - count (Dict[str, Any]): Counting translation of standard and alternatives.
+            - count (dict[str, Any]): Counting translation of standard and alternatives.
 
                 - singular (int): The number of times the singular form of the message is used, helping in understanding the frequency and importance of the message.
-                - plurals (List[int]): A list of counts for the different plural forms of the message, providing information on the usage of each plural form.
+                - plurals (list[int]): A list of counts for the different plural forms of the message, providing information on the usage of each plural form.
     """
 
-    def __check_plural_forms__(self, value: Optional[Dict[int, str]] = None) -> bool:
+    def __check_plural_forms__(self, value: dict[int, str] | None = None) -> bool:
         """
         Check if the plural_forms attribute or the provided value has the correct data structure.
 
         Args:
-            value (Optional[Dict[int, str]], optional): The value to check. If None, checks self.plural_forms. Defaults to None.
+            value (dict[int, str] | None, optional): The value to check. If None, checks self.plural_forms. Defaults to None.
 
         Returns:
             bool: True if the structure is valid, False otherwise.
@@ -123,12 +123,12 @@ class Message:
 
         return _check_index_dict(data_to_check)
 
-    def __check_alternatives__(self, value: Optional[Dict[int, str]] = None) -> bool:
+    def __check_alternatives__(self, value: dict[int, str] | None = None) -> bool:
         """
         Check if the alternatives attribute or the provided value has the correct data structure.
 
         Args:
-            value (Optional[Dict[int, str]], optional): The value to check. If None, checks self.alternatives. Defaults to None.
+            value (dict[int, str] | None, optional): The value to check. If None, checks self.alternatives. Defaults to None.
 
         Returns:
             bool: True if the structure is valid, False otherwise.
@@ -140,13 +140,13 @@ class Message:
         return _check_index_dict(data_to_check)
 
     def __check_alternative_plural_forms__(
-        self, value: Optional[Dict[int, Dict[int, str]]] = None
+        self, value: dict[int, dict[int, str]] | None = None
     ) -> bool:
         """
         Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
 
         Args:
-            value (Optional[Dict[int, Dict[int, str]]], optional): The value to check. If None, checks self.alternative_plural_forms. Defaults to None.
+            value (dict[int, dict[int, str]] | None, optional): The value to check. If None, checks self.alternative_plural_forms. Defaults to None.
 
         Returns:
             bool: True if the structure is valid, False otherwise.
@@ -163,12 +163,12 @@ class Message:
 
         return __check
 
-    def __check_metadata__(self, value: Dict[str, Any]) -> bool:
+    def __check_metadata__(self, value: dict[str, Any]) -> bool:
         """
         Check if the metadata attribute or the provided value has the correct data structure.
 
         Args:
-            value (Optional[Dict[str, Any]], optional): The value to check. If None, checks self.metadata. Defaults to None.
+            value (dict[str, Any] | None, optional): The value to check. If None, checks self.metadata. Defaults to None.
 
         Returns:
             bool: True if the structure is valid, False otherwise.
@@ -198,12 +198,12 @@ class Message:
 
         return count
 
-    def __count_plurals__(self) -> List[int]:
+    def __count_plurals__(self) -> list[int]:
         """
         Get the list of plurals for each singular or alternative singular.
 
         Returns:
-            List[int]: The list of count of plurals for each singular.
+            list[int]: The list of count of plurals for each singular.
         """
         counts = [len(self.default_plurals)]
         for index in range(1, len(self.options) + 1):
@@ -257,11 +257,11 @@ class Message:
         self,
         id: str,
         default: str = "",
-        options: Optional[Dict[int, str]] = None,
-        default_plurals: Optional[Dict[int, str]] = None,
-        options_plurals: Optional[Dict[int, Dict[int, str]]] = None,
+        options: dict[int, str] | None = None,
+        default_plurals: dict[int, str] | None = None,
+        options_plurals: dict[int, dict[int, str]] | None = None,
         context: str = "",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize a new Message instance.
@@ -269,11 +269,11 @@ class Message:
         Args:
             id (str): The unique identifier for the message.
             default (str, optional): The main translation text. Defaults to "".
-            options (Dict[int, str], optional): Alternative translations. Defaults to None.
-            default_plurals (Dict[int, str], optional): Plural forms of the main translation. Defaults to None.
-            options_plurals (Dict[int, Dict[int, str]], optional): Plural forms for alternative translations. Defaults to None.
+            options (dict[int, str], optional): Alternative translations. Defaults to None.
+            default_plurals (dict[int, str], optional): Plural forms of the main translation. Defaults to None.
+            options_plurals (dict[int, dict[int, str]], optional): Plural forms for alternative translations. Defaults to None.
             context (str, optional): Context information for the translation. Defaults to "".
-            metadata (Dict[str, Any], optional): Metadata about the translation. Defaults to None.
+            metadata (dict[str, Any], optional): Metadata about the translation. Defaults to None.
         """
         self.id = id
         self.default = default
@@ -332,8 +332,8 @@ class Message:
 
         Args:
             **kwargs: Keyword arguments corresponding to message attributes to set.
-                Supported keys: "translation" (str), "options" (Dict[int, str]),
-                "default_plurals" (Dict[int, str]), "options_plurals" (Dict[int, Dict[int, str]]).
+                Supported keys: "translation" (str), "options" (dict[int, str]),
+                "default_plurals" (dict[int, str]), "options_plurals" (dict[int, dict[int, str]]).
 
         Raises:
             ValueError: If "translation" is missing or empty, or if a provided attribute value is malformed.
@@ -367,8 +367,8 @@ class Message:
 
         Args:
             **kwargs: Keyword arguments corresponding to message attributes to set.
-                Supported keys: "translation" (str), "options" (Dict[int, str]),
-                "default_plurals" (Dict[int, str]), "options_plurals" (Dict[int, Dict[int, str]]).
+                Supported keys: "translation" (str), "options" (dict[int, str]),
+                "default_plurals" (dict[int, str]), "options_plurals" (dict[int, dict[int, str]]).
 
         Raises:
             ValueError: If "translation" is missing or empty, or if a provided attribute value is malformed.
@@ -404,19 +404,19 @@ class Message:
         self.metadata = _build_empty_metadata()
 
     @property
-    def message(self) -> List[List[str]]:
+    def message(self) -> list[list[str]]:
         """
         The list of translations in Message instance.
 
         :return: The list of translations in Message instance.
-        :rtype: List[List[str]]
+        :rtype: list[list[str]]
         """
         msg = [self.principal]
         msg.extend(self.variants)
         return msg
 
     @message.setter
-    def message(self, value: List[List[str]]) -> None:
+    def message(self, value: list[list[str]]) -> None:
         """
         Set the translations in Message instance.
 
@@ -429,24 +429,24 @@ class Message:
 
     # Managing main
 
-    def get_principal(self) -> List[str]:
+    def get_principal(self) -> list[str]:
         """
         Get the main translation and its plural forms.
 
         Returns:
-            List[str]: A formatted list containing the main translation and all plural forms.
+            list[str]: A formatted list containing the main translation and all plural forms.
         """
         translations = [self.default]
         if self.default_plurals:
             translations.extend(self.default_plurals.values())
         return translations
 
-    def get_principal_plurals(self) -> List[str]:
+    def get_principal_plurals(self) -> list[str]:
         """
         Get the main translation's plural forms.
 
         Returns:
-            List[str]: The list of plural forms.
+            list[str]: The list of plural forms.
         """
         plurals = []
         if self.default_plurals:
@@ -569,7 +569,7 @@ class Message:
         if 0 < index <= len(self.default_plurals):
             del self.default_plurals[index]
 
-            reshaped_dict: Dict[int, str] = {}
+            reshaped_dict: dict[int, str] = {}
             for idx, key in enumerate(sorted(self.default_plurals.keys()), start=1):
                 reshaped_dict[idx] = self.default_plurals[key]
             self.default_plurals = reshaped_dict
@@ -604,7 +604,7 @@ class Message:
 
     # Managing variant
 
-    def get_variant(self, option: int) -> List[str]:
+    def get_variant(self, option: int) -> list[str]:
         """
         Get the alternative translation and its plural forms for a specific location index.
 
@@ -612,7 +612,7 @@ class Message:
             option (int): The location index of the alternative translation.
 
         Returns:
-            List[str]: A list containing the alternative translation and all its plural forms.
+            list[str]: A list containing the alternative translation and all its plural forms.
 
         Raises:
             IndexError: If the specified location index doesn't exist.
@@ -630,12 +630,12 @@ class Message:
         except KeyError:
             raise IndexError(f"Alternative translation at index {option} not found")
 
-    def get_variant_plurals(self, option: int = 0) -> List[str]:
+    def get_variant_plurals(self, option: int = 0) -> list[str]:
         """
         Get the alternative translation's plural forms.
         :param option: Option number of the alternative translation.
         :return: the list of plural forms.
-        :rtype: List[str]
+        :rtype: list[str]
         """
         if option > len(self.options_plurals) or option <= 0:
             raise IndexError(
@@ -1063,7 +1063,7 @@ class Message:
         # 2) Reindex self.options to keep keys contiguous starting from 1
         if option < previous_length:
             # Preserve insertion order by iterating values in key order
-            reshaped_dict: Dict[int, str] = {}
+            reshaped_dict: dict[int, str] = {}
             for idx, key in enumerate(sorted(self.options.keys()), start=1):
                 reshaped_dict[idx] = self.options[key]
             self.options = reshaped_dict
@@ -1102,7 +1102,7 @@ class Message:
 
         if option < previous_length:
             # Preserve insertion order by iterating values in key order
-            reshaped_dict: Dict[int, str] = {}
+            reshaped_dict: dict[int, str] = {}
             for idx, key in enumerate(sorted(self.options.keys()), start=1):
                 reshaped_dict[idx] = self.options[key]
             self.options = reshaped_dict
@@ -1110,7 +1110,7 @@ class Message:
         self._refresh_counts(singular=True)
 
     def _remove_options_plurals_segment(
-        self, option: int, index: Optional[int] = None
+        self, option: int, index: int | None = None
     ) -> None:
         """
         Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
@@ -1125,7 +1125,7 @@ class Message:
             self._remove_options_segment(option)
         elif self.options_plurals.paths().__contains__([option, index]):
             del self.options_plurals[[option, index]]
-            reshaped_dict: Dict[int, str] = {}
+            reshaped_dict: dict[int, str] = {}
             for idx, key in enumerate(
                 sorted(self.options_plurals[option].keys()), start=1
             ):
@@ -1136,7 +1136,7 @@ class Message:
             raise IndexError(f"The plural path [{option}, {index}] is out of range")
 
     @property
-    def variants(self) -> List[List[str]]:
+    def variants(self) -> list[list[str]]:
         """
         The list of variants in the repository.
         :return:
@@ -1147,7 +1147,7 @@ class Message:
         return variants
 
     @variants.setter
-    def variants(self, variants: List[List[str]]) -> None:
+    def variants(self, variants: list[list[str]]) -> None:
         """
         The list of variants in the repository.
         :param variants:
@@ -1158,18 +1158,16 @@ class Message:
 
     # Managing metadata
 
-    def get_metadata(
-        self, key: Optional[Union[List[str], str]] = None
-    ) -> Union[Dict[str, Any], Any]:
+    def get_metadata(self, key: list[str] | str | None = None) -> dict[str, Any] | Any:
         """
         Get metadata from the message.
 
         Args:
-            key (List[str] or str, optional): The specific metadata key to retrieve.
+            key (list[str] or str, optional): The specific metadata key to retrieve.
                 If None, returns all metadata. Defaults to None.
 
         Returns:
-            Union[Dict[str, Any], Any]: The requested metadata. If key is None, returns the entire
+            dict[str, Any] | Any: The requested metadata. If key is None, returns the entire
                 metadata dictionary. If key is provided, returns the value for that key.
 
         Raises:
@@ -1217,13 +1215,13 @@ class Message:
         key = mode + "_comments"
         self.metadata[key].append(comment)
 
-    def add_metadata(self, *args: Tuple[List[str], Any], **kwargs) -> None:
+    def add_metadata(self, *args: tuple[list[str], Any], **kwargs) -> None:
         """
         Set metadata for the message.
 
         Args:
-            args (Tuple[List[str], Any]): The list of keys and value to pass to the metadata.
-            kwargs (Dict[str, Any]): The kwargs parameters to pass to the metadata.
+            args (tuple[list[str], Any]): The list of keys and value to pass to the metadata.
+            kwargs (dict[str, Any]): The kwargs parameters to pass to the metadata.
 
         Raises:
             ValueError: If key_or_dict is malformed and value is None.
@@ -1268,12 +1266,12 @@ class Message:
                         f"The key '{key}' is not a present key in the metadata dictionary"
                     )
 
-    def update_metadata(self, *args: Tuple[List[str], Any], **kwargs) -> None:
+    def update_metadata(self, *args: tuple[list[str], Any], **kwargs) -> None:
         """
         Update the message's metadata with new values.
 
         Args:
-            args (Tuple[List[str], Any): is a list of (paths, value) pairs is a StrictNestedDictionary
+            args (Tuple[list[str], Any): is a list of (paths, value) pairs is a StrictNestedDictionary
             kwargs :
         """
 
@@ -1326,12 +1324,12 @@ class Message:
                         f"The key '{key}' is not a present key in the metadata dictionary"
                     )
 
-    def remove_metadata(self, key: Optional[Union[str, List[str]]] = None) -> None:
+    def remove_metadata(self, key: str | list[str] | None = None) -> None:
         """
         Delete metadata from the message.
 
         Args:
-            key (Optional[str], optional): The specific metadata key to delete.
+            key (str | None, optional): The specific metadata key to delete.
                 If None, clears all metadata.
 
         Raises:
@@ -1379,7 +1377,7 @@ class Message:
             self._assert_valid_option(destination)
 
         # Helper to get singular and plurals for an index
-        def get_pair(index: int) -> Tuple[str, Dict[int, str]]:
+        def get_pair(index: int) -> tuple[str, dict[int, str]]:
             if index == 0:
                 return self.default, dict(self.default_plurals)
             # index > 0
@@ -1392,7 +1390,7 @@ class Message:
             return singular, plurals
 
         # Helper to set singular and plurals for an index
-        def set_pair(index: int, singular: str, plurals: Dict[int, str]) -> None:
+        def set_pair(index: int, singular: str, plurals: dict[int, str]) -> None:
             if index == 0:
                 self.default = singular
                 self.default_plurals = dict(plurals)
@@ -1436,7 +1434,7 @@ class Message:
             return
 
         # Helper to fetch a pair (singular, plurals) for index
-        def get_pair(index: int) -> Tuple[str, Dict[int, str]]:
+        def get_pair(index: int) -> tuple[str, dict[int, str]]:
             if index == 0:
                 return self.default, dict(self.default_plurals)
             singular = self.options[index]
@@ -1448,7 +1446,7 @@ class Message:
             return singular, plurals
 
         # Build the current ordered list of (singular, plurals)
-        pairs: List[Tuple[str, Dict[int, str]]] = [get_pair(0)] + [
+        pairs: list[tuple[str, dict[int, str]]] = [get_pair(0)] + [
             get_pair(i) for i in range(1, n + 1)
         ]
 
@@ -1463,7 +1461,7 @@ class Message:
         self.default = new_default_s
         self.default_plurals = dict(new_default_p)
 
-        new_options: Dict[int, str] = {}
+        new_options: dict[int, str] = {}
         new_plurals = StrictNestedDictionary()
         for idx in range(1, n + 1):
             s, p = rotated[idx]
@@ -1513,7 +1511,7 @@ class Message:
         except Exception as e:
             raise ValueError(f"Error formatting message '{self.id}': {str(e)}")
 
-    def get_format_variables(self, option: int = 0) -> List[List[str]]:
+    def get_format_variables(self, option: int = 0) -> list[list[str]]:
         """
         This function returns the list of named variables in singular and plurals text to format. By default if option is
         equal to zero the default translation will be explored.
@@ -1521,7 +1519,7 @@ class Message:
         :param option: the  index of option text to explore
         :type option: int
         :return: a tuple of list of variables
-        :rtype: List[List[str]]
+        :rtype: list[list[str]]
         :raises IndexError: If option is out of range.
         :raises ValueError: If no variables extracted is out of range.
         """
@@ -1571,25 +1569,25 @@ class Message:
         except Exception:
             return False
 
-    def to_i18n_tools_format(self) -> Dict[str, Any]:
+    def to_i18n_tools_format(self) -> dict[str, Any]:
         """
         Convert the Message to i18n_tools format.
 
         Returns:
-            Dict[str, Any]: The message in i18n_tools format.
+            dict[str, Any]: The message in i18n_tools format.
         """
         return message_to_i18n_tools_format(self)
 
     @classmethod
     def from_i18n_tools(
-        cls, message_id: str, i18n_tools_entry: Dict[str, Any]
+        cls, message_id: str, i18n_tools_entry: dict[str, Any]
     ) -> "Message":
         """
         Create a Message instance from an i18n_tools format entry.
 
         Args:
             message_id (str): The message ID.
-            i18n_tools_entry (Dict[str, Any]): The i18n_tools format entry.
+            i18n_tools_entry (dict[str, Any]): The i18n_tools format entry.
 
         Returns:
             Message: A new Message instance.
@@ -1745,7 +1743,7 @@ class Book:
       "total_messages" and "total_words".
     """
 
-    def __init__(self, *args: Message, **kwargs: Dict[str, Any]) -> None:
+    def __init__(self, *args: Message, **kwargs: dict[str, Any]) -> None:
         """
         Initialize a Book.
 
@@ -1875,7 +1873,7 @@ class Book:
         """Unset the book language (may leave the book in an inconsistent state)."""
         self.language = None
 
-    def get_domain(self) -> Optional[str]:
+    def get_domain(self) -> str | None:
         """Return the domain of this book."""
         return self.domain
 
@@ -1895,7 +1893,7 @@ class Book:
         """Unset the book domain (may leave the book unusable until reset)."""
         self.domain = None
 
-    def get_format(self) -> Optional[str]:
+    def get_format(self) -> str | None:
         """Return the serialization/storage format hint."""
         return self.format
 
@@ -1950,9 +1948,7 @@ class Book:
         self.metadata[["statistics", "total_messages"]] = len(self.messages)
         self.metadata[["statistics", "total_words"]] = total_words
 
-    def set_metadata(
-        self, key: Optional[Union[str, List[str]]], value: Any = None
-    ) -> None:
+    def set_metadata(self, key: str | list[str] | None, value: Any = None) -> None:
         """
         Add, update or delete a metadata entry.
         - If value is None, the metadata is reset/removed to its default for the given key.
@@ -2016,7 +2012,7 @@ class Book:
         # Keep backward compatibility counter and recompute statistics if messages count involved
         self.metadata[["count", "messages"]] = len(self.messages)
 
-    def get(self, index: str) -> Optional[Message]:
+    def get(self, index: str) -> Message | None:
         """
         Get a message by id.
         :param index: id of the message
@@ -2033,11 +2029,11 @@ class Book:
         """
         return iter(self.messages.values())
 
-    def add(self, domain: str, messages: List[Message]) -> None:
+    def add(self, domain: str, messages: list[Message]) -> None:
         """
         Add messages to the book if language and domain are identical.
         :param messages: list of messages to add to the book
-        :type messages: List[Message]
+        :type messages: list[Message]
         :param domain: the domain of the messages
         :type domain: str
         :return: nothing
@@ -2148,7 +2144,7 @@ class FallbackBook:
     - biface/i18n#20 : MessageNotFoundError (DD-24)
     """
 
-    def __init__(self, chain: List["Book"], language: str) -> None:
+    def __init__(self, chain: list["Book"], language: str) -> None:
         """
         Initialise the FallbackBook from an ordered list of real Books.
 
@@ -2161,7 +2157,7 @@ class FallbackBook:
         """
         if not chain:
             raise ValueError("FallbackBook chain must contain at least one Book")
-        self._chain: List["Book"] = chain
+        self._chain: list["Book"] = chain
         self._language: str = language
 
     # --- Core message access ---
@@ -2317,7 +2313,7 @@ class Corpus:
         from i18n_tools.exceptions import MessageNotFoundError
 
         normalized = normalize_language_tag(lang)
-        chain: List["Book"] = []
+        chain: list["Book"] = []
         seen: set = set()
 
         def _add(language: str) -> None:
@@ -2360,11 +2356,11 @@ class Corpus:
         return self._domain
 
     @property
-    def languages(self) -> List[str]:
+    def languages(self) -> list[str]:
         """List of loaded language tags, in insertion order."""
         return list(self._books.keys())
 
-    def coverage(self) -> Dict[str, float]:
+    def coverage(self) -> dict[str, float]:
         """
         Compute the coverage rate of each loaded language.
 
@@ -2374,7 +2370,7 @@ class Corpus:
 
         :return: Mapping of language tag to coverage rate (0.0–1.0).
             Returns an empty dict if no Books are loaded.
-        :rtype: Dict[str, float]
+        :rtype: dict[str, float]
 
         References
         ----------
@@ -2393,14 +2389,14 @@ class Corpus:
             for lang, book in self._books.items()
         }
 
-    def missing(self, lang: str) -> List[str]:
+    def missing(self, lang: str) -> list[str]:
         """
         Return identifiers present in other Books but absent in ``lang``.
 
         :param lang: Language tag to check.
         :type lang: str
         :return: Sorted list of missing message identifiers.
-        :rtype: List[str]
+        :rtype: list[str]
         :raises ValueError: If ``lang`` is not loaded in this Corpus.
 
         References
@@ -2445,7 +2441,7 @@ class Encyclopaedia:
         - biface/i18n#42 : four-level model hierarchy (DD-07)
         """
         # Key: (module, domain) -> Corpus
-        self._corpora: Dict[Tuple[str, str], Corpus] = {}
+        self._corpora: dict[tuple[str, str], Corpus] = {}
 
     def add_corpus(self, module: str, corpus: Corpus) -> None:
         """
@@ -2496,7 +2492,7 @@ class Encyclopaedia:
             )
         return self._corpora[key]
 
-    def __contains__(self, key: Tuple[str, str]) -> bool:
+    def __contains__(self, key: tuple[str, str]) -> bool:
         """Return True if ``(module, domain)`` is registered."""
         return key in self._corpora
 
