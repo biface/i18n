@@ -18,7 +18,7 @@ something `Authors` enforces on its own.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
@@ -46,7 +46,7 @@ class Author(StrictNestedDictionary):
         last_name: str,
         email: str,
         url: str,
-        languages: List[str],
+        languages: list[str],
     ) -> None:
         if not isinstance(languages, list):
             raise TypeError("author['languages'] must be a list of strings")
@@ -141,7 +141,7 @@ class Authors:
             current[key] = value
 
     @staticmethod
-    def get_id_by_email(repository: "Repository", email: str) -> Optional[str]:
+    def get_id_by_email(repository: "Repository", email: str) -> str | None:
         """Find the author UUID owning the given email.
 
         Uses ndict-tools' own value-search primitive (ancestors(), a DFS

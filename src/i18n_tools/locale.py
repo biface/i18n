@@ -13,7 +13,6 @@ import langcodes
 # from typing import Dict, List, Set
 
 
-
 def is_valid_language_tag(tag: str) -> bool:
     """
     Vérifie si un tag linguistique est valide selon ISO 639-1 ou ISO 639-3.
