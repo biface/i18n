@@ -271,11 +271,11 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
         if isinstance(message_id, tuple):
             # Handle plural forms
             singular = message_id[0]
-            message_entry = {
+            message_entry: dict[str, Any] = {
                 "translation": (
                     message.string
                     if isinstance(message.string, str)
-                    else message.string[0]
+                    else (message.string[0] if message.string is not None else "")
                 ),
                 "plural_forms": {},
                 "context": message.context or "",
@@ -362,7 +362,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
 
 
 def unified_format_to_catalog(
-    unified: dict[str, Any], locale: str = None, domain: str = None
+    unified: dict[str, Any], locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert a unified format dictionary to a Babel Catalog.
@@ -800,7 +800,7 @@ def i18n_tools_to_unified_format(
             metadata = value["metadata"]
 
             # Initialize entry with the main message (first alternative)
-            entry = {
+            entry: dict[str, Any] = {
                 "translation": messages[0][0] if messages and messages[0] else "",
                 "plural_forms": {},
                 "context": "",
@@ -850,7 +850,7 @@ def i18n_tools_to_unified_format(
             value_lists = value
 
             # Initialize entry with the main message (first alternative)
-            entry = {
+            entry: dict[str, Any] = {
                 "translation": (
                     value_lists[0][0] if value_lists and value_lists[0] else ""
                 ),
@@ -1048,7 +1048,7 @@ def i18n_tools_format_to_message_dict(
     :return: Dictionary with Message constructor parameters
     :rtype: dict[str, Any]
     """
-    result = {
+    result: dict[str, Any] = {
         "default": "",
         "options": {},
         "default_plurals": {},
@@ -1058,8 +1058,8 @@ def i18n_tools_format_to_message_dict(
     }
 
     # Extract messages and metadata
-    messages = i18n_tools_entry.get("messages", [])
-    metadata = i18n_tools_entry.get("metadata", {})
+    messages: list[list[Any]] = i18n_tools_entry.get("messages", [])
+    metadata: dict[str, Any] = i18n_tools_entry.get("metadata", {})
 
     # Process main translation and alternatives
     if messages and len(messages) > 0 and len(messages[0]) > 0:
@@ -1136,7 +1136,7 @@ def convert_catalog_to_i18next(
 
 
 def convert_i18next_to_catalog(
-    i18next_data: dict[str, Any], locale: str = None, domain: str = None
+    i18next_data: dict[str, Any], locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert i18next JSON format directly to a Babel Catalog.
@@ -1168,7 +1168,9 @@ def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]
 
 
 def convert_i18n_tools_to_catalog(
-    i18n_tools_data: dict[str, list[list[str]]], locale: str = None, domain: str = None
+    i18n_tools_data: dict[str, list[list[str]]],
+    locale: str | None = None,
+    domain: str | None = None,
 ) -> Catalog:
     """
     Convert i18n_tools JSON format directly to a Babel Catalog.
@@ -1247,7 +1249,7 @@ def load_and_convert_po_to_i18next(
 
 
 def load_and_convert_json_to_catalog(
-    json_file_path: str, locale: str = None, domain: str = None
+    json_file_path: str, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Load a JSON file (i18next format) and convert it to a Babel Catalog.
