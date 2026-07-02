@@ -384,7 +384,7 @@ class Config(metaclass=Singleton):
         self,
         root_path: str | None = None,
         setting_file_ext: str | None = None,
-        main_module: str = None,
+        main_module: str | None = None,
         modules: list[str] | None = None,
     ) -> None:
         """

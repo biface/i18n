@@ -143,7 +143,7 @@ class Authors:
             current[key] = value
 
     @staticmethod
-    def get_id_by_email(repository: "Repository", email: str) -> str | None:
+    def get_id_by_email(repository: StrictNestedDictionary, email: str) -> str | None:
         """Find the author UUID owning the given email.
 
         Uses ndict-tools' own value-search primitive (ancestors(), a DFS

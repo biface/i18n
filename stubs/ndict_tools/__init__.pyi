@@ -79,6 +79,7 @@ class _StackedDict(dict[Any, Any]):
     def from_dict(
         cls: Type[_T], dictionary: dict[Any, Any], **class_options: Any
     ) -> _T: ...
+    def is_key(self, key: Any) -> bool: ...
 
 # ------------------------------------------------------------------------------
 # Public classes
