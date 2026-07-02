@@ -359,6 +359,9 @@ def _load_config_file(config_path: Path | str) -> dict[str, Any]:
             return toml.load(file)
         elif file_extension == ".json":
             return json.load(file)
+    return (
+        {}
+    )  # unreachable if __check_config_extension passed, but satisfies type checker
 
 
 def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
@@ -468,10 +471,10 @@ def _non_traversal_path(
     """
 
     # Convert root_path to a Path object and resolve it to an absolute path
-    root_path = Path(root_path).resolve()
+    root_path_p: Path = Path(root_path).resolve()
 
     # Create a set of expected module paths by combining root_path with each module in module_list
-    expected_module_paths = {root_path / module for module in module_list}
+    expected_module_paths = {root_path_p / module for module in module_list}
 
     # List to store the safe paths for extraction
     safe_paths = []
@@ -481,10 +484,10 @@ def _non_traversal_path(
         member_path = Path(member.name)
 
         # Resolve the member path to check for directory traversal
-        resolved_path = (root_path / member_path).resolve()
+        resolved_path = (root_path_p / member_path).resolve()
 
         # Check if the resolved path is within the root path and within any of the expected module paths
-        if resolved_path.is_relative_to(root_path):
+        if resolved_path.is_relative_to(root_path_p):
             # Ensure the resolved path is within one of the expected module paths
             if any(
                 resolved_path.is_relative_to(module) for module in expected_module_paths

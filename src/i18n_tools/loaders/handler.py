@@ -311,7 +311,7 @@ def create_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: str | None = None,
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Creates an empty translation dictionary for a given language and domain in the specified module.
@@ -423,7 +423,7 @@ def fetch_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: str | None = None,
+    fmt: TranslationFileFormat | None = None,
 ) -> dict[str, Any]:
     """
     Fetches the translation dictionary for a given language and domain.
@@ -521,7 +521,15 @@ def update_catalog(
             message = catalog.add(
                 id=key,
                 string=string_value,
-                locations=value.get("locations", ()),
+                locations=[
+                    (
+                        (loc.split(":")[0], int(loc.split(":")[1]))
+                        if ":" in loc
+                        else (loc, 0)
+                    )
+                    for loc in value.get("locations", [])
+                    if isinstance(loc, str)
+                ],
                 previous_id=value.get("previous_id", ""),
                 flags=["python-format"],
             )
@@ -539,7 +547,7 @@ def update_dictionary(
     language: str,
     domain: str,
     data: dict[str, Any],
-    fmt: str | None = None,
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Updates the translation dictionary for a given language and domain.
@@ -587,7 +595,7 @@ def dump_dictionary(
     language: str,
     domain: str,
     data: dict[str, Any],
-    fmt: str | None = None,
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Dump the translation dictionary for a given language and domain.
@@ -693,7 +701,7 @@ def remove_dictionary(
     module: str,
     language: str,
     domain: str,
-    fmt: str | None = None,
+    fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
     Removes a translation dictionary for a given language and domain in the specified module.
@@ -725,7 +733,7 @@ def remove_dictionary(
 # Managing configuration files
 
 
-def load_config(config_path: str = None) -> dict[str, Any]:
+def load_config(config_path: str | None = None) -> dict[str, Any]:
     """
     Load the configuration file (YAML, TOML, or JSON) from the application directories
     (not from the package i18n-tools) and return its contents as a dictionary.

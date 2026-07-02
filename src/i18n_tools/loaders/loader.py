@@ -33,6 +33,7 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_LOCALE,
     I18N_TOOLS_MESSAGES,
     I18N_TOOLS_TEMPLATE,
+    TranslationFileFormat,
 )
 from i18n_tools.loaders.handler import (
     _verify_available_languages,
@@ -277,7 +278,9 @@ def save_aggregated_locale_json(
         module_json_path.unlink()
 
 
-def build_book_filename(domain: str, fmt: str | None = None) -> tuple[str, str]:
+def build_book_filename(
+    domain: str, fmt: TranslationFileFormat | None = None
+) -> tuple[str, str]:
     """
     Pass-through to :func:`i18n_tools.loaders.handler.build_book_filename`.
 
@@ -289,7 +292,7 @@ def build_book_filename(domain: str, fmt: str | None = None) -> tuple[str, str]:
     :type domain: str
     :param fmt: The desired storage format ("json" or "yaml"). Defaults to
                 "json" if ``None``.
-    :type fmt: str | None
+    :type fmt: TranslationFileFormat | None
     :return: A ``(format, filename)`` tuple.
     :rtype: tuple[str, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
