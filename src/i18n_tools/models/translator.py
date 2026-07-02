@@ -13,7 +13,7 @@ StrictNestedDictionary section.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ndict_tools import StrictNestedDictionary
 
@@ -34,7 +34,12 @@ class Translator(StrictNestedDictionary):
     the rest of the model layer.
     """
 
-    def __init__(self, details: dict, pricing: dict, technical: dict) -> None:
+    def __init__(
+        self,
+        details: dict[str, Any],
+        pricing: dict[str, Any],
+        technical: dict[str, Any],
+    ) -> None:
         payload = {"details": details, "pricing": pricing, "technical": technical}
         self.validate_payload(payload)
         super().__init__(default_setup=_DEFAULT_SETUP)
@@ -45,7 +50,7 @@ class Translator(StrictNestedDictionary):
         )
 
     @classmethod
-    def from_payload(cls, data: dict) -> "Translator":
+    def from_payload(cls, data: dict[str, Any]) -> "Translator":
         """Validate and build a Translator from a plain mapping."""
         cls.validate_payload(data)
         return cls(
@@ -55,7 +60,7 @@ class Translator(StrictNestedDictionary):
         )
 
     @classmethod
-    def from_dict(cls, dictionary: dict, **class_options) -> "Translator":
+    def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Translator":
         """
         Override of _StackedDict.from_dict() — see Author.from_dict() for
         the rationale (ndict-tools' Extending guide). Redirects to
@@ -65,7 +70,7 @@ class Translator(StrictNestedDictionary):
         return cls.from_payload(dictionary)
 
     @staticmethod
-    def validate_payload(translator: dict) -> None:
+    def validate_payload(translator: dict[str, Any]) -> None:
         """Validate the structure of a translator mapping.
 
         Expected nested structure and minimal type checks:
@@ -113,7 +118,11 @@ class Translator(StrictNestedDictionary):
         # Structural validation only — no network call (KI-01, DD-NN).
         # The real availability check (api.validate_api_url) is invoked
         # explicitly elsewhere (Config/CLI), never from this synchronous path.
-        result = validate_url_format(details.get("url"))
+        url = details.get("url")
+        if not isinstance(url, str):
+            raise TypeError("Translator[['details', 'url']] must be a string")
+        result = validate_url_format(url)
+
         if result.get("error"):
             raise ValueError(result["error"])
 
@@ -209,7 +218,7 @@ class Translators:
     """Manager for the `translators` section of a single Repository."""
 
     @staticmethod
-    def add(repository: "Repository", name: str, translator: dict) -> None:
+    def add(repository: "Repository", name: str, translator: dict[str, Any]) -> None:
         if not isinstance(name, str):
             raise TypeError("Translator name must be a string")
         if not isinstance(translator, dict):
@@ -226,7 +235,7 @@ class Translators:
         repository[["translators", name]] = translator_obj
 
     @staticmethod
-    def update(repository: "Repository", name: str, updates: dict) -> None:
+    def update(repository: "Repository", name: str, updates: dict[str, Any]) -> None:
         if not isinstance(name, str):
             raise TypeError("name must be a string")
         if not isinstance(updates, dict):
@@ -238,7 +247,9 @@ class Translators:
 
         existing_translator = translators[name]
 
-        def validate_and_apply(target: dict, patch: dict, path: str = "") -> None:
+        def validate_and_apply(
+            target: dict[str, Any], patch: dict[str, Any], path: str = ""
+        ) -> None:
             for key, value in patch.items():
                 full_path = f"{path}.{key}" if path else key
                 if key not in target:

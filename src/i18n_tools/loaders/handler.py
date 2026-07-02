@@ -725,7 +725,7 @@ def remove_dictionary(
 # Managing configuration files
 
 
-def load_config(config_path: str = None) -> dict:
+def load_config(config_path: str = None) -> dict[str, Any]:
     """
     Load the configuration file (YAML, TOML, or JSON) from the application directories
     (not from the package i18n-tools) and return its contents as a dictionary.
@@ -766,7 +766,7 @@ def load_config(config_path: str = None) -> dict:
     )
 
 
-def save_config(file_path: str, data: dict) -> None:
+def save_config(file_path: str, data: dict[str, Any]) -> None:
     """
     Save configuration data to a file.
 

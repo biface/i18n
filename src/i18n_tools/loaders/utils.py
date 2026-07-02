@@ -336,7 +336,7 @@ def _convert_catalog(file_path: Path | str) -> None:
 # Configuration file load and save
 
 
-def _load_config_file(config_path: Path | str) -> dict:
+def _load_config_file(config_path: Path | str) -> dict[str, Any]:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -361,7 +361,7 @@ def _load_config_file(config_path: Path | str) -> dict:
             return json.load(file)
 
 
-def _save_config_file(config_path: Path | str, data: dict) -> None:
+def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
     """
     Helper function to save the configuration file based on its extension.
 

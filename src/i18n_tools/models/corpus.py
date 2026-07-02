@@ -1655,7 +1655,7 @@ class Message:
             return False
 
     @property
-    def translations_set(self) -> set:
+    def translations_set(self) -> set[Any]:
         """
         Construit un ensemble de toutes les chaînes de traduction présentes dans ce message,
         en agrégeant le texte principal, ses pluriels, ainsi que toutes les variantes et leurs pluriels.
@@ -2314,7 +2314,7 @@ class Corpus:
 
         normalized = normalize_language_tag(lang)
         chain: list["Book"] = []
-        seen: set = set()
+        seen: set[Any] = set()
 
         def _add(language: str) -> None:
             if language not in seen and language in self._books:
@@ -2378,7 +2378,7 @@ class Corpus:
         """
         if not self._books:
             return {}
-        all_ids: set = set()
+        all_ids: set[Any] = set()
         for book in self._books.values():
             all_ids.update(book.messages.keys())
         total = len(all_ids)

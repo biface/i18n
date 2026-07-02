@@ -8,11 +8,13 @@ Key Responsibilities:
 
 """
 
+from typing import Any
+
 import requests
 import validators
 
 
-def validate_url_format(url: str) -> dict:
+def validate_url_format(url: str) -> dict[str, Any]:
     """
     Validates the syntactic format of a URL — no network call.
 
@@ -24,13 +26,13 @@ def validate_url_format(url: str) -> dict:
     :param url: The URL to validate.
     :return: A dictionary with the URL and an error message if the format is invalid.
     """
-    result = {"url": url, "error": None}
+    result: dict[str, Any] = {"url": url, "error": None}
     if not validators.url(url):
         result["error"] = f"URL '{url}' is not a valid format."
     return result
 
 
-def validate_api_url(url: str, timeout: int = 5) -> dict:
+def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
     """
     Validates a URL by checking its format and availability.
 
@@ -42,7 +44,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict:
     :param timeout: Maximum wait time for the server response (in seconds).
     :return: A dictionary containing the validation status and details about the URL.
     """
-    result = {
+    result: dict[str, Any] = {
         "url": url,
         "is_alive": False,
         "status_code": None,

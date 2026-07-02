@@ -244,7 +244,7 @@ class Config(metaclass=Singleton):
         except Exception as e:
             raise e
 
-    def get(self, key: list) -> Any:
+    def get(self, key: list[str]) -> Any:
         """
         Retrieve a configuration value by key.
 
@@ -476,7 +476,12 @@ class Config(metaclass=Singleton):
             raise KeyError(f"The key {d_key} is not in the details of the repository.")
 
     def add_author(
-        self, first_name: str, last_name: str, email: str, url: str, languages: list
+        self,
+        first_name: str,
+        last_name: str,
+        email: str,
+        url: str,
+        languages: list[str],
     ) -> None:
         """
         Add a new author to the authors dictionary.
@@ -704,7 +709,7 @@ class Config(metaclass=Singleton):
 
         return self.get([self._current_config, "translators", name])
 
-    def list_translators(self) -> list:
+    def list_translators(self) -> list[str]:
         """
         List all the translators currently in the configuration.
 
@@ -713,7 +718,7 @@ class Config(metaclass=Singleton):
 
         return list(self.__getattribute__(self._current_config)["translators"].keys())
 
-    def update_translator(self, name: str, updates: dict) -> None:
+    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
         """
         Update an existing translator's details while ensuring the structure remains valid.
 
@@ -733,7 +738,9 @@ class Config(metaclass=Singleton):
         existing_translator = current_repository["translators"][name]
 
         # Recursive function to validate the updates against the existing structure
-        def validate_structure(expected: dict, actual: dict, path: str = ""):
+        def validate_structure(
+            expected: dict[str, Any], actual: dict[str, Any], path: str = ""
+        ):
             for key, value in actual.items():
                 full_path = f"{path}.{key}" if path else key
 

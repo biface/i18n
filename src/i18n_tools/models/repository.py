@@ -164,7 +164,7 @@ class Repository(StrictNestedDictionary):
         self._apply_kwargs(kwargs)
 
     # --- Private helpers ---
-    def _new_section(self, data: dict) -> StrictNestedDictionary:
+    def _new_section(self, data: dict[str, Any]) -> StrictNestedDictionary:
         """Create a StrictNestedDictionary section with the shared default setup."""
         return StrictNestedDictionary(data, default_setup=_DEFAULT_SETUP)
 
@@ -186,7 +186,7 @@ class Repository(StrictNestedDictionary):
                 else:
                     self[path].update(value)
 
-    def _apply_kwargs(self, kwargs: dict) -> None:
+    def _apply_kwargs(self, kwargs: dict[str, Any]) -> None:
         for key, value in kwargs.items():
             if key in self.keys():
                 if isinstance(value, dict):
@@ -289,7 +289,7 @@ class Repository(StrictNestedDictionary):
         return self[["paths", "modules"]]
 
     @modules.setter
-    def modules(self, value: list):
+    def modules(self, value: list[str]):
         """
         The list of domains in the repository.
         :param value:
@@ -349,7 +349,7 @@ class Repository(StrictNestedDictionary):
         return self["domains"].to_dict()
 
     @domains.setter
-    def domains(self, value: dict) -> None:
+    def domains(self, value: dict[str, Any]) -> None:
         # Accepts an iterable of (module, [domains...]) and merges into self["domains"]
         for module, domains in value.items():
             if module in self[["paths", "modules"]]:
@@ -528,7 +528,7 @@ class Repository(StrictNestedDictionary):
         return self["authors"]
 
     @authors.setter
-    def authors(self, value: dict) -> None:
+    def authors(self, value: dict[str, Any]) -> None:
         if not isinstance(value, dict):
             raise TypeError(f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
@@ -536,7 +536,7 @@ class Repository(StrictNestedDictionary):
         for author_id, author in value.items():
             self.add_author(author_id, author)
 
-    def add_author(self, author_id: str, author: dict) -> None:
+    def add_author(self, author_id: str, author: dict[str, Any]) -> None:
         """Add a new author entry.
 
         This method mirrors the structure expected by Config.add_author outputs,
@@ -549,7 +549,7 @@ class Repository(StrictNestedDictionary):
         """Remove an author by its identifier. Delegates to Authors.remove()."""
         Authors.remove(self, author_id)
 
-    def update_author(self, author_id: str, updates: dict) -> None:
+    def update_author(self, author_id: str, updates: dict[str, Any]) -> None:
         """Update fields of an existing author with type checking.
 
         Only existing keys can be updated and their types must match the
@@ -569,7 +569,7 @@ class Repository(StrictNestedDictionary):
         return self["translators"]
 
     @translators.setter
-    def translators(self, value: dict) -> None:
+    def translators(self, value: dict[str, Any]) -> None:
         if not isinstance(value, dict):
             raise TypeError(f"translators must be a dictionary, not {type(value)}")
         # Replace the whole translators section
@@ -577,7 +577,7 @@ class Repository(StrictNestedDictionary):
         for name, translator in value.items():
             self.add_translator(name, translator)
 
-    def add_translator(self, name: str, translator: dict) -> None:
+    def add_translator(self, name: str, translator: dict[str, Any]) -> None:
         """Add a new translator entry.
 
         Mirrors add_author: caller provides the unique name and a dictionary
@@ -586,7 +586,7 @@ class Repository(StrictNestedDictionary):
         """
         Translators.add(self, name, translator)
 
-    def update_translator(self, name: str, updates: dict) -> None:
+    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
         """
         Update an existing translator's details with structural validation.
 
