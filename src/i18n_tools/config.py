@@ -613,7 +613,7 @@ class Config(metaclass=Singleton):
         url: str,
         status: str,
         api_key: str,
-        supported_languages: list,
+        supported_languages: list[str],
         translation_type: str | None = None,
         cost_per_translation: float | None = None,
         request_limit: int | None = None,

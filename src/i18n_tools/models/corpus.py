@@ -2408,7 +2408,7 @@ class Corpus:
             raise ValueError(
                 f"Language '{normalized}' is not loaded in Corpus '{self._domain}'"
             )
-        all_ids: set = set()
+        all_ids: set[Any] = set()
         for book in self._books.values():
             all_ids.update(book.messages.keys())
         present = set(self._books[normalized].messages.keys())
