@@ -16,12 +16,12 @@ from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
 
 
-def _check_index_dict(dictionary: dict[int, str]) -> bool:
+def _check_index_dict(dictionary: dict[int, Any]) -> bool:
     """
     Validate that dictionary keys are within the range [1, len(dictionary)].
 
     Args:
-        dictionary (dict[int, str]): The dictionary to validate.
+        dictionary (dict[int, Any]): The dictionary to validate.
 
     Returns:
         bool: True if all keys are within the valid range, False otherwise.
@@ -140,13 +140,13 @@ class Message:
         return _check_index_dict(data_to_check)
 
     def __check_alternative_plural_forms__(
-        self, value: dict[int, dict[int, str]] | None = None
+        self, value: dict[int, Any] | StrictNestedDictionary | None = None
     ) -> bool:
         """
         Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
 
         Args:
-            value (dict[int, dict[int, str]] | None, optional): The value to check. If None, checks self.alternative_plural_forms. Defaults to None.
+            value (dict[int, Any] | StrictNestedDictionary | None, optional): The value to check. If None, checks self.alternative_plural_forms. Defaults to None.
 
         Returns:
             bool: True if the structure is valid, False otherwise.
@@ -1743,7 +1743,9 @@ class Book:
       "total_messages" and "total_words".
     """
 
-    def __init__(self, *args: Message, **kwargs: dict[str, Any]) -> None:
+    def __init__(
+        self, *args: Message | tuple[Message] | list[Message], **kwargs: Any
+    ) -> None:
         """
         Initialize a Book.
 
@@ -1844,11 +1846,12 @@ class Book:
         This private function is used to set or update filename, if one of these component changes.
         :return: nothing
         """
-        self.filename = (
-            self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
-        )
+        if self.domain is not None and self.format is not None:
+            self.filename = (
+                self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
+            )
 
-    def get_language(self) -> str:
+    def get_language(self) -> str | None:
         """Return the normalized language tag of this book."""
         return self.language
 
@@ -1901,11 +1904,14 @@ class Book:
         """Set the format if not already set."""
         if getattr(self, "format", None) is not None:
             raise ValueError("Format is already set for this book")
-
+        if self.domain is None:
+            raise ValueError("Domain must be set before setting the format")
         self.format, self.filename = build_book_filename(self.domain, fmt)
 
     def update_format(self, fmt: TranslationFileFormat) -> None:
         """Update the format hint."""
+        if self.domain is None:
+            raise ValueError("Domain must be set before updating the format")
         self.format, self.filename = build_book_filename(self.domain, fmt)
 
     def remove_format(self) -> None:
@@ -2095,7 +2101,8 @@ class Book:
         for msgid, entry in data.items():
             kwargs = i18n_tools_format_to_message_dict(entry)
             msg = Message(id=msgid, **kwargs)
-            msg.add_language(self.language)
+            if self.language is not None:
+                msg.add_language(self.language)
             self.messages[msgid] = msg
         self.metadata[["count", "messages"]] = len(self.messages)
         self._compute_statistics()
@@ -2195,7 +2202,7 @@ class FallbackBook:
         return self._language
 
     @property
-    def domain(self) -> str:
+    def domain(self) -> str | None:
         """Domain of the first Book in the chain."""
         return self._chain[0].domain
 
@@ -2257,7 +2264,7 @@ class Corpus:
         if not isinstance(domain, str):
             raise TypeError(f"Corpus domain must be a string, got {type(domain)}")
         self._domain: str = domain
-        self._books: Dict[str, "Book"] = {}  # language -> Book
+        self._books: dict[str, "Book"] = {}  # language -> Book
 
     # --- Book management ---
 
@@ -2285,6 +2292,8 @@ class Corpus:
             raise ValueError(
                 f"A Book for language '{book.language}' is already registered in this Corpus"
             )
+        if book.language is None:
+            raise ValueError("Book has no language set — cannot register in Corpus")
         self._books[book.language] = book
 
     def get_book(self, lang: str) -> FallbackBook:
