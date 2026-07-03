@@ -136,7 +136,7 @@ class Authors:
         for key, value in updates.items():
             if key not in current.keys():
                 raise KeyError(f"Key '{key}' is not a valid field for author")
-            if type(value) != type(current[key]):
+            if type(value) is not type(current[key]):
                 raise TypeError(
                     f"Type mismatch for '{key}': expected {type(current[key])}, got {type(value)}"
                 )

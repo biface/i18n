@@ -263,7 +263,7 @@ class Translators:
                         )
                     validate_and_apply(target[key], value, full_path)
                 else:
-                    if type(value) != type(target[key]):
+                    if type(value) is not type(target[key]):
                         raise TypeError(
                             f"Type mismatch for '{full_path}': expected {type(target[key])}, got {type(value)}"
                         )

@@ -466,7 +466,7 @@ class Config(metaclass=Singleton):
         """
         current_repository = self.__getattribute__(self._current_config)
         if d_key in current_repository["details"].keys():
-            if type(d_value) == type(current_repository["details"][d_key]):
+            if type(d_value) is type(current_repository["details"][d_key]):
                 current_repository["details"][d_key] = d_value
             else:
                 raise TypeError(
@@ -544,7 +544,7 @@ class Config(metaclass=Singleton):
         # Check if the input is a valid UUID
 
         try:
-            uuid_obj = UUID(index)
+            _ = UUID(index)  # Validates format; raises ValueError if not a valid UUID
             if index in current_config["authors"]:
                 return current_config[["authors", index]]
             else:
@@ -581,7 +581,7 @@ class Config(metaclass=Singleton):
 
         # Check if the input is a valid UUID
         try:
-            uuid_obj = UUID(index)
+            _ = UUID(index)
             # Remove by UUID if it exists
             if index in current_repository["authors"]:
                 current_repository.remove_author(index)

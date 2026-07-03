@@ -33,7 +33,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
 
@@ -176,7 +175,7 @@ class Repository(StrictNestedDictionary):
                 raise KeyError(f"{path} is not a valid path or key")
 
             if not isinstance(value, dict):
-                if type(value) != type(self[path]):
+                if type(value) is not type(self[path]):
                     raise TypeError(f"{path} : {value} is not a {type(self[path])}")
                 else:
                     self[path] = value
@@ -631,7 +630,7 @@ class Repository(StrictNestedDictionary):
         if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
-        if type(value) != type(self[path]):
+        if type(value) is not type(self[path]):
             raise TypeError(f"type of {value} must be {type(self[path])}")
 
         if self[path] or not value:
@@ -658,7 +657,7 @@ class Repository(StrictNestedDictionary):
         if not self.paths().__contains__(path):
             raise KeyError(f"Path '{path}' does not exist in the repository.")
 
-        if type(value) != type(self[path]):
+        if type(value) is not type(self[path]):
             raise TypeError(f"type of {value} must be {type(self[path])}")
 
         # For update, ensure there is already a value (non-empty) present
