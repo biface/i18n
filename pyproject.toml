@@ -120,6 +120,7 @@ reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownParameterType = false
 reportAny = false
+reportImportCycles = false
 
 [tool.flake8]
 max-line-length = 88

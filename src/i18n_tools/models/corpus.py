@@ -5,8 +5,11 @@ from typing import Any, Literal
 
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools import __static__
-from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT, TranslationFileFormat
+from i18n_tools.__static__ import (
+    I18N_TOOLS_TRANSLATION_FILE_EXT,
+    TranslationFileFormat,
+)
+from i18n_tools.__static__ import __version__ as i18n_tools_version
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
     message_to_i18n_tools_format,
@@ -35,7 +38,7 @@ def _check_index_dict(dictionary: dict[int, Any]) -> bool:
 def _build_empty_metadata() -> StrictNestedDictionary:
     return StrictNestedDictionary(
         {
-            "version": __static__.__version__,
+            "version": i18n_tools_version,
             "language": "",
             "location": [],
             "flags": ["python-format"],

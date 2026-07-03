@@ -39,7 +39,7 @@ from ndict_tools import StrictNestedDictionary
 
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_languages_hierarchy
-from .author import Author, Authors
+from .author import Author, Authors  # type: ignore[reportImportCycle]
 from .translator import Translators
 
 # Shared default setup to avoid repetition

@@ -18,9 +18,6 @@ from babel.core import Locale
 from babel.messages.catalog import Catalog, Message
 from ndict_tools import StrictNestedDictionary
 
-# import i18n_tools
-from i18n_tools import __static__
-
 from ..__static__ import (
     I18N_TOOLS_CONFIG,
     I18N_TOOLS_LOCALE,
@@ -29,6 +26,7 @@ from ..__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
     TranslationFileFormat,
 )
+from ..__static__ import __version__ as i18n_tools_version
 from ..locale import get_all_languages, normalize_language_tag
 from .utils import (
     _build_dictionary_path,
@@ -211,7 +209,7 @@ def create_template(
     catalog = Catalog(
         project=repository[["details", "name"]],
         version=repository[["details", "version"]],
-        copyright_holder=f"i18n-tools ({__static__.__version__}) builder",
+        copyright_holder=f"i18n-tools ({i18n_tools_version}) builder",
         msgid_bugs_address=repository[["details", "report-bugs-to"]],
         fuzzy=(
             bool(repository[["details", "flags", "fuzzy"]])
@@ -253,7 +251,7 @@ def create_template(
         ("Content-Transfer-Encoding", "8bit"),
         (
             "Generated-By",
-            f"i18n-tools ({__static__.__version__}) using Babel ({babel_version})",
+            f"i18n-tools ({i18n_tools_version}) using Babel ({babel_version})",
         ),
     ]
 

@@ -25,7 +25,7 @@ from ndict_tools import StrictNestedDictionary
 from ndict_tools.exception import StackedValueError
 
 if TYPE_CHECKING:
-    from .repository import Repository
+    from .repository import Repository  # type: ignore[reportImportCycle]
 
 _DEFAULT_SETUP = {"indent": 2}
 
