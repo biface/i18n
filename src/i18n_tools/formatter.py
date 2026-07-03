@@ -10,7 +10,7 @@ Main responsibilities:
 
 """
 
-from .models import Corpus, Message
+from .models import Message
 
 
 def publish(message: Message) -> str:
