@@ -71,7 +71,7 @@ def text_test_file(tmp_function_repository):
     catalog.header_comment = """\
         # This test file is used as experimental
         # Copyright (C) 2023-20025 Personal Dev. Homework
-        # This file is distributed as is under the same license as the projet. 
+        # This file is distributed as is under the same license as the projet.
         """
     with open(file_path, "wb") as f:
         write_po(f, catalog)
@@ -232,7 +232,7 @@ class TestTextOperations:
         with pytest.raises(FileNotFoundError):
             _load_text("/nonexistent/path")
 
-    def test_save_text(slef, text_test_file):
+    def test_save_text(self, text_test_file):
         catalog = _load_text(str(text_test_file))
         catalog.add("Hello", "Bonjour", locations=[("main.py", 10)])
         _save_text(text_test_file, catalog)

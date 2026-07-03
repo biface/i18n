@@ -184,7 +184,7 @@ class Message:
             paths = StrictNestedDictionary(value).paths()
 
         for path in paths:
-            if not path in self.metadata.paths():
+            if path not in self.metadata.paths():
                 __check = False
 
         return __check
