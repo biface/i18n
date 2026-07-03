@@ -15,7 +15,7 @@ from typing import Any
 
 from babel import __version__ as babel_version
 from babel.core import Locale
-from babel.messages.catalog import Catalog, Message
+from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
 from ..__static__ import (
@@ -34,21 +34,16 @@ from .utils import (
     _check_domains,
     _convert_catalog,
     _create_directory,
-    _create_empty_json,
     _exist_path,
     _is_absolute_path,
     _load_by_format,
     _load_config_file,
-    _load_json,
     _load_text,
-    _load_yaml,
     _normalize_module_identifier,
     _remove_file,
     _save_by_format,
     _save_config_file,
-    _save_json,
     _save_text,
-    _save_yaml,
     _validate_translation_format,
 )
 
@@ -516,7 +511,7 @@ def update_catalog(
                     # If we don't have a string, create a tuple with empty strings
                     string_value = tuple([""] * len(key))
 
-            message = catalog.add(
+            catalog.add(
                 id=key,
                 string=string_value,
                 locations=[
