@@ -12,7 +12,7 @@ class TestCheckRepository:
     def test_pot_created_once_per_domain_in_templates(self, tmp_path):
         """The bug: .pot was created inside each language's LC_MESSAGES/
         (duplicated per language) instead of once per domain in
-        templates/ (DD-12, repository.rst)."""
+        templates/."""
         domains = {"module_a": ["usage"]}
         languages = {
             "source": "en",

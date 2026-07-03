@@ -50,8 +50,7 @@ def check_repository(
         locales_path.mkdir(parents=True, exist_ok=True)
 
         for domain in domain_list:
-            # .pot is a per-domain template, shared across all languages
-            # (DD-12, repository.rst) — created once in templates/, not
+            # .pot is a per-domain template, shared across all languages created once in templates/, not
             # duplicated inside each language's LC_MESSAGES/.
             templates_path = locales_path / I18N_TOOLS_TEMPLATE
             templates_path.mkdir(parents=True, exist_ok=True)
