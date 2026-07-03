@@ -45,12 +45,6 @@ __all__ = [
 ]
 
 from i18n_tools.config import Config  # noqa: E402
-
-# Models, Repository, and Config can now be imported in any order: __version__
-# and the other shared constants live in __static__.py, which internal modules
-# (corpus.py, loaders/handler.py, loaders/repository.py) import directly,
-# without going through this file. The former import-order constraint
-# (biface/i18n#47, DD-19) no longer applies.
 from i18n_tools.models import (  # noqa: E402
     Book,
     Corpus,
@@ -59,3 +53,8 @@ from i18n_tools.models import (  # noqa: E402
     Message,
 )
 from i18n_tools.models.repository import Repository  # noqa: E402
+
+# Models, Repository, and Config can now be imported in any order: __version__
+# and the other shared constants live in __static__.py, which internal modules
+# import directly, without going through this file. The former import-order
+# constraint (biface/i18n#47) no longer applies.
