@@ -182,11 +182,10 @@ Key Responsibilities:
 import re
 from typing import Any
 
-from babel.messages.catalog import Catalog, Message
+from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders.utils import _load_json, _load_text, _save_json, _save_text
-from i18n_tools.locale import get_all_languages
+from i18n_tools.loaders.utils import _load_json, _load_text
 
 # -----------------------------------------------------------------------------
 # Unified Format Conversion Functions
@@ -235,18 +234,12 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
 
         message_id = message.id
 
-        # Check if this is an alternative message (using the extended ID convention)
-        is_alternative = False
-        base_id = message_id
-        alt_index = None
-
         if isinstance(message_id, str) and re.search(r"_\d{3}$", message_id):
             # This is an alternative message (e.g., id_001)
             match = re.search(r"(.+)_(\d{3})$", message_id)
             if match:
                 base_id = match.group(1)
                 alt_index = int(match.group(2))
-                is_alternative = True
 
                 # Store the alternative message for later processing
                 if base_id not in alternative_messages:
@@ -565,18 +558,12 @@ def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
             # Skip nested objects for now
             continue
 
-        # Check if this is an alternative message (using the extended ID convention)
-        is_alternative = False
-        base_key = key
-        alt_index = None
-
         if re.search(r"_\d{3}$", key) and not key.endswith("_plural"):
             # This is an alternative message (e.g., id_001)
             match = re.search(r"(.+)_(\d{3})$", key)
             if match:
                 base_key = match.group(1)
                 alt_index = int(match.group(2))
-                is_alternative = True
 
                 # Store the alternative message for later processing
                 if base_key not in alternative_messages:
