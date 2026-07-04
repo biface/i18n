@@ -21,6 +21,7 @@ objects required) or together with model instances (e.g. ``Book``,
 ``Repository``).
 """
 
+import sys
 import tarfile
 from pathlib import Path
 from typing import Any
@@ -448,6 +449,12 @@ def restore_module_from_archive(
         # Open the archive file in read mode with gzip compression
         with tarfile.open(archive_path, "r:gz") as tar:
             # Extract all members that are safe to extract
+            # filter="data" available from Python 3.12 only (PEP 706);
+            # on 3.10/3.11 extractall() has no filter parameter at all,
+            # so it is omitted there rather than raising a TypeError.
+            extractall_kwargs = (
+                {"filter": "data"} if sys.version_info >= (3, 12) else {}
+            )
             tar.extractall(
                 path=repository[["paths", "repository"]],
                 members=_non_traversal_path(
@@ -455,6 +462,7 @@ def restore_module_from_archive(
                     [top_level_module],
                     tar.getmembers(),
                 ),
+                **extractall_kwargs,
             )
     else:
         # Raise an error if the archive file does not exist
