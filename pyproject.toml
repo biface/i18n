@@ -111,8 +111,6 @@ docs = [
 [tool.basedpyright]
 pythonVersion = "3.10"
 pythonPlatform = "Linux"
-venvPath = "."
-venv = ".venv"
 stubPath = "stubs"
 reportMissingTypeStubs = false
 reportUnknownVariableType = false
