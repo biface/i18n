@@ -8,6 +8,58 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.6.0 — CI/CD & repository hygiene (Unreleased)
+
+### 🔧 Maintenance
+- Single-file `python-ci.yaml` pipeline: `quality → test-unit (py310-py314
+  matrix) → test-integration → coverage → build → publish-pypi/
+  publish-testpypi`, chained via `needs:`. `test-integration`, `coverage`,
+  `build`, and `publish-*` are tag-gated. Modelled on `oxiflow`/`clade`.
+  Replaces both the old mono-job workflow and the previously-explored
+  5-file `workflow_run` design (never implemented). (DD-36 amendment, #90)
+- `.codecov.yml` added — per-module components (`models`, `loaders`,
+  `exceptions`, `converter`, `config`, `api`), 80% target on `master` and
+  `staging/**`.
+- `basedpyright`/`flake8` fully activated in `tox.ini`; all findings
+  resolved. (#84)
+- `loaders/repository.py` and its orphaned Sphinx `.rst` **physically
+  deleted**. Documented as retired since DD-37/#85/#70, but the file (an
+  exact duplicate of functions already migrated into `loader.py`) had
+  never actually been removed from disk; nothing imported it and the
+  Sphinx toctree already excluded it. (#85, #70)
+- `models/__init__.py` duplicate resolved — a misnamed `models/init.py`
+  is gone; correct DD-37 exports (`Author`/`Authors`/`Translator`/
+  `Translators`) merged into the real `__init__.py`. (#87)
+- `CONTRIBUTING.md`/`CONTRIBUTING.fr.md` added (#79): development
+  environment (`uv`/`tox-uv`), test suite layout including the `Config`
+  Singleton execution-order constraint, Conventional Commits, and the
+  current (still informal) PR process. Design decisions are described as
+  GitHub issues labeled `type: decision` rather than as references to
+  `DESIGN_DECISIONS.md`/`PROJECT_STATUS.md`, which are maintainer-internal
+  working documents, not contributor-facing artifacts.
+- `README.md`/`README.fr.md` roadmap and feature tables updated to the
+  current state: v0.4.x–v0.5.0 delivered, v0.6.x in progress, and the
+  v0.8.0/v0.9.0 split from v1.0.0 (`core.py`/`fallback.py` and
+  `formatter.py`/`PluralRule`/CLI moved out of the v1.0.0 freeze
+  milestone, 2026-07-04).
+
+### 🐛 Bug Fixes
+- `pyproject.toml` — removed `venvPath`/`venv` from `[tool.basedpyright]`.
+  These pointed at a machine-local virtualenv absent from a clean CI
+  checkout, causing `basedpyright` to exit with a fatal configuration-error
+  code (`3`) that the tolerant `[ $code -le 1 ]` guard in the `ci-quality`
+  tox environment does not cover — CI failed even though the actual
+  diagnostics were clean (0 errors, warnings only). Reproduced locally
+  with the exact CI `basedpyright` version to confirm.
+- `loader.py` — `tar.extractall()` now passes `filter="data"`
+  conditionally (`sys.version_info >= (3, 12)`). Without an explicit
+  `filter`, Python 3.12/3.13 emit a `DeprecationWarning` and Python 3.14
+  will change its default behavior (PEP 706); the `filter` parameter does
+  not exist at all on Python 3.10/3.11, so it is omitted there rather than
+  raising a `TypeError`. (#86)
+
+---
+
 ## v0.5.0 — Architecture & layering hardening (2026-06-28)
 
 ### 🐛 Bug Fixes
