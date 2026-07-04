@@ -22,37 +22,40 @@ The goal is to provide a **modular**, **adaptable**, and **language-agnostic** s
 
 The project follows a progression by deliverable value. Each version is independently usable.
 
-| Milestone  | Description                                                                                   | Status      |
-|------------|-----------------------------------------------------------------------------------------------|-------------|
-| **v0.1.x** | Stabilisation — fix blocking bugs (B-01 to B-05)                                              | ✅ Delivered |
-| **v0.2.x** | Loaders ↔ models bridge — `Book.load()`, `.i18t` extension, partial `Config → Repository`     | ✅ Delivered |
-| **v0.3.x** | Complete model hierarchy — `Corpus`, `FallbackBook`, `Encyclopaedia`, exceptions              | ✅ Delivered |
-| **v0.4.x** | Quality and coverage — error handling, ≥ 80% coverage, Sphinx documentation                   | 🔵 In progress |
-| **v0.5.x** | Architecture & layering hardening — DD-06 boundary, `Config → Repository` completion          | 🔵 Planned  |
-| **v0.6.x** | CI/CD & repository hygiene — `uv`/`tox-uv`, `basedpyright`, `.codecov.yml`                     | 🔵 Planned  |
-| **v0.7.x** | Test coverage — ≥ 80% enforced across the package                                             | 🔵 Planned  |
-| **v1.0.0** | Full native i18n-tools — `core.py`, `fallback.py`, `formatter.py`, CLI, `.i18t` format frozen | 🔵 Planned  |
-| **v1.x**   | gettext interoperability — `.po`/`.mo` import/export via Babel                                | 🔵 Horizon  |
-| **v2.x**   | Third-party formats — i18next and others, central conversion hub                              | 🔵 Horizon  |
-| **v3.x**   | Complete CLI, stable API, Rust/JavaScript ports                                               | 🔵 Horizon  |
+| Milestone   | Description                                                                                  | Status         |
+|-------------|----------------------------------------------------------------------------------------------|----------------|
+| **v0.1.x**  | Foundational cleanup — fix blocking bugs                                                     | ✅ Delivered    |
+| **v0.2.x**  | Loaders ↔ models bridge — `Book.load()`, `.i18t` extension, partial `Config → Repository`    | ✅ Delivered    |
+| **v0.3.x**  | Complete model hierarchy — `Corpus`, `FallbackBook`, `Encyclopaedia`, exceptions             | ✅ Delivered    |
+| **v0.4.x**  | Quality and coverage — error handling, circular imports, Sphinx/Furo init                    | ✅ Delivered    |
+| **v0.5.0**  | Architecture & layering hardening — DD-06 boundary sealed, `Config → Repository` completed   | ✅ Delivered    |
+| **v0.6.x**  | CI/CD & repository hygiene — `uv`/`tox-uv`, `basedpyright`, `.codecov.yml`                   | 🔶 In progress |
+| **v0.7.x**  | Test coverage — ≥ 80% enforced across the package                                            | 🔵 Planned     |
+| **v0.8.0**  | Orchestration — `core.py` high-level entry point, `fallback.py` language chain resolution    | 🔵 Planned     |
+| **v0.9.0**  | Formatting & CLI — `formatter.py` complete with `PluralRule`, CLI/REPL                       | 🔵 Planned     |
+| **v0.10.0** | Module architecture and main object components review                                        | 🔵 Planned     |
+| **v1.0.0**  | Freeze & verification — `.i18t` format frozen, public API frozen, full Sphinx docs published | 🔵 Planned     |
+| **v1.x**    | gettext interoperability — `.po`/`.mo` import/export via Babel                               | 🔵 Horizon     |
+| **v2.x**    | Third-party formats — i18next and others, central conversion hub                             | 🔵 Horizon     |
+| **v3.x**    | Complete CLI, stable API, Rust/JavaScript ports                                              | 🔵 Horizon     |
 
 ---
 
 ### Features
 
-| Feature                                     | v0.2.x    | v1.0.0 | v1.x | v2.x |
-|---------------------------------------------|-----------|--------|------|------|
-| Native `.i18t` format (JSON/YAML)           | ✅         | ✅      | ✅    | ✅    |
-| Language-neutral identifiers                | ✅         | ✅      | ✅    | ✅    |
-| Variants and multiple plurals               | ✅         | ✅      | ✅    | ✅    |
-| Load a `Book` from `.i18t`                  | ✅         | ✅      | ✅    | ✅    |
-| Save a `Book` to `.i18t`                    | ✅        | ✅      | ✅    | ✅    |
-| Complete hierarchy (Corpus, Encyclopaedia)  | ✅        | ✅      | ✅    | ✅    |
-| Language fallback management                | ✅        | ✅      | ✅    | ✅    |
-| Interpolation and active plural rules       | ❌         | ✅      | ✅    | ✅    |
-| CLI/REPL interface                          | ❌         | ✅      | ✅    | ✅    |
-| `.po`/`.mo` import/export (Babel/gettext)   | ❌         | ❌      | ✅    | ✅    |
-| i18next conversion                          | ❌         | ❌      | ❌    | ✅    |
+| Feature                                     | v0.2.x | v0.9.0 | v1.0.0 | v1.x | v2.x |
+|---------------------------------------------|--------|--------|--------|------|------|
+| Native `.i18t` format (JSON/YAML)           | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Language-neutral identifiers                | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Variants and multiple plurals               | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Load a `Book` from `.i18t`                  | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Save a `Book` to `.i18t`                    | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Complete hierarchy (Corpus, Encyclopaedia)  | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Language fallback management                | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Interpolation and active plural rules       | ❌      | ✅      | ✅      | ✅    | ✅    |
+| CLI/REPL interface                          | ❌      | ✅      | ✅      | ✅    | ✅    |
+| `.po`/`.mo` import/export (Babel/gettext)   | ❌      | ❌      | ❌      | ✅    | ✅    |
+| i18next conversion                          | ❌      | ❌      | ❌      | ❌    | ✅    |
 
 ---
 
