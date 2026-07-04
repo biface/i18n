@@ -1,0 +1,53 @@
+# .codecov.yml — i18n-tools
+#
+# Per-module components, gating on master and staging/** (v0.7.x target: 80%
+# project-wide — see PROJECT_STATUS.md). Uploaded from the `coverage` job in
+# .github/workflows/python-ci.yaml (tag-only), using coverage/coverage.xml.
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        branches:
+          - master
+          - staging/**
+    patch:
+      default:
+        target: 80%
+        branches:
+          - master
+          - staging/**
+
+component_management:
+  individual_components:
+    - component_id: models
+      name: models
+      paths:
+        - src/i18n_tools/models/**
+    - component_id: loaders
+      name: loaders
+      paths:
+        - src/i18n_tools/loaders/**
+    - component_id: exceptions
+      name: exceptions
+      paths:
+        - src/i18n_tools/exceptions.py
+    - component_id: converter
+      name: converter
+      paths:
+        - src/i18n_tools/converter.py
+    - component_id: config
+      name: config
+      paths:
+        - src/i18n_tools/config.py
+    - component_id: api
+      name: api
+      paths:
+        - src/i18n_tools/api.py
+
+comment:
+  layout: "header, diff, flags, components, files"
+  behavior: default
+  require_changes: false
