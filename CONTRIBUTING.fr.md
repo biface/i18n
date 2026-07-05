@@ -6,9 +6,9 @@
 
 Merci de l'intérêt porté à i18n-tools. Ce document décrit la façon dont le
 projet est développé aujourd'hui. Il reflète l'état *actuel* de l'outillage
-et du processus — certains éléments (templates d'issues/PR, `labels.yml`)
-font partie du jalon v0.6.x (CI/hygiène du dépôt) et ne sont pas encore
-totalement en place ; ce document ne prétend pas le contraire.
+et du processus — les templates d'issues/PR font partie du jalon v0.6.x (CI/
+hygiène du dépôt) et ne sont pas encore totalement en place ; ce document
+ne prétend pas le contraire.
 
 ## Politique linguistique
 
@@ -161,12 +161,13 @@ mélanger des préoccupations distinctes dans un même commit.
 
 ## Pull requests
 
-Ce dépôt n'a pas encore de template d'issue/PR formel ni de taxonomie de
-labels (`labels.yml`) — cet outillage fait partie du jalon v0.6.x (CI/
-hygiène du dépôt) et n'est pas encore en place. En attendant :
+Les labels sont appliqués sur ce dépôt (8 catégories — `type:`, `status:`,
+`priority:`, `scope:`, `effort:`, `ecosystem:`, `domain:`, `meta:`), mais
+les templates d'issue/PR formels ne sont pas encore en place — ça fait
+partie du jalon v0.6.x (CI/hygiène du dépôt). En attendant :
 
 - Ouvre une issue d'abord pour tout ce qui dépasse une petite correction
-  évidente.
+  évidente, et applique le label `type:` pertinent.
 - Référence l'issue liée dans la description de ta PR (`Closes #NN` /
   `Fixes #NN`) si elle existe.
 - Vérifie que `uv run tox -e pre-push` passe en local avant d'ouvrir la PR —
