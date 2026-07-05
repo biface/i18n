@@ -132,6 +132,29 @@ def get_current_git_branch():
         return None
 
 
+def is_tag_ref():
+    """
+    Determines whether the current run was triggered by a tag push.
+
+    actions/checkout leaves a detached HEAD on tag builds, so
+    get_current_git_branch() cannot resolve "main"/"master" there even
+    when the run should use real network resources — python-ci.yaml's
+    test-integration and coverage jobs are tag-gated
+    (if: startsWith(github.ref, 'refs/tags/')), so every real run of
+    these jobs is, by construction, a tag build.
+
+    Checks GITHUB_REF (GitHub) for a refs/tags/ prefix, or CI_COMMIT_TAG
+    (GitLab).
+
+    Returns:
+        bool: True if this run was triggered by a tag, False otherwise.
+    """
+    github_ref = os.getenv("GITHUB_REF")
+    if github_ref and github_ref.startswith("refs/tags/"):
+        return True
+    return bool(os.getenv("CI_COMMIT_TAG"))
+
+
 @pytest.fixture(scope="session")
 def is_main_branch():
     """
@@ -148,13 +171,14 @@ def use_real_network_resources(is_main_branch):
     """
     Determines whether to use real network resources or mocked versions.
 
-    On main/master branches, real network resources are used.
-    On other branches, mocked versions are used to avoid network dependencies.
+    On main/master branches, or on tag-triggered CI runs, real network
+    resources are used. On other branches, mocked versions are used to
+    avoid network dependencies.
 
     Returns:
         bool: True if real network resources should be used, False if mocks should be used.
     """
-    return is_main_branch
+    return is_main_branch or is_tag_ref()
 
 
 def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
