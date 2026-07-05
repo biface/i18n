@@ -8,7 +8,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
-## v0.6.0 — CI/CD & repository hygiene (Unreleased)
+## v0.6.0 — CI/CD & repository hygiene (2026-07-05)
 
 ### 🔧 Maintenance
 - Single-file `python-ci.yaml` pipeline: `quality → test-unit (py310-py314
@@ -42,6 +42,33 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   v0.8.0/v0.9.0 split from v1.0.0 (`core.py`/`fallback.py` and
   `formatter.py`/`PluralRule`/CLI moved out of the v1.0.0 freeze
   milestone, 2026-07-04).
+- `mirror.yml` added — mirrors `biface/i18n` to `gitlab.com/open-works/
+  i18n.git` on every branch/tag push and on ref deletion, following the
+  `ndt`/`fsm` pattern (`--prune` with explicit branch/tag ref specs,
+  unlike `oxiflow`'s variant which declares a `delete:` trigger but omits
+  `--prune`).
+- `docs-ghpages.yml` added (#80) — single-version Sphinx/Furo build
+  deployed to GitHub Pages on final release tags only (no `rc`, no
+  `sphinx-multiversion` — both deferred, DD-33).
+- `.readthedocs.yaml` added — parallel ReadTheDocs hosting via native
+  `uv sync --group docs` support; no GitHub secret required (webhook-based
+  once the project is imported on readthedocs.org).
+- Network tests made CI-independent of the public httpbingo.org uptime:
+  `tests/helpers.py:HTTPBIN_BASE_URL` (default `https://httpbingo.org`,
+  unchanged locally) is now read by `test_00_api.py` and the `Translator3`
+  fixture; `test-integration` and `coverage` (both tag-gated, both running
+  `@pytest.mark.network` tests) start a `ghcr.io/mccutchen/go-httpbin`
+  service container and point `HTTPBIN_BASE_URL` at it instead. Required
+  adding `passenv = HTTPBIN_BASE_URL` to `[testenv:integration]`/
+  `[testenv:coverage]` in `tox.ini` — tox 4 does not forward arbitrary env
+  vars to the test subprocess by default.
+- `release-template-semver.yml` (`.github/`) + `release-drafter-semver.yml`
+  workflow added — maintains an internal draft-only preview of merged-PR
+  notes, categorized by the existing `type:` labels (CONVENTIONS.md §7).
+  Deliberately **not** wired into tag creation or `python-ci.yaml`: tags
+  stay fully manual, `action-gh-release` (in `publish-pypi`/
+  `publish-testpypi`) remains the sole mechanism that creates a real
+  release.
 
 ### 🐛 Bug Fixes
 - `pyproject.toml` — removed `venvPath`/`venv` from `[tool.basedpyright]`.
@@ -57,6 +84,54 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   will change its default behavior (PEP 706); the `filter` parameter does
   not exist at all on Python 3.10/3.11, so it is omitted there rather than
   raising a `TypeError`. (#86)
+- `CONTRIBUTING.md`/`.fr.md` incorrectly stated no label taxonomy existed
+  on the repository; corrected — the 8-category taxonomy is applied, only
+  issue/PR templates remain pending.
+- `tests/conftest.py` — network tests silently fell back to mocks on
+  tag-triggered CI runs. `get_current_git_branch()` only recognized
+  `refs/heads/...`; on a tag, `GITHUB_REF` is `refs/tags/...` and
+  `actions/checkout` leaves a detached HEAD, so `is_main_branch` was
+  always `False` there. Added `is_tag_ref()` and OR'd it into
+  `use_real_network_resources`, `patch_validate_api_url`, and
+  `patch_validate_email` (the latter two also used by
+  `tests/09_config/` and `TestRepositoryMethods`, autouse — same bug,
+  different call sites, found only once the tag pipeline actually ran
+  for the first time).
+- `tox.ini` — added `passenv = GITHUB_REF, CI_COMMIT_REF_NAME,
+  CI_COMMIT_TAG` to `[testenv:integration]`/`[testenv:coverage]`. tox 4
+  does not forward arbitrary environment variables to the test
+  subprocess by default; `is_tag_ref()` (above) needs `GITHUB_REF` to
+  actually reach pytest.
+- `python-ci.yaml` — `HTTPBIN_BASE_URL` changed from
+  `http://localhost:8080` to `http://127.0.0.1:8080`. `validators.url()`
+  (used by `api.py`'s `validate_url_format()`) rejects `localhost` as an
+  invalid domain (no TLD, not a valid IP) but accepts the literal IP;
+  the go-httpbin container was reachable on both, this was purely a
+  string-validation issue, not a networking one.
+- `python-ci.yaml` — added `permissions: contents: write` to
+  `publish-pypi` and `publish-testpypi`. `softprops/action-gh-release`
+  needs it to create the release; `docs-ghpages.yml` already declared
+  it, `python-ci.yaml` didn't.
+
+### 📦 Release
+- **PyPI distribution renamed**: `i18n-tools` → `pyi18t-tools`.
+  `i18n-tools` was rejected by TestPyPI ("too similar to an existing
+  project", likely `RF-i18n-tool`, one character away after
+  normalization) and the `i18n-tool(s)` namespace is crowded on the real
+  registry too. `pyi18t-tools` ties to the project's own `.i18t` format
+  (DD-10) rather than a personal name. Required an explicit
+  `[tool.hatch.build.targets.wheel/sdist]` in `pyproject.toml`, since
+  hatchling's default src-layout auto-detection derives the expected
+  folder from the project name and would otherwise look for
+  `src/pyi18t_tools/` instead of the real `src/i18n_tools/`. The
+  importable module is unchanged: `pip install pyi18t-tools` +
+  `import i18n_tools`.
+- Validated end-to-end via `v0.6.0rc1`–`rc3` on `staging/v0.6.0`: rc1 and
+  rc2 surfaced the four issues above in sequence (each only visible once
+  the previous one was fixed); rc3 published successfully to
+  `test.pypi.org` under the new distribution name.
+- Version bumped 0.5.0 → 0.6.0 (`pyproject.toml`, `__static__.py`,
+  `docs/source/conf.py`).
 
 ---
 
