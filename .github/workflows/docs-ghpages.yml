@@ -34,7 +34,7 @@ jobs:
       - name: Install documentation dependencies
         # --no-dev: keep the project + docs group, skip the (irrelevant here)
         # default dev group (tox, basedpyright, flake8, black, isort, bandit).
-        run: uv sync --locked --no-dev --group docs
+        run: uv sync --no-dev --group docs
 
       - name: Build docs
         # -W: warnings treated as errors (DD-33: "Built in CI, warnings as errors").
