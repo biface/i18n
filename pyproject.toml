@@ -50,7 +50,7 @@ include = [
 # The importable package remains `i18n_tools` (src/i18n_tools/) —
 # `pip install pyi18t-tools` + `import i18n_tools`, unchanged.
 name = "pyi18t-tools"
-version = "0.6.0rc3"
+version = "0.6.0"
 authors = [
     { name = "biface" },
 ]
