@@ -1,0 +1,29 @@
+name: Release Drafter
+
+# Keeps a running draft of "what merged since the last real release" for the
+# maintainer's own reference. Intentionally NOT wired into python-ci.yaml or
+# the publish-pypi/publish-testpypi jobs — tags are pushed manually, and
+# that manual push remains the only trigger for a real release. This draft
+# is never published from the GitHub UI.
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  update-draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # release-drafter needs this to create/update the draft
+      pull-requests: read
+    steps:
+      - uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-template-semver.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
