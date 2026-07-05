@@ -6,9 +6,9 @@
 
 Thank you for your interest in i18n-tools. This document describes how the
 project is developed today. It reflects the *current* state of the tooling
-and process — some items (issue/PR templates, `labels.yml`) are part of the
-v0.6.x CI/repository hygiene milestone and are not fully in place yet; this
-document does not pretend otherwise.
+and process — issue/PR templates are part of the v0.6.x CI/repository
+hygiene milestone and are not fully in place yet; this document does not
+pretend otherwise.
 
 ## Language policy
 
@@ -154,11 +154,13 @@ change; don't bundle unrelated concerns together.
 
 ## Pull requests
 
-This repository does not yet have a formal issue/PR template or label
-taxonomy (`labels.yml`) — that tooling is part of the v0.6.x CI/repository
-hygiene milestone and not fully in place. In the meantime:
+Labels are applied to this repository (8 categories — `type:`, `status:`,
+`priority:`, `scope:`, `effort:`, `ecosystem:`, `domain:`, `meta:`), but
+formal issue/PR templates are not yet in place — that's part of the v0.6.x
+CI/repository hygiene milestone. In the meantime:
 
-- Open an issue first for anything beyond a small, obvious fix.
+- Open an issue first for anything beyond a small, obvious fix, and apply
+  the relevant `type:` label.
 - Reference the related issue in your PR description (`Closes #NN` /
   `Fixes #NN`) if one exists.
 - Make sure `uv run tox -e pre-push` passes locally before opening the PR —
