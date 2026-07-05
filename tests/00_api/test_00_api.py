@@ -1,6 +1,7 @@
 import pytest
 
 from i18n_tools.api import validate_api_url as _real_validate_api_url
+from tests.helpers import HTTPBIN_BASE_URL
 
 
 @pytest.fixture
@@ -28,7 +29,7 @@ class TestValidateApiUrl:
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
-                "https://httpbingo.org/get",
+                f"{HTTPBIN_BASE_URL}/get",
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
@@ -36,11 +37,11 @@ class TestValidateApiUrl:
                 {"is_alive": True, "status_code": 200, "error": None},
             ),
             (
-                "https://httpbingo.org/status/204",
+                f"{HTTPBIN_BASE_URL}/status/204",
                 {"is_alive": True, "status_code": 204, "error": None},
             ),
             (
-                "https://httpbingo.org/status/401",
+                f"{HTTPBIN_BASE_URL}/status/401",
                 {"is_alive": True, "status_code": 401, "error": None},
             ),
         ],
@@ -124,7 +125,7 @@ class TestValidateApiUrlTimeouts:
         "url,timeout,expected",
         [
             (
-                "https://httpbingo.org/delay/10",
+                f"{HTTPBIN_BASE_URL}/delay/10",
                 5,
                 {
                     "is_alive": False,
@@ -133,7 +134,7 @@ class TestValidateApiUrlTimeouts:
                 },
             ),
             (
-                "https://httpbingo.org/delay/6",
+                f"{HTTPBIN_BASE_URL}/delay/6",
                 5,
                 {
                     "is_alive": False,
@@ -142,7 +143,7 @@ class TestValidateApiUrlTimeouts:
                 },
             ),
             (
-                "https://httpbingo.org/delay/8",
+                f"{HTTPBIN_BASE_URL}/delay/8",
                 5,
                 {
                     "is_alive": False,
@@ -158,7 +159,9 @@ class TestValidateApiUrlTimeouts:
         """
         Tests validate_api_url with URLs simulating timeouts.
 
-        Decorated @pytest.mark.network — runs on master only (real httpbingo.org calls).
+        Decorated @pytest.mark.network — runs on master only (real calls to
+        HTTPBIN_BASE_URL, httpbingo.org by default or the self-hosted
+        go-httpbin service container in CI).
         On dev branches, patch_validate_api_url intercepts the call via the mock.
         Error message is always English (DD-35).
         """

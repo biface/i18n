@@ -1,6 +1,15 @@
+import os
 import shutil
 
 import yaml
+
+# Base URL for @pytest.mark.network tests hitting a go-httpbin-compatible
+# service. Defaults to the public httpbingo.org instance (used locally and
+# on developer machines). In CI's test-integration job, HTTPBIN_BASE_URL is
+# set to point at a self-hosted `ghcr.io/mccutchen/go-httpbin` service
+# container instead, for reliability independent of the public instance's
+# uptime — same codebase, same endpoint shapes, so no test logic changes.
+HTTPBIN_BASE_URL = os.environ.get("HTTPBIN_BASE_URL", "https://httpbingo.org")
 
 
 def update_tmp_repository(key, root_dir, test_dir_conf):
