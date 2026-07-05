@@ -63,4 +63,4 @@ template: |
 
   $CHANGES
 
-  **Full Changelog**: $CHANGELOG_URL
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
