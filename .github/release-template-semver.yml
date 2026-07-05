@@ -1,0 +1,66 @@
+name-template: 'v$RESOLVED_VERSION (draft preview — not a real release)'
+tag-template: 'v$RESOLVED_VERSION'
+
+# This draft is never published from the GitHub UI and never creates a tag.
+# Tags are pushed manually; python-ci.yaml (DD-36) is tag-triggered and is
+# the sole mechanism that creates real releases, via action-gh-release in
+# the publish-pypi/publish-testpypi jobs. This draft exists purely so the
+# maintainer has an up-to-date preview of what merged PRs would summarize
+# to, before hand-writing the corresponding CHANGELOG.md section.
+
+categories:
+  - title: '⚠️ Breaking Changes'
+    labels:
+      - 'type: breaking'
+  - title: '✨ New Features'
+    labels:
+      - 'type: feature'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'type: bug'
+  - title: '⚡ Performance'
+    labels:
+      - 'type: perf'
+  - title: '🔒 Security'
+    labels:
+      - 'type: security'
+  - title: '📚 Documentation'
+    labels:
+      - 'type: docs'
+  - title: '🔧 Maintenance'
+    labels:
+      - 'type: refactor'
+      - 'type: chore'
+      - 'type: ci'
+      - 'type: test'
+
+exclude-labels:
+  - 'status: duplicate'
+  - 'status: wontfix'
+  - 'status: invalid'
+
+version-resolver:
+  major:
+    labels:
+      - 'type: breaking'
+  minor:
+    labels:
+      - 'type: feature'
+  patch:
+    labels:
+      - 'type: bug'
+      - 'type: perf'
+      - 'type: security'
+      - 'type: docs'
+      - 'type: refactor'
+      - 'type: chore'
+      - 'type: ci'
+      - 'type: test'
+  default: patch
+
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: $CHANGELOG_URL
