@@ -20,11 +20,36 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# Explicit package location — required since [project].name
+# ("pyi18t-tools") no longer matches the src/ folder name
+# ("i18n_tools"). hatchling's default src-layout auto-detection derives
+# the expected folder from the project name; without this override it
+# would look for src/pyi18t_tools/ and find nothing. The importable
+# module stays `i18n_tools` regardless of the PyPI distribution name —
+# no code changes needed anywhere else.
+[tool.hatch.build.targets.wheel]
+packages = ["src/i18n_tools"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/i18n_tools",
+]
+
 # -----------------------------------------------------------------------------
 # Project metadata
 # -----------------------------------------------------------------------------
 [project]
-name = "i18n-tools"
+# Distribution name on PyPI/TestPyPI — "i18n-tools" was rejected by
+# TestPyPI ("too similar to an existing project", likely RF-i18n-tool,
+# one character away after normalization). "pyi18t-tools" ties to the
+# project's own .i18t format (DD-10) rather than a personal name, and
+# adds enough edit distance from the crowded i18n-tool(s)/i18tool
+# namespace to be safe (no exact or near match found on PyPI at the
+# time of writing — final confirmation only comes from the actual
+# upload, PyPI's similarity check is not publicly documented).
+# The importable package remains `i18n_tools` (src/i18n_tools/) —
+# `pip install pyi18t-tools` + `import i18n_tools`, unchanged.
+name = "pyi18t-tools"
 version = "0.6.0rc1"
 authors = [
     { name = "biface" },
@@ -75,7 +100,7 @@ test = [
 
 # -----------------------------------------------------------------------------
 # Development dependency groups (PEP 735) — managed exclusively by uv
-# Not installed when a user does `pip install i18n-tools`
+# Not installed when a user does `pip install pyi18t-tools`
 #
 # Usage:
 #   uv sync --group dev    → installs tox, quality tools, test runners
