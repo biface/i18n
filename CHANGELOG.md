@@ -16,27 +16,26 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   publish-testpypi`, chained via `needs:`. `test-integration`, `coverage`,
   `build`, and `publish-*` are tag-gated. Modelled on `oxiflow`/`clade`.
   Replaces both the old mono-job workflow and the previously-explored
-  5-file `workflow_run` design (never implemented). (DD-36 amendment, #90)
+  5-file `workflow_run` design (never implemented). (#90)
 - `.codecov.yml` added — per-module components (`models`, `loaders`,
   `exceptions`, `converter`, `config`, `api`), 80% target on `master` and
   `staging/**`.
 - `basedpyright`/`flake8` fully activated in `tox.ini`; all findings
   resolved. (#84)
 - `loaders/repository.py` and its orphaned Sphinx `.rst` **physically
-  deleted**. Documented as retired since DD-37/#85/#70, but the file (an
+  deleted**. Documented as retired since #85/#70, but the file (an
   exact duplicate of functions already migrated into `loader.py`) had
   never actually been removed from disk; nothing imported it and the
   Sphinx toctree already excluded it. (#85, #70)
 - `models/__init__.py` duplicate resolved — a misnamed `models/init.py`
-  is gone; correct DD-37 exports (`Author`/`Authors`/`Translator`/
+  is gone; correct exports (`Author`/`Authors`/`Translator`/
   `Translators`) merged into the real `__init__.py`. (#87)
 - `CONTRIBUTING.md`/`CONTRIBUTING.fr.md` added (#79): development
   environment (`uv`/`tox-uv`), test suite layout including the `Config`
   Singleton execution-order constraint, Conventional Commits, and the
   current (still informal) PR process. Design decisions are described as
   GitHub issues labeled `type: decision` rather than as references to
-  `DESIGN_DECISIONS.md`/`PROJECT_STATUS.md`, which are maintainer-internal
-  working documents, not contributor-facing artifacts.
+  maintainer-internal working documents.
 - `README.md`/`README.fr.md` roadmap and feature tables updated to the
   current state: v0.4.x–v0.5.0 delivered, v0.6.x in progress, and the
   v0.8.0/v0.9.0 split from v1.0.0 (`core.py`/`fallback.py` and
@@ -49,7 +48,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   `--prune`).
 - `docs-ghpages.yml` added (#80) — single-version Sphinx/Furo build
   deployed to GitHub Pages on final release tags only (no `rc`, no
-  `sphinx-multiversion` — both deferred, DD-33).
+  `sphinx-multiversion` — both deferred).
 - `.readthedocs.yaml` added — parallel ReadTheDocs hosting via native
   `uv sync --group docs` support; no GitHub secret required (webhook-based
   once the project is imported on readthedocs.org).
@@ -119,7 +118,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   project", likely `RF-i18n-tool`, one character away after
   normalization) and the `i18n-tool(s)` namespace is crowded on the real
   registry too. `pyi18t-tools` ties to the project's own `.i18t` format
-  (DD-10) rather than a personal name. Required an explicit
+  rather than a personal name. Required an explicit
   `[tool.hatch.build.targets.wheel/sdist]` in `pyproject.toml`, since
   hatchling's default src-layout auto-detection derives the expected
   folder from the project name and would otherwise look for
@@ -157,11 +156,11 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ### 🔧 Maintenance
 - `loader.py` is now the sole bridge between `/models/` and the rest of
-  `/loaders/` (DD-06, DD-37): `handler.py`/`utils.py` are never imported
+  `/loaders/`: `handler.py`/`utils.py` are never imported
   directly from `/models/`. Three new pass-throughs added
   (`file_exists`, `is_absolute_path`, `normalize_module_identifier`),
   mirroring the existing `build_book_filename` pattern. (#70)
-- `loaders/repository.py` retired — pre-DD-06 legacy with no production
+- `loaders/repository.py` retired — legacy code with no production
   callers. Its 8 functions (`create_module_archive`,
   `restore_module_from_archive`, `build_repository`, `verify_repository`,
   `aggregate_dictionaries`, `add_translation_set`, `update_translation_set`,
@@ -195,11 +194,6 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 - Baseline: 1069 passed / 4 failed (KI-01) / 41 skipped → **1114 passed /
   0 failed / 0 skipped**.
 
-### 📐 Design Decisions Recorded
-- DD-37 — Sealing `handler.py`/`utils.py` below `loader.py`; retiring
-  `loaders/repository.py`; removing I/O from `Repository`; introducing
-  `Author`/`Authors` and `Translator`/`Translators`. (#69, #70, #17, #25)
-
 ---
 
 ## v0.4.0 — Quality, coverage & documentation (2026-06-27)
@@ -227,15 +221,15 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   module error naturally instead of masking it. (#27)
 - `sync.py::check_repository`: `.pot` files were created once per
   *language* inside `LC_MESSAGES/` instead of once per *domain* in
-  `templates/` (DD-12). (#30)
+  `templates/`. (#30)
 
 ### 🔧 Maintenance
 - Resolved the circular import between `i18n_tools.__init__` and three
   internal modules (`models/corpus.py`, `loaders/handler.py`,
   `loaders/repository.py`); `__version__` now lives in `__static__.py`.
   `Config` is exposed in the public API for the first time. (#64)
-- `models/corpus.py` (`Book`) no longer imports `loaders.utils` directly
-  (DD-06); format resolution now goes through `loader.build_book_filename()`.
+- `models/corpus.py` (`Book`) no longer imports `loaders.utils` directly;
+  format resolution now goes through `loader.build_book_filename()`.
   Also fixes an inconsistency where the constructor accepted invalid
   formats silently while `add_format()`/`update_format()` did not. (#66)
 - `loaders/loader.py`: removed 9 dead functions (6 private + 3 public
@@ -243,7 +237,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 - `models/repository.py`: extracted duplicated type-dispatch logic from
   `remove_value()`/`clean_value()` into `_empty_value_for()`. (#28)
 - `loaders/handler.py`: removed 12 no-value `try/except Exception as e:
-  raise e` wrappers (DD-26); removed the dead stub `dump_catalog()`
+  raise e` wrappers; removed the dead stub `dump_catalog()`
   (duplicate of `update_catalog()`, never called or tested). (#27, #68)
 - `loaders/utils.py::_check_domains`: removed the same no-value
   `except ValueError as e: raise e` pattern. (#26)
@@ -261,7 +255,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   `remove_value`/`clean_value`. (#29)
 
 ### 📚 Documentation
-- Corrected DD-19: `loaders/repository.py` is live, tested code (archive
+- Corrected a prior audit: `loaders/repository.py` is live, tested code (archive
   and aggregation operations with no equivalent elsewhere) — not the dead
   legacy loader the decision assumed without inspection. (#65)
 - Split the bilingual `README.md` into separate `README.md` (EN) and
@@ -272,7 +266,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   (FR), matching the README split.
 - Same correction applied to `CODE_OF_CONDUCT.md` / `CODE_DE_CONDUITE.md`
   (referenced `ndict-tools`).
-- Sphinx/Furo documentation initialised (DD-33): theme switched to Furo,
+- Sphinx/Furo documentation initialised: theme switched to Furo,
   `Makefile`/`make.bat` added (were missing), `format.rst`/
   `repository.rst` confirmed correctly migrated. Fixed a regression where
   several `.rst` files still referenced functions removed earlier in this
@@ -289,11 +283,11 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ### ✨ New Features
 - `Corpus` fixed; `FallbackBook` implemented — transparent multi-language
-  fallback resolution (DD-09, DD-09b). (#18)
+  fallback resolution. (#18)
 - `Encyclopaedia` implemented with lazy corpus loading. (#19)
-- `exceptions.py` — `I18nToolsError` hierarchy (DD-24). (#20)
-- Complete public API exposed in `src/i18n_tools/__init__.py` (DD-21). (#22)
-- `Book.save()` — model-to-disk persistence (DD-06, DD-15). (#57)
+- `exceptions.py` — `I18nToolsError` hierarchy. (#20)
+- Complete public API exposed in `src/i18n_tools/__init__.py`. (#22)
+- `Book.save()` — model-to-disk persistence. (#57)
 
 ### 🐛 Bug Fixes
 - Test suite failed on `master` under an English locale (`LANG=en`);
@@ -303,17 +297,14 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 - `models/__init__.py`: added missing `Book` and `Encyclopaedia` exports. (#21)
 - Test infrastructure audited and reorganised (numbered directories,
   nested `conftest.py`, network/timeout markers). (#32)
+- Public API surface finalised: `__init__.py` exports, `loaders/` kept
+  out of the public API, `models/__init__.py` exports settled. (#48)
+- Exception hierarchy and error handling policy finalised. (#49)
+- `api.py` language policy and test assertion strategy recorded. (#60)
 
 ### 🧪 Tests
 - `Corpus`, `Encyclopaedia`, `FallbackBook`. (#23)
 - `Repository` — construction, defaults, CRUD methods. (#24)
-
-### 📐 Design Decisions Recorded
-- DD-09/DD-09b — `FallbackBook` proxy for multi-language resolution. (#43)
-- DD-21/DD-22/DD-23 — Public API: `__init__.py`, loaders boundary, models
-  exports. (#48)
-- DD-24/DD-25/DD-26 — Exception hierarchy and error handling policy. (#49)
-- DD-35 — `api.py` language policy and test assertion strategy. (#60)
 
 ---
 
@@ -322,7 +313,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 ### ✨ New Features
 - `load_book()` implemented in `loader.py` — the central loader ↔ model
   bridge. (#16)
-- `_detect_format()` added to `loaders/utils.py` (DD-34). (#56)
+- `_detect_format()` added to `loaders/utils.py`. (#56)
 
 ### 🐛 Bug Fixes
 - `loaders/repository.py` ignored the `.i18t` extension (2 FIXMEs). (#13)
@@ -332,17 +323,13 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 ### 🔧 Maintenance
 - `aggregate_dictionaries()`: fixed wrong output filename and metadata
   key. (#15)
-
-### 📐 Design Decisions Recorded
-- DD-10/DD-11/DD-12 — `.i18t` format: extension, internal structure,
+- Native `.i18t` format finalised: extension, internal structure,
   repository layout. (#44)
-- DD-13/DD-14/DD-14b — External dependencies: Babel, langcodes,
-  ndict-tools. (#45)
-- DD-15/DD-16 — Hub-and-spoke conversion architecture, native
-  serialisation. (#46)
-- DD-18/DD-19/DD-20 — `Config` Singleton, `Repository` migration, CRUD
-  API. (#47)
-- DD-34 — `.i18t` naming convention and format detection. (#55)
+- External dependencies scoped: Babel, langcodes, ndict-tools. (#45)
+- Hub-and-spoke conversion architecture and native serialisation
+  finalised. (#46)
+- `Config` Singleton, `Repository` migration, and CRUD API finalised. (#47)
+- `.i18t` naming convention and format detection finalised. (#55)
 
 ---
 
@@ -361,12 +348,10 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 ### 🔧 Maintenance
 - Reserved field `plural_rule = None` added to `Message` and `Book`. (#10)
 - Removed 10 leftover debug `print()` calls from production code. (#11)
-
-### 📐 Design Decisions Recorded
-- DD-02/DD-03 — `messages[row][col]` matrix structure, free plurals. (#40)
-- DD-05/DD-06 — Layered architecture, strict model/layer separation. (#41)
-- DD-07/DD-08 — Four-level model hierarchy, `Book` as atomic persistence
-  unit. (#42)
+- `messages[row][col]` matrix structure and free plurals finalised. (#40)
+- Layered architecture and strict model/layer separation finalised. (#41)
+- Four-level model hierarchy, `Book` as atomic persistence unit,
+  finalised. (#42)
 
 ---
 
