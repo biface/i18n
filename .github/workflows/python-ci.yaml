@@ -95,6 +95,19 @@ jobs:
     needs: test-unit
     if: startsWith(github.ref, 'refs/tags/')
 
+    # Self-hosted go-httpbin, same codebase as the public httpbingo.org
+    # instance used by default outside CI (tests/helpers.py:HTTPBIN_BASE_URL).
+    # Removes a dependency on an external service's uptime from the one job
+    # that gates build/publish on a tag.
+    services:
+      httpbin:
+        image: ghcr.io/mccutchen/go-httpbin
+        ports:
+          - 8080:8080
+
+    env:
+      HTTPBIN_BASE_URL: http://localhost:8080
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -121,6 +134,17 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-integration
     if: startsWith(github.ref, 'refs/tags/')
+
+    # Coverage runs the full suite (only "not timeout" excluded, network
+    # tests included) — same service container as test-integration.
+    services:
+      httpbin:
+        image: ghcr.io/mccutchen/go-httpbin
+        ports:
+          - 8080:8080
+
+    env:
+      HTTPBIN_BASE_URL: http://localhost:8080
 
     steps:
       - name: Checkout repository
