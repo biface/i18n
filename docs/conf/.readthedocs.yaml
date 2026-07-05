@@ -1,34 +1,27 @@
-# .readthedocs.yaml
 # Read the Docs configuration file
-# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+# See https://docs.readthedocs.com/platform/stable/config-file/v2.html
 
-# Required
 version: 2
 
-
-# Set the OS, Python version and other tools you might need
 build:
-  os: ubuntu-22.04
+  os: ubuntu-24.04
   tools:
-    python: "3.8"
-    # You can also specify other tool versions:
-    # nodejs: "19"
-    # rust: "1.64"
-    # golang: "1.19"
+    python: "3.12"
 
-# Build documentation in the "docs/" directory with Sphinx
+# Build documentation from docs/source/ with Sphinx (Furo theme).
+# fail_on_warning matches the same policy as .github/workflows/docs-ghpages.yml
+# (-W flag) — DD-33: "Built in CI, warnings as errors".
 sphinx:
   configuration: docs/source/conf.py
+  fail_on_warning: true
 
-# Optionally build your docs in additional formats such as PDF and ePub
-# formats:
-#    - pdf
-#    - epub
-
-# Optional but recommended, declare the Python requirements required
-# to build your documentation
-# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
-
+# Native uv support (RTD >= 2025): installs the project + the "docs"
+# dependency group declared in pyproject.toml's [dependency-groups],
+# consistent with how docs-ghpages.yml installs the same group via
+# `uv sync --group docs`.
 python:
-   install:
-   - requirements: docs/conf/requirements.txt
+  install:
+    - method: uv
+      command: sync
+      groups:
+        - docs
