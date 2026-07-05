@@ -385,23 +385,26 @@ def mock_validate_email(email):
 
 
 @pytest.fixture(scope="function")
-def patch_validate_api_url(is_main_branch):
+def patch_validate_api_url(use_real_network_resources):
     """
-    Conditionally patches the validate_api_url function based on the Git branch.
+    Conditionally patches the validate_api_url function based on the Git branch
+    or tag build (see use_real_network_resources / is_tag_ref).
 
-    If the current branch is "main" or "master", the real validate_api_url function is used.
+    If real network resources should be used (main/master branch, or a
+    tag-triggered CI run), the real validate_api_url function is used.
     Otherwise, the mock_validate_api_url function is used.
 
     This fixture is automatically applied to all tests (autouse=True).
 
     Args:
-        is_main_branch: Fixture that determines if the current branch is main or master.
+        use_real_network_resources: Fixture determining whether to use real
+            network resources (main/master branch or tag build) or mocks.
 
     Yields:
         None: This fixture doesn't yield a value, it just applies the patch.
     """
-    if is_main_branch:
-        # On main/master branches, use the real function
+    if use_real_network_resources:
+        # On main/master branches or tag builds, use the real function
         yield
     else:
         # On other branches, use the mock function
@@ -414,23 +417,26 @@ def patch_validate_api_url(is_main_branch):
 
 
 @pytest.fixture(scope="function")
-def patch_validate_email(is_main_branch):
+def patch_validate_email(use_real_network_resources):
     """
-    Conditionally patches the validate_email function based on the Git branch.
+    Conditionally patches the validate_email function based on the Git branch
+    or tag build (see use_real_network_resources / is_tag_ref).
 
-    If the current branch is "main" or "master", the real validate_email function is used.
+    If real network resources should be used (main/master branch, or a
+    tag-triggered CI run), the real validate_email function is used.
     Otherwise, the mock_validate_email function is used.
 
     This fixture is automatically applied to all tests (autouse=True).
 
     Args:
-        is_main_branch: Fixture that determines if the current branch is main or master.
+        use_real_network_resources: Fixture determining whether to use real
+            network resources (main/master branch or tag build) or mocks.
 
     Yields:
         None: This fixture doesn't yield a value, it just applies the patch.
     """
-    if is_main_branch:
-        # On main/master branches, use the real function
+    if use_real_network_resources:
+        # On main/master branches or tag builds, use the real function
         yield
     else:
         # On other branches, use the mock function
