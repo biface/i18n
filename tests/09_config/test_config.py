@@ -8,6 +8,7 @@ from email_validator import EmailNotValidError
 
 from i18n_tools.config import Config
 from i18n_tools.patterns import Singleton
+from tests.helpers import HTTPBIN_BASE_URL
 
 
 class TestConfigInit:
@@ -1043,7 +1044,7 @@ class TestConfigTranslators:
                 "application",
                 {
                     "name": "Translator3",
-                    "url": "https://httpbingo.org/get",
+                    "url": f"{HTTPBIN_BASE_URL}/get",
                     "status": "private",
                     "api_key": "apikey456",
                     "supported_languages": ["fr", "en", "ga", "it"],
