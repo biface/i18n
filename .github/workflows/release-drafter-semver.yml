@@ -22,7 +22,7 @@ jobs:
       contents: write   # release-drafter needs this to create/update the draft
       pull-requests: read
     steps:
-      - uses: release-drafter/release-drafter@v6
+      - uses: release-drafter/release-drafter@v7
         with:
           config-name: release-template-semver.yml
         env:
