@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "quarterly"
+    target-branch: "master"
+    labels:
+      - "type: ci"
+      - "ecosystem: pipeline"
+      - "priority: low"
+    commit-message:
+      prefix: "ci"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "master"
+    labels:
+      - "type: chore"
+      - "ecosystem: language"
+      - "priority: low"
+    commit-message:
+      prefix: "chore"
