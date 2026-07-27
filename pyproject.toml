@@ -163,3 +163,7 @@ markers = [
     "network: mark test as requiring real network access (deactivated on dev branches)",
     "timeout: mark test as making slow HTTP calls (excluded from CI)",
 ]
+
+[tool.coverage.run]
+branch = true
+source = ["src/i18n_tools"]
