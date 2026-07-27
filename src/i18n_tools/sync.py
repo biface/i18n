@@ -13,7 +13,8 @@ Key Responsibilities:
 from pathlib import Path
 from typing import Any
 
-from .__static__ import I18N_TOOLS_TEMPLATE
+from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
+from .loaders.loader import build_book_filename
 from .loaders.utils import _create_empty_file, _create_empty_json
 from .locale import validate_and_normalize_language_tags
 
@@ -59,11 +60,15 @@ def check_repository(
                 _create_empty_file(str(pot_file))
 
             for lang in validated_languages:
-                lang_path = locales_path / lang / "LC_MESSAGES"
+                lang_path = locales_path / lang / I18N_TOOLS_MESSAGES
                 lang_path.mkdir(parents=True, exist_ok=True)
 
-                # Create .json and .po files
-                json_file = lang_path / f"{domain}.json"
+                # Create the native .i18t translation file (DD-34 naming,
+                # via build_book_filename — the same helper Book itself
+                # uses, so this stays in sync with Book's actual filename
+                # convention) and a companion .po file.
+                _, json_filename = build_book_filename(domain)
+                json_file = lang_path / json_filename
                 po_file = lang_path / f"{domain}.po"
 
                 if not json_file.exists():
