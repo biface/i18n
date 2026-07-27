@@ -23,6 +23,19 @@ name: Python CI
 # not apply to tags, only to branches, so Codecov can never block a
 # release regardless of that flag. Do not conflate the two mechanisms.
 # (no schedule trigger for now — deferred, see PROJECT_STATUS.md).
+#
+# 2026-07-27 — Node.js 24 migration: GitHub forced Node24 as the default
+# Actions runtime on 2026-06-02 and removes Node20 entirely on
+# 2026-09-16. Bumped: actions/checkout v4->v7, actions/setup-python
+# v5->v6, codecov/codecov-action v5->v6, actions/upload-artifact
+# v4->v6, actions/download-artifact v4->v7. astral-sh/setup-uv is
+# pinned by commit SHA (v4->v9.0.0) rather than a floating tag: as of
+# v8.0.0 that action no longer publishes moving major/minor tags at
+# all (its own post-tj-actions security hardening) — @v9 does not
+# resolve, only the full pinned version or its SHA do.
+# softprops/action-gh-release (already @v3) and
+# pypa/gh-action-pypi-publish (container-based, not Node) needed no
+# change.
 # -----------------------------------------------------------------------------
 
 on:
@@ -45,15 +58,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
       - name: Install tox
         run: uv pip install --system tox tox-uv
@@ -82,15 +95,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
       - name: Install tox
         run: uv pip install --system tox tox-uv
@@ -124,15 +137,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
       - name: Install tox
         run: uv pip install --system tox tox-uv
@@ -178,15 +191,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
 
       - name: Install tox
         run: uv pip install --system tox tox-uv
@@ -195,7 +208,7 @@ jobs:
         run: tox -e coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/coverage.xml
@@ -222,10 +235,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -302,7 +315,7 @@ jobs:
           ls -la dist/
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: python-package-distributions
           path: dist/
@@ -326,7 +339,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
@@ -357,7 +370,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: python-package-distributions
           path: dist/
