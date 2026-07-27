@@ -6,8 +6,22 @@ name: Python CI
 # instead of the previous 5-file `workflow_run` design (abandoned — see
 # DESIGN_DECISIONS.md §13).
 #
-# Sequence: quality -> test-unit -> test-integration -> coverage -> build -> publish
-# test-integration / coverage / build / publish are restricted to tags only
+# Sequence: quality -> test-unit -> {test-integration, coverage} -> build -> publish
+# build / publish remain tag-only. test-integration remains tag-only (real
+# network calls). coverage was opened up 2026-07-27 (v0.7.0, Option B): it
+# now runs on master, staging/**, pull_request, AND tags — no longer
+# tag-only — since it uses its own self-hosted go-httpbin container and no
+# longer depends on test-integration in the `needs:` chain. This is what
+# makes .codecov.yml's per-PR/per-push feedback actually useful during the
+# coverage-focused v0.7.0 sprint (see PROJECT_STATUS.md).
+#
+# IMPORTANT: coverage's own hard enforcement step (`tox -e coverage-gate`,
+# see tox.ini) stays tag-only regardless of the above — it is the real
+# release gate (currently inert, --fail-under=0, activates at v1.0.0).
+# Codecov's status checks (.codecov.yml) are `informational: true` and are
+# NOT a release gate — GitHub branch protection required-status-checks do
+# not apply to tags, only to branches, so Codecov can never block a
+# release regardless of that flag. Do not conflate the two mechanisms.
 # (no schedule trigger for now — deferred, see PROJECT_STATUS.md).
 # -----------------------------------------------------------------------------
 
@@ -127,16 +141,32 @@ jobs:
         run: tox -e integration
 
   # ---------------------------------------------------------------------------
-  # Coverage — full suite, tag-only, uploaded to Codecov (.codecov.yml components)
+  # Coverage — full suite, uploaded to Codecov (.codecov.yml components)
+  #
+  # Opened up 2026-07-27 (v0.7.0, Option B): runs on master, staging/**,
+  # pull_request, and tags — no longer tag-only. Depends only on test-unit
+  # (not test-integration) so it can run in contexts where test-integration
+  # doesn't (non-tag pushes/PRs). Runs its own go-httpbin container,
+  # independent of test-integration's.
+  #
+  # The Codecov upload/status below is informational only (.codecov.yml,
+  # informational: true) — it is NOT the release gate. The real gate is the
+  # separate, tag-only "Enforce coverage gate" step at the end of this job.
   # ---------------------------------------------------------------------------
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
-    needs: test-integration
-    if: startsWith(github.ref, 'refs/tags/')
+    needs: test-unit
+    if: >-
+      startsWith(github.ref, 'refs/tags/') ||
+      github.ref == 'refs/heads/master' ||
+      startsWith(github.ref, 'refs/heads/staging/') ||
+      github.event_name == 'pull_request'
 
     # Coverage runs the full suite (only "not timeout" excluded, network
-    # tests included) — same service container as test-integration.
+    # tests included). Own service container — no longer shared/ordered
+    # with test-integration's, since the two jobs may now run in different
+    # contexts (test-integration is tag-only; coverage is not).
     services:
       httpbin:
         image: ghcr.io/mccutchen/go-httpbin
@@ -171,13 +201,23 @@ jobs:
           files: ./coverage/coverage.xml
           fail_ci_if_error: true
 
+      # Real release gate — tag-only, inert until v1.0.0 (--fail-under=0
+      # in tox.ini's [testenv:coverage-gate]). Reads the .coverage file
+      # produced by the "Run coverage" step above; does not re-run pytest.
+      - name: Enforce coverage gate (release only, inactive before v1.0.0)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: tox -e coverage-gate
+
   # ---------------------------------------------------------------------------
   # Build — version consistency check + package build, tag-only
   # ---------------------------------------------------------------------------
   build:
     name: Verify version and build package
     runs-on: ubuntu-latest
-    needs: coverage
+    # Both required explicitly: coverage no longer implies test-integration
+    # succeeded (they run independently since 2026-07-27, Option B) — a tag
+    # push runs both, and build must wait for both to pass.
+    needs: [coverage, test-integration]
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
