@@ -3,19 +3,26 @@
 # Per-module components, gating on master and staging/** (v0.7.x target: 80%
 # project-wide — see PROJECT_STATUS.md). Uploaded from the `coverage` job in
 # .github/workflows/python-ci.yaml (tag-only), using coverage/coverage.xml.
+#
+# Coverage status checks are informational only for this cycle (v0.7.0 /
+# v0.8.0) — not CI-blocking. Becomes a blocking gate starting at v1.0.0
+# (PROJECT_STATUS.md, 2026-07-27 clarification; no new DD issued).
 
 coverage:
   status:
     project:
       default:
         target: 80%
-        threshold: 1%
+        threshold: 2%
+        informational: true
         branches:
           - master
           - staging/**
     patch:
       default:
         target: 80%
+        threshold: 2%
+        informational: true
         branches:
           - master
           - staging/**
@@ -42,10 +49,27 @@ component_management:
       name: config
       paths:
         - src/i18n_tools/config.py
+        - src/i18n_tools/patterns.py
     - component_id: api
       name: api
       paths:
         - src/i18n_tools/api.py
+    - component_id: orchestrator
+      name: orchestrator
+      paths:
+        - src/i18n_tools/core.py
+        - src/i18n_tools/sync.py
+    - component_id: translation
+      name: translation
+      paths:
+        - src/i18n_tools/fallback.py
+        - src/i18n_tools/formatter.py
+        - src/i18n_tools/locale.py
+    - component_id: package
+      name: package
+      paths:
+        - src/i18n_tools/__init__.py
+        - src/i18n_tools/__static__.py
 
 comment:
   layout: "header, diff, flags, components, files"
