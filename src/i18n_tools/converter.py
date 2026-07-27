@@ -3,6 +3,27 @@ This module is responsible for converting data between different internationaliz
 package documentation. It serves as a bridge between various translation systems, allowing seamless conversion and
 interoperability.
 
+Module status
+-------------
+
+Only two functions in this module are part of the active code path:
+``message_to_i18n_tools_format`` and ``i18n_tools_format_to_message_dict``.
+These implement the native ``Message`` object <-> ``.i18t`` dict
+serialisation, and are called directly by ``Book``/``Corpus`` and by the
+loader layer.
+
+Everything else below (the intermediate "unified format" and every
+Catalog/i18next conversion function built on top of it, plus
+``seek_translation``) has no caller anywhere in this package or its tests.
+It predates the hub-and-spoke architecture, under which ``Message``/``Book``
+are themselves the hub and no separate intermediate format is needed. It is
+kept, marked deprecated, and excluded from the public API rather than
+removed, pending a proper rebuild when gettext/i18next interoperability is
+actually implemented. Calling any deprecated function emits a
+``DeprecationWarning``; the underlying logic is unmaintained and known to
+have unresolved edge cases (see the FIXME below) — it is not a supported
+starting point for that future work, just a preserved reference.
+
 Supported Translation Formats
 -----------------------------
 
@@ -179,22 +200,58 @@ Key Responsibilities:
     - Interact with translation repositories to find and manipulate translations.
 """
 
+import functools
 import re
-from typing import Any
+import warnings
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.loaders.utils import _load_json, _load_text
 
+_F = TypeVar("_F", bound=Callable[..., Any])
+
+
+def _deprecated_unmaintained(func: _F) -> _F:
+    """
+    Mark a function as deprecated and unmaintained.
+
+    Emits a ``DeprecationWarning`` on every call. Used for the intermediate
+    "unified format" bridge and every Catalog/i18next conversion function
+    built on top of it — see the module-level status note above for why
+    these are kept rather than removed.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        warnings.warn(
+            f"{func.__name__} is deprecated and unmaintained. It predates "
+            "the current hub-and-spoke architecture (Message/Book as the "
+            "hub, no separate intermediate format) and has no caller "
+            "anywhere in this package. It is kept for reference only, "
+            "pending a proper rebuild when gettext/i18next "
+            "interoperability is actually implemented.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper  # type: ignore[return-value]
+
+
 # -----------------------------------------------------------------------------
 # Unified Format Conversion Functions
 # -----------------------------------------------------------------------------
 #
+# Deprecated — see module-level status note above. No caller in this
+# package or its tests.
 
 # FIXME : Conversion to or from i18next and Catalog does not work well...
 
 
+@_deprecated_unmaintained
 def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
     """
     Convert a Babel Catalog to a unified format dictionary.
@@ -354,6 +411,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
     return unified
 
 
+@_deprecated_unmaintained
 def unified_format_to_catalog(
     unified: dict[str, Any], locale: str | None = None, domain: str | None = None
 ) -> Catalog:
@@ -537,6 +595,7 @@ def unified_format_to_catalog(
     return catalog
 
 
+@_deprecated_unmaintained
 def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
     """
     Convert i18next JSON format to unified format.
@@ -675,6 +734,7 @@ def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
     return unified
 
 
+@_deprecated_unmaintained
 def unified_format_to_i18next(
     unified: dict[str, Any], flatten: bool = True
 ) -> dict[str, Any]:
@@ -764,6 +824,7 @@ def unified_format_to_i18next(
     return i18next
 
 
+@_deprecated_unmaintained
 def i18n_tools_to_unified_format(
     i18n_tools_data: dict[str, Any],
 ) -> dict[str, Any]:
@@ -876,12 +937,12 @@ def i18n_tools_to_unified_format(
 
     # Add global metadata if available
     if "metadata" in i18n_tools_data:
-        print("metadata", i18n_tools_data["metadata"])
         unified["metadata"] = i18n_tools_data["metadata"]
 
     return unified
 
 
+@_deprecated_unmaintained
 def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
     """
     Convert unified format to i18n_tools JSON format.
@@ -1105,6 +1166,7 @@ def i18n_tools_format_to_message_dict(
 # through the unified format explicitly.
 
 
+@_deprecated_unmaintained
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
 ) -> dict[str, Any]:
@@ -1122,6 +1184,7 @@ def convert_catalog_to_i18next(
     return unified_format_to_i18next(unified, flatten)
 
 
+@_deprecated_unmaintained
 def convert_i18next_to_catalog(
     i18next_data: dict[str, Any], locale: str | None = None, domain: str | None = None
 ) -> Catalog:
@@ -1141,6 +1204,7 @@ def convert_i18next_to_catalog(
     return unified_format_to_catalog(unified, locale, domain)
 
 
+@_deprecated_unmaintained
 def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]]:
     """
     Convert a Babel Catalog directly to i18n_tools JSON format.
@@ -1154,6 +1218,7 @@ def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]
     return unified_format_to_i18n_tools(unified)
 
 
+@_deprecated_unmaintained
 def convert_i18n_tools_to_catalog(
     i18n_tools_data: dict[str, list[list[str]]],
     locale: str | None = None,
@@ -1171,14 +1236,12 @@ def convert_i18n_tools_to_catalog(
     :return: Babel Catalog object
     :rtype: Catalog
     """
-    print("i18n_tools_data keys:", list(i18n_tools_data.keys()))
     unified = i18n_tools_to_unified_format(i18n_tools_data)
-    print("unified keys:", list(unified.keys()))
     catalog = unified_format_to_catalog(unified, locale, domain)
-    print("catalog keys:", [msg.id for msg in catalog if msg.id])
     return catalog
 
 
+@_deprecated_unmaintained
 def convert_i18next_to_i18n_tools(
     i18next_data: dict[str, Any],
 ) -> dict[str, list[list[str]]]:
@@ -1194,6 +1257,7 @@ def convert_i18next_to_i18n_tools(
     return unified_format_to_i18n_tools(unified)
 
 
+@_deprecated_unmaintained
 def convert_i18n_tools_to_i18next(
     i18n_tools_data: dict[str, list[list[str]]], flatten: bool = True
 ) -> dict[str, Any]:
@@ -1218,6 +1282,7 @@ def convert_i18n_tools_to_i18next(
 # converting them to another format.
 
 
+@_deprecated_unmaintained
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
 ) -> dict[str, Any]:
@@ -1235,6 +1300,7 @@ def load_and_convert_po_to_i18next(
     return convert_catalog_to_i18next(catalog, flatten)
 
 
+@_deprecated_unmaintained
 def load_and_convert_json_to_catalog(
     json_file_path: str, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
@@ -1261,6 +1327,7 @@ def load_and_convert_json_to_catalog(
 # manipulate translations.
 
 
+@_deprecated_unmaintained
 def seek_translation(
     repository: StrictNestedDictionary,
     module: str,
