@@ -37,7 +37,7 @@ from typing import Any
 from ndict_tools import StrictNestedDictionary
 
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
-from ..locale import normalize_languages_hierarchy
+from ..locale import normalize_language_tag, normalize_languages_hierarchy
 from .author import Author, Authors  # type: ignore[reportImportCycle]
 from .translator import Translators
 
@@ -509,6 +509,38 @@ class Repository(StrictNestedDictionary):
 
     def clean_hierarchy(self) -> None:
         self[["languages", "hierarchy"]] = self._new_section({})
+
+    # --- languages.source / languages.fallback helpers ---
+    # Mirror the hierarchy property above, but for the two singular language
+    # values in "languages": the repository's source language and its
+    # single global fallback (last resort when no hierarchy entry matches).
+    # An empty string is the documented "unset" default (see __init__) and
+    # bypasses IETF validation; any non-empty value is validated and
+    # normalized via locale.normalize_language_tag, same as hierarchy
+    # entries.
+    @property
+    def source(self) -> str:
+        return self[["languages", "source"]]
+
+    @source.setter
+    def source(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"source must be a string, not {type(value)}")
+        self[["languages", "source"]] = (
+            normalize_language_tag(value) if value else value
+        )
+
+    @property
+    def fallback(self) -> str:
+        return self[["languages", "fallback"]]
+
+    @fallback.setter
+    def fallback(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"fallback must be a string, not {type(value)}")
+        self[["languages", "fallback"]] = (
+            normalize_language_tag(value) if value else value
+        )
 
     # --- authors helpers ---
     @property
