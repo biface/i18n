@@ -1,0 +1,79 @@
+name: "📚 Documentation"
+description: >
+  Missing, incorrect, or unclear documentation: docstrings, Sphinx pages,
+  README, guides, examples.
+title: "[DOCS] "
+labels:
+  - "type: docs"
+  - "status: triage"
+
+body:
+  - type: input
+    id: location
+    attributes:
+      label: "Location"
+      description: >
+        File, docstring, Sphinx page, or URL affected.
+      placeholder: "src/i18n_tools/models/corpus.py — Corpus.get_book() docstring"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What's missing, incorrect, or unclear?"
+      placeholder: >
+        `Corpus.get_book()`'s docstring doesn't mention that it returns a
+        `FallbackBook` proxy, not a plain `Book` — a caller checking
+        `isinstance(result, Book)` would be misled.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: "Suggested fix (optional)"
+      description: "Proposed wording, or a pointer to the correct behaviour."
+      placeholder: >
+        Clarify the return type as `FallbackBook` and cross-reference
+        DD-9/DD-9b in DESIGN_DECISIONS.md.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: "Affected scopes"
+      description: "Apply the matching `scope:` labels manually after creation."
+      options:
+        - label: "`api` — public interface"
+        - label: "`docs` — docstrings, Sphinx, guides"
+        - label: "`tests` — pytest, coverage"
+        - label: "`ci` — tox, GitHub Actions, pipeline"
+        - label: "`ui` — error messages, output formatting"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "Apply the matching `priority:` label after creation."
+      options:
+        - "none — someday, out of sprint"
+        - "low — before the next minor version"
+        - "medium — in the target version"
+        - "high — actively misleading, blocks understanding of a public API"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "Estimated effort"
+      description: "Apply the matching `effort:` label after creation."
+      options:
+        - "XS — < 1 h (wording fix)"
+        - "S  — half-day (one page/module)"
+        - "M  — 1 day (cross-referenced rewrite)"
+        - "L  — 2–3 days (structural doc rework)"
+    validations:
+      required: true

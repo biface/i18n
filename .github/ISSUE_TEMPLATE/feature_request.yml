@@ -1,0 +1,137 @@
+name: "✨ Feature"
+description: "Propose a new feature or improvement."
+title: "[FEAT] "
+labels:
+  - "type: feature"
+  - "status: triage"
+
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: "Why?"
+      description: >
+        What problem does this feature solve?
+        Which use case is currently impossible or cumbersome?
+      placeholder: |
+        As a maintainer, I cannot tell which languages are fully
+        translated for a given domain without writing custom code.
+        The current `Corpus` API forces me to loop over `coverage()`
+        results manually for every caller that needs this.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "What?"
+      description: "Precise description of the desired feature."
+      placeholder: |
+        Add a `Corpus.fully_covered_languages()` method that returns the
+        list of languages with 100% message coverage for this domain.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance criteria"
+      description: >
+        Verifiable conditions. Each criterion should map to
+        a unit test or documentation test.
+      placeholder: |
+        - [ ] `pytest` passes — coverage ≥ 80%
+        - [ ] `tox -e ci-quality`: 0 errors
+        - [ ] Existing public API unchanged
+        - [ ] `CHANGELOG.md` updated
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: api-sketch
+    attributes:
+      label: "API sketch (optional)"
+      description: >
+        Proposed signatures, usage examples, or configuration structure.
+        Need not be final.
+      placeholder: |
+        ```python
+        corpus = Corpus(domain="ui")
+        corpus.fully_covered_languages()  # → ["en", "fr", "es"]
+        ```
+      render: markdown
+    validations:
+      required: false
+
+  - type: input
+    id: related-dd
+    attributes:
+      label: "Related Design Decisions"
+      description: "DD issue numbers covering the associated architecture choices."
+      placeholder: "#42 (DD-7/DD-8), #43 (DD-9)"
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: "Affected scopes"
+      description: "Apply the matching `scope:` labels manually after creation."
+      options:
+        - label: "`api` — public interface"
+        - label: "`docs` — docstrings, Sphinx, guides"
+        - label: "`tests` — pytest, coverage"
+        - label: "`ci` — tox, GitHub Actions, pipeline"
+        - label: "`ui` — error messages, output formatting"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "Apply the matching `priority:` label after creation."
+      options:
+        - "none — nice-to-have, outside immediate roadmap"
+        - "low — in the next version"
+        - "medium — in the target version"
+        - "high — blocks the release"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "Estimated effort"
+      description: "Apply the matching `effort:` label after creation."
+      options:
+        - "XS — < 1 h"
+        - "S  — half-day"
+        - "M  — 1 day"
+        - "L  — 2–3 days"
+        - "XL — > 3 days"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: "Breaking change?"
+      description: >
+        If yes, replace `type: feature` with `type: breaking`
+        and update the version constraints accordingly.
+      options:
+        - "No — backward-compatible"
+        - "Yes — requires a minor or major version bump"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: submit-checklist
+    attributes:
+      label: "Pre-submission checklist"
+      options:
+        - label: "The feature does not already exist (checked docs and open issues)"
+          required: true
+        - label: "The backward-compatibility constraint has been assessed"
+          required: true
+        - label: "A DD issue is created or referenced if architecture choices are involved"

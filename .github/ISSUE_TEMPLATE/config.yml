@@ -1,0 +1,10 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: "📖 Documentation"
+    url: https://i18n-tools.readthedocs.io
+    about: "Check the full documentation on ReadTheDocs before opening an issue."
+
+  - name: "📦 PyPI"
+    url: https://pypi.org/project/pyi18t-tools/
+    about: "Published versions and release history."

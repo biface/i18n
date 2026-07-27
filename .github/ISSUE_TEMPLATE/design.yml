@@ -1,0 +1,161 @@
+name: "🧭 Design Decision (DD)"
+description: >
+  Propose or document an architecture / design decision.
+title: "[DD-N] "
+labels:
+  - "type: decision"
+  - "status: triage"
+
+body:
+  - type: input
+    id: dd-id
+    attributes:
+      label: "DD Identifier"
+      description: >
+        Sequential number, NO leading zeros (e.g. DD-40, not DD-040).
+        Check DESIGN_DECISIONS.md / existing decision issues for the next
+        available number — amendments to an existing decision get their
+        own new number rather than reusing the amended one.
+      placeholder: "DD-40"
+    validations:
+      required: true
+
+  - type: input
+    id: target-version
+    attributes:
+      label: "Target version"
+      description: "Project version where this decision takes effect (= milestone)."
+      placeholder: "0.8.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: "Context"
+      description: >
+        Why is this decision necessary?
+        What constraint, gap, or opportunity motivates it?
+      placeholder: |
+        `Corpus.get_book()` currently resolves the fallback chain inline.
+        The chain-building logic needs to be testable in isolation from
+        `Corpus`/`Book`, and reused consistently across call sites…
+    validations:
+      required: true
+
+  - type: textarea
+    id: options
+    attributes:
+      label: "Options considered"
+      description: "List the alternatives with their trade-offs."
+      placeholder: |
+        | Option | Advantage | Risk |
+        |--------|-----------|------|
+        | **A** — … | … | … |
+        | **B** — … | … | … |
+        | **C** — … | … | … |
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: decision
+    attributes:
+      label: "Decision"
+      description: "The chosen option and a brief justification."
+      placeholder: "Option B — because…"
+    validations:
+      required: false
+
+  - type: textarea
+    id: consequences
+    attributes:
+      label: "Consequences"
+      description: >
+        Impact on the public API, dependencies, tests,
+        backward compatibility, or future decisions.
+      placeholder: |
+        - `fallback.py` gains a `resolve(lang, config) -> list[str]` function
+        - `Corpus.get_book()` is updated to call it instead of resolving inline
+        - Related: #43 (DD-9/DD-9b — FallbackBook proxy)
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: "Affected scopes"
+      description: "Apply the matching `scope:` labels manually after creation."
+      options:
+        - label: "`api` — public interface"
+        - label: "`ui` — error messages, output formatting"
+        - label: "`docs` — docstrings, Sphinx, guides"
+        - label: "`tests` — pytest, coverage"
+        - label: "`ci` — tox, GitHub Actions, pipeline"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "Apply the matching `priority:` label after creation."
+      options:
+        - "none — informational, not urgent"
+        - "low — to address in target version"
+        - "medium — blocks a feature"
+        - "high — blocks the release"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "Estimated effort"
+      description: >
+        Time to document, validate, and integrate the decision.
+        Apply the matching `effort:` label after creation.
+      options:
+        - "XS — < 1 h (obvious, immediate consensus)"
+        - "S  — half-day (light research)"
+        - "M  — 1 day (prototype or benchmark)"
+        - "L  — 2–3 days (refactoring involved)"
+        - "XL — > 3 days (major architectural impact)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ecosystem
+    attributes:
+      label: "Ecosystem layer"
+      description: "Apply the matching `ecosystem:` label after creation."
+      options:
+        - "language — Python idioms, typing, protocols"
+        - "framework — library or framework architecture"
+        - "ops — PyPI publishing, packaging"
+        - "pipeline — tox, GitHub Actions, CI tooling"
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: "Related issues & references"
+      description: "Previous DD issues, GitHub issues, PRs, relevant PEPs."
+      placeholder: |
+        - Follows from: #43 (DD-9/DD-9b — FallbackBook proxy)
+        - Blocks: #36 (core.py orchestrator)
+        - PEP: https://peps.python.org/pep-xxxx/
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: done-checklist
+    attributes:
+      label: "Closing checklist"
+      description: >
+        Check all boxes before closing the issue. Per CONVENTIONS.md §2,
+        this issue closes on the decision being recorded in
+        DESIGN_DECISIONS.md — not on implementation being complete.
+      options:
+        - label: "Decision text is recorded in DESIGN_DECISIONS.md"
+        - label: "Affected modules are identified"
+        - label: "Implementation issue(s) are linked (if any)"

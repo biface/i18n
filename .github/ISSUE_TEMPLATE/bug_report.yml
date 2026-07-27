@@ -1,0 +1,169 @@
+name: "🐛 Bug"
+description: >
+  Report an incorrect behaviour, an exception, or an unexpected result.
+title: "[BUG] "
+labels:
+  - "type: bug"
+  - "status: triage"
+  - "priority: high"
+
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: "Summary"
+      description: "One sentence: what happens vs what should happen."
+      placeholder: >
+        When calling `Corpus.get_book(lang)` for a language with no
+        matching Book anywhere in the fallback chain, the function raises
+        `KeyError` instead of `MessageNotFoundError`.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: "Expected behaviour"
+      placeholder: >
+        Raise `MessageNotFoundError` identifying the requested language,
+        domain, and the fallback chain that was searched.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: "Observed behaviour"
+      placeholder: |
+        ```
+        Traceback (most recent call last):
+          File "repro.py", line 9, in <module>
+            corpus.get_book("fr-CH")
+          File "src/i18n_tools/models/corpus.py", line 412, in get_book
+            return self._books[lang]
+        KeyError: 'fr-CH'
+        ```
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: "Reproduction steps"
+      description: >
+        Minimal Python code reproducing the issue (MCVE).
+        A failing pytest test is ideal.
+      placeholder: |
+        ```python
+        import pytest
+        from i18n_tools import Corpus
+        from i18n_tools.exceptions import MessageNotFoundError
+
+        def test_repro_missing_fallback_book():
+            corpus = Corpus(domain="ui", books={})
+            with pytest.raises(MessageNotFoundError):
+                corpus.get_book("fr-CH")  # raises KeyError instead
+        ```
+      render: markdown
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: "Python version"
+      description: "Output of `python --version`."
+      placeholder: "Python 3.12.3"
+    validations:
+      required: true
+
+  - type: input
+    id: package-version
+    attributes:
+      label: "Package version"
+      description: "Output of `pip show pyi18t-tools | grep Version`."
+      placeholder: "0.6.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: "Environment"
+      description: "OS, relevant dependencies and their versions."
+      placeholder: |
+        - OS: Ubuntu 24.04 / macOS 15 / Windows 11
+        - pip: 24.x
+        - Relevant deps: ndict-tools==1.2.0, babel==2.x
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating system"
+      options:
+        - "Linux"
+        - "macOS"
+        - "Windows"
+        - "Other"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: "Affected module(s)"
+      description: "Apply the matching `scope:` labels manually after creation."
+      options:
+        - label: "`api` — public interface"
+        - label: "`docs` — docstrings, examples"
+        - label: "`tests` — pytest, coverage"
+        - label: "`ci` — tox, pipeline"
+        - label: "`ui` — error messages, output formatting"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Severity"
+      description: "`priority: high` is applied by default. Adjust if needed."
+      options:
+        - "high — unhandled exception, data corruption, public regression"
+        - "medium — incorrect behaviour, workaround available"
+        - "low — cosmetic, imprecise error message"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: "Estimated fix effort"
+      description: "Apply the matching `effort:` label after creation."
+      options:
+        - "XS — typo, missing guard clause"
+        - "S  — localised fix (1 module)"
+        - "M  — multi-module fix"
+        - "L  — refactoring required"
+        - "XL — architectural impact"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: breaking-fix
+    attributes:
+      label: "Is the fix a breaking change?"
+      description: "If yes, also add `type: breaking`."
+      options:
+        - "No — transparent fix"
+        - "Yes — API change required"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: "Additional context"
+      description: "Full traceback, logs, `pip freeze` output, etc."
+    validations:
+      required: false
