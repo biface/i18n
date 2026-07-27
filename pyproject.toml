@@ -167,3 +167,27 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["src/i18n_tools"]
+
+[tool.coverage.report]
+# This is now the SOLE coverage config source — a stray .coveragerc used
+# to take silent precedence over this entire file (coverage.py's config
+# discovery order is .coveragerc > setup.cfg > tox.ini > pyproject.toml,
+# first file found with any settings wins, all others ignored). Removed
+# 2026-07-27; its only still-useful pattern (def __repr__) is folded in
+# below. Its `omit` list (.tox/docs/tests/.venv) was already a no-op
+# given source = ["src/i18n_tools"] above, and its
+# `if __name__ = "__main__"` pattern had a typo (single "=") and never
+# matched anything.
+#
+# Excludes the 13 functions in converter.py decorated @_deprecated_unmaintained
+# (the intermediate "unified format" bridge, all Catalog/i18next converters,
+# and seek_translation) from coverage counting. Confirmed empirically that
+# matching a decorator line via exclude_also excludes the whole decorated
+# def block (signature + body), not just the decorator line itself. These
+# functions have no caller anywhere in this package (see the module-level
+# status note at the top of converter.py) — counting them as "missing"
+# would misrepresent the converter component's real coverage.
+exclude_also = [
+    "@_deprecated_unmaintained",
+    "def __repr__",
+]
