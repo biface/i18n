@@ -16,7 +16,7 @@ from typing import Any
 from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
 from .loaders.loader import build_book_filename
 from .loaders.utils import _create_empty_file, _create_empty_json
-from .locale import validate_and_normalize_language_tags
+from .locale import get_all_languages, validate_and_normalize_language_tags
 
 
 def check_repository(
@@ -38,10 +38,14 @@ def check_repository(
     if not tld_path.exists():
         raise FileNotFoundError(f"The tld path does not exist: {tld}")
 
-    # Validate and normalize languages
-    all_languages = [languages["source"]] + [
-        lang for sublist in languages["hierarchy"].values() for lang in sublist
-    ]
+    # Validate and normalize languages — source plus every language in the
+    # hierarchy, both the parent (fallback) keys themselves (e.g. "fr") and
+    # their variants (e.g. "fr-FR", "fr-BE"). Uses the same
+    # get_all_languages() helper as core.load_corpus(), so the two always
+    # agree on which languages must have files on disk.
+    all_languages = [languages["source"]] + list(
+        get_all_languages(languages["hierarchy"])
+    )
     validated_languages = validate_and_normalize_language_tags(all_languages)
 
     for module, domain_list in domains.items():
