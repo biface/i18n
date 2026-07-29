@@ -1,0 +1,1681 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../../../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="4.7. Configuration Module" href="../config.html"><link rel="prev" title="4.6.1. Repository" href="repository.html">
+        <link rel="prefetch" href="../../../_static/logo.svg" as="image">
+
+    <link rel="shortcut icon" href="../../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
+        <title>4.6.2. Corpus module - i18n-tools 0.6.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../../../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../../../_static/logo.svg" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Documentation content:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">1. Introduction to i18n-tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">2. Getting Started with i18n-tools</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../concept/index.html">3. Core Concepts</a><input aria-label="Toggle navigation of 3. Core Concepts" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/repository.html">3.1. Repository Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/format.html">3.2. Proprietary Translation Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/conversions.html">3.3. Conversion of Alternative Messages</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">4. API Reference</a><input aria-label="Toggle navigation of 4. API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../main_variables.html">4.1. Main Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../patterns.html">4.2. Design Patterns Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api.html">4.3. API Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../locale.html">4.4. Locale module</a></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../loaders/index.html">4.5. Loaders Module</a><input aria-label="Toggle navigation of 4.5. Loaders Module" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l3"><a class="reference internal" href="../loaders/utils.html">4.5.1. Utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../loaders/handler.html">4.5.2. Handler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../loaders/loader.html">4.5.3. Loader module</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">4.6. Models Module</a><input aria-label="Toggle navigation of 4.6. Models Module" checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="repository.html">4.6.1. Repository</a></li>
+<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">4.6.2. Corpus module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../config.html">4.7. Configuration Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../converter.html">4.8. Converter Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../formatter.html">4.9. Formatter Module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../indices.html">5. Indices and references</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../../../_sources/api/modules/models/corpus.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="module-i18n_tools.models.corpus">
+<span id="corpus-module"></span><h1><span class="section-number">4.6.2. </span>Corpus module<a class="headerlink" href="#module-i18n_tools.models.corpus" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">i18n_tools.models.corpus.</span></span><span class="sig-name descname"><span class="pre">Message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_plurals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options_plurals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#i18n_tools.models.corpus.Message" title="Link to this definition">¶</a></dt>
+<dd><p>A class for handling internationalization messages using the i18n_tools specifications.</p>
+<p>This class provides functionality to create, store, and format messages for
+internationalization purposes. It uses the native i18n_tools format for storing
+messages and supports formatting using f-strings with variables.</p>
+<p><strong>Terminology:</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>message is the content of a translation and its options</p></li>
+<li><p>translation is the list of singular message and its plurals, each element of the list is a <em>token</em></p></li>
+<li><p>alternative is a different <em>option</em> of the translation in the message</p></li>
+<li><p>component  is a token inside a translation or an alternative</p></li>
+<li><p>option is an alternative translation</p></li>
+</ul>
+<p>message va devenir translation,
+translation va devenir variant,
+component va devenir segment</p>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.id">
+<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.id" title="Link to this definition">¶</a></dt>
+<dd><p>A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.default">
+<span class="sig-name descname"><span class="pre">default</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.default" title="Link to this definition">¶</a></dt>
+<dd><p>The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.options">
+<span class="sig-name descname"><span class="pre">options</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.options" title="Link to this definition">¶</a></dt>
+<dd><p>A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[int, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.default_plurals">
+<span class="sig-name descname"><span class="pre">default_plurals</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.default_plurals" title="Link to this definition">¶</a></dt>
+<dd><p>A set of translations that account for different pluralization rules, accommodating languages with multiple plural forms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[int, str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.options_plurals">
+<span class="sig-name descname"><span class="pre">options_plurals</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.options_plurals" title="Link to this definition">¶</a></dt>
+<dd><p>Plural forms associated with alternative translations, providing comprehensive support for various linguistic pluralization requirements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[int, dict[int, str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.context">
+<span class="sig-name descname"><span class="pre">context</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.context" title="Link to this definition">¶</a></dt>
+<dd><p>Additional information that clarifies the usage context of the message, helping to disambiguate messages with similar or identical text. It is maintained for compatibility with other format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.metadata" title="Link to this definition">¶</a></dt>
+<dd><p>The metadata attribute of the Message class contains detailed information about the translation, aiding in its management and usage. The structure of the metadata is as follows:</p>
+<ul>
+<li><p>version (str): Indicates the version of the metadata structure, allowing for future changes in format while maintaining backward compatibility.</p></li>
+<li><p>language (str): Is the IETF Language Tag code used in the message. It is built with language code library.</p></li>
+<li><p>location (List[Tuple[int, str]]): A list of source file locations where the message is used, including the file path and line number. This helps in tracking the usage of the message within the codebase.</p></li>
+<li><p>flags (list[str]): A set of indicators that provide additional information about the message, such as whether it is fuzzy or uses a specific format like Python-format.</p></li>
+<li><p>comments (str): Notes or comments from translators, offering insights or additional context about the message.</p></li>
+<li><p>count (dict[str, Any]): Counting translation of standard and alternatives.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>singular (int): The number of times the singular form of the message is used, helping in understanding the frequency and importance of the message.</p></li>
+<li><p>plurals (list[int]): A list of counts for the different plural forms of the message, providing information on the usage of each plural form.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>StrictNestedDictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.message">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">message</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.message" title="Link to this definition">¶</a></dt>
+<dd><p>The list of translations in Message instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of translations in Message instance.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[list[str]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.principal">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">principal</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.principal" title="Link to this definition">¶</a></dt>
+<dd><p>The components of the main or default translation (principal) as a list of sentences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a list of sentences</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.variants">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">variants</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.variants" title="Link to this definition">¶</a></dt>
+<dd><p>The list of variants in the repository.
+:return:</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.has_variants">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">has_variants</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.has_variants" title="Link to this definition">¶</a></dt>
+<dd><p>Indique s’il existe des variantes (options) pour cette traduction.
+Retourne True si au moins une variante (options) ou des pluriels de variantes (options_plurals) existent.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.has_plurals">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">has_plurals</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.has_plurals" title="Link to this definition">¶</a></dt>
+<dd><p>Indique s’il existe des formes plurielles pour cette traduction.
+Retourne True si des pluriels par défaut (default_plurals) existent ou si
+au moins une variante possède des pluriels (options_plurals).</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.translations_set">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">translations_set</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">set</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.translations_set" title="Link to this definition">¶</a></dt>
+<dd><p>Construit un ensemble de toutes les chaînes de traduction présentes dans ce message,
+en agrégeant le texte principal, ses pluriels, ainsi que toutes les variantes et leurs pluriels.
+L’objectif est de permettre une comparaison d’équivalence indépendante du rangement en
+« main » (default/default_plurals) ou « variant » (options/options_plurals).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_id">
+<span class="sig-name descname"><span class="pre">get_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_id" title="Link to this definition">¶</a></dt>
+<dd><p>Get the unique identifier for the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The message identifier.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_message">
+<span class="sig-name descname"><span class="pre">add_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_message" title="Link to this definition">¶</a></dt>
+<dd><p>Add translation-related attributes to the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Keyword arguments corresponding to message attributes to set.
+Supported keys: “translation” (str), “options” (dict[int, str]),
+“default_plurals” (dict[int, str]), “options_plurals” (dict[int, dict[int, str]]).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If “translation” is missing or empty, or if a provided attribute value is malformed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_message">
+<span class="sig-name descname"><span class="pre">update_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_message" title="Link to this definition">¶</a></dt>
+<dd><p>Update translation-related attributes to the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>**kwargs</strong> – Keyword arguments corresponding to message attributes to set.
+Supported keys: “translation” (str), “options” (dict[int, str]),
+“default_plurals” (dict[int, str]), “options_plurals” (dict[int, dict[int, str]]).</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If “translation” is missing or empty, or if a provided attribute value is malformed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.remove_message">
+<span class="sig-name descname"><span class="pre">remove_message</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.remove_message" title="Link to this definition">¶</a></dt>
+<dd><p>Removes all translations in Message instance and setup to default emtpy values including metadata.
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_principal">
+<span class="sig-name descname"><span class="pre">get_principal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_principal" title="Link to this definition">¶</a></dt>
+<dd><p>Get the main translation and its plural forms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A formatted list containing the main translation and all plural forms.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_principal_plurals">
+<span class="sig-name descname"><span class="pre">get_principal_plurals</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_principal_plurals" title="Link to this definition">¶</a></dt>
+<dd><p>Get the main translation’s plural forms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of plural forms.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_principal">
+<span class="sig-name descname"><span class="pre">add_principal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_principal" title="Link to this definition">¶</a></dt>
+<dd><p>Add the main translation or its plural forms and update the metadata counters..
+:param args: is a list of translation components
+:type args: list
+:param kwargs: if no args, is a dictionary of translation components
+:type kwargs: dict
+:return: Nothing (void function)
+:rtype: None</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_principal">
+<span class="sig-name descname"><span class="pre">update_principal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_principal" title="Link to this definition">¶</a></dt>
+<dd><p>Update segments of a translation
+:param args: list of translation component
+:param kwargs: dictionary of translation components
+:return: nothing (void function)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.remove_principal">
+<span class="sig-name descname"><span class="pre">remove_principal</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.remove_principal" title="Link to this definition">¶</a></dt>
+<dd><p>Removes the main translation from message and update metadata
+:return: nothing (void function)
+:rtype: None</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_variant">
+<span class="sig-name descname"><span class="pre">get_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_variant" title="Link to this definition">¶</a></dt>
+<dd><p>Get the alternative translation and its plural forms for a specific location index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>option</strong> (<em>int</em>) – The location index of the alternative translation.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list containing the alternative translation and all its plural forms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[str]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>IndexError</strong> – If the specified location index doesn’t exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_variant_plurals">
+<span class="sig-name descname"><span class="pre">get_variant_plurals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_variant_plurals" title="Link to this definition">¶</a></dt>
+<dd><p>Get the alternative translation’s plural forms.
+:param option: Option number of the alternative translation.
+:return: the list of plural forms.
+:rtype: list[str]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_variant">
+<span class="sig-name descname"><span class="pre">add_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_variant" title="Link to this definition">¶</a></dt>
+<dd><p>Add an optional (alternative) translation and its plural forms and update the metadata counters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong></p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_variant">
+<span class="sig-name descname"><span class="pre">update_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_variant" title="Link to this definition">¶</a></dt>
+<dd><p>Update alternative translation
+:param option: index of alternative translation
+:type option: int
+:param args: list of alternative translation components
+:type args: list
+:param kwargs: dictionary of alternative translation components
+:type kwargs: dictionary
+:return: nothing (void function)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.remove_variant">
+<span class="sig-name descname"><span class="pre">remove_variant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.remove_variant" title="Link to this definition">¶</a></dt>
+<dd><p>Removes the option variant of translation and keeps indices coherent.</p>
+<p>This method ensures that after removal, both self.options and
+self.options_plurals have contiguous indices starting from 1 so that
+validation checks (__check_alternatives__ and __check_alternative_plural_forms__)
+remain true. For example, if option 2 is removed and there were 4 options,
+then former option 3 becomes 2 and former option 4 becomes 3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>option</strong> (<em>int</em>) – the index of the variant translation to remove.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>nothing (void method)</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>IndexError</strong> – If option is out of range.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_main_segment">
+<span class="sig-name descname"><span class="pre">get_main_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_main_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Private function to get token in the main translation
+:param index: segment’s location in the main translation
+:type index: int
+:return: the corresponding segment located at the token location
+:rtype: str</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_variant_segment">
+<span class="sig-name descname"><span class="pre">get_variant_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_variant_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Private function to get token in the variant translation
+:param option: segment’s option in the variant translation
+:type option: int
+:param index: segment’s location in the variant option
+:type index: int
+:return: the corresponding segment located at the token location of the variant option</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_segment">
+<span class="sig-name descname"><span class="pre">get_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Get the message string from the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>dict</em>) – contains mandatory keys to access each kind of segment in main and variant translation.
+these keys are such as target (default, variant, plurals) and positions (option and token)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The content of the message.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>KeyError</strong> – If a mandatory key is missing</p></li>
+<li><p><strong>IndexError</strong> – If a mandatory key is out of range</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_main_segment">
+<span class="sig-name descname"><span class="pre">add_main_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_main_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Add a plural form to the message. This function is securing text adding by not allowing emptied texts. If you
+need to add en empty string use the _add_default_segement method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>index</strong> (<em>int</em>) – location of segment in the main translation, if token = 0 change self.default is is None</p></li>
+<li><p><strong>segment</strong> (<em>str</em>) – The text for the plural form.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the index is less than or equal to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_variant_segment">
+<span class="sig-name descname"><span class="pre">add_variant_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_variant_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Add an alternative translation to the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token</strong> (<em>int</em>) – The index of the alternative translation.</p></li>
+<li><p><strong>segment</strong> (<em>str</em>) – The alternative translation text.</p></li>
+<li><p><strong>option</strong> (<em>int</em>) – The option of the alternative translation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the index is less than or equal to 0.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_main_segment">
+<span class="sig-name descname"><span class="pre">update_main_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_main_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing element (singular or one of the plurals) of the main translation of the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segment</strong> (<em>str</em>) – the text to add</p></li>
+<li><p><strong>index</strong> (<em>int</em>) – the location in the main translation list of the element to be updated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>nothing (void method)</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>IndexError</strong> – If token is out of range.</p></li>
+<li><p><strong>ValueError</strong> – If the segment is already stored in message at the requested locations or if it is emtpy.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_variant_segment">
+<span class="sig-name descname"><span class="pre">update_variant_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_variant_segment" title="Link to this definition">¶</a></dt>
+<dd><p>Update an existing element (singular or one of the plurals) of (option) the variant translation of the message.
+:param segment: the text to update
+:param option: the index of the variant translation to update.
+:param index: the index of the element to be updated in the variant translation.
+:return: nothing (void method)
+:raises IndexError: If option or token is out of range.
+:raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_metadata">
+<span class="sig-name descname"><span class="pre">get_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Get metadata from the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<em>list</em><em>[</em><em>str</em><em>] or </em><em>str</em><em>, </em><em>optional</em>) – The specific metadata key to retrieve.
+If None, returns all metadata. Defaults to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>The requested metadata. If key is None, returns the entire</dt><dd><p>metadata dictionary. If key is provided, returns the value for that key.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict[str, Any] | Any</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> – If the specified key doesn’t exist in the metadata.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_location">
+<span class="sig-name descname"><span class="pre">add_location</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">line</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_location" title="Link to this definition">¶</a></dt>
+<dd><p>Add a source location where the message is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>line</strong> (<em>int</em>) – The line number in the file where the translation is used.</p></li>
+<li><p><strong>file</strong> (<em>str</em>) – The file path where the translation is used.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_language">
+<span class="sig-name descname"><span class="pre">add_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_language" title="Link to this definition">¶</a></dt>
+<dd><p>Set the language of the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>lang</strong> (<em>str</em>) – An IETF language tag.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_comment">
+<span class="sig-name descname"><span class="pre">add_comment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'auto'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'user'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_comment" title="Link to this definition">¶</a></dt>
+<dd><p>Add an author’s comment to the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>Literal</em><em>[</em><em>&quot;auto&quot;</em><em>, </em><em>&quot;user&quot;</em><em>]</em><em>, </em><em>optional</em>) – The mode of the comment. Defaults to “auto”.</p></li>
+<li><p><strong>comment</strong> (<em>str</em>) – The author’s comment to add.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.add_metadata">
+<span class="sig-name descname"><span class="pre">add_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.add_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Set metadata for the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>tuple</em><em>[</em><em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Any</em><em>]</em>) – The list of keys and value to pass to the metadata.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The kwargs parameters to pass to the metadata.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If key_or_dict is malformed and value is None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.update_metadata">
+<span class="sig-name descname"><span class="pre">update_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.update_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Update the message’s metadata with new values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>Tuple</em><em>[</em><em>list</em><em>[</em><em>str</em><em>]</em><em>, </em><em>Any</em>) – is a list of (paths, value) pairs is a StrictNestedDictionary</p></li>
+<li><p><strong>kwargs</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.remove_metadata">
+<span class="sig-name descname"><span class="pre">remove_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.remove_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Delete metadata from the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<em>str</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – The specific metadata key to delete.
+If None, clears all metadata.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>KeyError</strong> – If the specified key doesn’t exist in the metadata.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.switch">
+<span class="sig-name descname"><span class="pre">switch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.switch" title="Link to this definition">¶</a></dt>
+<dd><p>Switch the position of two translations (singular and their plural forms).</p>
+<ul class="simple">
+<li><p>Index 0 refers to the default translation.</p></li>
+<li><p>Positive indices (1..len(options)) refer to variant options.</p></li>
+</ul>
+<p>This swaps both the singular text and the associated plural forms between
+the two specified positions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>source</strong> – Index of the source translation (0 for default).</p></li>
+<li><p><strong>destination</strong> – Index of the destination translation (0 for default).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>IndexError</strong> – If indices are equal or out of range.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.toggle">
+<span class="sig-name descname"><span class="pre">toggle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'natural'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.toggle" title="Link to this definition">¶</a></dt>
+<dd><p>Rotate all translations (default and variants) together with their plural forms.</p>
+<ul class="simple">
+<li><p>“natural”: 0 -&gt; 1, 1 -&gt; 2, …, n -&gt; 0</p></li>
+<li><p>“reverse”: 0 -&gt; n, 1 -&gt; 0, 2 -&gt; 1, …</p></li>
+</ul>
+<p>Index 0 refers to the default translation; indices 1..n are the variant options.
+The rotation preserves option ordering integrity (contiguous indices starting at 1)
+and moves corresponding plural forms along with each singular.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>direction</strong> – Either “natural” (default) or “reverse”.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If direction is invalid.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.format">
+<span class="sig-name descname"><span class="pre">format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.format" title="Link to this definition">¶</a></dt>
+<dd><p>Format the message with the provided variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>option</strong> (<em>int</em><em>, </em><em>optional</em>) – The alternative index to use. Defaults to 0.</p></li>
+<li><p><strong>token</strong> (<em>int</em><em>, </em><em>optional</em>) – The plural form index to use. Defaults to 0.</p></li>
+<li><p><strong>**kwargs</strong> – Variables to use for formatting.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The formatted message.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.get_format_variables">
+<span class="sig-name descname"><span class="pre">get_format_variables</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.get_format_variables" title="Link to this definition">¶</a></dt>
+<dd><p>This function returns the list of named variables in singular and plurals text to format. By default if option is
+equal to zero the default translation will be explored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>option</strong> (<em>int</em>) – the  index of option text to explore</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a tuple of list of variables</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list[list[str]]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>IndexError</strong> – If option is out of range.</p></li>
+<li><p><strong>ValueError</strong> – If no variables extracted is out of range.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.to_i18n_tools_format">
+<span class="sig-name descname"><span class="pre">to_i18n_tools_format</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.to_i18n_tools_format" title="Link to this definition">¶</a></dt>
+<dd><p>Convert the Message to i18n_tools format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The message in i18n_tools format.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict[str, Any]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.from_i18n_tools">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_i18n_tools</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i18n_tools_entry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.from_i18n_tools" title="Link to this definition">¶</a></dt>
+<dd><p>Create a Message instance from an i18n_tools format entry.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message_id</strong> (<em>str</em>) – The message ID.</p></li>
+<li><p><strong>i18n_tools_entry</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The i18n_tools format entry.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new Message instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message">Message</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.equals">
+<span class="sig-name descname"><span class="pre">equals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.equals" title="Link to this definition">¶</a></dt>
+<dd><p>Vérifie si deux messages sont égaux en comparant exactement toutes leurs propriétés.
+Retourne True si et seulement si toutes les propriétés sont identiques.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Message.is_similar">
+<span class="sig-name descname"><span class="pre">is_similar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Message.is_similar" title="Link to this definition">¶</a></dt>
+<dd><p>Deux messages sont « semblables » s’ils possèdent le même ensemble de traductions,
+indépendamment de l’endroit où elles sont rangées (principal vs variantes).
+Cette comparaison ignore id, context, metadata et l’organisation entre default/options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__check_plural_forms__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span></dt>
+<dd><p>Check if the plural_forms attribute or the provided value has the correct data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>dict</em><em>[</em><em>int</em><em>, </em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – The value to check. If None, checks self.plural_forms. Defaults to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the structure is valid, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__check_alternatives__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span></dt>
+<dd><p>Check if the alternatives attribute or the provided value has the correct data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>dict</em><em>[</em><em>int</em><em>, </em><em>str</em><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – The value to check. If None, checks self.alternatives. Defaults to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the structure is valid, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__check_alternative_plural_forms__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">StrictNestedDictionary</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span></dt>
+<dd><p>Check if the alternative_plural_forms attribute or the provided value has the correct data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>dict</em><em>[</em><em>int</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>StrictNestedDictionary</em><em> | </em><em>None</em><em>, </em><em>optional</em>) – The value to check. If None, checks self.alternative_plural_forms. Defaults to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the structure is valid, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__check_metadata__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span></dt>
+<dd><p>Check if the metadata attribute or the provided value has the correct data structure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em><em>, </em><em>optional</em>) – The value to check. If None, checks self.metadata. Defaults to None.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the structure is valid, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__count_singular__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span></dt>
+<dd><p>Get the count of singulars in translation and alternatives.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The count of presently stored singulars.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__count_plurals__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span></dt>
+<dd><p>Get the list of plurals for each singular or alternative singular.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The list of count of plurals for each singular.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[int]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_assert_valid_option</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Ensure the given option index refers to an existing variant.</p>
+<p>Raises IndexError with a consistent message if out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_assert_valid_token_in_option</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Ensure the given token index refers to an existing plural of an option.</p>
+<p>Expects the option to exist. Raises IndexError if token is out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_assert_valid_default_plural_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Ensure the given token index refers to an existing default plural.
+Raises IndexError if token is out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_refresh_counts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">singular</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plurals</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Refresh metadata counts.
+If both flags are False, refresh both counts; otherwise refresh selected ones.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_remove_default_segment</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dd><p>Protected function to empties self.default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>nothing (void function)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_remove_default_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected function to empties self.default_plurals.
+:param index: the location index (token) of the plural to be removed
+:type index: int
+:return: nothing (void function)
+:rtype: None
+:raises IndexError: if the token is out of range</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_add_default_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to add a default text to the message. This function is simply present for homogeneity since
+self.default = segment will work.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>segment</strong> – the text to add</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>nothing (void function)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_add_default_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to add an item in the default plural form to the message.
+:param segment:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_add_options_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected function to add an alternative translation corresponding of the next option index of the message .</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>segment</strong> – The alternative translation text.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_add_options_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Add a plural form to an alternative translation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segment</strong> (<em>str</em>) – The alternative translation text.</p></li>
+<li><p><strong>option</strong> (<em>int</em>) – The index of the alternative translation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If alt_index or plural_index is less than or equal to 0.</p></li>
+<li><p><strong>KeyError</strong> – If the alternative translation at alt_index doesn’t exist.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_update_default_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to update the default singular translation of the message. This function is simply present
+for homogeneity since self.default = segment will work.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>segment</strong> – the text to update</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>nothing (void method)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_update_default_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to update the default plural translation of the message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>segment</strong> – the text to update</p></li>
+<li><p><strong>index</strong> – the location in the main translation list of the element to be updated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>nothing (void method)</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>IndexError</strong> – If token is out of range.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_update_options_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to update one of the (option) variant translation singular of the message.
+:param segment:
+:param option:
+:return: nothing (void method)
+:raises IndexError: If option is out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_update_options_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segment</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected function to update one of the (option) variant plural (token) translation singular of the message.
+:param segment: the text to update
+:param option: the variant index
+:param index: the index of the element to be updated in the variant plural.
+:return: nothing (void method)
+:raises IndexError: If option or toaken is out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_remove_options_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to remove the option variant translation of the message.
+:param option: the index of the variant translation to remove.
+:type option: int
+:return: nothing (void method)
+:rtype: None
+:raises IndexError: If option is out of range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_remove_options_plurals_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
+:param option: the index of the variant translation to be reached.
+:param index: the index of the plural translation to be removed.
+:return: nothing (void method)
+:rtype: None
+:raises IndexError: If option or token is out of range.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">i18n_tools.models.corpus.</span></span><span class="sig-name descname"><span class="pre">Book</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#i18n_tools.models.corpus.Book" title="Link to this definition">¶</a></dt>
+<dd><p>Manage a book (collection) of internationalization Message objects for a single
+domain and a single language, using the i18n_tools format.</p>
+<p>Iteration</p>
+<ul class="simple">
+<li><p>The class is iterable: iterating over a Book yields its Message instances
+in the natural dictionary order of self.messages (insertion order).</p></li>
+</ul>
+<p>Invariants</p>
+<ul class="simple">
+<li><p>All messages in a Book share the same normalized language (BCP 47-like tag)
+and the same domain.</p></li>
+</ul>
+<p>Core attributes (moved out of metadata)</p>
+<ul class="simple">
+<li><p>language (str): Normalized language tag of this book (e.g. “fr-FR”).</p></li>
+<li><p>domain (str): Functional or logical domain grouping the messages.</p></li>
+<li><p>format (str): Serialization/storage format hint (e.g. “json”).</p></li>
+<li><p>messages (StrictNestedDictionary): Mapping of message.id -&gt; Message.</p></li>
+<li><p>metadata (StrictNestedDictionary): Additional data such as
+project_id_version, report_msgid_bugs_to, pot_creation_date, language_team,
+header_comment, statistics, and backward compatible counters.</p></li>
+</ul>
+<p>Notes</p>
+<ul class="simple">
+<li><p>The keys “language”, “domain” and “format” are NOT present in metadata
+anymore; they are stored as instance attributes.</p></li>
+<li><p>Statistics are available under metadata[“statistics”], with
+“total_messages” and “total_words”.</p></li>
+</ul>
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.add" title="Link to this definition">¶</a></dt>
+<dd><p>Add messages to the book if language and domain are identical.
+:param messages: list of messages to add to the book
+:type messages: list[Message]
+:param domain: the domain of the messages
+:type domain: str
+:return: nothing
+:rtype: None
+:raises ValueError: If a message is not compatible with this book language and domain or already registered.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.remove">
+<span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.remove" title="Link to this definition">¶</a></dt>
+<dd><p>Remove a message from the book if language and domain are identical.
+:param index: key index of message to remove
+:type index: str
+:return: nothing
+:rtype: None
+:raises KeyError: If key message is not in this book.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.load" title="Link to this definition">¶</a></dt>
+<dd><p>Load messages from a .i18t file into this Book instance.</p>
+<p>The file is located at <code class="docutils literal notranslate"><span class="pre">path_directory/self.filename</span></code>.
+Each message is assigned the book language before insertion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path_directory</strong> (<em>str</em>) – Directory containing the .i18t file.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>FileNotFoundError</strong> – If the file does not exist.</p></li>
+<li><p><strong>ValueError</strong> – If the file fails the integrity check.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.save" title="Link to this definition">¶</a></dt>
+<dd><p>Save the content of this Book to a .i18t file.</p>
+<p>The file is written at <code class="docutils literal notranslate"><span class="pre">path_directory/self.filename</span></code>.
+Delegates all I/O to <code class="docutils literal notranslate"><span class="pre">save_book()</span></code> in <code class="docutils literal notranslate"><span class="pre">loader.py</span></code>,
+following the same delegation pattern as <code class="docutils literal notranslate"><span class="pre">load()</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path_directory</strong> (<em>str</em>) – Directory where the .i18t file will be written.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>FileNotFoundError</strong> – If <code class="docutils literal notranslate"><span class="pre">path_directory</span></code> does not exist.</p>
+</dd>
+</dl>
+<p class="rubric">References</p>
+<ul class="simple">
+<li><p>biface/i18n#42 : strict separation models / loaders (DD-06)</p></li>
+<li><p>biface/i18n#57 : Book.save() persistence (DD-06, DD-15, DD-16)</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.get_language">
+<span class="sig-name descname"><span class="pre">get_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.get_language" title="Link to this definition">¶</a></dt>
+<dd><p>Return the normalized language tag of this book.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.add_language">
+<span class="sig-name descname"><span class="pre">add_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.add_language" title="Link to this definition">¶</a></dt>
+<dd><p>Set the language if not already set; value is normalized.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.update_language">
+<span class="sig-name descname"><span class="pre">update_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.update_language" title="Link to this definition">¶</a></dt>
+<dd><p>Update the book language after verifying every Message matches it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.remove_language">
+<span class="sig-name descname"><span class="pre">remove_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.remove_language" title="Link to this definition">¶</a></dt>
+<dd><p>Unset the book language (may leave the book in an inconsistent state).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.get_domain">
+<span class="sig-name descname"><span class="pre">get_domain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.get_domain" title="Link to this definition">¶</a></dt>
+<dd><p>Return the domain of this book.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.add_domain">
+<span class="sig-name descname"><span class="pre">add_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.add_domain" title="Link to this definition">¶</a></dt>
+<dd><p>Set the domain if not already set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.update_domain">
+<span class="sig-name descname"><span class="pre">update_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.update_domain" title="Link to this definition">¶</a></dt>
+<dd><p>Update the book domain.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.remove_domain">
+<span class="sig-name descname"><span class="pre">remove_domain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.remove_domain" title="Link to this definition">¶</a></dt>
+<dd><p>Unset the book domain (may leave the book unusable until reset).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.get_format">
+<span class="sig-name descname"><span class="pre">get_format</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.get_format" title="Link to this definition">¶</a></dt>
+<dd><p>Return the serialization/storage format hint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.add_format">
+<span class="sig-name descname"><span class="pre">add_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.add_format" title="Link to this definition">¶</a></dt>
+<dd><p>Set the format if not already set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.update_format">
+<span class="sig-name descname"><span class="pre">update_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.update_format" title="Link to this definition">¶</a></dt>
+<dd><p>Update the format hint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.remove_format">
+<span class="sig-name descname"><span class="pre">remove_format</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.remove_format" title="Link to this definition">¶</a></dt>
+<dd><p>Unset the format hint.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Book.set_metadata">
+<span class="sig-name descname"><span class="pre">set_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.models.corpus.Book.set_metadata" title="Link to this definition">¶</a></dt>
+<dd><p>Add, update or delete a metadata entry.
+- If value is None, the metadata is reset/removed to its default for the given key.
+- If key is a string, it refers to a top-level key in self.metadata.
+- If key is a list, it refers to a nested path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__set_filename</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>This private function is used to set or update filename, if one of these component changes.
+:return: nothing</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_compute_statistics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span></dt>
+<dd><p>Compute statistics from the messages contained in the book and store them in metadata.statistics.
+- total_messages: number of messages in the book
+- total_words: total word count across all message strings (default, options, default_plurals, options_plurals)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<dd><p>Iterate over Message instances contained in the book.
+Yields Message objects in insertion order of the underlying dictionary.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Corpus">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">i18n_tools.models.corpus.</span></span><span class="sig-name descname"><span class="pre">Corpus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#i18n_tools.models.corpus.Corpus" title="Link to this definition">¶</a></dt>
+<dd><p>Container of Books for a single domain across all loaded languages.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Corpus</span></code> holds one real <code class="docutils literal notranslate"><span class="pre">Book</span></code> per available language.  Its central
+entry point is <code class="docutils literal notranslate"><span class="pre">get_book(lang)</span></code>, which returns a <code class="docutils literal notranslate"><span class="pre">FallbackBook</span></code> — a
+transparent proxy that resolves each message individually through the
+fallback chain (DD-09).</p>
+<p>The fallback chain for a requested language <code class="docutils literal notranslate"><span class="pre">lang</span></code> is built inline
+(v0.3.x, no <code class="docutils literal notranslate"><span class="pre">fallback.py</span></code> yet) using the IETF parent tag extracted via
+<code class="docutils literal notranslate"><span class="pre">langcodes</span></code>.  The full <code class="docutils literal notranslate"><span class="pre">fallback.py</span></code> module (DD-29) will replace this
+inline resolution in v1.0.0.</p>
+<section id="cross-language-operations">
+<h2><span class="section-number">4.6.2. </span>Cross-language operations<a class="headerlink" href="#cross-language-operations" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">coverage()</span></code>  — coverage rate per language (0.0–1.0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">missing(lang)</span></code> — identifiers absent in <code class="docutils literal notranslate"><span class="pre">lang</span></code> but present elsewhere</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">languages</span></code>   — list of loaded languages</p></li>
+</ul>
+<p class="rubric">References</p>
+<ul class="simple">
+<li><p>biface/i18n#43 : Corpus design (DD-09, DD-09b)</p></li>
+<li><p>biface/i18n#20 : MessageNotFoundError (DD-24)</p></li>
+</ul>
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="i18n_tools.models.corpus.Encyclopaedia">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">i18n_tools.models.corpus.</span></span><span class="sig-name descname"><span class="pre">Encyclopaedia</span></span><a class="headerlink" href="#i18n_tools.models.corpus.Encyclopaedia" title="Link to this definition">¶</a></dt>
+<dd><p>Collection of Corpora across all domains and modules of a repository.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Encyclopaedia</span></code> is keyed by <code class="docutils literal notranslate"><span class="pre">(module,</span> <span class="pre">domain)</span></code> pairs (DD-07).  Corpora
+are loaded lazily: a <code class="docutils literal notranslate"><span class="pre">Corpus</span></code> is inserted via <code class="docutils literal notranslate"><span class="pre">add_corpus()</span></code> and
+retrieved via <code class="docutils literal notranslate"><span class="pre">get_corpus()</span></code>.  The lazy-loading hook (loading from disk
+on first access) is reserved for v1.0.0 once <code class="docutils literal notranslate"><span class="pre">core.py</span></code> is in place.</p>
+<p class="rubric">References</p>
+<ul class="simple">
+<li><p>biface/i18n#42 : four-level model hierarchy (DD-07)</p></li>
+</ul>
+</dd></dl>
+
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="../config.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title"><span class="section-number">4.7. </span>Configuration Module</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="repository.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title"><span class="section-number">4.6.1. </span>Repository</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, biface
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">4.6.2. Corpus module</a><ul>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message"><code class="docutils literal notranslate"><span class="pre">Message</span></code></a><ul>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.id"><code class="docutils literal notranslate"><span class="pre">Message.id</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.default"><code class="docutils literal notranslate"><span class="pre">Message.default</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.options"><code class="docutils literal notranslate"><span class="pre">Message.options</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.default_plurals"><code class="docutils literal notranslate"><span class="pre">Message.default_plurals</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.options_plurals"><code class="docutils literal notranslate"><span class="pre">Message.options_plurals</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.context"><code class="docutils literal notranslate"><span class="pre">Message.context</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.metadata"><code class="docutils literal notranslate"><span class="pre">Message.metadata</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.message"><code class="docutils literal notranslate"><span class="pre">Message.message</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.principal"><code class="docutils literal notranslate"><span class="pre">Message.principal</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.variants"><code class="docutils literal notranslate"><span class="pre">Message.variants</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.has_variants"><code class="docutils literal notranslate"><span class="pre">Message.has_variants</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.has_plurals"><code class="docutils literal notranslate"><span class="pre">Message.has_plurals</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.translations_set"><code class="docutils literal notranslate"><span class="pre">Message.translations_set</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_id"><code class="docutils literal notranslate"><span class="pre">Message.get_id()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_message"><code class="docutils literal notranslate"><span class="pre">Message.add_message()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_message"><code class="docutils literal notranslate"><span class="pre">Message.update_message()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.remove_message"><code class="docutils literal notranslate"><span class="pre">Message.remove_message()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_principal"><code class="docutils literal notranslate"><span class="pre">Message.get_principal()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_principal_plurals"><code class="docutils literal notranslate"><span class="pre">Message.get_principal_plurals()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_principal"><code class="docutils literal notranslate"><span class="pre">Message.add_principal()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_principal"><code class="docutils literal notranslate"><span class="pre">Message.update_principal()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.remove_principal"><code class="docutils literal notranslate"><span class="pre">Message.remove_principal()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_variant"><code class="docutils literal notranslate"><span class="pre">Message.get_variant()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_variant_plurals"><code class="docutils literal notranslate"><span class="pre">Message.get_variant_plurals()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_variant"><code class="docutils literal notranslate"><span class="pre">Message.add_variant()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_variant"><code class="docutils literal notranslate"><span class="pre">Message.update_variant()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.remove_variant"><code class="docutils literal notranslate"><span class="pre">Message.remove_variant()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_main_segment"><code class="docutils literal notranslate"><span class="pre">Message.get_main_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_variant_segment"><code class="docutils literal notranslate"><span class="pre">Message.get_variant_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_segment"><code class="docutils literal notranslate"><span class="pre">Message.get_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_main_segment"><code class="docutils literal notranslate"><span class="pre">Message.add_main_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_variant_segment"><code class="docutils literal notranslate"><span class="pre">Message.add_variant_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_main_segment"><code class="docutils literal notranslate"><span class="pre">Message.update_main_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_variant_segment"><code class="docutils literal notranslate"><span class="pre">Message.update_variant_segment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_metadata"><code class="docutils literal notranslate"><span class="pre">Message.get_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_location"><code class="docutils literal notranslate"><span class="pre">Message.add_location()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_language"><code class="docutils literal notranslate"><span class="pre">Message.add_language()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_comment"><code class="docutils literal notranslate"><span class="pre">Message.add_comment()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.add_metadata"><code class="docutils literal notranslate"><span class="pre">Message.add_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.update_metadata"><code class="docutils literal notranslate"><span class="pre">Message.update_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.remove_metadata"><code class="docutils literal notranslate"><span class="pre">Message.remove_metadata()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.switch"><code class="docutils literal notranslate"><span class="pre">Message.switch()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.toggle"><code class="docutils literal notranslate"><span class="pre">Message.toggle()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.format"><code class="docutils literal notranslate"><span class="pre">Message.format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.get_format_variables"><code class="docutils literal notranslate"><span class="pre">Message.get_format_variables()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.to_i18n_tools_format"><code class="docutils literal notranslate"><span class="pre">Message.to_i18n_tools_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.from_i18n_tools"><code class="docutils literal notranslate"><span class="pre">Message.from_i18n_tools()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.equals"><code class="docutils literal notranslate"><span class="pre">Message.equals()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Message.is_similar"><code class="docutils literal notranslate"><span class="pre">Message.is_similar()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book"><code class="docutils literal notranslate"><span class="pre">Book</span></code></a><ul>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.add"><code class="docutils literal notranslate"><span class="pre">Book.add()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.remove"><code class="docutils literal notranslate"><span class="pre">Book.remove()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.load"><code class="docutils literal notranslate"><span class="pre">Book.load()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.save"><code class="docutils literal notranslate"><span class="pre">Book.save()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.get_language"><code class="docutils literal notranslate"><span class="pre">Book.get_language()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.add_language"><code class="docutils literal notranslate"><span class="pre">Book.add_language()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.update_language"><code class="docutils literal notranslate"><span class="pre">Book.update_language()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.remove_language"><code class="docutils literal notranslate"><span class="pre">Book.remove_language()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.get_domain"><code class="docutils literal notranslate"><span class="pre">Book.get_domain()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.add_domain"><code class="docutils literal notranslate"><span class="pre">Book.add_domain()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.update_domain"><code class="docutils literal notranslate"><span class="pre">Book.update_domain()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.remove_domain"><code class="docutils literal notranslate"><span class="pre">Book.remove_domain()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.get_format"><code class="docutils literal notranslate"><span class="pre">Book.get_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.add_format"><code class="docutils literal notranslate"><span class="pre">Book.add_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.update_format"><code class="docutils literal notranslate"><span class="pre">Book.update_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.remove_format"><code class="docutils literal notranslate"><span class="pre">Book.remove_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Book.set_metadata"><code class="docutils literal notranslate"><span class="pre">Book.set_metadata()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Corpus"><code class="docutils literal notranslate"><span class="pre">Corpus</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.models.corpus.Encyclopaedia"><code class="docutils literal notranslate"><span class="pre">Encyclopaedia</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../../../_static/documentation_options.js?v=8fa8b3e9"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
+    </body>
+</html>
