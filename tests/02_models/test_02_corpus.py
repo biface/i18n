@@ -116,6 +116,88 @@ class TestCorpusGetBook:
 
 
 # ---------------------------------------------------------------------------
+# TestCorpusGetBookWithRepository
+# ---------------------------------------------------------------------------
+
+
+class TestCorpusGetBookWithRepository:
+    """Corpus.get_book(lang, repository=...) — fallback.resolve()-driven
+    resolution, as opposed to the inline heuristic used when repository
+    is omitted."""
+
+    def test_equivalent_to_inline_when_hierarchy_matches_loaded_siblings(
+        self, fr_fr_book, en_us_book
+    ):
+        from i18n_tools.models.repository import Repository
+
+        corpus = Corpus(domain="test")
+        corpus.add_book(fr_fr_book)
+        corpus.add_book(en_us_book)
+
+        repository = Repository()
+        repository.hierarchy = {"fr": ["fr-FR"]}
+        repository.fallback = "en-US"
+
+        fb_inline = corpus.get_book("fr-CH")
+        fb_repo = corpus.get_book("fr-CH", repository=repository)
+
+        assert [b.language for b in fb_inline._chain] == [
+            b.language for b in fb_repo._chain
+        ]
+
+    def test_repository_hierarchy_excludes_undeclared_sibling(
+        self, fr_fr_book, en_us_book, en_gb_book
+    ):
+        """The inline heuristic treats any loaded language sharing the
+        same IETF parent as a sibling. The repository-driven path only
+        follows what is actually declared in repository.hierarchy —
+        here fr-FR is loaded but the repository only declares en-GB
+        under "en" (not fr-FR under "fr"), so fr-FR must be excluded
+        from the repository-driven chain even though it would be
+        included by the inline heuristic."""
+        from i18n_tools.models.repository import Repository
+
+        corpus = Corpus(domain="test")
+        corpus.add_book(fr_fr_book)
+        corpus.add_book(en_us_book)
+        corpus.add_book(en_gb_book)
+
+        repository = Repository()
+        repository.hierarchy = {"en": ["en-GB"]}
+        repository.fallback = "en-US"
+
+        fb_repo = corpus.get_book("fr-CH", repository=repository)
+        # No "fr"/"fr-*" declared anywhere -> straight to the global
+        # fallback en-US and its declared variants (none here).
+        assert [b.language for b in fb_repo._chain] == ["en-US"]
+
+        fb_inline = corpus.get_book("fr-CH")
+        # Inline heuristic still finds fr-FR as an IETF sibling.
+        assert "fr-FR" in [b.language for b in fb_inline._chain]
+
+    def test_repository_mode_still_raises_when_nothing_matches(self):
+        from i18n_tools.models.repository import Repository
+
+        corpus = Corpus(domain="test")
+        repository = Repository()
+
+        with pytest.raises(MessageNotFoundError):
+            corpus.get_book("de-DE", repository=repository)
+
+    def test_repository_none_is_equivalent_to_omitting_it(self, fr_fr_book, en_us_book):
+        corpus = Corpus(domain="test")
+        corpus.add_book(fr_fr_book)
+        corpus.add_book(en_us_book)
+
+        fb_omitted = corpus.get_book("fr-CH")
+        fb_explicit_none = corpus.get_book("fr-CH", repository=None)
+
+        assert [b.language for b in fb_omitted._chain] == [
+            b.language for b in fb_explicit_none._chain
+        ]
+
+
+# ---------------------------------------------------------------------------
 # TestCorpusCoverage
 # ---------------------------------------------------------------------------
 
