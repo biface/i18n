@@ -2299,28 +2299,60 @@ class Corpus:
             raise ValueError("Book has no language set — cannot register in Corpus")
         self._books[book.language] = book
 
-    def get_book(self, lang: str) -> FallbackBook:
+    def get_real_book(self, lang: str) -> "Book":
         """
-        Return a FallbackBook for ``lang`` built from the inline fallback chain.
+        Return the actual registered Book for a language — no fallback
+        resolution, unlike ``get_book()``, which always returns a
+        ``FallbackBook`` proxy. Useful for callers that need the concrete
+        Book itself (e.g. saving it back to disk), rather than the
+        resolved-content view.
 
-        Chain resolution (v0.3.x inline, DD-29 pending for v1.0.0):
-        1. The requested language (``lang``) if loaded.
-        2. The IETF parent tag (e.g. ``fr`` for ``fr-CH``) if different and loaded.
-        3. Any other loaded language whose IETF parent matches (siblings).
-        4. All remaining loaded languages in insertion order.
+        :param lang: Exact language tag to look up.
+        :type lang: str
+        :return: The Book registered for that exact language.
+        :rtype: Book
+        :raises KeyError: If no Book is registered for that exact
+            language — no fallback chain is consulted.
+        """
+        return self._books[lang]
 
-        If the resulting chain is empty, ``MessageNotFoundError`` is raised.
+    def get_book(
+        self, lang: str, repository: "StrictNestedDictionary | None" = None
+    ) -> FallbackBook:
+        """
+        Return a FallbackBook for ``lang`` built from a fallback chain.
+
+        Two resolution modes:
+
+        - ``repository`` supplied: the chain comes from
+          ``fallback.resolve(lang, repository)`` — the requested
+          language, its IETF parent, variants declared under that
+          parent in ``repository.hierarchy``, and the repository's
+          global fallback and its own variants — filtered to the
+          languages actually loaded in this Corpus.
+        - ``repository`` omitted: the inline heuristic chain (unchanged
+          from prior versions), for a Corpus used standalone without a
+          Repository at hand:
+
+          1. The requested language, if loaded.
+          2. The IETF parent tag (e.g. ``fr`` for ``fr-CH``), if
+             different and loaded.
+          3. Any other loaded language whose IETF parent matches
+             (siblings).
+          4. All remaining loaded languages, in insertion order.
+
+        If the resulting chain is empty, ``MessageNotFoundError`` is
+        raised.
 
         :param lang: Requested language tag (e.g. ``"fr-CH"``).
         :type lang: str
+        :param repository: Optional Repository to resolve the chain
+            against ``fallback.resolve()`` instead of the inline
+            heuristic.
+        :type repository: StrictNestedDictionary | None
         :return: A FallbackBook wrapping the resolved chain.
         :rtype: FallbackBook
         :raises MessageNotFoundError: If no loaded Book matches the chain.
-
-        References
-        ----------
-        - biface/i18n#43 : Corpus / FallbackBook (DD-09, DD-09b)
-        - biface/i18n#52 : fallback.py deferred to v1.0.0 (DD-29)
         """
         from i18n_tools.exceptions import MessageNotFoundError
 
@@ -2333,25 +2365,31 @@ class Corpus:
                 chain.append(self._books[language])
                 seen.add(language)
 
-        # 1. Requested language
-        _add(normalized)
+        if repository is not None:
+            from i18n_tools.fallback import resolve
 
-        # 2. IETF parent (e.g. "fr" for "fr-CH" or "fr-FR")
-        parent = normalized.rsplit("-", 1)[0] if "-" in normalized else None
-        if parent:
-            _add(parent)
+            for tag in resolve(normalized, repository):
+                _add(tag)
+        else:
+            # 1. Requested language
+            _add(normalized)
 
-        # 3. Siblings — other loaded languages sharing the same parent
-        for loaded_lang in self._books:
-            loaded_parent = (
-                loaded_lang.rsplit("-", 1)[0] if "-" in loaded_lang else loaded_lang
-            )
-            if loaded_parent == parent or loaded_lang == parent:
+            # 2. IETF parent (e.g. "fr" for "fr-CH" or "fr-FR")
+            parent = normalized.rsplit("-", 1)[0] if "-" in normalized else None
+            if parent:
+                _add(parent)
+
+            # 3. Siblings — other loaded languages sharing the same parent
+            for loaded_lang in self._books:
+                loaded_parent = (
+                    loaded_lang.rsplit("-", 1)[0] if "-" in loaded_lang else loaded_lang
+                )
+                if loaded_parent == parent or loaded_lang == parent:
+                    _add(loaded_lang)
+
+            # 4. All remaining loaded languages
+            for loaded_lang in self._books:
                 _add(loaded_lang)
-
-        # 4. All remaining loaded languages
-        for loaded_lang in self._books:
-            _add(loaded_lang)
 
         if not chain:
             raise MessageNotFoundError(
