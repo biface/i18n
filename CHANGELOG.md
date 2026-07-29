@@ -8,6 +8,173 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.8.0 — Orchestration (2026-07-29)
+
+Combined v0.7.0 + v0.8.0 work cycle, single tag at v0.8.0 (calendar
+reagencement decided 2026-07-27 — v0.7.0 was originally scheduled after
+v0.8.0 on the GitHub milestones, inconsistent with roadmap order). The
+v0.7.0 milestone closes with a "merged into v0.8.0" note rather than
+its own tag — no separate release was published for it.
+
+### v0.7.0 — Test coverage & repository hygiene
+
+#### ✨ New Features
+- `.codecov.yml` added — 9 components (`models`, `loaders`,
+  `exceptions`, `converter`, `config`, `api`, `orchestrator`,
+  `translation`, `package`) covering the full `src/i18n_tools/` tree.
+  `informational: true` on `master`/`staging/**` for this cycle —
+  coverage stays a personal/informative target until v1.0.0, per the
+  2026-07-27 clarification (no new DD issued, consistent with DD-36's
+  original wording). (#96)
+- GitHub issue templates + PR template added, per `CONVENTIONS.md`
+  §2/§3 — was a v0.6.0 milestone deliverable that never actually
+  shipped. 5 issue forms (`bug_report`, `feature_request`,
+  `documentation`, `technical_task`, `design`) plus `config.yml`
+  disabling blank issues. `documentation.yml` didn't exist at all
+  before; `technical_task.yml` now auto-applies `type: chore` (its
+  predecessor, reused from a sibling project, only applied
+  `status: triage`, leaving the type unset). (#99)
+- `dependabot.yml` added — `github-actions` ecosystem on a quarterly
+  cadence, `pip` monthly.
+- Real, tag-only release gate for coverage: `tox -e coverage-gate`
+  (`coverage report --fail-under=N`), currently inert (`N=0`) until
+  v1.0.0. Distinct from and unrelated to Codecov's `informational`
+  status, which was never a viable release gate in the first place —
+  GitHub's required-status-checks only apply to branches, never to
+  tags. Documented as its own decision (DD-39) to prevent the two
+  mechanisms from being conflated later.
+
+#### 🐛 Bug Fixes
+- `converter.py` — 4 leftover debug `print()` statements removed
+  (`i18n_tools_to_unified_format`, `convert_i18n_tools_to_catalog`).
+- Stray `.coveragerc` removed. `coverage.py`'s config discovery order
+  is `.coveragerc` > `setup.cfg` > `tox.ini` > `pyproject.toml` — first
+  file found with any settings wins, all others are silently ignored.
+  This leftover file (predating the `pyproject.toml` consolidation) was
+  the reason `pyproject.toml`'s coverage settings never took effect.
+  Its `omit` list was already a no-op given
+  `source = ["src/i18n_tools"]`, and its `if __name__ = "__main__"`
+  exclude pattern had a typo (single `=`) and never matched anything.
+  Its one genuinely useful pattern, `def __repr__`, was folded into
+  `pyproject.toml`'s `exclude_also`.
+
+#### 🔧 Maintenance
+- `converter.py` — 13 functions (the intermediate "unified format"
+  bridge and every Catalog/i18next conversion function built on it,
+  plus `seek_translation`) confirmed to have zero callers anywhere in
+  `src/` or `tests/`. DD-15 already called this code obsolete and
+  DD-17 already decided it should be `@deprecated` and excluded from
+  the public API, but neither had actually been implemented. Now
+  marked `@_deprecated_unmaintained` (emits `DeprecationWarning` on
+  call) rather than removed — not implementing v2.x/v3.x's rebuild
+  early. `message_to_i18n_tools_format`/`i18n_tools_format_to_message_dict`
+  (DD-16, actually used by `Book`/`Corpus`/`loader.py`) are untouched.
+  Combined with the `.coveragerc` fix above, `converter.py` coverage
+  went from 16% (61/381 lines, mostly this dead code) to 92%
+  (56 real lines).
+- CI: the `coverage` job opened up from tag-only to
+  `master`/`staging/**`/`pull_request`, using its own `go-httpbin`
+  service container and no longer depending on `test-integration` in
+  the `needs:` chain (so it can run in contexts where
+  `test-integration`, still tag-only, does not). `build` now lists
+  `needs: [coverage, test-integration]` explicitly, preserving the
+  release-safety guarantee that both must pass on a tag. (#98)
+- GitHub Actions bumped for the Node.js 24 migration (Node20 actions
+  forced onto Node24 since 2026-06-02, fully removed 2026-09-16):
+  `actions/checkout` v4→v7, `actions/setup-python` v5→v6,
+  `codecov/codecov-action` v5→v6, `actions/upload-artifact` v4→v6,
+  `actions/download-artifact` v4→v7. `astral-sh/setup-uv` pinned by
+  commit SHA (v4→v9.0.0) rather than a floating tag — as of v8.0.0
+  that action no longer publishes moving major/minor tags at all.
+  `softprops/action-gh-release` (already v3) and
+  `pypa/gh-action-pypi-publish` (container-based, not Node) needed no
+  change.
+- `pyproject.toml` — `[tool.coverage.run] branch = true` added; no
+  config anywhere in the repo previously enabled branch-coverage
+  measurement (the branch data seen in local runs came from an
+  unversioned, machine-local config).
+
+### v0.8.0 — Orchestration
+
+#### ✨ New Features
+- `fallback.py` — `resolve(lang, repository) -> list[str]` implemented.
+  Pure function, no I/O, no dependency on Message/Book/Corpus: requested
+  language → IETF parent (via `langcodes`, not naive string splitting)
+  → variants declared under that parent in `Repository.hierarchy` →
+  the repository's global fallback language and its own variants.
+  De-duplicated, first occurrence wins. (#35)
+- `Repository.source`/`Repository.fallback` properties added — the
+  two singular `languages` values previously had no accessor at all
+  (unlike `hierarchy`, which already had a full property + CRUD API).
+  Prerequisite for `fallback.py`.
+- `core.py` — the high-level orchestrator is no longer a stub.
+  `load_book`/`save_book`/`load_corpus`/`save_corpus`/`synchronize`
+  implemented, bridging `Repository` (paths, module/domain/language
+  configuration) and the content model (`Message`/`Book`/`Corpus`/
+  `Encyclopaedia`). `Book.load()`/`Book.save()` already did the actual
+  file I/O; `core.py` only resolves the on-disk directory and
+  delegates. `save_book`/`save_corpus` take `module` explicitly rather
+  than reading it off `Book`/`Corpus` — neither ever carries it; only
+  `Encyclopaedia` and this orchestration layer do. (#36)
+- `Corpus.get_real_book(lang)` added — returns the actual registered
+  Book, no fallback resolution, as opposed to `get_book()` which always
+  returns a `FallbackBook` proxy. Needed by `core.save_corpus()`.
+- `Corpus.get_book(lang, repository=None)` — now accepts an optional
+  `Repository` to resolve the fallback chain via `fallback.resolve()`
+  instead of the inline v0.3.x heuristic. Omitting `repository` keeps
+  the exact previous behavior (any loaded language sharing an IETF
+  parent counts as a sibling); supplying one respects only what is
+  actually declared in `repository.hierarchy`/`fallback`, filtered to
+  languages loaded in that Corpus. Fully backward compatible — no
+  existing callers, and the no-repository path is unchanged logic.
+
+#### 🐛 Bug Fixes
+- `sync.py` — `check_repository()` created files as `{domain}.json`,
+  predating `Book`/`build_book_filename`'s actual native `.i18t`
+  naming convention (`{domain}.{fmt}.i18t`) — `Book.load()` could never
+  find them. `sync.py` was built against an older design, before the
+  current `Repository`/`Encyclopaedia`/`Corpus`/`Book`/`Message` model
+  was in place, and was never updated. Found via `core.py`'s first
+  end-to-end test (`synchronize` → `load_book` → `save_book`), which is
+  what actually exercised the two modules together for the first time.
+- `sync.py` — `check_repository()` also excluded hierarchy *parent*
+  keys from the synced language set (only variants like `fr-FR`/`fr-BE`
+  were synced, never `fr` itself, even though it is a legitimate
+  fallback language in its own right). Now uses `locale.get_all_languages()`
+  (keys + values) — the same helper `core.load_corpus()` uses — so the
+  two always agree on which languages must exist on disk.
+- `tests/conftest.py` — `use_real_network_resources()` only checked
+  `is_main_branch`/`is_tag_ref()`, both false on a `pull_request` event
+  (`GITHUB_REF` is `refs/pull/<n>/merge` — neither a branch nor a tag
+  ref). Never exercised before: the `coverage` job, which sets
+  `HTTPBIN_BASE_URL` and runs its own `go-httpbin` container, was
+  tag-only until the v0.7.0 CI restructuring above, so `is_tag_ref()`
+  was always true there in practice and the mock path never actually
+  activated for this job. Once `coverage` started running on
+  `pull_request`/`master`/`staging/**`, the mock activated for the
+  first time — but its simulated responses only ever covered the
+  public `httpbingo.org` URLs used elsewhere, never this container's
+  own `127.0.0.1:8080`, causing `TestValidateApiUrl` failures and a
+  `TestConfigTranslators` cascade (`Translator3` never gets created, so
+  every subsequent test depending on it in the same `Config` Singleton
+  sequence fails too). Fix: `HTTPBIN_BASE_URL` being set is itself a
+  reliable signal that a real container is present and should be used —
+  added as a third condition. `test-unit` never sets this variable, so
+  it doesn't widen real-network use there. Same class of bug as the
+  `is_tag_ref()` fix in v0.6.0 — a code path that only ever ran in one
+  specific CI context, breaking the first time that context actually
+  changed.
+
+#### 🔧 Maintenance
+- New `tests/03_orchestration/` directory — `test_00_fallback.py`
+  (11 tests), `test_01_sync.py` (moved and extended from the former
+  flat `tests/test_04_sync.py`, 6 tests), `test_02_core.py` (10 tests,
+  `core.py` 0% → 100% line coverage). `tests/02_models/test_02_corpus.py`
+  extended with 4 tests for `get_book(repository=...)`.
+- Version bumped 0.6.0 → 0.8.0.
+
+---
+
 ## v0.6.0 — CI/CD & repository hygiene (2026-07-05)
 
 ### 🔧 Maintenance

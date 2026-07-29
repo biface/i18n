@@ -1,6 +1,12 @@
-![Python](https://img.shields.io/badge/Language-python-green.svg)
+![Python - Language](https://img.shields.io/badge/Language-python-green.svg)
+![Python - Status](https://img.shields.io/pypi/status/pyi18t-tools)
+![Python - Licence](https://img.shields.io/pypi/l/pyi18t-tools)
+![Python - Supported Versions](https://img.shields.io/pypi/pyversions/pyi18t-tools)
+![Read the Docs](https://img.shields.io/readthedocs/pyi18t-tools)
+![Github - CI](https://github.com/biface/i18n/actions/workflows/python-ci.yaml/badge.svg?branch=master)
 ![Codecov](https://img.shields.io/codecov/c/github/biface/i18n)
-
+![Github - Release](https://img.shields.io/github/v/release/biface/i18n)
+![PyPI - Version](https://img.shields.io/pypi/v/pyi18t-tools)
 --------------
 # i18n-tools
 
@@ -29,10 +35,12 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 | **v0.3.x** | Hiérarchie modèles complète — `Corpus`, `FallbackBook`, `Encyclopaedia`, exceptions             | ✅ Livré     |
 | **v0.4.x** | Qualité et couverture — harmonisation des erreurs, imports circulaires, init Sphinx/Furo        | ✅ Livré     |
 | **v0.5.0** | Renforcement architecture — frontière modèles/loaders scellée, `Config → Repository` finalisé | ✅ Livré     |
-| **v0.6.x** | CI/CD et hygiène du dépôt — `uv`/`tox-uv`, `basedpyright`, `.codecov.yml`                        | 🔶 En cours |
-| **v0.7.x** | Couverture de tests — ≥ 80 % imposé sur tout le package                                         | 🔵 Planifié |
-| **v0.8.0** | Orchestration — point d'entrée `core.py`, résolution de repli `fallback.py`                      | 🔵 Planifié |
+| **v0.6.0** | CI/CD et hygiène du dépôt — `uv`/`tox-uv`, `basedpyright`, `.codecov.yml`                        | ✅ Livré     |
+| **v0.7.0** | Couverture de tests & hygiène du dépôt — composants `.codecov.yml`, `coverage-gate`, templates issues/PR, migration CI Node.js 24. Pas de tag séparé — fusionné dans v0.8.0 (réagencement calendaire) | ✅ Livré     |
+| **v0.8.0** | Orchestration — point d'entrée `core.py`, résolution de repli `fallback.py`                      | ✅ Livré     |
 | **v0.9.0** | Formatage & CLI — `formatter.py` complet avec `PluralRule`, CLI/REPL                             | 🔵 Planifié |
+| **v0.10.0**| Revue d'architecture & des modèles — révision architecturale avant le gel v1.0.0                | 🔵 Planifié |
+| **v0.11.0**| Documentation complète — matériel de référence multilingue                                      | 🔵 Planifié |
 | **v1.0.0** | Gel & vérification — format `.i18t` gelé, API publique gelée, documentation Sphinx complète      | 🔵 Planifié |
 | **v1.x**   | Interopérabilité gettext — import/export `.po`/`.mo` via Babel                                  | 🔵 Horizon  |
 | **v2.x**   | Formats tiers — i18next et autres, hub de conversion central                                    | 🔵 Horizon  |
@@ -42,19 +50,20 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 
 ### Fonctionnalités
 
-| Fonctionnalité                              | v0.2.x    | v0.9.0 | v1.0.0 | v1.x | v2.x |
-|---------------------------------------------|-----------|--------|--------|------|------|
-| Format `.i18t` natif (JSON/YAML)            | ✅         | ✅      | ✅      | ✅    | ✅    |
-| Identifiants indépendants de la langue      | ✅         | ✅      | ✅      | ✅    | ✅    |
-| Variantes et pluriels multiples             | ✅         | ✅      | ✅      | ✅    | ✅    |
-| Chargement d'un `Book` depuis `.i18t`       | ✅         | ✅      | ✅      | ✅    | ✅    |
-| Sauvegarde d'un `Book` vers `.i18t`         | ✅        | ✅      | ✅      | ✅    | ✅    |
-| Hiérarchie complète (Corpus, Encyclopaedia) | ✅        | ✅      | ✅      | ✅    | ✅    |
-| Gestion des replis linguistiques            | ✅        | ✅      | ✅      | ✅    | ✅    |
-| Interpolation et règles de pluriel actives  | ❌         | ✅      | ✅      | ✅    | ✅    |
-| Interface CLI/REPL                          | ❌         | ✅      | ✅      | ✅    | ✅    |
-| Import/export `.po`/`.mo` (Babel/gettext)   | ❌         | ❌      | ❌      | ✅    | ✅    |
-| Conversion vers i18next                     | ❌         | ❌      | ❌      | ❌    | ✅    |
+| Fonctionnalité                              | v0.2.x    | v0.8.0 | v0.9.0 | v1.0.0 | v1.x | v2.x |
+|---------------------------------------------|-----------|--------|--------|--------|------|------|
+| Format `.i18t` natif (JSON/YAML)            | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Identifiants indépendants de la langue      | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Variantes et pluriels multiples             | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Chargement d'un `Book` depuis `.i18t`       | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Sauvegarde d'un `Book` vers `.i18t`         | ✅        | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Hiérarchie complète (Corpus, Encyclopaedia) | ✅        | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Gestion des replis linguistiques            | ✅        | ✅      | ✅      | ✅      | ✅    | ✅    |
+| Orchestration de haut niveau (`core.py` : charger/sauvegarder un Book ou Corpus, synchroniser un dépôt) | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Interpolation et règles de pluriel actives  | ❌         | ❌      | ✅      | ✅      | ✅    | ✅    |
+| Interface CLI/REPL                          | ❌         | ❌      | ✅      | ✅      | ✅    | ✅    |
+| Import/export `.po`/`.mo` (Babel/gettext)   | ❌         | ❌      | ❌      | ❌      | ✅    | ✅    |
+| Conversion vers i18next                     | ❌         | ❌      | ❌      | ❌      | ❌    | ✅    |
 
 ---
 
