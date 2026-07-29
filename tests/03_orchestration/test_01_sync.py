@@ -56,6 +56,24 @@ class TestCheckRepository:
             assert (lc_messages / expected_filename).exists()
             assert (lc_messages / "usage.po").exists()
 
+    def test_hierarchy_parent_key_itself_gets_synced(self, tmp_path):
+        """The bug: only hierarchy *values* were synced (e.g. fr-FR,
+        fr-BE), never the parent *key* itself (e.g. fr) — even though
+        `fr` is a legitimate fallback language in its own right, and
+        core.load_corpus() (via locale.get_all_languages()) expects a
+        file for it too."""
+        domains = {"module_a": ["usage"]}
+        languages = {
+            "source": "en",
+            "hierarchy": {"fr": ["fr-FR", "fr-BE"]},
+        }
+
+        check_repository(str(tmp_path), domains, languages)
+
+        for lang in ("en", "fr", "fr-FR", "fr-BE"):
+            lc_messages = tmp_path / "module_a" / "locales" / lang / "LC_MESSAGES"
+            assert lc_messages.is_dir(), f"missing directory for {lang}"
+
     def test_rejects_relative_tld(self, tmp_path):
         with pytest.raises(ValueError, match="must be absolute"):
             check_repository("relative/path", {}, {"source": "en", "hierarchy": {}})
