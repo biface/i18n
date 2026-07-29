@@ -138,10 +138,14 @@ def is_tag_ref():
 
     actions/checkout leaves a detached HEAD on tag builds, so
     get_current_git_branch() cannot resolve "main"/"master" there even
-    when the run should use real network resources — python-ci.yaml's
-    test-integration and coverage jobs are tag-gated
+    when the run should use real network resources.
+
+    test-integration remains tag-gated
     (if: startsWith(github.ref, 'refs/tags/')), so every real run of
-    these jobs is, by construction, a tag build.
+    that job is, by construction, a tag build. coverage was opened up
+    to master/staging/**/pull_request on 2026-07-27 — it is NOT always
+    a tag build anymore; see use_real_network_resources() below for how
+    it still gets real network resources in those other contexts.
 
     Checks GITHUB_REF (GitHub) for a refs/tags/ prefix, or CI_COMMIT_TAG
     (GitLab).
@@ -171,14 +175,33 @@ def use_real_network_resources(is_main_branch):
     """
     Determines whether to use real network resources or mocked versions.
 
-    On main/master branches, or on tag-triggered CI runs, real network
-    resources are used. On other branches, mocked versions are used to
-    avoid network dependencies.
+    True when any of:
+    - the branch is main/master,
+    - the run was triggered by a tag (is_tag_ref()),
+    - HTTPBIN_BASE_URL is set.
+
+    The third condition matters specifically for the coverage job: it
+    runs its own go-httpbin service container and sets HTTPBIN_BASE_URL
+    to point at it — real network resources should always be used there,
+    regardless of branch, since that container's whole purpose is to be
+    hit for real. Before coverage was opened up to master/staging/**/
+    pull_request (2026-07-27), it only ever ran on tags, so is_tag_ref()
+    alone was always true there and this case never came up. On a
+    pull_request event in particular, GITHUB_REF is
+    "refs/pull/<n>/merge" — neither a branch nor a tag ref — so without
+    this third condition the mock path would activate for a job that
+    has a real container ready and waiting, and the mock's simulated
+    responses (built for the public httpbingo.org URLs used elsewhere,
+    never this container's own host:port) would not recognize the
+    container's URL at all.
+
+    test-unit never sets HTTPBIN_BASE_URL, so this condition does not
+    widen real-network use to that job.
 
     Returns:
         bool: True if real network resources should be used, False if mocks should be used.
     """
-    return is_main_branch or is_tag_ref()
+    return is_main_branch or is_tag_ref() or bool(os.getenv("HTTPBIN_BASE_URL"))
 
 
 def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
