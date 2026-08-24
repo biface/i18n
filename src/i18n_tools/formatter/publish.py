@@ -89,7 +89,9 @@ def _plural_row_exists(message: "Message", plural_index: int) -> bool:
     return plural_index == 0 or plural_index in message.default_plurals
 
 
-def publish(message: "Message", alternative: int = 0, n: int | None = None, **kwargs) -> str:
+def publish(
+    message: "Message", alternative: int = 0, n: int | None = None, **kwargs
+) -> str:
     """
     Format a message: resolve the cell to use (DD-27 four-step column
     fallback, with automatic plural-row resolution via DD-40's
@@ -132,6 +134,4 @@ def publish(message: "Message", alternative: int = 0, n: int | None = None, **kw
             f"Missing variable '{missing_var}' for message '{message.id}'"
         ) from e
     except Exception as e:
-        raise FormatterError(
-            f"Error formatting message '{message.id}': {e}"
-        ) from e
+        raise FormatterError(f"Error formatting message '{message.id}': {e}") from e
