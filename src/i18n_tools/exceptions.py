@@ -49,3 +49,15 @@ class ConversionError(I18nToolsError):
 
 class LocaleError(I18nToolsError):
     """Raised when an IETF language tag is invalid or cannot be normalised."""
+
+
+class FormatterError(I18nToolsError):
+    """Raised when formatting/publishing a Message fails."""
+
+
+class PluralIndexError(FormatterError):
+    """Raised when a PluralRule resolves to a plural row that does not exist on the Message."""
+
+
+class PluralRuleError(FormatterError):
+    """Raised when a PluralRule configuration is invalid (e.g. malformed thresholds)."""
