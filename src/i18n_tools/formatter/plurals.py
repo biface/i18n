@@ -43,9 +43,7 @@ class PluralRule:
     index (``int``), never a CLDR category string.
     """
 
-    def __init__(
-        self, locale: str, thresholds: dict[int, int] | None = None
-    ) -> None:
+    def __init__(self, locale: str, thresholds: dict[int, int] | None = None) -> None:
         """
         :param locale: IETF language tag identifying the CLDR plural
             rule to use as the baseline (e.g. ``"fr"``, ``"pl"``).
@@ -61,9 +59,7 @@ class PluralRule:
         try:
             self._locale = Locale.parse(locale)
         except (UnknownLocaleError, ValueError) as e:
-            raise PluralRuleError(
-                f"Invalid locale for PluralRule: {locale!r}"
-            ) from e
+            raise PluralRuleError(f"Invalid locale for PluralRule: {locale!r}") from e
 
         if thresholds is not None:
             for key, value in thresholds.items():
