@@ -43,8 +43,8 @@ uv sync --group dev             # tox, quality tools, test runners
 uv sync --group dev --group docs  # + Sphinx/Furo for documentation work
 ```
 
-All checks and tests run through `tox` — see `tox.ini` for the full
-environment list. In particular:
+All checks and tests run through `tox` — see `pyproject.toml`'s
+`[tool.tox]` table for the full environment list. In particular:
 
 ```bash
 uv run tox -e pre-push   # quality gate + unit tests — run this before pushing

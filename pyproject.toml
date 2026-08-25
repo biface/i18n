@@ -1,12 +1,17 @@
 # =============================================================================
 # pyproject.toml — i18n-tools
 # =============================================================================
-# Build system, project metadata, runtime dependencies, optional extras,
-# and development dependency groups (PEP 735, managed by uv).
+# Single configuration file for packaging, toolchain, and test orchestration.
+# Build system, project metadata, runtime dependencies, optional extras, and
+# development dependency groups (PEP 735, managed by uv).
 #
-# Tool configuration (flake8, isort, pytest) is also consolidated here.
-# tox configuration lives in tox.ini (phase 1); merge planned for a later
-# cycle once the CI pipeline is stable.
+# Tool configuration (flake8, isort, basedpyright, bandit, pytest, coverage,
+# tox) is fully consolidated here — tox.ini removed (unification, 2026-08-25).
+# flake8's [tool.flake8] section below is inert without the Flake8-pyproject
+# plugin (not a dependency here, by choice — see the [tool.tox.env.flake8]
+# comment): flake8's real, effective config is passed as explicit CLI flags
+# in that env's `commands`, the same pattern already used for bandit's
+# `-c pyproject.toml` and matching the approach validated on django-clade.
 #
 # Dependency groups:
 #   uv sync --group dev    — full development toolchain (tox, quality, tests)
@@ -115,8 +120,8 @@ test = [
 # -----------------------------------------------------------------------------
 [dependency-groups]
 dev = [
-    # tox orchestration
-    "tox>=4.0",
+    # tox orchestration — >=4.21 required for native [tool.tox] pyproject.toml support
+    "tox>=4.21",
     "tox-uv",
     # test runners
     "pytest",
@@ -151,18 +156,18 @@ reportUnknownParameterType = false
 reportAny = false
 reportImportCycles = false
 
-[tool.flake8]
-max-line-length = 88
-ignore = ["E501"]
-extend-ignore = ["E203", "W503"]
-exclude = [".tox", ".git", "__pycache__", "build", "dist"]
-
 [tool.isort]
 profile = "black"
 line_length = 88
 known_first_party = "i18n_tools"
 multi_line_output = 3
 include_trailing_comma = true
+
+[tool.bandit]
+# B202: tarfile traversal controlled via _non_traversal_path() in loaders.py
+skips = ["B202"]
+# Only read when invoked with `bandit -c pyproject.toml` (see
+# [tool.tox.env.bandit] below) — bandit does not auto-discover pyproject.toml.
 
 [tool.pytest.ini_options]
 markers = [
@@ -196,4 +201,239 @@ source = ["src/i18n_tools"]
 exclude_also = [
     "@_deprecated_unmaintained",
     "def __repr__",
+]
+
+# -----------------------------------------------------------------------------
+# tox — test orchestration
+#
+# Migrated from tox.ini (unification, 2026-08-25) — same ~20 environments,
+# functionally unchanged. Notable drops during migration:
+#   - [gh-actions] section: dead code. python-ci.yaml's test-unit job maps
+#     the Python matrix to a tox env itself (`tox -e py${PYVER}`) and never
+#     installs tox-gh-actions — this section's automatic mapping was never
+#     actually consulted, likely a survivor from before the DD-36
+#     amendment/#90 single-file workflow redesign.
+#   - [flake8] (tox.ini) / [tool.flake8] (pyproject.toml, already dead —
+#     confirmed empirically: flake8 does not read pyproject.toml without
+#     the Flake8-pyproject plugin, not a dependency here): consolidated as
+#     explicit CLI flags in env.flake8's commands below, sourced from
+#     tox.ini's version (the one actually in effect).
+#   - [isort] (tox.ini): was already redundant — isort reads [tool.isort]
+#     above natively; both ultimately resolved to the same settings via
+#     profile = "black", confirmed via `isort --show-config`.
+#
+# Scripts shared, unmodified: .tox-config/scripts/test.sh (reads
+# versions.txt), .tox-config/scripts/coverage.sh (reads
+# coverage-version.txt) — same convention as django-clade/ndict-tools.
+#
+# Refs: DD-36, DD-39 (coverage-gate)
+# -----------------------------------------------------------------------------
+[tool.tox]
+requires = ["tox>=4.21", "tox-uv"]
+env_list = [
+    "py310", "py311", "py312", "py313", "py314",
+    "integration",
+    "basedpyright", "flake8", "black-check", "isort-check", "bandit",
+    "black", "isort", "format",
+    "ci-quality", "coverage", "coverage-gate",
+    "pre-push", "local",
+]
+
+# Base for all py3NN test environments. Quality/coverage/workflow
+# environments override deps/commands entirely.
+[tool.tox.env_run_base]
+runner = "uv-venv-runner"
+set_env = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
+uv_seed = true
+deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
+commands = [
+    ["pytest", "--import-mode=importlib",
+     "-m", "not network and not timeout",
+     "--cov=i18n_tools", "--cov-report=term-missing", "tests"],
+]
+
+[tool.tox.env.py310]
+base_python = "python3.10"
+
+[tool.tox.env.py311]
+base_python = "python3.11"
+
+[tool.tox.env.py312]
+base_python = "python3.12"
+
+[tool.tox.env.py313]
+base_python = "python3.13"
+
+[tool.tox.env.py314]
+base_python = "python3.14"
+
+# =============================================================================
+# Integration tests — real network calls (httpbingo.org)
+# CI job: test-integration. Runs only on version tags and scheduled pipelines.
+# =============================================================================
+
+[tool.tox.env.integration]
+description = "Integration tests requiring real network access"
+base_python = "python3.12"
+pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
+deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
+commands = [
+    ["pytest", "--import-mode=importlib", "-m", "network and not timeout", "tests"],
+]
+
+# =============================================================================
+# Coverage — full suite (unit + integration)
+# CI job: coverage — runs on master, staging/**, pull_request, and tags.
+# =============================================================================
+
+[tool.tox.env.coverage]
+description = "Generate coverage report (full suite, excludes only timeout)"
+base_python = "python3.12"
+pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
+deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
+commands = [
+    ["pytest", "--import-mode=importlib", "-m", "not timeout",
+     "--cov=i18n_tools", "--cov-append", "--cov-report=term-missing",
+     "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
+     "--cov-report=html:{toxinidir}/coverage/coverage_html", "tests"],
+]
+
+# =============================================================================
+# Coverage gate — hard enforcement, release tags only (DD-39)
+# --fail-under pinned to 0 (inert) until v1.0.0 — one-line change (0 -> 80)
+# activates it. Reads the .coverage file already produced by env.coverage
+# above, in the same CI job — does not re-run pytest.
+# =============================================================================
+
+[tool.tox.env."coverage-gate"]
+description = "Hard coverage gate for release tags (inactive before v1.0.0 — threshold 0)"
+skip_install = true
+commands = [["coverage", "report", "--fail-under=0"]]
+
+# =============================================================================
+# Individual quality tools
+# =============================================================================
+
+[tool.tox.env.basedpyright]
+description = "Static type checking with basedpyright"
+deps = ["-r {toxinidir}/.tox-config/requirements/type-check.txt"]
+allowlist_externals = ["bash"]
+commands = [["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"]]
+
+[tool.tox.env.flake8]
+description = "Lint the code with flake8"
+deps = ["-r {toxinidir}/.tox-config/requirements/linter.txt"]
+allowlist_externals = ["flake8"]
+commands = [
+    ["flake8",
+     "--max-line-length=88",
+     "--extend-ignore=E203,W503,E501",
+     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
+     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
+     "src", "tests"],
+]
+
+[tool.tox.env."black-check"]
+description = "Check code formatting with black (no changes)"
+deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
+commands = [["black", "--check", "--diff", "--target-version", "py310", "src", "tests"]]
+
+[tool.tox.env."isort-check"]
+description = "Check import sorting with isort (no changes)"
+deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
+commands = [["isort", "--check-only", "--diff", "src", "tests"]]
+
+[tool.tox.env.bandit]
+description = "Security analysis with bandit"
+deps = ["-r {toxinidir}/.tox-config/requirements/security.txt"]
+allowlist_externals = ["bandit"]
+commands = [["bandit", "-c", "pyproject.toml", "-r", "src"]]
+
+# =============================================================================
+# Auto-fix tools
+# =============================================================================
+
+[tool.tox.env.black]
+description = "Auto-format code with black"
+deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
+commands = [["black", "--target-version", "py310", "src", "tests"]]
+
+[tool.tox.env.isort]
+description = "Auto-sort imports with isort"
+deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
+commands = [["isort", "src", "tests"]]
+
+[tool.tox.env.format]
+description = "Auto-format code (black then isort)"
+deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
+commands = [
+    ["black", "--target-version", "py310", "src", "tests"],
+    ["isort", "src", "tests"],
+]
+
+# =============================================================================
+# CI quality gate — verify only, no auto-fix
+# =============================================================================
+
+[tool.tox.env."ci-quality"]
+description = "All quality checks chained (used by the CI quality job)"
+deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
+allowlist_externals = ["bash", "flake8", "black", "isort", "bandit"]
+commands = [
+    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["flake8",
+     "--max-line-length=88",
+     "--extend-ignore=E203,W503,E501",
+     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
+     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
+     "src", "tests"],
+    ["black", "--check", "--diff", "--target-version", "py310", "src", "tests"],
+    ["isort", "--check-only", "--diff", "src", "tests"],
+    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+]
+
+# =============================================================================
+# Local workflows
+# =============================================================================
+
+[tool.tox.env."pre-push"]
+description = "Quality gate + unit tests before pushing"
+deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
+allowlist_externals = ["bash"]
+pass_env = ["HOME", "USER"]
+commands = [
+    ["black", "--target-version", "py310", "src", "tests"],
+    ["isort", "src", "tests"],
+    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["flake8",
+     "--max-line-length=88",
+     "--extend-ignore=E203,W503,E501",
+     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
+     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
+     "src", "tests"],
+    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    ["bash", "{toxinidir}/.tox-config/scripts/test.sh"],
+    ["bash", "{toxinidir}/.tox-config/scripts/coverage.sh"],
+]
+
+[tool.tox.env.local]
+description = "Full local workflow: auto-fix, all quality checks, full coverage"
+deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
+allowlist_externals = ["bash"]
+pass_env = ["HOME", "USER"]
+commands = [
+    ["black", "--target-version", "py310", "src", "tests"],
+    ["isort", "src", "tests"],
+    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["flake8",
+     "--max-line-length=88",
+     "--extend-ignore=E203,W503,E501",
+     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
+     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
+     "src", "tests"],
+    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    ["pytest", "--import-mode=importlib", "-m", "not timeout",
+     "--cov=i18n_tools", "--cov-report=term-missing",
+     "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
+     "--cov-report=html:{toxinidir}/coverage/coverage_html", "tests"],
 ]
