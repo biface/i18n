@@ -16,8 +16,9 @@ name: Python CI
 # coverage-focused v0.7.0 sprint (see PROJECT_STATUS.md).
 #
 # IMPORTANT: coverage's own hard enforcement step (`tox -e coverage-gate`,
-# see tox.ini) stays tag-only regardless of the above — it is the real
-# release gate (currently inert, --fail-under=0, activates at v1.0.0).
+# see pyproject.toml's [tool.tox.env."coverage-gate"]) stays tag-only
+# regardless of the above — it is the real release gate (currently
+# inert, --fail-under=0, activates at v1.0.0).
 # Codecov's status checks (.codecov.yml) are `informational: true` and are
 # NOT a release gate — GitHub branch protection required-status-checks do
 # not apply to tags, only to branches, so Codecov can never block a
@@ -215,8 +216,9 @@ jobs:
           fail_ci_if_error: true
 
       # Real release gate — tag-only, inert until v1.0.0 (--fail-under=0
-      # in tox.ini's [testenv:coverage-gate]). Reads the .coverage file
-      # produced by the "Run coverage" step above; does not re-run pytest.
+      # in pyproject.toml's [tool.tox.env."coverage-gate"]). Reads the
+      # .coverage file produced by the "Run coverage" step above; does
+      # not re-run pytest.
       - name: Enforce coverage gate (release only, inactive before v1.0.0)
         if: startsWith(github.ref, 'refs/tags/')
         run: tox -e coverage-gate

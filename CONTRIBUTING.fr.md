@@ -47,8 +47,8 @@ uv sync --group dev               # tox, outils qualité, lanceurs de tests
 uv sync --group dev --group docs  # + Sphinx/Furo pour la documentation
 ```
 
-Toutes les vérifications passent par `tox` — voir `tox.ini` pour la liste
-complète des environnements. En particulier :
+Toutes les vérifications passent par `tox` — voir la table `[tool.tox]`
+de `pyproject.toml` pour la liste complète des environnements. En particulier :
 
 ```bash
 uv run tox -e pre-push   # gate qualité + tests unitaires — à lancer avant de pousser
