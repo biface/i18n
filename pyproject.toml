@@ -89,6 +89,12 @@ Repository = "https://github.com/biface/i18n.git"
 Issues     = "https://github.com/biface/i18n/issues"
 
 # -----------------------------------------------------------------------------
+# CLI entry point (#39) — `i18n-tools validate|info|sync|repl`
+# -----------------------------------------------------------------------------
+[project.scripts]
+i18n-tools = "i18n_tools.cli:main"
+
+# -----------------------------------------------------------------------------
 # Optional extras — for consumers who want to run the test suite
 # without the full development toolchain
 # -----------------------------------------------------------------------------
