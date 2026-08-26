@@ -12,7 +12,7 @@ import sys
 project = 'pyi18t-tools'
 copyright = '2025, biface'
 author = 'biface'
-release = '0.9.0rc1'
+release = '0.9.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
