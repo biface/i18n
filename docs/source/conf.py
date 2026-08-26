@@ -9,7 +9,7 @@ import sys
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'i18n-tools'
+project = 'pyi18t-tools'
 copyright = '2025, biface'
 author = 'biface'
 release = '0.9.0rc1'
