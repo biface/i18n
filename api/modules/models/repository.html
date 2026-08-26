@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../../../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>4.6.1. Repository - i18n-tools 0.6.0 documentation</title>
+        <title>4.6.1. Repository - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../../../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -282,9 +282,9 @@ metadata (details, paths, languages, domains, translators, authors, etc.).</p>
 <h3>Quick example<a class="headerlink" href="#quick-example" title="Link to this heading">¶</a></h3>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">i18n_tools.models.repository</span><span class="w"> </span><span class="kn">import</span> <span class="n">Repository</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span> <span class="o">=</span> <span class="n">Repository</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;My Project&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;src/app&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_domain</span><span class="p">(</span><span class="s2">&quot;src/app&quot;</span><span class="p">,</span> <span class="s2">&quot;messages&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"My Project"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"src/app"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_domain</span><span class="p">(</span><span class="s2">"src/app"</span><span class="p">,</span> <span class="s2">"messages"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">hierarchy</span>
 <span class="go">StrictNestedDictionary({...})</span>
 </pre></div>
@@ -308,11 +308,11 @@ Python properties and helper methods to keep the underlying structure
 consistent.</p>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span> <span class="o">=</span> <span class="n">Repository</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;i18n-tools sample&quot;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">&quot;src/web&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_domain</span><span class="p">(</span><span class="s2">&quot;src/web&quot;</span><span class="p">,</span> <span class="s2">&quot;messages&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">languages</span><span class="p">[</span><span class="s2">&quot;source&quot;</span><span class="p">]</span>
-<span class="go">&#39;&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">"i18n-tools sample"</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="s2">"src/web"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">add_domain</span><span class="p">(</span><span class="s2">"src/web"</span><span class="p">,</span> <span class="s2">"messages"</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">repo</span><span class="o">.</span><span class="n">languages</span><span class="p">[</span><span class="s2">"source"</span><span class="p">]</span>
+<span class="go">''</span>
 </pre></div>
 </div>
 <p class="rubric">Notes</p>
@@ -402,7 +402,7 @@ keep JSON/YAML rendering consistent across the project.</p>
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../../../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

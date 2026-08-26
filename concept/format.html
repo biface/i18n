@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>3.2. Proprietary Translation Format - i18n-tools 0.6.0 documentation</title>
+        <title>3.2. Proprietary Translation Format - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -276,25 +276,25 @@
 <h2><span class="section-number">3.2.1. </span>Atomic Cell Entity<a class="headerlink" href="#atomic-cell-entity" title="Link to this heading">¶</a></h2>
 <p>The base structure is a JSON dictionary with the following format:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_1_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_1_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_1_of_alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_2_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_2_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_2_of_alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_3_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_3_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_3_of_alt_2_msg_without_variable_inside&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_1_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_1_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_1_of_alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_2_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_2_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_2_of_alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_3_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_3_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_3_of_alt_2_msg_without_variable_inside"</span><span class="p">]</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;singular_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;plural_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;locations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file1.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file2.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
+<span class="w">        </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">"singular_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"plural_counts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file1.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file2.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;fuzzy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;python-format&quot;</span>
+<span class="w">            </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">"fuzzy"</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">"python-format"</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;comments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Translator comments or notes about the message&quot;</span>
+<span class="w">            </span><span class="nt">"comments"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Translator comments or notes about the message"</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
@@ -330,18 +330,18 @@
 <section id="example-of-specific-metadata">
 <h3>Example of Specific Metadata<a class="headerlink" href="#example-of-specific-metadata" title="Link to this heading">¶</a></h3>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;singular_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;plural_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;locations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file1.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file2.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"singular_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"plural_counts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">        </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file1.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file2.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;fuzzy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;python-format&quot;</span>
+<span class="w">        </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">"fuzzy"</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">"python-format"</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;comments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Translator comments or notes about the message&quot;</span>
+<span class="w">        </span><span class="nt">"comments"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Translator comments or notes about the message"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -358,55 +358,55 @@
 <p><strong>Example of Translation Dictionary</strong></p>
 <p>Here is an example of how a translation dictionary is structured:</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;id_1&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_1_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_1_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_1_of_alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_2_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_2_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_2_of_alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;plural_3_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_3_of_alt_1_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;plural_3_of_alt_2_msg_without_variable_inside&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"id_1"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_1_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_1_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_1_of_alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_2_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_2_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_2_of_alt_2_msg_with'{variable}'_inside"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"plural_3_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_3_of_alt_1_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"plural_3_of_alt_2_msg_without_variable_inside"</span><span class="p">]</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;locations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file1.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file2.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
+<span class="w">        </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file1.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">123</span><span class="p">],</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file2.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">456</span><span class="p">]</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;fuzzy&quot;</span><span class="p">,</span>
-<span class="w">                </span><span class="s2">&quot;python-format&quot;</span>
+<span class="w">            </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">"fuzzy"</span><span class="p">,</span>
+<span class="w">                </span><span class="s2">"python-format"</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;comments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Translator comments or notes about the message&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;singular_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;plural_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"comments"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Translator comments or notes about the message"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"singular_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"plural_counts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;id_2&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;another_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;another_alt_1_msg&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;another_plural_1_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;another_plural_1_of_alt_1_msg&quot;</span><span class="p">],</span>
-<span class="w">            </span><span class="p">[</span><span class="s2">&quot;another_plural_2_of_main_msg&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;another_plural_2_of_alt_1_msg&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"id_2"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"another_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"another_alt_1_msg"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"another_plural_1_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"another_plural_1_of_alt_1_msg"</span><span class="p">],</span>
+<span class="w">            </span><span class="p">[</span><span class="s2">"another_plural_2_of_main_msg"</span><span class="p">,</span><span class="w"> </span><span class="s2">"another_plural_2_of_alt_1_msg"</span><span class="p">]</span>
 <span class="w">        </span><span class="p">],</span>
-<span class="w">        </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;locations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="p">[</span><span class="s2">&quot;path/to/source/file3.py&quot;</span><span class="p">,</span><span class="w"> </span><span class="mi">789</span><span class="p">]</span>
+<span class="w">        </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">"locations"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="p">[</span><span class="s2">"path/to/source/file3.py"</span><span class="p">,</span><span class="w"> </span><span class="mi">789</span><span class="p">]</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">                </span><span class="s2">&quot;python-format&quot;</span>
+<span class="w">            </span><span class="nt">"flags"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">                </span><span class="s2">"python-format"</span>
 <span class="w">            </span><span class="p">],</span>
-<span class="w">            </span><span class="nt">&quot;comments&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Additional translator comments or notes about the message&quot;</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;singular_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;plural_counts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span>
+<span class="w">            </span><span class="nt">"comments"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Additional translator comments or notes about the message"</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"singular_count"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"plural_counts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">],</span>
 <span class="w">        </span><span class="p">}</span>
 <span class="w">    </span><span class="p">},</span>
-<span class="w">    </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;project_id_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;i18n-tools 1.0&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;report_msgid_bugs_to&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bugs@example.com&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;pot_creation_date&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2023-10-01 12:00+0100&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;language_team&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;French Team &lt;french-team@example.com&gt;&quot;</span><span class="p">,</span>
-<span class="w">        </span><span class="nt">&quot;statistics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">            </span><span class="nt">&quot;total_words&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5678</span><span class="p">,</span>
-<span class="w">            </span><span class="nt">&quot;total_messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1234</span>
+<span class="w">    </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"project_id_version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"i18n-tools 1.0"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"report_msgid_bugs_to"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bugs@example.com"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"pot_creation_date"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2023-10-01 12:00+0100"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"language_team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"French Team &lt;french-team@example.com&gt;"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"statistics"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nt">"total_words"</span><span class="p">:</span><span class="w"> </span><span class="mi">5678</span><span class="p">,</span>
+<span class="w">            </span><span class="nt">"total_messages"</span><span class="p">:</span><span class="w"> </span><span class="mi">1234</span>
 <span class="w">        </span><span class="p">},</span>
-<span class="w">        </span><span class="nt">&quot;header_comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Global declarations or notes from translators about the translation domain&quot;</span>
+<span class="w">        </span><span class="nt">"header_comment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Global declarations or notes from translators about the translation domain"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -498,7 +498,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

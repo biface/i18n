@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>4.9. Formatter Module - i18n-tools 0.6.0 documentation</title>
+        <title>4.9. Formatter Module - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -266,22 +266,64 @@
         <article role="main" id="furo-main-content">
           <section id="module-i18n_tools.formatter">
 <span id="formatter-module"></span><h1><span class="section-number">4.9. </span>Formatter Module<a class="headerlink" href="#module-i18n_tools.formatter" title="Link to this heading">¶</a></h1>
-<p>This module is responsible for constructing messages to be added to a translation dictionary, transcribing data supplied by converters, and formatting them into strings for error messages.</p>
-<p>It also publishes messages in i18next mode using the appropriate APIs.</p>
-<dl class="simple">
-<dt>Main responsibilities:</dt><dd><ul class="simple">
-<li><p>Build a message to be stored in a translation dictionary</p></li>
-<li><p>Transcribe and format data from converters.</p></li>
-<li><p>Publish messages in i18next mode using appropriate APIs.</p></li>
+<section id="i18n-tools-formatter-sub-package">
+<h2><span class="section-number">4.9.1. </span>i18n-tools formatter sub-package<a class="headerlink" href="#i18n-tools-formatter-sub-package" title="Link to this heading">¶</a></h2>
+<p><strong>License:</strong>
+This file is distributed under the terms of the <a class="reference external" href="https://cecill.info/licences/Licence_CeCILL-C_V1-en.html">CeCILL-C Free Software License Agreement</a>. By using, modifying, or
+redistributing this file, you agree to comply with the terms of this license.</p>
+<p><strong>Author(s):</strong>
+This module is authored and maintained as part of the i18n-tools package.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">formatter</span></code> sub-package owns message <em>publishing</em>: turning a
+<code class="docutils literal notranslate"><span class="pre">Message</span></code>’s plural/alternative matrix and its <code class="docutils literal notranslate"><span class="pre">plural_rule</span></code> into a
+single, variable-substituted string (DD-27, DD-40). It mirrors the
+<code class="docutils literal notranslate"><span class="pre">models</span></code> sub-package’s layout, and leaves room for future
+<code class="docutils literal notranslate"><span class="pre">Book</span></code>/<code class="docutils literal notranslate"><span class="pre">Corpus</span></code>-level formatting modules without another
+restructuring.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">publish.py</span></code> — <code class="docutils literal notranslate"><span class="pre">publish()</span></code>: the DD-27 four-step column fallback,
+<code class="docutils literal notranslate"><span class="pre">PluralRule</span></code> resolution, variable substitution.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plurals.py</span></code> — <code class="docutils literal notranslate"><span class="pre">PluralRule</span></code>: the DD-40 CLDR-baseline-plus-
+business-threshold-overlay plural resolution rule.</p></li>
+</ul>
+<p>This sub-package imports from <code class="docutils literal notranslate"><span class="pre">models</span></code> (for type hints only); models
+never import from <code class="docutils literal notranslate"><span class="pre">formatter</span></code> (DD-05/DD-06).</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.formatter.publish">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.formatter.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="models/corpus.html#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">alternative</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.formatter.publish" title="Link to this definition">¶</a></dt>
+<dd><p>Format a message: resolve the cell to use (DD-27 four-step column
+fallback, with automatic plural-row resolution via DD-40’s
+<code class="docutils literal notranslate"><span class="pre">PluralRule</span></code> when applicable), then substitute variables.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>message</strong> (<a class="reference internal" href="models/corpus.html#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><em>Message</em></a>) – The <code class="docutils literal notranslate"><span class="pre">Message</span></code> to format.</p></li>
+<li><p><strong>alternative</strong> (<em>int</em>) – The alternative (column) index to use. Defaults
+to 0 (the main text).</p></li>
+<li><p><strong>n</strong> (<em>int</em><em> | </em><em>None</em>) – Count driving automatic plural-row resolution via
+<code class="docutils literal notranslate"><span class="pre">message.plural_rule</span></code>. Ignored if <code class="docutils literal notranslate"><span class="pre">message.plural_rule</span></code> is
+<code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
+<li><p><strong>kwargs</strong> – Variables substituted into the resolved text via
+<code class="docutils literal notranslate"><span class="pre">str.format_map</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The formatted message.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>PluralIndexError</strong> – If <code class="docutils literal notranslate"><span class="pre">message.plural_rule</span></code> resolves a
+plural row index that does not exist on <code class="docutils literal notranslate"><span class="pre">message</span></code>.</p></li>
+<li><p><strong>FormatterError</strong> – If variable substitution fails (a required
+variable is missing, or the resolved text is malformed).</p></li>
 </ul>
 </dd>
 </dl>
-<dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.formatter.publish">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.formatter.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="models/corpus.html#i18n_tools.models.corpus.Message" title="i18n_tools.models.corpus.Message"><span class="pre">Message</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.formatter.publish" title="Link to this definition">¶</a></dt>
-<dd><p>Format a message using the appropriate format.</p>
 </dd></dl>
 
+</section>
 </section>
 
         </article>
@@ -340,7 +382,10 @@
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">4.9. Formatter Module</a><ul>
+<li><a class="reference internal" href="#i18n-tools-formatter-sub-package">4.9.1. i18n-tools formatter sub-package</a><ul>
 <li><a class="reference internal" href="#i18n_tools.formatter.publish"><code class="docutils literal notranslate"><span class="pre">publish()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -352,7 +397,7 @@
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>

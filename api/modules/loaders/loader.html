@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../../../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>4.5.3. Loader module - i18n-tools 0.6.0 documentation</title>
+        <title>4.5.3. Loader module - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../../../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -294,15 +294,15 @@ objects required) or together with model instances (e.g. <code class="docutils l
 <dd><p>This function load a JSON file in the locales repository and containing i18next data. The structure of this
 dictionary is as follows:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;msgid_001&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">[</span><span class="s2">&quot;msgstr_001_000&quot;</span><span class="p">,</span> <span class="s2">&quot;msgstr_001_001&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;msgplr_001_1_000&quot;</span><span class="p">,</span> <span class="s2">&quot;msgplr_001_1_001&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;msgplr_001_2_000&quot;</span><span class="p">,</span> <span class="s2">&quot;msgplr_001_2_001&quot;</span><span class="p">]</span>
+    <span class="s2">"msgid_001"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="s2">"msgstr_001_000"</span><span class="p">,</span> <span class="s2">"msgstr_001_001"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"msgplr_001_1_000"</span><span class="p">,</span> <span class="s2">"msgplr_001_1_001"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"msgplr_001_2_000"</span><span class="p">,</span> <span class="s2">"msgplr_001_2_001"</span><span class="p">]</span>
         <span class="p">],</span>
-    <span class="s2">&quot;msgid_002&quot;</span><span class="p">:</span> <span class="p">[</span>
-            <span class="p">[</span><span class="s2">&quot;msgstr_002_000&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;msgplr_002_1_000&quot;</span><span class="p">],</span>
-            <span class="p">[</span><span class="s2">&quot;msgplr_002_2_000&quot;</span><span class="p">]</span>
+    <span class="s2">"msgid_002"</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">[</span><span class="s2">"msgstr_002_000"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"msgplr_002_1_000"</span><span class="p">],</span>
+            <span class="p">[</span><span class="s2">"msgplr_002_2_000"</span><span class="p">]</span>
         <span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
@@ -360,8 +360,8 @@ and <code class="docutils literal notranslate"><span class="pre">metadata</span>
 <p>The serialisation format (JSON or YAML) is detected from the file
 extension. The structure written to disk follows the native .i18t format:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">},</span>
-    <span class="s2">&quot;&lt;msgid&gt;&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span> <span class="p">},</span>
+    <span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">},</span>
+    <span class="s2">"&lt;msgid&gt;"</span><span class="p">:</span> <span class="p">{</span> <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[</span><span class="o">...</span><span class="p">],</span> <span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span> <span class="o">...</span> <span class="p">}</span> <span class="p">},</span>
     <span class="o">...</span>
 <span class="p">}</span>
 </pre></div>
@@ -550,7 +550,7 @@ pattern (DD-06, DD-08) — never directly to <cite>handler.py</cite>.</p>
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../../../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>

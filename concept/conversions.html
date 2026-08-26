@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>3.3. Conversion of Alternative Messages - i18n-tools 0.6.0 documentation</title>
+        <title>3.3. Conversion of Alternative Messages - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -279,8 +279,8 @@
 - Use the base ID (e.g., <code class="docutils literal notranslate"><span class="pre">id</span></code>) for the main message.
 - Example:</p>
 <blockquote>
-<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">&quot;id&quot;</span>
-<span class="nv">msgstr</span> <span class="s">&quot;main_msg&quot;</span>
+<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">"id"</span>
+<span class="nv">msgstr</span> <span class="s">"main_msg"</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -289,11 +289,11 @@
 - Use extended IDs (e.g., <code class="docutils literal notranslate"><span class="pre">id_001</span></code>, <code class="docutils literal notranslate"><span class="pre">id_002</span></code>) for alternative messages.
 - Example:</p>
 <blockquote>
-<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">&quot;id_001&quot;</span>
-<span class="nv">msgstr</span> <span class="s">&quot;alt_1_msg&quot;</span>
+<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">"id_001"</span>
+<span class="nv">msgstr</span> <span class="s">"alt_1_msg"</span>
 
-<span class="nv">msgid</span> <span class="s">&quot;id_002&quot;</span>
-<span class="nv">msgstr</span> <span class="s">&quot;alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span>
+<span class="nv">msgid</span> <span class="s">"id_002"</span>
+<span class="nv">msgstr</span> <span class="s">"alt_2_msg_with'{variable}'_inside"</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -302,15 +302,15 @@
 - Use a <code class="docutils literal notranslate"><span class="pre">_plural</span></code> suffix for plural forms of the main message and its alternatives.
 - Example:</p>
 <blockquote>
-<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">&quot;id_plural&quot;</span>
-<span class="nv">msgid_plural</span> <span class="s">&quot;plural_1_of_main_msg&quot;</span>
-<span class="nv">msgstr[</span><span class="mi">0</span><span class="nv">]</span> <span class="s">&quot;plural_2_of_main_msg&quot;</span>
-<span class="nv">msgstr[</span><span class="mi">1</span><span class="nv">]</span> <span class="s">&quot;plural_3_of_main_msg&quot;</span>
+<div><div class="highlight-po notranslate"><div class="highlight"><pre><span></span><span class="nv">msgid</span> <span class="s">"id_plural"</span>
+<span class="nv">msgid_plural</span> <span class="s">"plural_1_of_main_msg"</span>
+<span class="nv">msgstr[</span><span class="mi">0</span><span class="nv">]</span> <span class="s">"plural_2_of_main_msg"</span>
+<span class="nv">msgstr[</span><span class="mi">1</span><span class="nv">]</span> <span class="s">"plural_3_of_main_msg"</span>
 
-<span class="nv">msgid</span> <span class="s">&quot;id_001_plural&quot;</span>
-<span class="nv">msgid_plural</span> <span class="s">&quot;plural_1_of_alt_1_msg&quot;</span>
-<span class="nv">msgstr[</span><span class="mi">0</span><span class="nv">]</span> <span class="s">&quot;plural_2_of_alt_1_msg&quot;</span>
-<span class="nv">msgstr[</span><span class="mi">1</span><span class="nv">]</span> <span class="s">&quot;plural_3_of_alt_1_msg&quot;</span>
+<span class="nv">msgid</span> <span class="s">"id_001_plural"</span>
+<span class="nv">msgid_plural</span> <span class="s">"plural_1_of_alt_1_msg"</span>
+<span class="nv">msgstr[</span><span class="mi">0</span><span class="nv">]</span> <span class="s">"plural_2_of_alt_1_msg"</span>
+<span class="nv">msgstr[</span><span class="mi">1</span><span class="nv">]</span> <span class="s">"plural_3_of_alt_1_msg"</span>
 </pre></div>
 </div>
 </div></blockquote>
@@ -326,12 +326,12 @@
 - Example:</p>
 <blockquote>
 <div><div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;key1&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;value1&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;key2&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;value2&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;key3_plural&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plural value&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;key3&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;singular value&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;nested&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="nt">&quot;key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;nested value&quot;</span>
+<span class="w">    </span><span class="nt">"key1"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value1"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"key2"</span><span class="p">:</span><span class="w"> </span><span class="s2">"value2"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"key3_plural"</span><span class="p">:</span><span class="w"> </span><span class="s2">"plural value"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"key3"</span><span class="p">:</span><span class="w"> </span><span class="s2">"singular value"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"nested"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"key"</span><span class="p">:</span><span class="w"> </span><span class="s2">"nested value"</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -343,8 +343,8 @@
 - Example:</p>
 <blockquote>
 <div><div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;id_001&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;alt_1_msg&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;id_002&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;alt_2_msg_with&#39;{variable}&#39;_inside&quot;</span>
+<span class="w">  </span><span class="nt">"id_001"</span><span class="p">:</span><span class="w"> </span><span class="s2">"alt_1_msg"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"id_002"</span><span class="p">:</span><span class="w"> </span><span class="s2">"alt_2_msg_with'{variable}'_inside"</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -355,13 +355,13 @@
 - Example:</p>
 <blockquote>
 <div><div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;id_plural&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;one&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plural_1_of_main_msg&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;other&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plural_2_of_main_msg&quot;</span>
+<span class="w">  </span><span class="nt">"id_plural"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"one"</span><span class="p">:</span><span class="w"> </span><span class="s2">"plural_1_of_main_msg"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"other"</span><span class="p">:</span><span class="w"> </span><span class="s2">"plural_2_of_main_msg"</span>
 <span class="w">  </span><span class="p">},</span>
-<span class="w">  </span><span class="nt">&quot;id_001_plural&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;one&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plural_1_of_alt_1_msg&quot;</span><span class="p">,</span>
-<span class="w">    </span><span class="nt">&quot;other&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;plural_2_of_alt_1_msg&quot;</span>
+<span class="w">  </span><span class="nt">"id_001_plural"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"one"</span><span class="p">:</span><span class="w"> </span><span class="s2">"plural_1_of_alt_1_msg"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"other"</span><span class="p">:</span><span class="w"> </span><span class="s2">"plural_2_of_alt_1_msg"</span>
 <span class="w">  </span><span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -451,7 +451,7 @@
       
     </aside>
   </div>
-</div><script src="../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/scripts/furo.js?v=46bd48cc"></script>

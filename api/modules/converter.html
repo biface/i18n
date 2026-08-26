@@ -7,7 +7,7 @@
         <link rel="prefetch" href="../../_static/logo.svg" as="image">
 
     <link rel="shortcut icon" href="../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>4.8. Converter Module - i18n-tools 0.6.0 documentation</title>
+        <title>4.8. Converter Module - pyi18t-tools 0.9.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../index.html"><div class="brand">i18n-tools 0.6.0 documentation</div></a>
+      <a href="../../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">i18n-tools 0.6.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -353,48 +353,48 @@ key advantages:</p>
 <h3>Unified Format Structure<a class="headerlink" href="#unified-format-structure" title="Link to this heading">¶</a></h3>
 <p>The unified format is a dictionary with the following structure:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s2">&quot;message_id&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># The unique identifier for the message (string)</span>
-        <span class="s2">&quot;translation&quot;</span><span class="p">:</span> <span class="s2">&quot;The translated text for the message&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;plural_forms&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing plural forms of the translation</span>
-            <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;The singular form of the translation&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;The first plural form of the translation&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-            <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;The second plural form of the translation&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
+    <span class="s2">"message_id"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># The unique identifier for the message (string)</span>
+        <span class="s2">"translation"</span><span class="p">:</span> <span class="s2">"The translated text for the message"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"plural_forms"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing plural forms of the translation</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s2">"The singular form of the translation"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">"The first plural form of the translation"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+            <span class="mi">2</span><span class="p">:</span> <span class="s2">"The second plural form of the translation"</span><span class="p">,</span>  <span class="c1"># (string)</span>
             <span class="c1"># Additional plural forms as needed</span>
         <span class="p">},</span>
-        <span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="s2">&quot;Optional context information for the translation&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing metadata about the translation</span>
-            <span class="s2">&quot;locations&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A list of source code locations where the message is used&quot;</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
-            <span class="s2">&quot;flags&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;A list of flags providing additional information about the message&quot;</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
-            <span class="s2">&quot;comments&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Translator comments associated with the message&quot;</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
-            <span class="s2">&quot;auto_comments&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Developer comments extracted from the source code&quot;</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
+        <span class="s2">"context"</span><span class="p">:</span> <span class="s2">"Optional context information for the translation"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing metadata about the translation</span>
+            <span class="s2">"locations"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"A list of source code locations where the message is used"</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
+            <span class="s2">"flags"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"A list of flags providing additional information about the message"</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
+            <span class="s2">"comments"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Translator comments associated with the message"</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
+            <span class="s2">"auto_comments"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"Developer comments extracted from the source code"</span><span class="p">],</span>  <span class="c1"># (list of strings)</span>
             <span class="c1"># Additional metadata as needed</span>
         <span class="p">},</span>
-        <span class="s2">&quot;alternatives&quot;</span><span class="p">:</span> <span class="p">{</span> <span class="c1"># A dictionary containing alternative messages for the message</span>
-            <span class="mi">0</span><span class="p">:</span> <span class="s2">&quot;Alternative message 1&quot;</span>
-            <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;Alternative message 2&quot;</span>
+        <span class="s2">"alternatives"</span><span class="p">:</span> <span class="p">{</span> <span class="c1"># A dictionary containing alternative messages for the message</span>
+            <span class="mi">0</span><span class="p">:</span> <span class="s2">"Alternative message 1"</span>
+            <span class="mi">1</span><span class="p">:</span> <span class="s2">"Alternative message 2"</span>
             <span class="p">},</span>
-        <span class="s2">&quot;alternative_plural_forms&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing plural forms for alternative messages</span>
+        <span class="s2">"alternative_plural_forms"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># A dictionary containing plural forms for alternative messages</span>
             <span class="mi">0</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Index of the alternative message (corresponds to index in alternatives list)</span>
-                <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;First plural form of alternative message 1&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-                <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Second plural form of alternative message 1&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="s2">"First plural form of alternative message 1"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+                <span class="mi">2</span><span class="p">:</span> <span class="s2">"Second plural form of alternative message 1"</span><span class="p">,</span>  <span class="c1"># (string)</span>
             <span class="p">},</span>
             <span class="mi">1</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Index of the alternative message (corresponds to index in alternatives list)</span>
-                <span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;First plural form of alternative message 2&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-                <span class="mi">2</span><span class="p">:</span> <span class="s2">&quot;Second plural form of alternative message 2&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
+                <span class="mi">1</span><span class="p">:</span> <span class="s2">"First plural form of alternative message 2"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+                <span class="mi">2</span><span class="p">:</span> <span class="s2">"Second plural form of alternative message 2"</span><span class="p">,</span>  <span class="c1"># (string)</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">},</span>
-    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Global metadata for the translation domain</span>
-        <span class="s2">&quot;project_id_version&quot;</span><span class="p">:</span> <span class="s2">&quot;Project name and version&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;report_msgid_bugs_to&quot;</span><span class="p">:</span> <span class="s2">&quot;Email address for reporting message ID bugs&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;pot_creation_date&quot;</span><span class="p">:</span> <span class="s2">&quot;Date when the POT file was created&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;language_team&quot;</span><span class="p">:</span> <span class="s2">&quot;Name and email of the language team&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;domain&quot;</span><span class="p">:</span> <span class="s2">&quot;Translation domain name&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;header_comment&quot;</span><span class="p">:</span> <span class="s2">&quot;Comment in the header of the catalog&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;copyright_holder&quot;</span><span class="p">:</span> <span class="s2">&quot;Copyright holder information&quot;</span><span class="p">,</span>  <span class="c1"># (string)</span>
-        <span class="s2">&quot;statistics&quot;</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Statistics about the translations</span>
-            <span class="s2">&quot;total_messages&quot;</span><span class="p">:</span> <span class="mi">1234</span><span class="p">,</span>  <span class="c1"># (integer)</span>
-            <span class="s2">&quot;total_words&quot;</span><span class="p">:</span> <span class="mi">5678</span>  <span class="c1"># (integer)</span>
+    <span class="s2">"metadata"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Global metadata for the translation domain</span>
+        <span class="s2">"project_id_version"</span><span class="p">:</span> <span class="s2">"Project name and version"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"report_msgid_bugs_to"</span><span class="p">:</span> <span class="s2">"Email address for reporting message ID bugs"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"pot_creation_date"</span><span class="p">:</span> <span class="s2">"Date when the POT file was created"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"language_team"</span><span class="p">:</span> <span class="s2">"Name and email of the language team"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"domain"</span><span class="p">:</span> <span class="s2">"Translation domain name"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"header_comment"</span><span class="p">:</span> <span class="s2">"Comment in the header of the catalog"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"copyright_holder"</span><span class="p">:</span> <span class="s2">"Copyright holder information"</span><span class="p">,</span>  <span class="c1"># (string)</span>
+        <span class="s2">"statistics"</span><span class="p">:</span> <span class="p">{</span>  <span class="c1"># Statistics about the translations</span>
+            <span class="s2">"total_messages"</span><span class="p">:</span> <span class="mi">1234</span><span class="p">,</span>  <span class="c1"># (integer)</span>
+            <span class="s2">"total_words"</span><span class="p">:</span> <span class="mi">5678</span>  <span class="c1"># (integer)</span>
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
@@ -796,7 +796,7 @@ in different file formats.</p>
       
     </aside>
   </div>
-</div><script src="../../_static/documentation_options.js?v=8fa8b3e9"></script>
+</div><script src="../../_static/documentation_options.js?v=39bb1c6d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/scripts/furo.js?v=46bd48cc"></script>
