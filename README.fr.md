@@ -38,7 +38,7 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 | **v0.6.0** | CI/CD et hygiène du dépôt — `uv`/`tox-uv`, `basedpyright`, `.codecov.yml`                        | ✅ Livré     |
 | **v0.7.0** | Couverture de tests & hygiène du dépôt — composants `.codecov.yml`, `coverage-gate`, templates issues/PR, migration CI Node.js 24. Pas de tag séparé — fusionné dans v0.8.0 (réagencement calendaire) | ✅ Livré     |
 | **v0.8.0** | Orchestration — point d'entrée `core.py`, résolution de repli `fallback.py`                      | ✅ Livré     |
-| **v0.9.0** | Formatage & CLI — `formatter.py` complet avec `PluralRule`, CLI/REPL                             | 🔵 Planifié |
+| **v0.9.0** | Formatage & CLI — `formatter.py` complet avec `PluralRule`, CLI/REPL                             | ✅ Livré |
 | **v0.10.0**| Revue d'architecture & des modèles — révision architecturale avant le gel v1.0.0                | 🔵 Planifié |
 | **v0.11.0**| Documentation complète — matériel de référence multilingue                                      | 🔵 Planifié |
 | **v1.0.0** | Gel & vérification — format `.i18t` gelé, API publique gelée, documentation Sphinx complète      | 🔵 Planifié |

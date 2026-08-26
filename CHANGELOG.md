@@ -8,6 +8,71 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.9.0 — Formatting & CLI (2026-08-26)
+
+### ✨ New Features
+- `formatter/publish.py` — `publish()`: DD-27's four-step column
+  fallback (`messages[plural_index][alternative]` →
+  `messages[plural_index][0]` → `messages[0][alternative]` →
+  `messages[0][0]`), reading `Message`'s raw attributes
+  (`default`/`options`/`default_plurals`/`options_plurals`) directly.
+  `Message.format()` is left untouched — existing, tested, single-cell
+  API, not the DD-27 algorithm. (#112, #37)
+- `formatter/plurals.py` — `PluralRule` (DD-40): a CLDR baseline (via
+  Babel) for a given locale, overlaid with explicit business-defined
+  thresholds that take priority over the CLDR-derived category. Always
+  resolves to an integer plural row index, never a CLDR category
+  string. (#110)
+- `exceptions.py` — `FormatterError`, `PluralIndexError`,
+  `PluralRuleError`. (#111)
+- `formatter.py` restructured into a `formatter/` sub-package, mirroring
+  `models/`: `__init__.py` (re-exports `publish`, `PluralRule`),
+  `publish.py`, `plurals.py`. Public import path unchanged
+  (`from i18n_tools import formatter`). (#109)
+- `cli.py` — basic CLI on `argparse` (stdlib): `validate <path>` and
+  `info <path>` parse the DD-12 `<lang>/LC_MESSAGES/<domain>.<format>.i18t`
+  layout and load a `Book`; `sync <config>` loads an application
+  `Config` and calls `core.synchronize()`; `repl` is a minimal
+  interactive loop. Never imports `i18n_tools.loaders.*` directly —
+  `core.py` is the only module outside `loaders/` allowed to do that
+  (DD-28). `[project.scripts]` entry point added
+  (`i18n-tools = i18n_tools.cli:main`). (#39)
+
+### 🧪 Tests
+- `tests/04_formatter/` — 28 tests, 100% statement/branch coverage on
+  `formatter/__init__.py`, `plurals.py`, `publish.py`. (#113)
+- `tests/05_cli/` — 39 tests, 98% coverage on `cli.py`. `sync` is
+  exercised end-to-end via a subprocess: `Config` is a process-wide
+  Singleton (`patterns.Singleton`), and `01_loader`/`09_config` depend
+  on its state surviving unchanged across the whole suite — an
+  in-process `Config(config_path)` call here would silently return
+  whatever instance already exists elsewhere in the session. A
+  companion in-process test covers `cmd_sync()`'s body itself via an
+  `isolated_config_singleton` fixture that saves and restores the
+  singleton, leaving no residual state. (#114)
+
+### 🔧 Maintenance
+- `tox.ini` removed entirely — unified into `pyproject.toml`'s
+  `[tool.tox]` table (`tox>=4.21`, native support), ~20 environments,
+  functionally unchanged (amends DD-36, DD-39 — see comments on #90,
+  #93). Two dead-config findings along the way:
+  - `[gh-actions]` (`tox.ini`) was never actually consulted —
+    `python-ci.yaml`'s `test-unit` job has always resolved its own tox
+    env (`tox -e py${PYVER}`) and never installed `tox-gh-actions`.
+    Dropped.
+  - `[tool.flake8]` (`pyproject.toml`) was already inert — flake8 does
+    not read `pyproject.toml` without the `Flake8-pyproject` plugin
+    (not a dependency here). The real, effective config lived in
+    `tox.ini`'s `[flake8]` section (confirmed via its
+    `per-file-ignores` rule); consolidated as explicit CLI flags in
+    each environment's `commands` instead, alongside `bandit -c
+    pyproject.toml` (`[tool.bandit]`).
+  - `docs/source/conf.py`'s `release` field was found stale at `0.6.0`
+    (unrelated drift since that tag) — will be corrected together with
+    the version bump at tag time.
+
+---
+
 ## v0.8.0 — Orchestration (2026-07-29)
 
 Combined v0.7.0 + v0.8.0 work cycle, single tag at v0.8.0 (calendar
