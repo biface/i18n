@@ -10,6 +10,12 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
 
+from i18n_tools.loaders.settings import (
+    _load_config_file,
+    _load_toml,
+    _save_config_file,
+    _save_toml,
+)
 from i18n_tools.loaders.utils import (
     _build_path,
     _convert_catalog,
@@ -21,19 +27,15 @@ from i18n_tools.loaders.utils import (
     _detect_format,
     _exist_path,
     _is_absolute_path,
-    _load_config_file,
     _load_json,
     _load_machine,
     _load_text,
-    _load_toml,
     _load_yaml,
     _non_traversal_path,
     _remove_file,
-    _save_config_file,
     _save_json,
     _save_machine,
     _save_text,
-    _save_toml,
     _save_yaml,
 )
 
