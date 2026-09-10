@@ -68,6 +68,29 @@ The project follows a progression by deliverable value. Each version is independ
 
 ---
 
+### Installation
+
+```bash
+pip install pyi18t-tools
+```
+
+This installs everything needed to load, format, and save `.i18t` files:
+`Message`, `Book`, `Corpus`, `Encyclopaedia`, `formatter.publish()`.
+
+Author and translator management (`Config`/`Repository` author/translator
+methods, translator API URL validation) additionally requires the `api`
+extra:
+
+```bash
+pip install pyi18t-tools[api]
+```
+
+Calling one of these methods without the extra installed raises a clear
+`ModuleNotFoundError` naming the missing package and this install command,
+rather than a bare import failure (DD-41).
+
+---
+
 ### Why This Project?
 
 - **Flexibility**: a format designed to adapt to all translation needs, without linguistic constraints — no language is dominant.

@@ -112,7 +112,6 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from email_validator import EmailNotValidError, validate_email
 from ndict_tools import StrictNestedDictionary
 
 from .__static__ import (
@@ -493,7 +492,16 @@ class Config(metaclass=Singleton):
         :param languages: List of languages for which the author provides translations.
         :raises EmailNotValidError: if email is malformed
         :raises ValueError: If at least one of the languages is not an IETF tag
+        :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
+        try:
+            from email_validator import validate_email
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "add_author() requires the 'api' extra — "
+                "install with: pip install pyi18t-tools[api]"
+            ) from e
+
         try:
             validate_email(email)
             normalized_languages = validate_and_normalize_language_tags(languages)
@@ -538,7 +546,16 @@ class Config(metaclass=Singleton):
         :return: The author's details as a dictionary, or None if not found.
         :rtype: dict
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
+        :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
+        try:
+            from email_validator import EmailNotValidError, validate_email
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "get_author() requires the 'api' extra — "
+                "install with: pip install pyi18t-tools[api]"
+            ) from e
+
         current_config = self.__getattribute__(self._current_config)
 
         # Check if the input is a valid UUID
@@ -576,7 +593,16 @@ class Config(metaclass=Singleton):
         :param index: The index to search by, either a UUID or an email address.
         :return: True if the author was successfully removed, False if not found.
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
+        :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
+        try:
+            from email_validator import EmailNotValidError, validate_email
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "remove_author() requires the 'api' extra — "
+                "install with: pip install pyi18t-tools[api]"
+            ) from e
+
         current_repository = self.__getattribute__(self._current_config)
 
         # Check if the input is a valid UUID

@@ -462,10 +462,12 @@ def patch_validate_email(use_real_network_resources):
         # On main/master branches or tag builds, use the real function
         yield
     else:
-        # On other branches, use the mock function
-        # Patch both the direct import in email_validator module and the import in config module
-        with (
-            mock.patch("email_validator.validate_email", mock_validate_email),
-            mock.patch("i18n_tools.config.validate_email", mock_validate_email),
-        ):
+        # On other branches, use the mock function.
+        # Since DD-41 (#118), config.py imports validate_email lazily inside
+        # each method (add_author/get_author/remove_author) rather than at
+        # module load time — there is no more i18n_tools.config.validate_email
+        # module attribute to patch. Patching email_validator.validate_email
+        # itself is now sufficient: the local `from email_validator import
+        # validate_email` re-reads the (patched) attribute at call time.
+        with mock.patch("email_validator.validate_email", mock_validate_email):
             yield

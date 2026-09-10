@@ -78,11 +78,8 @@ dependencies = [
     "ndict-tools>=1.2.0",
     "babel",
     "langcodes",        # IETF tag normalisation — locale.py (DD-14)
-    "email-validator",  # email validation — config.py
-    "toml",             # .toml file loading — loaders/utils.py
+    "toml",             # .toml file loading — loaders/utils.py (moves to [api] in #119)
     "PyYAML",           # .yaml / .i18t file loading — loaders/utils.py
-    "requests",         # HTTP calls — api.py (validate_api_url)
-    "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
 ]
 
 # -----------------------------------------------------------------------------
@@ -104,6 +101,15 @@ i18n-tools = "i18n_tools.cli:main"
 # without the full development toolchain
 # -----------------------------------------------------------------------------
 [project.optional-dependencies]
+# Config/Repository/CLI usage: author & translator management (email format
+# validation, translator API URL syntax/availability checks). Core .i18t
+# usage (Message/Book/Corpus/Encyclopaedia/formatter) never needs this
+# (DD-41). Imports are lazy at the point of use — see api.py/config.py.
+api = [
+    "requests",         # HTTP calls — api.py (validate_api_url)
+    "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
+    "email-validator",  # email validation — config.py
+]
 test = [
     "pytest",
     "pytest-cov",
@@ -245,6 +251,12 @@ env_list = [
 runner = "uv-venv-runner"
 set_env = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
 uv_seed = true
+# The test suite exercises Config/Repository author & translator management
+# (email format validation, translator API URL checks) — it needs the `api`
+# extra even though core .i18t usage doesn't (DD-41, #118). Envs that
+# override `deps` below (coverage, integration, local, pre-push) still
+# inherit this `extras` value unless they redefine it themselves.
+extras = ["api"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
     ["pytest", "--import-mode=importlib",
