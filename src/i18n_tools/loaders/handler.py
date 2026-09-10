@@ -28,6 +28,7 @@ from ..__static__ import (
 )
 from ..__static__ import __version__ as i18n_tools_version
 from ..locale import get_all_languages, normalize_language_tag
+from .settings import _load_config_file, _save_config_file
 from .utils import (
     _build_dictionary_path,
     _build_path,
@@ -37,12 +38,10 @@ from .utils import (
     _exist_path,
     _is_absolute_path,
     _load_by_format,
-    _load_config_file,
     _load_text,
     _normalize_module_identifier,
     _remove_file,
     _save_by_format,
-    _save_config_file,
     _save_text,
     _validate_translation_format,
 )

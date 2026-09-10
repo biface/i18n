@@ -16,7 +16,6 @@ import tarfile
 from pathlib import Path, PurePath, PurePosixPath
 from typing import Any
 
-import toml
 import yaml
 from babel.messages.catalog import Catalog
 from babel.messages.mofile import read_mo, write_mo
@@ -30,10 +29,6 @@ from ..__static__ import (
 )
 
 # Generic empty files
-
-
-def __check_config_extension(ext: str) -> bool:
-    return ext.lstrip(".").lower() in ["json", "yaml", "yml", "toml"]
 
 
 def __check_path(file_path: Path | str) -> Path:
@@ -219,30 +214,6 @@ def _build_dictionary_path(
     return base + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
 
 
-def _load_toml(file_path: Path | str) -> dict[str, Any]:
-    """
-    Load a TOML file without managing data structure and returns its content.
-    :param file_path:
-    :return:
-    """
-    file_path = __check_path(file_path)
-
-    with open(file_path, "r", encoding="utf-8") as toml_file:
-        return toml.load(toml_file)
-
-
-def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
-    """
-    Save a TOML file without managing data structure and returns its content.
-    :param file_path:
-    :param data:
-    :return:
-    """
-    file_path = __check_path(file_path)
-    with open(file_path, "w", encoding="utf-8") as toml_file:
-        toml.dump(data, toml_file)
-
-
 # PO file handling with polib
 
 
@@ -331,61 +302,6 @@ def _convert_catalog(file_path: Path | str) -> None:
     mo_file_path = file_path.with_suffix(".mo")
     with open(mo_file_path, "wb") as mo_file:
         write_mo(mo_file, catalog)
-
-
-# Configuration file load and save
-
-
-def _load_config_file(config_path: Path | str) -> dict[str, Any]:
-    """
-    Helper function to load the configuration file based on its extension.
-
-    :param config_path: Path to the configuration file.
-    :raises ValueError: If the file format is unsupported.
-    :raises FileNotFoundError: If the file does not exist.
-    :return: The configuration content as a dictionary.
-    """
-
-    config_path = __check_path(config_path)
-    [file_extension] = config_path.suffixes
-
-    if not __check_config_extension(file_extension):
-        raise ValueError(f"Unsupported configuration file format: {file_extension}")
-
-    with open(config_path, "r", encoding="utf-8") as file:
-        if file_extension in {".yaml", ".yml"}:
-            return yaml.safe_load(file)
-        elif file_extension == ".toml":
-            return toml.load(file)
-        elif file_extension == ".json":
-            return json.load(file)
-    return (
-        {}
-    )  # unreachable if __check_config_extension passed, but satisfies type checker
-
-
-def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
-    """
-    Helper function to save the configuration file based on its extension.
-
-    :param config_path: Path to the configuration file.
-    :raises ValueError: If the file format is unsupported.
-    :return: None
-    """
-
-    config_path = __check_path(config_path)
-    [file_extension] = config_path.suffixes
-
-    if not __check_config_extension(file_extension):
-        raise ValueError(f"Unsupported configuration file format: {file_extension}")
-
-    with open(config_path, "w", encoding="utf-8") as cf:
-        if file_extension == ".json":
-            json.dump(data, cf, indent=4)
-        elif file_extension in {".yaml", ".yml"}:
-            yaml.safe_dump(data, cf, default_flow_style=False)
-        elif file_extension == ".toml":
-            toml.dump(data, cf)
 
 
 # Utility functions

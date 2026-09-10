@@ -78,7 +78,6 @@ dependencies = [
     "ndict-tools>=1.2.0",
     "babel",
     "langcodes",        # IETF tag normalisation — locale.py (DD-14)
-    "toml",             # .toml file loading — loaders/utils.py (moves to [api] in #119)
     "PyYAML",           # .yaml / .i18t file loading — loaders/utils.py
 ]
 
@@ -102,13 +101,16 @@ i18n-tools = "i18n_tools.cli:main"
 # -----------------------------------------------------------------------------
 [project.optional-dependencies]
 # Config/Repository/CLI usage: author & translator management (email format
-# validation, translator API URL syntax/availability checks). Core .i18t
-# usage (Message/Book/Corpus/Encyclopaedia/formatter) never needs this
-# (DD-41). Imports are lazy at the point of use — see api.py/config.py.
+# validation, translator API URL syntax/availability checks), and reading
+# or writing a `.toml` settings file (`.yaml`/`.json` settings files need
+# no extra). Core .i18t usage (Message/Book/Corpus/Encyclopaedia/formatter)
+# never needs this (DD-41). Imports are lazy at the point of use — see
+# api.py/config.py/loaders/settings.py.
 api = [
     "requests",         # HTTP calls — api.py (validate_api_url)
     "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
     "email-validator",  # email validation — config.py
+    "toml",             # .toml settings file — loaders/settings.py (#119)
 ]
 test = [
     "pytest",
