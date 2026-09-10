@@ -10,9 +10,6 @@ Key Responsibilities:
 
 from typing import Any
 
-import requests
-import validators
-
 
 def validate_url_format(url: str) -> dict[str, Any]:
     """
@@ -23,9 +20,21 @@ def validate_url_format(url: str) -> dict[str, Any]:
     availability check remains validate_api_url(), to be invoked explicitly
     and separately (DD-14c, DD-NN, KI-01).
 
+    Requires the ``api`` extra (``validators``). Imported lazily so that
+    core .i18t usage never pulls this dependency in (DD-41).
+
     :param url: The URL to validate.
     :return: A dictionary with the URL and an error message if the format is invalid.
+    :raises ModuleNotFoundError: if the ``api`` extra is not installed.
     """
+    try:
+        import validators
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            "validate_url_format() requires the 'api' extra — "
+            "install with: pip install pyi18t-tools[api]"
+        ) from e
+
     result: dict[str, Any] = {"url": url, "error": None}
     if not validators.url(url):
         result["error"] = f"URL '{url}' is not a valid format."
@@ -40,10 +49,23 @@ def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
     version, this function will use the package's own locale mechanism to produce
     locale-aware messages.
 
+    Requires the ``api`` extra (``requests``, and transitively ``validators``
+    via validate_url_format()). Imported lazily so that core .i18t usage
+    never pulls this dependency in (DD-41).
+
     :param url: The URL to validate.
     :param timeout: Maximum wait time for the server response (in seconds).
     :return: A dictionary containing the validation status and details about the URL.
+    :raises ModuleNotFoundError: if the ``api`` extra is not installed.
     """
+    try:
+        import requests
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            "validate_api_url() requires the 'api' extra — "
+            "install with: pip install pyi18t-tools[api]"
+        ) from e
+
     result: dict[str, Any] = {
         "url": url,
         "is_alive": False,
@@ -52,6 +74,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
     }
 
     # Format check delegated to validate_url_format() — single source of truth
+    # (raises its own ModuleNotFoundError first if 'validators' is missing)
     format_check = validate_url_format(url)
     if format_check["error"]:
         result["error"] = format_check["error"]
