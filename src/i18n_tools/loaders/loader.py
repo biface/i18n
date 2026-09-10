@@ -58,9 +58,7 @@ from i18n_tools.loaders.handler import is_absolute_path as _is_absolute_path
 from i18n_tools.loaders.handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
-from i18n_tools.loaders.handler import (
-    update_dictionary,
-)
+from i18n_tools.loaders.handler import update_dictionary
 from i18n_tools.loaders.utils import (
     _build_dictionary_path,
     _check_domains,
