@@ -44,6 +44,10 @@ log_section() {
 run_tests() {
     cd "${PROJECT_ROOT}"
 
+    log_section "Running test-core (no [api] extra installed)"
+    tox -e test-core || { log_error "test-core failed"; return 1; }
+    log_success "test-core passed"
+
     if [[ ! -f "${VERSIONS_FILE}" ]]; then
         log_warning "File not found: ${VERSIONS_FILE}"
         log_info "Using default versions: py310 py311 py312"
