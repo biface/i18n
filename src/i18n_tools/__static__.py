@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 from typing import Literal
 
-__version__ = "0.9.0"
+__version__ = "0.10.0rc1"
 """
 This variable stores the package version. It lives here (rather than in
 ``__init__.py``) so that internal modules can depend on it without creating
