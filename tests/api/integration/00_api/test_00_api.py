@@ -14,7 +14,7 @@ def get_validate_api_url(use_real_network_resources):
     """
     if use_real_network_resources:
         return _real_validate_api_url
-    from tests.conftest import mock_validate_api_url as _mock
+    from tests.api.conftest import mock_validate_api_url as _mock
 
     return _mock
 
