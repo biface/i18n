@@ -75,11 +75,13 @@ pip install pyi18t-tools
 ```
 
 This installs everything needed to load, format, and save `.i18t` files:
-`Message`, `Book`, `Corpus`, `Encyclopaedia`, `formatter.publish()`.
+`Message`, `Book`, `Corpus`, `Encyclopaedia`, `formatter.publish()`, and
+the CLI (`validate`/`info`/`sync`/`repl`) with a `.yaml`/`.json` settings
+file.
 
 Author and translator management (`Config`/`Repository` author/translator
-methods, translator API URL validation) additionally requires the `api`
-extra:
+methods, translator API URL validation, or a `.toml` settings file)
+additionally requires the `api` extra:
 
 ```bash
 pip install pyi18t-tools[api]

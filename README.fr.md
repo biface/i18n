@@ -67,6 +67,32 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 
 ---
 
+### Installation
+
+```bash
+pip install pyi18t-tools
+```
+
+Ceci installe tout le nécessaire pour charger, formater et sauvegarder
+un fichier `.i18t` existant : `Message`, `Book`, `Corpus`,
+`Encyclopaedia`, `formatter.publish()`, ainsi que la CLI
+(`validate`/`info`/`sync`/`repl`) avec un fichier de réglages
+`.yaml`/`.json`.
+
+La gestion des auteurs et traducteurs (méthodes `Config`/`Repository`
+dédiées, validation d'URL d'API traducteur, ou un fichier de réglages
+`.toml`) nécessite en plus l'extra `api` :
+
+```bash
+pip install pyi18t-tools[api]
+```
+
+Appeler une de ces méthodes sans l'extra installé lève une erreur
+`ModuleNotFoundError` explicite, nommant le paquet manquant et cette
+commande d'installation, plutôt qu'un échec d'import brut (DD-41).
+
+---
+
 ### Pourquoi ce projet ?
 
 - **Flexibilité** : un format conçu pour s'adapter à tous les besoins de traduction, sans contrainte linguistique — aucune langue n'est dominante.
