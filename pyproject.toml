@@ -260,10 +260,34 @@ uv_seed = true
 # inherit this `extras` value unless they redefine it themselves.
 extras = ["api"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
+# tests/core + tests/api, excluding tests/api/integration (real network
+# calls, tag-only — see env.integration). Directory-based exclusion
+# replaces the old "-m not network and not timeout" marker filter: the
+# core/api split (DD-41) made "does this need [api]" a directory boundary,
+# and moving 00_api + the translator network tests under
+# tests/api/integration/ made "is this a real network call" one too.
 commands = [
     ["pytest", "--import-mode=importlib",
-     "-m", "not network and not timeout",
-     "--cov=i18n_tools", "--cov-report=term-missing", "tests"],
+     "--cov=i18n_tools", "--cov-report=term-missing",
+     "tests/core", "tests/api", "--ignore=tests/api/integration"],
+]
+
+# =============================================================================
+# Core-only tests — no [api] extra installed at all
+# CI job: test-core. Runs before test-unit: a genuine "[core] still stands
+# on its own" regression here is more fundamental than any unit-test
+# failure downstream, and cheaper to isolate before running the full
+# [api] matrix (DD-41 review; same discipline this project intends to
+# apply again if/when pyi18t-core/pyi18t-tools become separate packages).
+# =============================================================================
+
+[tool.tox.env.test-core]
+description = "Run tests/core with no [api] extra installed at all"
+base_python = "python3.12"
+extras = []
+deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
+commands = [
+    ["pytest", "--import-mode=importlib", "tests/core"],
 ]
 
 [tool.tox.env.py310]
@@ -292,7 +316,8 @@ base_python = "python3.12"
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
-    ["pytest", "--import-mode=importlib", "-m", "network and not timeout", "tests"],
+    ["pytest", "--import-mode=importlib", "-m", "not timeout",
+     "tests/api/integration"],
 ]
 
 # =============================================================================
@@ -309,7 +334,8 @@ commands = [
     ["pytest", "--import-mode=importlib", "-m", "not timeout",
      "--cov=i18n_tools", "--cov-append", "--cov-report=term-missing",
      "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
-     "--cov-report=html:{toxinidir}/coverage/coverage_html", "tests"],
+     "--cov-report=html:{toxinidir}/coverage/coverage_html",
+     "tests/core", "tests/api"],
 ]
 
 # =============================================================================
