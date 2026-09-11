@@ -11,12 +11,19 @@ Key Responsibilities:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from babel import __version__ as babel_version
 from babel.core import Locale
-from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
+
+if TYPE_CHECKING:
+    # Only used in fetch_template()/fetch_catalog()'s return-type
+    # annotations — never instantiated here (create_template() imports
+    # it locally itself, DD-41 #120: this whole PO/MO path is dead in
+    # production, build_repository()/verify_repository() have zero
+    # callers).
+    from babel.messages.catalog import Catalog
 
 from ..__static__ import (
     I18N_TOOLS_CONFIG,
@@ -193,6 +200,8 @@ def create_template(
     :param domain: The domain name.
     :type domain: str
     """
+    from babel.messages.catalog import Catalog
+
     _check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
