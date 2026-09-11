@@ -8,6 +8,59 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.10.0 — Fashionably Late (2026-09-11)
+
+*(Title provisional — confirm or replace when writing the GitHub release note; date should match the actual `v0.10.0` tag.)*
+
+### 📦 Release
+- **New `[api]` extra.** `requests`, `validators`, `email-validator`,
+  and `toml` are no longer unconditional dependencies — they move to
+  `pip install pyi18t-tools[api]`. Plain `pip install pyi18t-tools`
+  now covers everything needed to load, format, and save an existing
+  `.i18t` file (`Message`/`Book`/`Corpus`/`Encyclopaedia`,
+  `formatter.publish()`), **and** the CLI's `validate`/`info`/`sync`/
+  `repl` commands with a `.yaml`/`.json` settings file — confirmed
+  during implementation to need no `[api]`-only functionality at all,
+  correcting the sprint's own original assumption. Author/translator
+  management (`Config`/`Repository`), translator API URL validation,
+  and a `.toml` settings file still require `[api]`. Calling one of
+  these without the extra installed raises a plain `ModuleNotFoundError`
+  naming the missing package and the install command, instead of a
+  bare import failure. (DD-41, #117, #118, #119, #120)
+- `dependencies` shrinks from 8 packages to 4: `ndict-tools`, `babel`,
+  `langcodes`, `PyYAML`.
+
+### 🔧 Maintenance
+- `api.py`/`config.py`: `requests`/`validators`/`email_validator`
+  moved from module-level to function-local imports. (#118)
+- `loaders/utils.py` split: the settings-file primitives
+  (`_load_toml`/`_save_toml`/`_load_config_file`/`_save_config_file`)
+  moved to a new `loaders/settings.py`. `toml` itself stays local to
+  each function's `.toml`-specific branch — a `.yaml`/`.json` settings
+  file needs no `[api]` dependency at all, only `.toml` does. (#119)
+- `babel.messages` imports on the confirmed-dead
+  `build_repository()`/`verify_repository()`/`create_template()` path
+  (`loaders/utils.py`, `loaders/handler.py`) moved behind
+  `TYPE_CHECKING` or localized — no dependency change, `babel` stays
+  core; this only removes an eager-import cost. (#120)
+
+### 🧪 Tests
+- `tests/` reorganized into `tests/core/` (no `[api]` dependency at
+  all — verified with none installed: 852 passed), `tests/api/`
+  (mocked), and `tests/api/integration/` (real network, tag-only).
+  Replaces the previous `-m "not network and not timeout"` marker
+  filter with a directory boundary. Also closes a gap found along the
+  way: `09_config`'s translator tests made the same real
+  `add_translator() → validate_api_url()` call as `00_api`'s tests, but
+  were never marked `@pytest.mark.network` — they silently ran real
+  network calls inside what was meant to be `test-unit`'s network-free
+  selection on `master`/`staging` pushes.
+- New `tox -e test-core` environment (`pytest tests/core`, no `[api]`
+  extra installed) and a matching CI job, ahead of `test-unit` in the
+  pipeline (`quality → test-core → test-unit → …`).
+
+---
+
 ## v0.9.0 — Formatting & CLI (2026-08-26)
 
 ### ✨ New Features
