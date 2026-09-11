@@ -14,13 +14,21 @@ import os
 import shutil
 import tarfile
 from pathlib import Path, PurePath, PurePosixPath
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
-from babel.messages.catalog import Catalog
-from babel.messages.mofile import read_mo, write_mo
-from babel.messages.pofile import read_po, write_po
 from ndict_tools import StrictNestedDictionary
+
+if TYPE_CHECKING:
+    # Only used in type annotations below (_load_text/_save_text/
+    # _load_machine/_save_machine return/accept a Catalog) — never
+    # instantiated in this module. Guarded so the real babel.messages
+    # import stays local to each function that actually needs it
+    # (DD-41, #120): this whole PO/MO path is dead in production
+    # (build_repository()/verify_repository() have zero callers), so
+    # importing it at module level buys nothing and costs every caller
+    # of this module the babel.messages import.
+    from babel.messages.catalog import Catalog
 
 from ..__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
@@ -227,6 +235,7 @@ def _load_text(file_path: Path | str) -> Catalog:
     :rtype: Catalog
     :raises FileNotFoundError: If the file is not found.
     """
+    from babel.messages.pofile import read_po
 
     file_path = __check_path(file_path)
 
@@ -244,6 +253,7 @@ def _save_text(file_path: Path | str, catalog: Catalog) -> None:
     :type catalog: Catalog
     :raises IOError: If there is an error writing the file.
     """
+    from babel.messages.pofile import write_po
 
     file_path = __check_path(file_path)
 
@@ -264,6 +274,7 @@ def _load_machine(file_path: Path | str) -> Catalog:
     :rtype: Catalog
     :raises FileNotFoundError: If the file is not found.
     """
+    from babel.messages.mofile import read_mo
 
     file_path = __check_path(file_path)
 
@@ -281,6 +292,7 @@ def _save_machine(file_path: Path | str, catalog: Catalog) -> None:
     :type catalog: POFile
     :raises FileNotFoundError: If the file path is invalid.
     """
+    from babel.messages.mofile import write_mo
 
     file_path = __check_path(file_path)
 
@@ -295,6 +307,7 @@ def _convert_catalog(file_path: Path | str) -> None:
     :param file_path: Path to the PO file.
     :type file_path: str
     """
+    from babel.messages.mofile import write_mo
 
     file_path = __check_path(file_path)
 
