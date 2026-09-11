@@ -6,7 +6,7 @@ name: Python CI
 # instead of the previous 5-file `workflow_run` design (abandoned — see
 # DESIGN_DECISIONS.md §13).
 #
-# Sequence: quality -> test-unit -> {test-integration, coverage} -> build -> publish
+# Sequence: quality -> test-core -> test-unit -> {test-integration, coverage} -> build -> publish
 # build / publish remain tag-only. test-integration remains tag-only (real
 # network calls). coverage was opened up 2026-07-27 (v0.7.0, Option B): it
 # now runs on master, staging/**, pull_request, AND tags — no longer
@@ -14,6 +14,15 @@ name: Python CI
 # longer depends on test-integration in the `needs:` chain. This is what
 # makes .codecov.yml's per-PR/per-push feedback actually useful during the
 # coverage-focused v0.7.0 sprint (see PROJECT_STATUS.md).
+#
+# test-core added 2026-09-10 (DD-41, tests reorg): a single, fast job that
+# installs the package with no extras at all and runs only tests/core
+# (tox -e test-core). Sits before test-unit, not parallel to it: a genuine
+# "[core] no longer stands on its own" regression is more fundamental than
+# any unit-test failure downstream, and cheaper to isolate before paying
+# for the full py310-py314 [api] matrix. Same discipline this project
+# intends to reapply if/when pyi18t-core/pyi18t-tools become separate
+# packages (DD-42, v1.x -> v2.0.0 horizon).
 #
 # IMPORTANT: coverage's own hard enforcement step (`tox -e coverage-gate`,
 # see pyproject.toml's [tool.tox.env."coverage-gate"]) stays tag-only
@@ -76,12 +85,42 @@ jobs:
         run: tox -e ci-quality
 
   # ---------------------------------------------------------------------------
-  # Unit tests — matrix py310-py314, mocked (no network/timeout)
+  # Core tests — package installed with no extras at all, tests/core only.
+  # Single Python version: this job verifies "[core] stands on its own",
+  # not per-version compatibility (test-unit's matrix already covers that
+  # for the [api] install).
+  # ---------------------------------------------------------------------------
+  test-core:
+    name: Core tests (no [api] extra)
+    runs-on: ubuntu-latest
+    needs: quality
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Install tox
+        run: uv pip install --system tox tox-uv
+
+      - name: Run core tests
+        run: tox -e test-core
+
+  # ---------------------------------------------------------------------------
+  # Unit tests — matrix py310-py314, tests/core + tests/api (mocked),
+  # excluding tests/api/integration (real network — see test-integration)
   # ---------------------------------------------------------------------------
   test-unit:
     name: Unit tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    needs: quality
+    needs: test-core
 
     strategy:
       fail-fast: false
