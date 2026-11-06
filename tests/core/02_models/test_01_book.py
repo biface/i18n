@@ -6,6 +6,7 @@ import json
 import re
 
 import pytest
+from helpers import as_plain
 
 from i18n_tools import __version__
 from i18n_tools.converter import message_to_i18n_tools_format
@@ -526,7 +527,7 @@ class TestBookMetadata:
         # Access metadata using path semantics supported by StrictNestedDictionary
         # For top-level keys, expected_path is [key]
         if len(expected_path) == 1:
-            assert book.metadata[expected_path[0]] == expected_value
+            assert as_plain(book.metadata[expected_path[0]]) == expected_value
         else:
             assert book.metadata[expected_path] == expected_value
 

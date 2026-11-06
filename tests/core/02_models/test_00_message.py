@@ -5,6 +5,7 @@ Test module for the Message class in the models module.
 import re
 
 import pytest
+from helpers import as_plain
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
@@ -425,7 +426,7 @@ class TestMessageGetMetadata:
     )
     def test_message_get_metadata(self, fixture_name, path, expected, request) -> None:
         message = request.getfixturevalue(fixture_name)
-        assert message.get_metadata(path) == expected
+        assert as_plain(message.get_metadata(path)) == expected
 
     def test_message_get_metadata_failed(self, fr_message):
         with pytest.raises(
@@ -581,7 +582,7 @@ class TestMessageAdd:
         message = request.getfixturevalue(fixture_name)
         message.add_message(**options)
         for attribute, value in expected:
-            assert message.__getattribute__(attribute) == value
+            assert as_plain(message.__getattribute__(attribute)) == value
 
     @pytest.mark.parametrize(
         "fixture_name, options, expected",
@@ -1197,7 +1198,7 @@ class TestMessageAddSegment:
         message = empty_message
         message.add_message(**options)
         message._add_options_plurals_segment(additional, alt_index)
-        assert message.options_plurals == expected
+        assert as_plain(message.options_plurals) == expected
 
     @pytest.mark.parametrize(
         "options, alt_index, additional, error, expected",
@@ -3596,7 +3597,7 @@ class TestMessageCreation:
         assert message.options_plurals[[loc, index]] == expect
 
     def test_alternative_plural_forms_empty(self, empty_message):
-        assert empty_message.options_plurals.isomorph({})
+        assert empty_message.options_plurals.similar({})
 
     @pytest.mark.parametrize(
         "fixture_name", ["fr_message", "en_message", "empty_message"]
