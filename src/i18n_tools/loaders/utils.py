@@ -181,7 +181,7 @@ def _validate_translation_format(
     _fmt: str = fmt or "json"
     if _fmt not in I18N_TRANSLATION_FORMAT:
         raise ValueError(f"Unknown format '{_fmt}'")
-    return _fmt  # type: ignore[return-value]
+    return _fmt
 
 
 def _load_by_format(

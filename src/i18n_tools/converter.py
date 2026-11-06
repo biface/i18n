@@ -204,7 +204,7 @@ import functools
 import re
 import warnings
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
@@ -238,7 +238,7 @@ def _deprecated_unmaintained(func: _F) -> _F:
         )
         return func(*args, **kwargs)
 
-    return wrapper  # type: ignore[return-value]
+    return cast(_F, wrapper)
 
 
 # -----------------------------------------------------------------------------

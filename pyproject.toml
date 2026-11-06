@@ -163,7 +163,6 @@ docs = [
 [tool.basedpyright]
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
-stubPath = "stubs"
 reportMissingTypeStubs = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false

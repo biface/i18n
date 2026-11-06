@@ -1,7 +1,7 @@
 """ """
 
 import re
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from ndict_tools import StrictNestedDictionary
 
@@ -17,6 +17,9 @@ from i18n_tools.converter import (
 from i18n_tools.loaders.loader import build_book_filename
 from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
+
+if TYPE_CHECKING:
+    from i18n_tools.models.repository import Repository
 
 
 def _check_index_dict(dictionary: dict[int, Any]) -> bool:
@@ -1605,7 +1608,7 @@ class Message:
             options=entry.get("options", None),
             options_plurals=entry.get("options_plurals", None),
             context=entry.get("context", ""),
-            metadata=StrictNestedDictionary(entry.get("metadata", None)),
+            metadata=entry.get("metadata"),
         )
 
     def __str__(self) -> str:
@@ -2317,7 +2320,7 @@ class Corpus:
         return self._books[lang]
 
     def get_book(
-        self, lang: str, repository: "StrictNestedDictionary | None" = None
+        self, lang: str, repository: "Repository | None" = None
     ) -> FallbackBook:
         """
         Return a FallbackBook for ``lang`` built from a fallback chain.
@@ -2349,7 +2352,7 @@ class Corpus:
         :param repository: Optional Repository to resolve the chain
             against ``fallback.resolve()`` instead of the inline
             heuristic.
-        :type repository: StrictNestedDictionary | None
+        :type repository: Repository | None
         :return: A FallbackBook wrapping the resolved chain.
         :rtype: FallbackBook
         :raises MessageNotFoundError: If no loaded Book matches the chain.

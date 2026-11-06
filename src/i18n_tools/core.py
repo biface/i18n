@@ -48,12 +48,10 @@ from .models.corpus import Book, Corpus
 from .sync import check_repository
 
 if TYPE_CHECKING:
-    from ndict_tools import StrictNestedDictionary
+    from .models.repository import Repository
 
 
-def _book_directory(
-    repository: "StrictNestedDictionary", module: str, lang: str
-) -> str:
+def _book_directory(repository: "Repository", module: str, lang: str) -> str:
     """
     Resolve the on-disk directory holding a Book's translation file.
 
@@ -66,7 +64,7 @@ def _book_directory(
 
     :param repository: Repository whose ``paths.repository`` root anchors
         the layout.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param lang: Language tag for the Book (e.g. ``"fr-CH"``).
@@ -86,9 +84,7 @@ def _book_directory(
     )
 
 
-def load_book(
-    repository: "StrictNestedDictionary", module: str, domain: str, lang: str
-) -> Book:
+def load_book(repository: "Repository", module: str, domain: str, lang: str) -> Book:
     """
     Load a Book for a given module/domain/language from the repository.
 
@@ -97,7 +93,7 @@ def load_book(
     file read to ``Book.load()``.
 
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param domain: Translation domain name.
@@ -117,7 +113,7 @@ def load_book(
     return book
 
 
-def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> None:
+def save_book(book: Book, repository: "Repository", module: str) -> None:
     """
     Save a Book back to its module's location in the repository.
 
@@ -132,7 +128,7 @@ def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> 
     :param book: The Book to persist.
     :type book: Book
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier under which to save this Book.
     :type module: str
     :raises BookError: If the Book has no language set — a Book may be
@@ -147,7 +143,7 @@ def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> 
     book.save(path_directory)
 
 
-def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
+def _corpus_languages(repository: "Repository") -> set[str]:
     """
     Compute the full set of languages a Corpus for this repository should
     hold — ``repository.source`` plus every language declared in
@@ -159,7 +155,7 @@ def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
     ``locale.get_all_languages()`` for exactly this reason.
 
     :param repository: Repository declaring ``source``/``hierarchy``.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :return: Set of language tags.
     :rtype: set[str]
     """
@@ -169,9 +165,7 @@ def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
     return languages
 
 
-def load_corpus(
-    repository: "StrictNestedDictionary", module: str, domain: str
-) -> Corpus:
+def load_corpus(repository: "Repository", module: str, domain: str) -> Corpus:
     """
     Load a full Corpus — every configured language — for a module/domain.
 
@@ -189,7 +183,7 @@ def load_corpus(
     Corpus-level loading is a separate, later decision.
 
     :param repository: Repository providing paths and declared languages.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param domain: Translation domain name.
@@ -208,9 +202,7 @@ def load_corpus(
     return corpus
 
 
-def save_corpus(
-    corpus: Corpus, repository: "StrictNestedDictionary", module: str
-) -> None:
+def save_corpus(corpus: Corpus, repository: "Repository", module: str) -> None:
     """
     Save every Book currently registered in a Corpus back to disk.
 
@@ -224,7 +216,7 @@ def save_corpus(
     :param corpus: The Corpus whose Books should be persisted.
     :type corpus: Corpus
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier under which to save these Books.
     :type module: str
     :raises IOError: If a module/language directory does not exist —
@@ -235,7 +227,7 @@ def save_corpus(
         save_book(book, repository, module)
 
 
-def synchronize(repository: "StrictNestedDictionary") -> None:
+def synchronize(repository: "Repository") -> None:
     """
     Ensure the repository's on-disk directory structure exists.
 
@@ -252,7 +244,7 @@ def synchronize(repository: "StrictNestedDictionary") -> None:
 
     :param repository: Repository declaring paths, domains, and
         languages.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     """
     check_repository(
         repository[["paths", "repository"]],

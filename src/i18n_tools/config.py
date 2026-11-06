@@ -158,7 +158,7 @@ class Config(metaclass=Singleton):
 
         def _setup_configuration(
             config_dir: str | None = "", settings_file: str | None = ""
-        ) -> StrictNestedDictionary:
+        ) -> Repository:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
             nested dictionary with spécific keys which will be used as to verify while loading the configuration.
@@ -168,7 +168,7 @@ class Config(metaclass=Singleton):
             :param settings_file: file part of configuration file
             :type settings_file: str
             :return: an initialized nested dictionary with used keys
-            :rtype: StrictNestedDictionary
+            :rtype: Repository
             """
             # Initialize using Repository class instead of raw StrictNestedDictionary
             repo = Repository()
@@ -327,12 +327,12 @@ class Config(metaclass=Singleton):
                 # Re-raise any ndict-tools specific exception directly
                 raise e
 
-    def get_repository(self) -> StrictNestedDictionary:
+    def get_repository(self) -> Repository:
         """
         Build the repository dictionary from configuration.
 
         :return: a configured repository
-        :rtype: StrictNestedDictionary
+        :rtype: Repository
         """
         return self.__getattribute__(self._current_config)
 
