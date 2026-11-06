@@ -75,7 +75,10 @@ classifiers = [
 # Runtime dependencies — required by any consumer of the package
 # -----------------------------------------------------------------------------
 dependencies = [
-    "ndict-tools>=1.2.0",
+    # TEMPORARY (v0.11.0 step 1): <1.3.0 isolates this step from the
+    # ndict-tools 1.3.0 semantic changes (13 test failures) — replaced
+    # by ">=1.3.0" in step 2.
+    "ndict-tools>=1.2.0,<1.3.0",
     "babel",
     "langcodes",        # IETF tag normalisation — locale.py (DD-14)
     "PyYAML",           # .yaml / .i18t file loading — loaders/utils.py
