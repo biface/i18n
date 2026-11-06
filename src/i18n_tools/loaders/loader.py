@@ -21,7 +21,6 @@ objects required) or together with model instances (e.g. ``Book``,
 ``Repository``).
 """
 
-import sys
 import tarfile
 from pathlib import Path
 from typing import Any
@@ -446,22 +445,17 @@ def restore_module_from_archive(
     if _exist_path(archive_path):
         # Open the archive file in read mode with gzip compression
         with tarfile.open(archive_path, "r:gz") as tar:
-            # Extract all members that are safe to extract
-            # filter="data" available from Python 3.12 only (PEP 706);
-            # on 3.10/3.11 extractall() has no filter parameter at all,
-            # so it is omitted there rather than raising a TypeError.
-            extractall_kwargs = (
-                {"filter": "data"} if sys.version_info >= (3, 12) else {}
-            )
-            tar.extractall(
-                path=repository[["paths", "repository"]],
-                members=_non_traversal_path(
-                    repository[["paths", "repository"]],
-                    [top_level_module],
-                    tar.getmembers(),
-                ),
-                **extractall_kwargs,
-            )
+            root = repository[["paths", "repository"]]
+            # Only members inside this module's own tree are extracted.
+            members = _non_traversal_path(root, [top_level_module], tar.getmembers())
+            # Extraction filters (PEP 706) were backported to 3.11.4, so a
+            # version check on (3, 12) would skip the filter on interpreters
+            # that support it. Detect the feature itself; 3.11.0-3.11.3
+            # have no filter parameter and extract without one.
+            if hasattr(tarfile, "data_filter"):
+                tar.extractall(path=root, members=members, filter="data")
+            else:
+                tar.extractall(path=root, members=members)
     else:
         # Raise an error if the archive file does not exist
         raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
