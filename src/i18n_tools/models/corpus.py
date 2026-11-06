@@ -392,6 +392,8 @@ class Message:
             value = kwargs.pop(attr_name, None)
             if value is not None:
                 if check_method(value):
+                    if attr_name == "options_plurals":
+                        value = StrictNestedDictionary(value)
                     setattr(self, attr_name, value)
                 else:
                     raise ValueError(f"The '{attr_name}' value is malformed")
