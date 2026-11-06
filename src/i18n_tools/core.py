@@ -41,6 +41,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from .exceptions import BookError
 from .loaders.handler import build_path
 from .locale import get_all_languages, normalize_language_tag
 from .models.corpus import Book, Corpus
@@ -134,9 +135,14 @@ def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> 
     :type repository: StrictNestedDictionary
     :param module: Module identifier under which to save this Book.
     :type module: str
+    :raises BookError: If the Book has no language set — a Book may be
+        built without deciding between a parent tag and a regional variant,
+        but its target directory depends on that choice.
     :raises IOError: If the module/language directory does not exist —
         typically because the repository has not been synchronized yet.
     """
+    if book.language is None:
+        raise BookError(f"Cannot save Book '{book.domain}': no language set")
     path_directory = _book_directory(repository, module, book.language)
     book.save(path_directory)
 

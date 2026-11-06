@@ -12,6 +12,7 @@ from i18n_tools.core import (
     save_corpus,
     synchronize,
 )
+from i18n_tools.exceptions import BookError
 from i18n_tools.models.corpus import Message
 from i18n_tools.models.repository import Repository
 
@@ -75,6 +76,15 @@ class TestSaveBook:
         reloaded = load_book(synchronized_repository, "app", "ui", "fr-FR")
         assert list(reloaded.messages.keys()) == ["greeting"]
         assert reloaded.messages["greeting"].default == "Bonjour"
+
+    def test_raises_if_book_has_no_language(self, synchronized_repository):
+        """Book.language may stay unset while the Book is being built,
+        but the target directory depends on it: save_book must refuse."""
+        book = load_book(synchronized_repository, "app", "ui", "fr-FR")
+        book.remove_language()
+
+        with pytest.raises(BookError, match="no language set"):
+            save_book(book, synchronized_repository, "app")
 
     def test_module_is_required_explicitly(self, synchronized_repository):
         """save_book takes module explicitly — Book itself never carries
