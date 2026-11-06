@@ -140,7 +140,7 @@ dev = [
     "pytest",
     "pytest-cov",
     # quality — static analysis
-    "basedpyright",
+    "basedpyright==1.40.2",
     # quality — linting and formatting
     "flake8",
     "black",
@@ -160,6 +160,9 @@ docs = [
 [tool.basedpyright]
 pythonVersion = "3.11"
 pythonPlatform = "Linux"
+# Warnings are reported but do not fail the run until #130 brings them to
+# zero; basedpyright otherwise exits 1 on warnings alone.
+failOnWarnings = false
 reportMissingTypeStubs = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false
@@ -363,8 +366,7 @@ commands = [["coverage", "report", "--fail-under=0"]]
 [tool.tox.env.basedpyright]
 description = "Static type checking with basedpyright"
 deps = ["-r {toxinidir}/.tox-config/requirements/type-check.txt"]
-allowlist_externals = ["bash"]
-commands = [["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"]]
+commands = [["basedpyright", "--pythonpath", "{env_python}", "src"]]
 
 [tool.tox.env.flake8]
 description = "Lint the code with flake8"
@@ -424,9 +426,9 @@ commands = [
 [tool.tox.env."ci-quality"]
 description = "All quality checks chained (used by the CI quality job)"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
-allowlist_externals = ["bash", "flake8", "black", "isort", "bandit"]
+allowlist_externals = ["flake8", "black", "isort", "bandit"]
 commands = [
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
     ["flake8",
      "--max-line-length=88",
      "--extend-ignore=E203,W503,E501",
@@ -450,7 +452,7 @@ pass_env = ["HOME", "USER"]
 commands = [
     ["black", "src", "tests"],
     ["isort", "src", "tests"],
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
     ["flake8",
      "--max-line-length=88",
      "--extend-ignore=E203,W503,E501",
@@ -470,7 +472,7 @@ pass_env = ["HOME", "USER"]
 commands = [
     ["black", "src", "tests"],
     ["isort", "src", "tests"],
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
     ["flake8",
      "--max-line-length=88",
      "--extend-ignore=E203,W503,E501",
