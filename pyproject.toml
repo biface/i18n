@@ -61,12 +61,17 @@ authors = [
 ]
 description = "Toolbox to manage localized messages with json and gettext functions."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
     "License :: CeCILL-C Free Software License Agreement (CECILL-C)",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Topic :: Utilities",
 ]
@@ -75,9 +80,9 @@ classifiers = [
 # Runtime dependencies — required by any consumer of the package
 # -----------------------------------------------------------------------------
 dependencies = [
-    # TEMPORARY (v0.11.0 step 1): <1.3.0 isolates this step from the
-    # ndict-tools 1.3.0 semantic changes (13 test failures) — replaced
-    # by ">=1.3.0" in step 2.
+    # TEMPORARY (v0.11.0): <1.3.0 keeps ndict-tools 1.2.0 until the
+    # 1.3.0 semantic changes (13 test failures) are handled in models
+    # and tests — that change replaces this cap by ">=1.3.0".
     "ndict-tools>=1.2.0,<1.3.0",
     "babel",
     "langcodes",        # IETF tag normalisation — locale.py (DD-14)
@@ -156,7 +161,7 @@ docs = [
 # -----------------------------------------------------------------------------
 
 [tool.basedpyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
 stubPath = "stubs"
 reportMissingTypeStubs = false
@@ -242,7 +247,7 @@ exclude_also = [
 [tool.tox]
 requires = ["tox>=4.21", "tox-uv"]
 env_list = [
-    "py310", "py311", "py312", "py313", "py314",
+    "py311", "py312", "py313", "py314", "py315",
     "integration",
     "basedpyright", "flake8", "black-check", "isort-check", "bandit",
     "black", "isort", "format",
@@ -293,9 +298,6 @@ commands = [
     ["pytest", "--import-mode=importlib", "tests/core"],
 ]
 
-[tool.tox.env.py310]
-base_python = "python3.10"
-
 [tool.tox.env.py311]
 base_python = "python3.11"
 
@@ -307,6 +309,11 @@ base_python = "python3.13"
 
 [tool.tox.env.py314]
 base_python = "python3.14"
+
+# Experimental: CI only (continue-on-error), excluded from the local
+# sequential run (.tox-config/versions.txt).
+[tool.tox.env.py315]
+base_python = "python3.15"
 
 # =============================================================================
 # Integration tests — real network calls (httpbingo.org)
@@ -379,7 +386,7 @@ commands = [
 [tool.tox.env."black-check"]
 description = "Check code formatting with black (no changes)"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
-commands = [["black", "--check", "--diff", "--target-version", "py310", "src", "tests"]]
+commands = [["black", "--check", "--diff", "src", "tests"]]
 
 [tool.tox.env."isort-check"]
 description = "Check import sorting with isort (no changes)"
@@ -399,7 +406,7 @@ commands = [["bandit", "-c", "pyproject.toml", "-r", "src"]]
 [tool.tox.env.black]
 description = "Auto-format code with black"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
-commands = [["black", "--target-version", "py310", "src", "tests"]]
+commands = [["black", "src", "tests"]]
 
 [tool.tox.env.isort]
 description = "Auto-sort imports with isort"
@@ -410,7 +417,7 @@ commands = [["isort", "src", "tests"]]
 description = "Auto-format code (black then isort)"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
+    ["black", "src", "tests"],
     ["isort", "src", "tests"],
 ]
 
@@ -430,7 +437,7 @@ commands = [
      "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
      "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
      "src", "tests"],
-    ["black", "--check", "--diff", "--target-version", "py310", "src", "tests"],
+    ["black", "--check", "--diff", "src", "tests"],
     ["isort", "--check-only", "--diff", "src", "tests"],
     ["bandit", "-c", "pyproject.toml", "-r", "src"],
 ]
@@ -445,7 +452,7 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
+    ["black", "src", "tests"],
     ["isort", "src", "tests"],
     ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
     ["flake8",
@@ -465,7 +472,7 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
+    ["black", "src", "tests"],
     ["isort", "src", "tests"],
     ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
     ["flake8",

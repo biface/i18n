@@ -50,8 +50,8 @@ run_tests() {
 
     if [[ ! -f "${VERSIONS_FILE}" ]]; then
         log_warning "File not found: ${VERSIONS_FILE}"
-        log_info "Using default versions: py310 py311 py312"
-        for env in py310 py311 py312; do
+        log_info "Using default versions: py311 py312 py313 py314"
+        for env in py311 py312 py313 py314; do
             log_section "Running tests with ${env}"
             tox -e "${env}" || { log_error "Tests failed for ${env}"; return 1; }
             log_success "Tests passed for ${env}"
@@ -71,8 +71,8 @@ run_tests() {
     done < "${VERSIONS_FILE}"
 
     if [[ ${#versions[@]} -eq 0 ]]; then
-        log_warning "No versions found — using defaults: py310 py311 py312"
-        versions=(py310 py311 py312)
+        log_warning "No versions found — using defaults: py311 py312 py313 py314"
+        versions=(py311 py312 py313 py314)
     fi
 
     log_info "Test versions: ${versions[*]}"

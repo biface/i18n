@@ -20,7 +20,7 @@ name: Python CI
 # (tox -e test-core). Sits before test-unit, not parallel to it: a genuine
 # "[core] no longer stands on its own" regression is more fundamental than
 # any unit-test failure downstream, and cheaper to isolate before paying
-# for the full py310-py314 [api] matrix. Same discipline this project
+# for the full py311-py315 [api] matrix. Same discipline this project
 # intends to reapply if/when pyi18t-core/pyi18t-tools become separate
 # packages (DD-42, v1.x -> v2.0.0 horizon).
 #
@@ -114,7 +114,7 @@ jobs:
         run: tox -e test-core
 
   # ---------------------------------------------------------------------------
-  # Unit tests — matrix py310-py314, tests/core + tests/api (mocked),
+  # Unit tests — matrix py311-py315, tests/core + tests/api (mocked),
   # excluding tests/api/integration (real network — see test-integration)
   # ---------------------------------------------------------------------------
   test-unit:
@@ -125,10 +125,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         experimental: [false]
         include:
-          - python-version: "3.14"
+          - python-version: "3.15"
             experimental: true
 
     continue-on-error: ${{ matrix.experimental }}

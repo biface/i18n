@@ -2,7 +2,7 @@
 # ==============================================
 #
 # Format:
-# - One version per line (e.g. py310, py311, py312)
+# - One version per line (e.g. py311, py312, py313)
 # - Empty lines and lines starting with # are ignored
 #
 # To add or remove a version, edit this file.
@@ -10,8 +10,8 @@
 #
 # ==============================================
 
-py310
 py311
 py312
 py313
-# py314 — experimental, excluded from local sequential run
+py314
+# py315 — experimental, excluded from local sequential run
