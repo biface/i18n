@@ -228,11 +228,11 @@ def _deprecated_unmaintained(func: _F) -> _F:
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             f"{func.__name__} is deprecated and unmaintained. It predates "
-            "the current hub-and-spoke architecture (Message/Book as the "
-            "hub, no separate intermediate format) and has no caller "
-            "anywhere in this package. It is kept for reference only, "
-            "pending a proper rebuild when gettext/i18next "
-            "interoperability is actually implemented.",
+            + "the current hub-and-spoke architecture (Message/Book as the "
+            + "hub, no separate intermediate format) and has no caller "
+            + "anywhere in this package. It is kept for reference only, "
+            + "pending a proper rebuild when gettext/i18next "
+            + "interoperability is actually implemented.",
             category=DeprecationWarning,
             stacklevel=2,
         )

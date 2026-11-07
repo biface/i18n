@@ -32,7 +32,7 @@ def validate_url_format(url: str) -> dict[str, Any]:
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             "validate_url_format() requires the 'api' extra — "
-            "install with: pip install pyi18t-tools[api]"
+            + "install with: pip install pyi18t-tools[api]"
         ) from e
 
     result: dict[str, Any] = {"url": url, "error": None}
@@ -63,7 +63,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             "validate_api_url() requires the 'api' extra — "
-            "install with: pip install pyi18t-tools[api]"
+            + "install with: pip install pyi18t-tools[api]"
         ) from e
 
     result: dict[str, Any] = {

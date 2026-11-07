@@ -305,7 +305,7 @@ class Config(metaclass=Singleton):
                 if not isinstance(value, type(attr)):
                     raise TypeError(
                         f"Type mismatch: Cannot assign value of type '{type(value).__name__}' "
-                        f"to attribute '{attr_name}' of type '{type(attr).__name__}'."
+                        + f"to attribute '{attr_name}' of type '{type(attr).__name__}'."
                     )
                 setattr(self, attr_name, value)
 
@@ -500,7 +500,7 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "add_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         try:
@@ -554,7 +554,7 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "get_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         current_config = self.__getattribute__(self._current_config)
@@ -601,7 +601,7 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "remove_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         current_repository = self.__getattribute__(self._current_config)
@@ -787,7 +787,7 @@ class Config(metaclass=Singleton):
                 elif not isinstance(value, type(expected[key])):
                     raise ValueError(
                         f"Type mismatch for '{full_path}': "
-                        f"expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
+                        + f"expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
                     )
 
         # Validate updates against the existing translator structure

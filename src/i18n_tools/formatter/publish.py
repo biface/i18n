@@ -121,7 +121,7 @@ def publish(
         if not _plural_row_exists(message, plural_index):
             raise PluralIndexError(
                 f"PluralRule resolved plural row {plural_index} for n={n}, "
-                f"which does not exist on message '{message.id}'"
+                + f"which does not exist on message '{message.id}'"
             )
 
     text = _resolve_cell(message, plural_index, alternative)

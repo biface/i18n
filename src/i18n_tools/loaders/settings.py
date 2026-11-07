@@ -51,7 +51,7 @@ def _load_toml(file_path: Path | str) -> dict[str, Any]:
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             "_load_toml() requires the 'api' extra — "
-            "install with: pip install pyi18t-tools[api]"
+            + "install with: pip install pyi18t-tools[api]"
         ) from e
 
     file_path = __check_path(file_path)
@@ -77,7 +77,7 @@ def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
             "_save_toml() requires the 'api' extra — "
-            "install with: pip install pyi18t-tools[api]"
+            + "install with: pip install pyi18t-tools[api]"
         ) from e
 
     file_path = __check_path(file_path)
@@ -114,8 +114,8 @@ def _load_config_file(config_path: Path | str) -> dict[str, Any]:
             except ModuleNotFoundError as e:
                 raise ModuleNotFoundError(
                     "_load_config_file(): reading a '.toml' settings file "
-                    "requires the 'api' extra — "
-                    "install with: pip install pyi18t-tools[api]"
+                    + "requires the 'api' extra — "
+                    + "install with: pip install pyi18t-tools[api]"
                 ) from e
             return toml.load(file)
         elif file_extension == ".json":
@@ -155,7 +155,7 @@ def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
             except ModuleNotFoundError as e:
                 raise ModuleNotFoundError(
                     "_save_config_file(): writing a '.toml' settings file "
-                    "requires the 'api' extra — "
-                    "install with: pip install pyi18t-tools[api]"
+                    + "requires the 'api' extra — "
+                    + "install with: pip install pyi18t-tools[api]"
                 ) from e
             _ = toml.dump(data, cf)

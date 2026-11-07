@@ -73,15 +73,15 @@ def _parse_i18t_path(path: str) -> tuple[str, str, str, str]:
     if not match:
         raise CliError(
             f"'{filename}' does not look like a translation file "
-            f"(expected '<domain>.<json|yaml>.i18t')"
+            + "(expected '<domain>.<json|yaml>.i18t')"
         )
 
     parent_name = os.path.basename(directory)
     if parent_name != "LC_MESSAGES":
         raise CliError(
             f"'{path}' is not under a 'LC_MESSAGES' directory — cannot "
-            f"determine its language (templates/ files have no language "
-            f"and are not supported by 'validate'/'info')"
+            + "determine its language (templates/ files have no language "
+            + "and are not supported by 'validate'/'info')"
         )
 
     language = os.path.basename(os.path.dirname(directory))

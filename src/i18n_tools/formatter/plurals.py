@@ -65,8 +65,8 @@ class PluralRule:
             for key, value in thresholds.items():
                 if not isinstance(key, int) or not isinstance(value, int):
                     raise PluralRuleError(
-                        f"PluralRule thresholds must map int to int, "
-                        f"got {key!r}: {value!r}"
+                        "PluralRule thresholds must map int to int, "
+                        + f"got {key!r}: {value!r}"
                     )
 
         self._thresholds: dict[int, int] = dict(thresholds) if thresholds else {}
