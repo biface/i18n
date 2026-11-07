@@ -122,7 +122,7 @@ from .__static__ import (
 )
 from ._compat import override
 from .api import validate_api_url
-from .loaders._handler import build_path, file_exists, load_config, save_config
+from .loaders.loader import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 from .models.author import Authors
 from .models.repository import Repository

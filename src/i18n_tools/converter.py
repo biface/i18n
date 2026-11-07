@@ -209,7 +209,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders._utils import load_json, load_text
+from i18n_tools.loaders.loader import load_json, load_text
 
 if TYPE_CHECKING:
     from i18n_tools.models.corpus import Message
@@ -1366,7 +1366,7 @@ def seek_translation(
 
     try:
         # Local import to avoid circular imports at module level
-        from i18n_tools.loaders._handler import fetch_dictionary
+        from i18n_tools.loaders.loader import fetch_dictionary
 
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():

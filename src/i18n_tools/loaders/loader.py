@@ -23,7 +23,7 @@ objects required) or together with model instances (e.g. ``Book``,
 
 import tarfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ndict_tools import StrictNestedDictionary
 
@@ -36,9 +36,9 @@ from i18n_tools.__static__ import (
     TranslationFileFormat,
 )
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
+from i18n_tools.loaders._handler import build_dictionary_path
+from i18n_tools.loaders._handler import build_path as _build_path
 from i18n_tools.loaders._handler import (
-    build_dictionary_path,
-    build_path,
     build_translation_lang_files,
     check_domains,
     check_json_integrity,
@@ -46,21 +46,29 @@ from i18n_tools.loaders._handler import (
     create_catalog,
     create_dictionary,
     create_directory,
+)
+from i18n_tools.loaders._handler import create_empty_file as _create_empty_file
+from i18n_tools.loaders._handler import create_empty_json as _create_empty_json
+from i18n_tools.loaders._handler import (
     create_gzip,
     create_template,
     detect_format,
     dump_dictionary,
-    fetch_dictionary,
 )
+from i18n_tools.loaders._handler import fetch_dictionary as _fetch_dictionary
 from i18n_tools.loaders._handler import file_exists as _file_exists
 from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
-from i18n_tools.loaders._handler import load_by_format, load_json, non_traversal_path
+from i18n_tools.loaders._handler import load_by_format
+from i18n_tools.loaders._handler import load_config as _load_config
+from i18n_tools.loaders._handler import load_json as _load_json
+from i18n_tools.loaders._handler import load_text as _load_text
+from i18n_tools.loaders._handler import non_traversal_path
 from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
+from i18n_tools.loaders._handler import path_exists, save_by_format
+from i18n_tools.loaders._handler import save_config as _save_config
 from i18n_tools.loaders._handler import (
-    path_exists,
-    save_by_format,
     save_json,
     update_dictionary,
     verify_available_languages,
@@ -68,6 +76,9 @@ from i18n_tools.loaders._handler import (
     verify_target_domain,
 )
 from i18n_tools.locale import get_all_languages
+
+if TYPE_CHECKING:
+    from babel.messages.catalog import Catalog
 
 
 def load_locale_json(file_path: str) -> dict[str, Any]:
@@ -340,6 +351,60 @@ def normalize_module_identifier(path: str) -> str:
     :rtype: str
     """
     return _normalize_module_identifier(path)
+
+
+# Pass-throughs for the modules outside loaders/ (config, core, sync,
+# converter): they import this module only.
+
+
+def build_path(base_path: str, *sub_dirs: str) -> str:
+    """Pass-through to :func:`i18n_tools.loaders._handler.build_path`."""
+    return _build_path(base_path, *sub_dirs)
+
+
+def load_config(config_path: str | None = None) -> dict[str, Any]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_config`."""
+    return _load_config(config_path)
+
+
+def save_config(file_path: str, data: dict[str, Any]) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.save_config`."""
+    _save_config(file_path, data)
+
+
+def create_empty_file(file_path: Path | str) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.create_empty_file`."""
+    _create_empty_file(file_path)
+
+
+def create_empty_json(file_path: Path | str) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.create_empty_json`."""
+    _create_empty_json(file_path)
+
+
+def load_json(file_path: Path | str) -> dict[str, Any]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_json`.
+
+    Loads the file as is, without the integrity check of
+    :func:`load_locale_json`.
+    """
+    return _load_json(file_path)
+
+
+def load_text(file_path: Path | str) -> "Catalog":
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_text`."""
+    return _load_text(file_path)
+
+
+def fetch_dictionary(
+    repository: StrictNestedDictionary,
+    module: str,
+    language: str,
+    domain: str,
+    fmt: TranslationFileFormat | None = None,
+) -> dict[str, Any]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.fetch_dictionary`."""
+    return _fetch_dictionary(repository, module, language, domain, fmt)
 
 
 def _update_json_translations(

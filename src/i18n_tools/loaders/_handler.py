@@ -916,6 +916,21 @@ def path_exists(path: Path | str) -> bool:
     return _utils.exist_path(path)
 
 
+def create_empty_file(file_path: Path | str) -> None:
+    """Create an empty file at ``file_path``."""
+    _utils.create_empty_file(file_path)
+
+
+def create_empty_json(file_path: Path | str) -> None:
+    """Create a JSON file holding an empty object at ``file_path``."""
+    _utils.create_empty_json(file_path)
+
+
+def load_text(file_path: Path | str) -> Catalog:
+    """Load a catalog from a PO file."""
+    return _utils.load_text(file_path)
+
+
 def detect_format(path: Path | str) -> TranslationFileFormat:
     """Detect the serialisation format of a file from its extension."""
     return _utils.detect_format(path)

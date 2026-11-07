@@ -14,10 +14,9 @@ Basic command-line interface for i18n-tools (#39): ``validate``, ``info``,
 ``sync``, ``repl``. Built on ``argparse`` (stdlib) — the four flat
 subcommands don't yet justify a third-party CLI framework.
 
-This module never imports ``i18n_tools.loaders.*`` directly: ``core.py``
-is the only module outside ``loaders/`` allowed to do that (DD-28). The
+This module does not import ``i18n_tools.loaders`` at all. The
 ``validate``/``info`` commands go through the ``Book`` model's own
-public ``load()`` method instead; ``sync`` goes through
+public ``load()`` method; ``sync`` goes through
 ``core.synchronize()``.
 
 Key Responsibilities:
