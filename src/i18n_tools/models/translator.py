@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from ndict_tools import StrictNestedDictionary
 
+from .._checks import ensure_type
 from .._compat import override
 from ..api import validate_url_format
 
@@ -223,10 +224,8 @@ class Translators:
 
     @staticmethod
     def add(repository: "Repository", name: str, translator: dict[str, Any]) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Translator name must be a string")
-        if not isinstance(translator, dict):
-            raise TypeError("Translator content must be a dictionary")
+        ensure_type(name, str, "Translator name must be a string")
+        ensure_type(translator, dict, "Translator content must be a dictionary")
 
         translator_obj = Translator.from_payload(translator)
 
@@ -244,10 +243,8 @@ class Translators:
 
     @staticmethod
     def update(repository: "Repository", name: str, updates: dict[str, Any]) -> None:
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
-        if not isinstance(updates, dict):
-            raise TypeError("updates must be a dictionary")
+        ensure_type(name, str, "name must be a string")
+        ensure_type(updates, dict, "updates must be a dictionary")
 
         translators = repository["translators"]
         if name not in translators.keys():
@@ -281,8 +278,7 @@ class Translators:
 
     @staticmethod
     def remove(repository: "Repository", name: str) -> None:
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
+        ensure_type(name, str, "name must be a string")
         translators = repository["translators"]
         if name not in translators.keys():
             raise ValueError(f"Translator '{name}' does not exist")

@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import langcodes
 
+from i18n_tools._checks import ensure_type, is_type
+
 # from typing import Dict, List, Set
 
 
@@ -72,8 +74,7 @@ def normalize_languages_hierarchy(
     - Validates each language tag and deduplicates while preserving order.
     - Returns the normalized list of variants.
     """
-    if not isinstance(fallback, str):
-        raise TypeError(f"Fallback must be a string, not {type(fallback)}")
+    ensure_type(fallback, str, f"Fallback must be a string, not {type(fallback)}")
     if not is_valid_language_tag(fallback):
         raise ValueError(
             f"Fallback language must be a compliant IETF Tag, not {fallback}"
@@ -81,7 +82,7 @@ def normalize_languages_hierarchy(
 
     if isinstance(languages, str):
         langs_list = [languages]
-    elif isinstance(languages, list):
+    elif is_type(languages, list):
         langs_list = languages
     else:
         raise TypeError(
@@ -91,7 +92,7 @@ def normalize_languages_hierarchy(
     normalized: list[str] = []
     seen: set[str] = set()
     for lang in langs_list:
-        if not isinstance(lang, str):
+        if not is_type(lang, str):
             raise TypeError(
                 f"Language hierarchy must be a list of string, not {type(lang)}"
             )

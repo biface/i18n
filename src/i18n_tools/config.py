@@ -120,6 +120,7 @@ from .__static__ import (
     I18N_TOOLS_CONFIG_FILE,
     I18N_TOOLS_LOCALE,
 )
+from ._checks import is_type
 from ._compat import override
 from .api import validate_api_url
 from .loaders.loader import build_path, file_exists, load_config, save_config
@@ -277,7 +278,7 @@ class Config(metaclass=Singleton):
                 path = [path]
             else:
                 raise ValueError("Path must be a non-empty string the attribute.")
-        elif not isinstance(path, list) or len(path) == 0:
+        elif not is_type(path, list) or len(path) == 0:
             raise ValueError(
                 "Path must be a non-empty list or list representing the attribute or nested key."
             )

@@ -10,6 +10,7 @@ from i18n_tools.__static__ import (
     TranslationFileFormat,
 )
 from i18n_tools.__static__ import __version__ as i18n_tools_version
+from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
@@ -2017,7 +2018,7 @@ class Book:
                 self.metadata[key] = (
                     default_meta[key] if key in default_meta.paths() else None
                 )
-            elif isinstance(key, str):
+            elif is_type(key, str):
                 if not self.metadata.is_key(key):
                     raise KeyError(
                         f"The key '{key}' is not a present key in the metadata dictionary"
@@ -2037,7 +2038,7 @@ class Book:
                         f"The path '{key}' is not a present key in the metadata dictionary"
                     )
                 self.metadata[key] = value
-            elif isinstance(key, str):
+            elif is_type(key, str):
                 if not self.metadata.is_key(key):
                     # For top-level additions, we allow adding a new simple key
                     self.metadata.update({key: value})
@@ -2293,8 +2294,7 @@ class Corpus:
         ----------
         - biface/i18n#43 : Corpus design (DD-09)
         """
-        if not isinstance(domain, str):
-            raise TypeError(f"Corpus domain must be a string, got {type(domain)}")
+        ensure_type(domain, str, f"Corpus domain must be a string, got {type(domain)}")
         self._domain: str = domain
         self._books: dict[str, "Book"] = {}  # language -> Book
 
@@ -2314,8 +2314,7 @@ class Corpus:
         ----------
         - biface/i18n#43 : Corpus design (DD-09)
         """
-        if not isinstance(book, Book):
-            raise TypeError(f"Expected a Book instance, got {type(book)}")
+        ensure_type(book, Book, f"Expected a Book instance, got {type(book)}")
         if book.domain != self._domain:
             raise ValueError(
                 f"Book domain '{book.domain}' does not match Corpus domain '{self._domain}'"
@@ -2538,10 +2537,8 @@ class Encyclopaedia:
         ----------
         - biface/i18n#42 : four-level model hierarchy (DD-07)
         """
-        if not isinstance(module, str):
-            raise TypeError(f"module must be a string, got {type(module)}")
-        if not isinstance(corpus, Corpus):
-            raise TypeError(f"Expected a Corpus instance, got {type(corpus)}")
+        ensure_type(module, str, f"module must be a string, got {type(module)}")
+        ensure_type(corpus, Corpus, f"Expected a Corpus instance, got {type(corpus)}")
         key = (module, corpus.domain)
         if key in self._corpora:
             raise ValueError(

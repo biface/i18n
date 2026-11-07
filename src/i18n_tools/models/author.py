@@ -24,6 +24,7 @@ from uuid import UUID
 from ndict_tools import StrictNestedDictionary
 from ndict_tools.exception import StackedValueError
 
+from .._checks import ensure_type
 from .._compat import override
 
 if TYPE_CHECKING:
@@ -131,8 +132,7 @@ class Authors:
         repository: "Repository", author_id: str, updates: dict[str, Any]
     ) -> None:
         _validate_uuid4_string(author_id)
-        if not isinstance(updates, dict):
-            raise TypeError("updates must be a dictionary")
+        ensure_type(updates, dict, "updates must be a dictionary")
         if author_id not in repository["authors"].keys():
             raise ValueError(f"Author '{author_id}' does not exist")
         current = repository[["authors", author_id]]

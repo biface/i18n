@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from babel.core import Locale, UnknownLocaleError
 
+from .._checks import is_type
 from ..exceptions import PluralRuleError
 
 # Canonical CLDR category order (DD-40): used to resolve a CLDR category
@@ -63,7 +64,7 @@ class PluralRule:
 
         if thresholds is not None:
             for key, value in thresholds.items():
-                if not isinstance(key, int) or not isinstance(value, int):
+                if not is_type(key, int) or not is_type(value, int):
                     raise PluralRuleError(
                         "PluralRule thresholds must map int to int, "
                         + f"got {key!r}: {value!r}"

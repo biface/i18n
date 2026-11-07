@@ -36,6 +36,7 @@ from typing import Any
 
 from ndict_tools import StrictNestedDictionary
 
+from .._checks import ensure_type
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
 from .author import Author, Authors  # type: ignore[reportImportCycle]
@@ -310,8 +311,7 @@ class Repository(StrictNestedDictionary):
         :return:
         :raises ValueError: if module already exists
         """
-        if not isinstance(module, str):
-            raise TypeError(f"Module must be a string, not {type(module)}")
+        ensure_type(module, str, f"Module must be a string, not {type(module)}")
 
         module_path = normalize_module_identifier(module)
 
@@ -410,8 +410,7 @@ class Repository(StrictNestedDictionary):
 
     @repository.setter
     def repository(self, path: str) -> None:
-        if not isinstance(path, str):
-            raise TypeError(f"Repository must be a string, not {type(path)}")
+        ensure_type(path, str, f"Repository must be a string, not {type(path)}")
         try:
             self.add_repository(path)
         except ValueError:
@@ -452,8 +451,7 @@ class Repository(StrictNestedDictionary):
     @hierarchy.setter
     def hierarchy(self, value: dict[str, str | list[str]]) -> None:
 
-        if not isinstance(value, dict):
-            raise TypeError(f"hierarchy must be a dictionary, not {type(value)}")
+        ensure_type(value, dict, f"hierarchy must be a dictionary, not {type(value)}")
 
         # Rebuild the hierarchy by delegating to add_hierarchy for each fallback
         self[["languages", "hierarchy"]] = self._new_section({})
@@ -528,8 +526,7 @@ class Repository(StrictNestedDictionary):
 
     @source.setter
     def source(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError(f"source must be a string, not {type(value)}")
+        ensure_type(value, str, f"source must be a string, not {type(value)}")
         self[["languages", "source"]] = (
             normalize_language_tag(value) if value else value
         )
@@ -540,8 +537,7 @@ class Repository(StrictNestedDictionary):
 
     @fallback.setter
     def fallback(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError(f"fallback must be a string, not {type(value)}")
+        ensure_type(value, str, f"fallback must be a string, not {type(value)}")
         self[["languages", "fallback"]] = (
             normalize_language_tag(value) if value else value
         )
@@ -564,8 +560,7 @@ class Repository(StrictNestedDictionary):
 
     @authors.setter
     def authors(self, value: dict[str, Any]) -> None:
-        if not isinstance(value, dict):
-            raise TypeError(f"authors must be a dictionary, not {type(value)}")
+        ensure_type(value, dict, f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
         self["authors"] = self._new_section({})
         for author_id, author in value.items():
@@ -605,8 +600,7 @@ class Repository(StrictNestedDictionary):
 
     @translators.setter
     def translators(self, value: dict[str, Any]) -> None:
-        if not isinstance(value, dict):
-            raise TypeError(f"translators must be a dictionary, not {type(value)}")
+        ensure_type(value, dict, f"translators must be a dictionary, not {type(value)}")
         # Replace the whole translators section
         self["translators"] = self._new_section({})
         for name, translator in value.items():
