@@ -1,7 +1,8 @@
 Utils module (internal)
 =======================
 
-Low-level file operations. Internal module.
+Low-level file operations. Internal module: imported by the handler and
+settings modules only.
 
 .. automodule:: i18n_tools.loaders._utils
     :private-members: _load_yaml, _save_yaml

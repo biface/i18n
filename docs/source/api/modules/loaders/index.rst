@@ -10,7 +10,11 @@ The **Loaders** module is responsible for loading and managing translation files
   also handles filesystem archive and aggregation operations (backups, multi-module/domain aggregation).
 
 Utils, Settings and Handler are internal modules: ``loaders._utils``,
-``loaders._settings`` and ``loaders._handler``.
+``loaders._settings`` and ``loaders._handler``. Each layer imports only the
+layer below it: Handler imports Utils and Settings, Settings may import Utils,
+and Loader imports Handler only. Every module outside ``loaders/`` imports
+``loaders.loader`` only. A test of the suite checks these rules on the source
+tree.
 
 
 .. toctree::

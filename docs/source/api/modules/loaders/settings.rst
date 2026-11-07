@@ -2,7 +2,7 @@ Settings module (internal)
 ==========================
 
 Low-level settings-file I/O (JSON, YAML, TOML), at the same level as the utils
-module. Internal module.
+module. Internal module: imported by the handler module only.
 
 .. automodule:: i18n_tools.loaders._settings
     :private-members: _check_config_extension, _load_toml, _save_toml

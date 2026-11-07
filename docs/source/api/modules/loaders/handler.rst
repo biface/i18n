@@ -2,7 +2,7 @@ Handler module (internal)
 =========================
 
 Intermediate layer for path and file type management. Internal
-module.
+module: imported by the loader module only.
 
 .. automodule:: i18n_tools.loaders._handler
 
