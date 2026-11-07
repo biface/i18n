@@ -161,4 +161,8 @@ class Authors:
 
     @staticmethod
     def clean(repository: "Repository") -> None:
-        repository["authors"] = repository._new_section({})
+        # Authors and Translators manage sections of the Repository they are
+        # given and share its section factory. Whether ndict-tools 1.3.0 makes
+        # the factory unnecessary is reviewed in #128.
+        section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
+        repository["authors"] = section

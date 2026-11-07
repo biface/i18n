@@ -231,7 +231,11 @@ class Translators:
         translator_obj = Translator.from_payload(translator)
 
         if not isinstance(repository["translators"], StrictNestedDictionary):
-            repository["translators"] = repository._new_section({})
+            # Authors and Translators manage sections of the Repository they are
+            # given and share its section factory. Whether ndict-tools 1.3.0 makes
+            # the factory unnecessary is reviewed in #128.
+            section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
+            repository["translators"] = section
 
         if name in repository["translators"].keys():
             raise ValueError(f"Translator '{name}' already exists")
@@ -286,4 +290,5 @@ class Translators:
 
     @staticmethod
     def clean(repository: "Repository") -> None:
-        repository["translators"] = repository._new_section({})
+        section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
+        repository["translators"] = section
