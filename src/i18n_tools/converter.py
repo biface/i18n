@@ -842,13 +842,15 @@ def i18n_tools_to_unified_format(
         if key == "metadata" or key == ".i18n_tools":  # Skip metadata at root level
             continue
 
+        entry: dict[str, Any]
+
         # Check if the entry has the new structure with messages and metadata
         if isinstance(value, dict) and "messages" in value and "metadata" in value:
             messages = value["messages"]
             metadata = value["metadata"]
 
             # Initialize entry with the main message (first alternative)
-            entry: dict[str, Any] = {
+            entry = {
                 "translation": messages[0][0] if messages and messages[0] else "",
                 "plural_forms": {},
                 "context": "",
@@ -898,7 +900,7 @@ def i18n_tools_to_unified_format(
             value_lists = value
 
             # Initialize entry with the main message (first alternative)
-            entry: dict[str, Any] = {
+            entry = {
                 "translation": (
                     value_lists[0][0] if value_lists and value_lists[0] else ""
                 ),

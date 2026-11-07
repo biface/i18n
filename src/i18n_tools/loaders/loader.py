@@ -668,7 +668,7 @@ def add_translation_set(
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
 
@@ -719,7 +719,7 @@ def update_translation_set(
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
         # Load existing translations
@@ -772,7 +772,7 @@ def remove_translation_set(
 
     for lang, msgids in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
 
@@ -784,7 +784,7 @@ def remove_translation_set(
         )
 
         # Remove specified translations
-        for msgid, options in msgids.items():
+        for msgid in msgids:
             if msgid in existing_translations:
                 del existing_translations[msgid]
 

@@ -165,7 +165,7 @@ class Message:
 
         # Check that all keys are integers and all values are dictionaries
         if __check:
-            for key, val in data_to_check.items():
+            for val in data_to_check.values():
                 __check = _check_index_dict(val)
 
         return __check
