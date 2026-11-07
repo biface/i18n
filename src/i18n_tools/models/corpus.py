@@ -20,6 +20,7 @@ from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
 
 if TYPE_CHECKING:
+    from i18n_tools.formatter.plurals import PluralRule
     from i18n_tools.models.repository import Repository
 
 
@@ -114,6 +115,15 @@ class Message:
                 - singular (int): The number of times the singular form of the message is used, helping in understanding the frequency and importance of the message.
                 - plurals (list[int]): A list of counts for the different plural forms of the message, providing information on the usage of each plural form.
     """
+
+    id: str
+    default: str
+    options: dict[int, str]
+    default_plurals: dict[int, str]
+    options_plurals: StrictNestedDictionary
+    context: str
+    metadata: StrictNestedDictionary
+    plural_rule: "PluralRule | None"
 
     def __check_plural_forms__(self, value: dict[int, str] | None = None) -> bool:
         """
@@ -1484,7 +1494,7 @@ class Message:
         # Refresh metadata counts (structure unchanged, indices may carry different texts)
         self._refresh_counts()
 
-    def format(self, option: int = 0, token: int = 0, **kwargs) -> str:
+    def format(self, option: int = 0, token: int = 0, **kwargs: object) -> str:
         """
         Format the message with the provided variables.
 
@@ -1641,7 +1651,7 @@ class Message:
             return NotImplemented
 
         # Normalize potentially nested dictionaries for comparison
-        def to_plain(d):
+        def to_plain(d: object) -> object:
             if isinstance(d, StrictNestedDictionary):
                 return d.to_dict() if hasattr(d, "to_dict") else dict(d)
             return d
@@ -1755,6 +1765,14 @@ class Book:
       "total_messages" and "total_words".
     """
 
+    filename: str
+    plural_rule: "PluralRule | None"
+    language: str | None
+    domain: str | None
+    messages: StrictNestedDictionary
+    format: str | None
+    metadata: StrictNestedDictionary
+
     def __init__(
         self, *args: Message | tuple[Message] | list[Message], **kwargs: Any
     ) -> None:
@@ -1805,11 +1823,12 @@ class Book:
             raise KeyError("No language specified")
         self.language = normalize_language_tag(language)
 
-        self.domain = kwargs.pop("domain", None)
-        if self.domain is None:
+        domain = kwargs.pop("domain", None)
+        if domain is None:
             raise KeyError("No domain specified")
-        elif not isinstance(self.domain, str):
+        elif not isinstance(domain, str):
             raise TypeError("Book domain must be a string.")
+        self.domain = domain
 
         # Initialize collections
         self.messages = StrictNestedDictionary()
