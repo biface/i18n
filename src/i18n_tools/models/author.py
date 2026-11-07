@@ -51,8 +51,7 @@ class Author(StrictNestedDictionary):
         url: str,
         languages: list[str],
     ) -> None:
-        if not isinstance(languages, list):
-            raise TypeError("author['languages'] must be a list of strings")
+        ensure_type(languages, list, "author['languages'] must be a list of strings")
         super().__init__(default_setup=_DEFAULT_SETUP)
         self["first_name"] = first_name
         self["last_name"] = last_name
@@ -61,8 +60,11 @@ class Author(StrictNestedDictionary):
         self["languages"] = languages
 
     @classmethod
-    def from_payload(cls, data: dict[str, Any]) -> "Author":
+    def from_payload(cls, data: object) -> "Author":
         """Validate and build an Author from a plain mapping.
+
+        ``data`` is a raw payload, typically read from a settings file: any
+        value is accepted and checked here.
 
         Preserves the exact validation contract previously enforced by
         Repository's private ``_validate_author_payload`` (same exception
@@ -100,8 +102,7 @@ class Author(StrictNestedDictionary):
 
 def _validate_uuid4_string(value: str, name: str = "author_id") -> None:
     """Validate that a value is a UUID4 string; raise consistent errors."""
-    if not isinstance(value, str):
-        raise TypeError(f"{name} must be a string")
+    ensure_type(value, str, f"{name} must be a string")
     try:
         parsed = UUID(value)
     except ValueError:

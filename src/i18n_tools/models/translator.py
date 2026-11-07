@@ -75,8 +75,11 @@ class Translator(StrictNestedDictionary):
         return cls.from_payload(dictionary)
 
     @staticmethod
-    def validate_payload(translator: dict[str, Any]) -> None:
+    def validate_payload(translator: object) -> None:
         """Validate the structure of a translator mapping.
+
+        ``translator`` is a raw payload, typically read from a settings file:
+        any value is accepted and checked here.
 
         Expected nested structure and minimal type checks:
           - details: { name: str, status: str, url: str }
