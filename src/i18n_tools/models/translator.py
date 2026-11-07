@@ -179,7 +179,7 @@ class Translator(StrictNestedDictionary):
             )
         if isinstance(key_exp, str) and key_exp.strip():
             try:
-                datetime.strptime(key_exp, "%Y-%m-%d")
+                _ = datetime.strptime(key_exp, "%Y-%m-%d")
             except ValueError:
                 raise ValueError(
                     "Translator[['technical', 'api', 'key_expiration']] must be in 'YYYY-MM-DD' format"

@@ -220,15 +220,15 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     validate_parser = subparsers.add_parser("validate", help="Validate a .i18t file")
-    validate_parser.add_argument("path")
+    _ = validate_parser.add_argument("path")
 
     info_parser = subparsers.add_parser("info", help="Display info about a .i18t file")
-    info_parser.add_argument("path")
+    _ = info_parser.add_argument("path")
 
     sync_parser = subparsers.add_parser("sync", help="Synchronize a repository")
-    sync_parser.add_argument("config")
+    _ = sync_parser.add_argument("config")
 
-    subparsers.add_parser("repl", help="Start an interactive REPL")
+    _ = subparsers.add_parser("repl", help="Start an interactive REPL")
 
     return parser
 

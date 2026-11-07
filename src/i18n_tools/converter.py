@@ -507,7 +507,7 @@ def unified_format_to_catalog(
             else:
                 msg_id_tuple = message_id
 
-            catalog.add(
+            _ = catalog.add(
                 id=msg_id_tuple,
                 string=tuple(plural_strings),
                 locations=locations,
@@ -518,7 +518,7 @@ def unified_format_to_catalog(
             )
         else:
             # Handle singular form
-            catalog.add(
+            _ = catalog.add(
                 id=message_id,
                 string=entry.get("translation", ""),
                 locations=locations,
@@ -560,7 +560,7 @@ def unified_format_to_catalog(
                     # Create a tuple of message IDs (singular, plural)
                     alt_msg_id_tuple = (alt_message_id, f"{alt_message_id}_plural")
 
-                    catalog.add(
+                    _ = catalog.add(
                         id=alt_msg_id_tuple,
                         string=tuple(alt_plural_strings),
                         locations=locations,
@@ -571,7 +571,7 @@ def unified_format_to_catalog(
                     )
                 else:
                     # Add alternative without plural forms
-                    catalog.add(
+                    _ = catalog.add(
                         id=alt_message_id,
                         string=alt_translation,
                         locations=locations,
@@ -582,7 +582,7 @@ def unified_format_to_catalog(
                     )
             else:
                 # Add alternative without plural forms
-                catalog.add(
+                _ = catalog.add(
                     id=alt_message_id,
                     string=alt_translation,
                     locations=locations,

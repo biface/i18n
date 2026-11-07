@@ -82,7 +82,7 @@ def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
 
     file_path = __check_path(file_path)
     with open(file_path, "w", encoding="utf-8") as toml_file:
-        toml.dump(data, toml_file)
+        _ = toml.dump(data, toml_file)
 
 
 def _load_config_file(config_path: Path | str) -> dict[str, Any]:
@@ -158,4 +158,4 @@ def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
                     "requires the 'api' extra — "
                     "install with: pip install pyi18t-tools[api]"
                 ) from e
-            toml.dump(data, cf)
+            _ = toml.dump(data, cf)

@@ -519,7 +519,7 @@ def update_catalog(
                     # If we don't have a string, create a tuple with empty strings
                     string_value = tuple([""] * len(key))
 
-            catalog.add(
+            _ = catalog.add(
                 id=key,
                 string=string_value,
                 locations=[

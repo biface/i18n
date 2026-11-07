@@ -69,7 +69,7 @@ def _create_empty_file(file_path: Path | str) -> None:
     file_path = __check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as empty_file:
-        empty_file.write("")
+        _ = empty_file.write("")
 
 
 def _create_directory(file_path: Path | str) -> None:
