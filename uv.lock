@@ -903,6 +903,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "tox" },
     { name = "tox-uv" },
+    { name = "typing-extensions" },
 ]
 docs = [
     { name = "furo" },
@@ -929,7 +930,7 @@ provides-extras = ["api", "test"]
 [package.metadata.requires-dev]
 dev = [
     { name = "bandit" },
-    { name = "basedpyright" },
+    { name = "basedpyright", specifier = "==1.40.2" },
     { name = "black" },
     { name = "flake8" },
     { name = "isort" },
@@ -937,6 +938,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "tox", specifier = ">=4.21" },
     { name = "tox-uv" },
+    { name = "typing-extensions", specifier = ">=4.4" },
 ]
 docs = [
     { name = "furo" },

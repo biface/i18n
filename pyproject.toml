@@ -141,6 +141,9 @@ dev = [
     "pytest-cov",
     # quality — static analysis
     "basedpyright==1.40.2",
+    # resolves i18n_tools._compat's TYPE_CHECKING-only import; never a
+    # runtime dependency
+    "typing_extensions>=4.4",
     # quality — linting and formatting
     "flake8",
     "black",
