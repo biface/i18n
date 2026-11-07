@@ -114,7 +114,7 @@ i18n-tools = "i18n_tools.cli:main"
 api = [
     "requests",         # HTTP calls — api.py (validate_api_url)
     "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
-    "email-validator",  # email validation — config.py
+    "email-validator>=2.0",  # email validation — config.py (needs .normalized)
     "toml",             # .toml settings file — loaders/settings.py (#119)
 ]
 test = [

@@ -8,6 +8,21 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ---
 
+## v0.11.0 — Unreleased
+
+### 🐛 Bug Fixes
+- `Config.add_author()`/`get_author()`/`remove_author()`: email
+  addresses are normalized before they are stored or looked up —
+  validated by `email-validator`, then lower-cased, local part
+  included. `Marie.Curie@Example.ORG` and `marie.curie@example.org`
+  now designate the same author. Addresses already stored in a
+  settings file are not rewritten: one stored with upper-case letters
+  is no longer found by `get_author()`/`remove_author()`, nor detected
+  as a duplicate by `add_author()`, until it is corrected by hand. `email-validator>=2.0` is now required by the
+  `[api]` extra. (#158)
+
+---
+
 ## v0.10.0 — Fashionably Late (2026-09-11)
 
 *(Title provisional — confirm or replace when writing the GitHub release note; date should match the actual `v0.10.0` tag.)*

@@ -492,7 +492,8 @@ class Config(metaclass=Singleton):
 
         :param first_name: First name of the author.
         :param last_name: Last name of the author.
-        :param email: Email address of the author.
+        :param email: Email address of the author. Stored in normalized
+            form: domain and local part in lower case.
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
         :raises EmailNotValidError: if email is malformed
@@ -508,7 +509,7 @@ class Config(metaclass=Singleton):
             ) from e
 
         try:
-            validate_email(email)
+            normalized_email = validate_email(email).normalized.lower()
             normalized_languages = validate_and_normalize_language_tags(languages)
         except Exception as e:
             raise e
@@ -519,13 +520,13 @@ class Config(metaclass=Singleton):
         )
 
         existing_uuid = Authors.get_id_by_email(
-            current_repository, email
-        ) or Authors.get_id_by_email(other_repository, email)
+            current_repository, normalized_email
+        ) or Authors.get_id_by_email(other_repository, normalized_email)
 
         if existing_uuid:
             if existing_uuid in current_repository["authors"].keys():
                 raise KeyError(
-                    f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
+                    f"Email address '{normalized_email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
                 )
             else:
                 author_id = existing_uuid
@@ -535,7 +536,7 @@ class Config(metaclass=Singleton):
             author = {
                 "first_name": first_name,
                 "last_name": last_name,
-                "email": email,
+                "email": normalized_email,
                 "url": url,
                 "languages": normalized_languages,
             }
@@ -547,6 +548,7 @@ class Config(metaclass=Singleton):
         Retrieve an author's details by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
+            An email address is normalized (lower case) before the lookup.
         :type index: str
         :return: The author's details as a dictionary, or None if not found.
         :rtype: dict
@@ -579,12 +581,13 @@ class Config(metaclass=Singleton):
 
         # Validate the email format
         try:
-            validate_email(index)  # Throws EmailNotValidError if invalid
+            # Throws EmailNotValidError if invalid
+            email = validate_email(index).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
         # Search by email in the email index
-        author_id = Authors.get_id_by_email(current_config, index)
+        author_id = Authors.get_id_by_email(current_config, email)
         if author_id:
             return current_config[["authors", author_id]]
 
@@ -596,6 +599,7 @@ class Config(metaclass=Singleton):
         Remove an author from the configuration by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
+            An email address is normalized (lower case) before the lookup.
         :return: True if the author was successfully removed, False if not found.
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
@@ -625,12 +629,13 @@ class Config(metaclass=Singleton):
 
         # Validate the email format
         try:
-            validate_email(index)  # Throws EmailNotValidError if invalid
+            # Throws EmailNotValidError if invalid
+            email = validate_email(index).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
         # Search by email
-        author_id = Authors.get_id_by_email(current_repository, index)
+        author_id = Authors.get_id_by_email(current_repository, email)
         if author_id:
             current_repository.remove_author(author_id)
             return True

@@ -915,7 +915,7 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "babel" },
-    { name = "email-validator", marker = "extra == 'api'" },
+    { name = "email-validator", marker = "extra == 'api'", specifier = ">=2.0" },
     { name = "langcodes" },
     { name = "ndict-tools", specifier = ">=1.3.0" },
     { name = "pytest", marker = "extra == 'test'" },

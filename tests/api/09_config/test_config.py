@@ -677,6 +677,27 @@ class TestConfigAuthors:
 
         config.save()
 
+    def test_author_email_is_normalized(self, tmp_module_repository):
+        config = tmp_module_repository[4]
+        config.switch_to_application_config()
+        config.set(
+            ["application", "paths", "config"],
+            tmp_module_repository[2][0] + "/fsm_tools/locales/_i18n_tools",
+        )
+        config.set(["application", "paths", "settings"], "i18n-tools.yaml")
+        config.load()
+
+        config.add_author("Marie", "Curie", "Marie.Curie@Dupont.ORG", "", ["fr"])
+        assert config.get_author("MARIE.CURIE@dupont.org")["email"] == (
+            "marie.curie@dupont.org"
+        )
+        with pytest.raises(KeyError):
+            config.add_author("Marie", "Curie", "marie.curie@DUPONT.org", "", ["fr"])
+        assert config.remove_author("Marie.Curie@DUPONT.ORG")
+        assert config.get_author("marie.curie@dupont.org") is None
+
+        config.save()
+
 
 class TestConfigModulesDomain:
     @pytest.mark.parametrize(
