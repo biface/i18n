@@ -105,8 +105,12 @@ class Repository(StrictNestedDictionary):
     keep JSON/YAML rendering consistent across the project.
     """
 
-    def __init__(self, *args, **kwargs):
-        kwargs.pop("default_setup", None)
+    def __init__(
+        self,
+        *args: tuple[str | list[str], object],
+        **kwargs: dict[str, object],
+    ) -> None:
+        _ = kwargs.pop("default_setup", None)
         super().__init__(default_setup=_DEFAULT_SETUP)
 
         # Initialize sections with a helper to factorize StrictNestedDictionary creation
@@ -167,7 +171,7 @@ class Repository(StrictNestedDictionary):
         """Create a StrictNestedDictionary section with the shared default setup."""
         return StrictNestedDictionary(data, default_setup=_DEFAULT_SETUP)
 
-    def _apply_args(self, args) -> None:
+    def _apply_args(self, args: tuple[tuple[str | list[str], object], ...]) -> None:
         for path, value in args:
             if not (isinstance(path, list) and path in self.paths()) and not (
                 isinstance(path, str) and self.is_key(path)

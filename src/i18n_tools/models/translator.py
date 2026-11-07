@@ -62,7 +62,9 @@ class Translator(StrictNestedDictionary):
 
     @override
     @classmethod
-    def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Translator":
+    def from_dict(
+        cls, dictionary: dict[str, Any], **class_options: object
+    ) -> "Translator":
         """
         Override of _StackedDict.from_dict() — see Author.from_dict() for
         the rationale (ndict-tools' Extending guide). Redirects to

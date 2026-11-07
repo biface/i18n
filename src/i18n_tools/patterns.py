@@ -10,8 +10,11 @@ Key Responsibilities:
 """
 
 from threading import Lock
+from typing import ClassVar, TypeVar, cast
 
 from ._compat import override
+
+_T = TypeVar("_T")
 
 
 class Singleton(type):
@@ -22,13 +25,17 @@ class Singleton(type):
     instance of the `Config` class is created.
     """
 
-    _instances = {}
-    _lock = Lock()
+    _instances: ClassVar[dict[type, object]] = {}
+    _lock: ClassVar[Lock] = Lock()
 
     @override
-    def __call__(cls, *args, **kwargs):
-        with cls._lock:
-            if cls not in cls._instances:
-                cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+    def __call__(cls: type[_T], *args: object, **kwargs: object) -> _T:
+        # Returning the instance type lets type checkers check the call's
+        # arguments against the class's own __init__ signature.
+        with Singleton._lock:
+            if cls not in Singleton._instances:
+                Singleton._instances[cls] = type.__call__(cls, *args, **kwargs)
+            instance = Singleton._instances[cls]
 
-        return cls._instances[cls]
+        # Safe: the mapping only ever stores an instance of its key.
+        return cast(_T, instance)

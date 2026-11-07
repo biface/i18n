@@ -38,7 +38,8 @@ import argparse
 import os
 import re
 import sys
-from typing import NoReturn
+from collections.abc import Callable, Iterable
+from typing import NoReturn, TextIO
 
 from .config import Config
 from .core import synchronize
@@ -168,14 +169,17 @@ def cmd_sync(config_path: str) -> str:
     return f"OK: repository synchronized from '{config_path}'"
 
 
-_REPL_COMMANDS = {
-    "validate": lambda arg: cmd_validate(arg),
-    "info": lambda arg: cmd_info(arg),
-    "sync": lambda arg: cmd_sync(arg),
+_REPL_COMMANDS: dict[str, Callable[[str], str]] = {
+    "validate": cmd_validate,
+    "info": cmd_info,
+    "sync": cmd_sync,
 }
 
 
-def cmd_repl(input_stream=None, output_stream=None) -> None:
+def cmd_repl(
+    input_stream: Iterable[str] | None = None,
+    output_stream: TextIO | None = None,
+) -> None:
     """
     Run a minimal interactive REPL reusing ``validate``/``info``/``sync``.
 
@@ -185,14 +189,14 @@ def cmd_repl(input_stream=None, output_stream=None) -> None:
     :param input_stream: Line source; defaults to ``sys.stdin``.
     :param output_stream: Output sink; defaults to ``sys.stdout``.
     """
-    input_stream = input_stream if input_stream is not None else sys.stdin
-    output_stream = output_stream if output_stream is not None else sys.stdout
+    lines: Iterable[str] = sys.stdin if input_stream is None else input_stream
+    out: TextIO = sys.stdout if output_stream is None else output_stream
 
     print(
         "i18n-tools REPL — commands: validate <path>, info <path>, sync <config>, exit",
-        file=output_stream,
+        file=out,
     )
-    for raw_line in input_stream:
+    for raw_line in lines:
         line = raw_line.strip()
         if not line:
             continue
@@ -205,13 +209,13 @@ def cmd_repl(input_stream=None, output_stream=None) -> None:
 
         handler = _REPL_COMMANDS.get(command)
         if handler is None:
-            print(f"Unknown command: '{command}'", file=output_stream)
+            print(f"Unknown command: '{command}'", file=out)
             continue
 
         try:
-            print(handler(argument), file=output_stream)
+            print(handler(argument), file=out)
         except CliError as e:
-            print(f"Error: {e}", file=output_stream)
+            print(f"Error: {e}", file=out)
 
 
 def build_parser() -> argparse.ArgumentParser:

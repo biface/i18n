@@ -109,7 +109,7 @@ from __future__ import annotations
 
 import os
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 from ndict_tools import StrictNestedDictionary
@@ -138,12 +138,16 @@ class Config(metaclass=Singleton):
     settings related to translations, translators, authors, and modules.
 
     Attributes:
-        package (StrictNestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
+        package (Repository): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
 
-        application (StrictNestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
+        application (Repository): A nested dictionary which contains the default application translation repository configuration settings.
 
         _current_config (str): store the current configuration to manage.
     """
+
+    package: Repository
+    application: Repository
+    _current_config: Literal["package", "application"]
 
     def __init__(self, config_file: str | None = None):
         """

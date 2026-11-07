@@ -83,7 +83,7 @@ class Author(StrictNestedDictionary):
 
     @override
     @classmethod
-    def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Author":
+    def from_dict(cls, dictionary: dict[str, Any], **class_options: object) -> "Author":
         """
         Override of _StackedDict.from_dict() — the recursive-construction
         hook documented in ndict-tools' Extending guide. Author's __init__

@@ -90,7 +90,7 @@ def _plural_row_exists(message: "Message", plural_index: int) -> bool:
 
 
 def publish(
-    message: "Message", alternative: int = 0, n: int | None = None, **kwargs
+    message: "Message", alternative: int = 0, n: int | None = None, **kwargs: object
 ) -> str:
     """
     Format a message: resolve the cell to use (DD-27 four-step column

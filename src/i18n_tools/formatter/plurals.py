@@ -57,7 +57,7 @@ class PluralRule:
             to ``int``.
         """
         try:
-            self._locale = Locale.parse(locale)
+            self._locale: Locale = Locale.parse(locale)
         except (UnknownLocaleError, ValueError) as e:
             raise PluralRuleError(f"Invalid locale for PluralRule: {locale!r}") from e
 

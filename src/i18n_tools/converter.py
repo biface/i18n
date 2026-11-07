@@ -204,12 +204,15 @@ import functools
 import re
 import warnings
 from collections.abc import Callable
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.loaders.utils import _load_json, _load_text
+
+if TYPE_CHECKING:
+    from i18n_tools.models.corpus import Message
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 
@@ -1024,7 +1027,7 @@ def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
     return i18n_tools
 
 
-def message_to_i18n_tools_format(message) -> dict[str, Any]:
+def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
     """
     Convert a Message object directly to i18n_tools format without using unified format.
 
