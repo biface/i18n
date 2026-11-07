@@ -23,6 +23,8 @@ if TYPE_CHECKING:
     # it locally itself, DD-41 #120: this whole PO/MO path is dead in
     # production, build_repository()/verify_repository() have zero
     # callers).
+    import tarfile
+
     from babel.messages.catalog import Catalog
 
 from ..__static__ import (
@@ -898,3 +900,75 @@ def verify_target_domain(
         raise ValueError(
             f"The target domain '{target_domain}' is not registered in the repository"
         )
+
+
+# ---------------------------------------------------------------------------
+# Low-level operations offered to loader.py
+#
+# loader.py reaches the low-level layer only through this module. Each
+# function below delegates to _utils for now; this is where checks on these
+# operations belong once they exist.
+# ---------------------------------------------------------------------------
+
+
+def path_exists(path: Path | str) -> bool:
+    """Return whether a file or directory exists at ``path``."""
+    return _utils.exist_path(path)
+
+
+def detect_format(path: Path | str) -> TranslationFileFormat:
+    """Detect the serialisation format of a file from its extension."""
+    return _utils.detect_format(path)
+
+
+def load_json(file_path: Path | str) -> dict[str, Any]:
+    """Load a JSON file and return its content."""
+    return _utils.load_json(file_path)
+
+
+def save_json(file_path: Path | str, data: dict[str, Any]) -> None:
+    """Save a dictionary to a JSON file."""
+    _utils.save_json(file_path, data)
+
+
+def load_by_format(file_path: Path | str, fmt: TranslationFileFormat) -> dict[str, Any]:
+    """Load a dictionary file in the given format (json|yaml)."""
+    return _utils.load_by_format(file_path, fmt)
+
+
+def save_by_format(
+    file_path: Path | str, data: dict[str, Any], fmt: TranslationFileFormat
+) -> None:
+    """Save a dictionary to a file in the given format (json|yaml)."""
+    _utils.save_by_format(file_path, data, fmt)
+
+
+def build_dictionary_path(
+    base_path: Path | str, domain: str, fmt: TranslationFileFormat | None
+) -> str:
+    """Build a dictionary file path from a base directory, a domain and a format."""
+    return _utils.build_dictionary_path(base_path, domain, fmt)
+
+
+def create_gzip(file_path: Path | str) -> None:
+    """Write a gzip-compressed copy of ``file_path``."""
+    _utils.create_gzip(file_path)
+
+
+def non_traversal_path(
+    root_path: str, module_list: list[str], members: list[tarfile.TarInfo]
+) -> list[tarfile.TarInfo]:
+    """Keep the archive members that extract inside the expected module paths."""
+    return _utils.non_traversal_path(root_path, module_list, members)
+
+
+def check_module(repository: StrictNestedDictionary, module_list: list[str]) -> None:
+    """Raise if a module of ``module_list`` is not defined in the repository."""
+    _utils.check_module(repository, module_list)
+
+
+def check_domains(
+    repository: StrictNestedDictionary, module: str, domain_list: list[str]
+) -> None:
+    """Raise if a domain of ``domain_list`` is not defined for ``module``."""
+    _utils.check_domains(repository, module, domain_list)

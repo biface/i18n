@@ -37,39 +37,35 @@ from i18n_tools.__static__ import (
 )
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import (
+    build_dictionary_path,
     build_path,
     build_translation_lang_files,
+    check_domains,
     check_json_integrity,
+    check_module,
     create_catalog,
     create_dictionary,
     create_directory,
+    create_gzip,
     create_template,
+    detect_format,
     dump_dictionary,
     fetch_dictionary,
 )
 from i18n_tools.loaders._handler import file_exists as _file_exists
 from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
+from i18n_tools.loaders._handler import load_by_format, load_json, non_traversal_path
 from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
 from i18n_tools.loaders._handler import (
+    path_exists,
+    save_by_format,
+    save_json,
     update_dictionary,
     verify_available_languages,
     verify_paths_and_modules,
     verify_target_domain,
-)
-from i18n_tools.loaders._utils import (
-    build_dictionary_path,
-    check_domains,
-    check_module,
-    create_gzip,
-    detect_format,
-    exist_path,
-    load_by_format,
-    load_json,
-    non_traversal_path,
-    save_by_format,
-    save_json,
 )
 from i18n_tools.locale import get_all_languages
 
@@ -442,7 +438,7 @@ def restore_module_from_archive(
     )
 
     # Check if the archive file exists
-    if exist_path(archive_path):
+    if path_exists(archive_path):
         # Open the archive file in read mode with gzip compression
         with tarfile.open(archive_path, "r:gz") as tar:
             root = repository[["paths", "repository"]]
@@ -488,7 +484,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
         )
         module_template_directory = module_directory + "/" + I18N_TOOLS_TEMPLATE
 
-        if not exist_path(module_template_directory):
+        if not path_exists(module_template_directory):
             create_directory(module_template_directory)
 
         # Iterate through each domain
@@ -558,21 +554,21 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
             module_directory = build_path(
                 repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
             )
-            if not exist_path(module_directory):
+            if not path_exists(module_directory):
                 return False
 
             # Check template directory
             module_template_directory = build_path(
                 module_directory, I18N_TOOLS_TEMPLATE
             )
-            if not exist_path(module_template_directory):
+            if not path_exists(module_template_directory):
                 return False
 
             # Check each domain
             for domain in domains:
                 # Check template file
                 template_path = build_path(module_template_directory, f"{domain}.pot")
-                if not exist_path(template_path):
+                if not path_exists(template_path):
                     return False
 
                 # Check each language
@@ -581,19 +577,19 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
                     language_directory = build_path(
                         module_directory, language, I18N_TOOLS_MESSAGES
                     )
-                    if not exist_path(language_directory):
+                    if not path_exists(language_directory):
                         return False
 
                     # Check catalog file
                     catalog_path = build_path(language_directory, f"{domain}.po")
-                    if not exist_path(catalog_path):
+                    if not path_exists(catalog_path):
                         return False
 
                     # Check dictionary file (default json for backward compatibility)
                     dictionary_path = build_dictionary_path(
                         language_directory, domain, None
                     )
-                    if not exist_path(dictionary_path):
+                    if not path_exists(dictionary_path):
                         return False
 
         # All checks passed

@@ -27,6 +27,20 @@ module.
     .. autofunction:: update_catalog
     .. autofunction:: update_dictionary
 
+    Low-level operations offered to the loader module:
+
+    .. autofunction:: path_exists
+    .. autofunction:: detect_format
+    .. autofunction:: load_json
+    .. autofunction:: save_json
+    .. autofunction:: load_by_format
+    .. autofunction:: save_by_format
+    .. autofunction:: build_dictionary_path
+    .. autofunction:: create_gzip
+    .. autofunction:: non_traversal_path
+    .. autofunction:: check_module
+    .. autofunction:: check_domains
+
     .. autofunction:: verify_paths_and_modules()
         :no-index:
     .. autofunction:: verify_available_languages()
