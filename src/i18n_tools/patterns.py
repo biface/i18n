@@ -11,6 +11,8 @@ Key Responsibilities:
 
 from threading import Lock
 
+from ._compat import override
+
 
 class Singleton(type):
     """
@@ -23,6 +25,7 @@ class Singleton(type):
     _instances = {}
     _lock = Lock()
 
+    @override
     def __call__(cls, *args, **kwargs):
         with cls._lock:
             if cls not in cls._instances:

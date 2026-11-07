@@ -120,6 +120,7 @@ from .__static__ import (
     I18N_TOOLS_CONFIG_FILE,
     I18N_TOOLS_LOCALE,
 )
+from ._compat import override
 from .api import validate_api_url
 from .loaders.handler import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
@@ -942,6 +943,7 @@ class Config(metaclass=Singleton):
             "application" if self._current_config == "package" else "package"
         )
 
+    @override
     def __repr__(self) -> str:
         """
         Represent the `Config` object as a human-readable string.

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any
 
 from ndict_tools import StrictNestedDictionary
 
+from .._compat import override
 from ..api import validate_url_format
 
 if TYPE_CHECKING:
@@ -59,6 +60,7 @@ class Translator(StrictNestedDictionary):
             technical=data["technical"],
         )
 
+    @override
     @classmethod
     def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Translator":
         """

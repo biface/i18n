@@ -10,6 +10,7 @@ from i18n_tools.__static__ import (
     TranslationFileFormat,
 )
 from i18n_tools.__static__ import __version__ as i18n_tools_version
+from i18n_tools._compat import override
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
     message_to_i18n_tools_format,
@@ -1613,6 +1614,7 @@ class Message:
             metadata=entry.get("metadata"),
         )
 
+    @override
     def __str__(self) -> str:
         """
         Return the string representation of the message.
@@ -1622,6 +1624,7 @@ class Message:
         """
         return self.default
 
+    @override
     def __repr__(self) -> str:
         """
         Return the representation of the message.
@@ -1632,6 +1635,7 @@ class Message:
         return f"Message(id='{self.id}', translation='{self.default}')"
 
     # Equality based on exact properties
+    @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Message):
             return NotImplemented
@@ -2226,6 +2230,7 @@ class FallbackBook:
         """Return True if ``msg_id`` exists in any Book of the chain."""
         return any(book.get(msg_id) is not None for book in self._chain)
 
+    @override
     def __repr__(self) -> str:
         langs = [b.language for b in self._chain]
         return f"FallbackBook(language='{self._language}', chain={langs})"
@@ -2469,6 +2474,7 @@ class Corpus:
         present = set(self._books[normalized].messages.keys())
         return sorted(all_ids - present)
 
+    @override
     def __repr__(self) -> str:
         return f"Corpus(domain='{self._domain}', languages={self.languages})"
 
@@ -2555,6 +2561,7 @@ class Encyclopaedia:
         """Number of registered Corpora."""
         return len(self._corpora)
 
+    @override
     def __repr__(self) -> str:
         keys = list(self._corpora.keys())
         return f"Encyclopaedia(corpora={keys})"

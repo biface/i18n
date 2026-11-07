@@ -24,6 +24,8 @@ from uuid import UUID
 from ndict_tools import StrictNestedDictionary
 from ndict_tools.exception import StackedValueError
 
+from .._compat import override
+
 if TYPE_CHECKING:
     from .repository import Repository  # type: ignore[reportImportCycle]
 
@@ -79,6 +81,7 @@ class Author(StrictNestedDictionary):
             languages=data["languages"],
         )
 
+    @override
     @classmethod
     def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Author":
         """
