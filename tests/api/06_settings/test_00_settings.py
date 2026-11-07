@@ -1,8 +1,8 @@
 """
-Tests for i18n_tools.loaders.settings (DD-41, #119) — the TOML/JSON/YAML
+Tests for i18n_tools.loaders._settings (DD-41, #119) — the TOML/JSON/YAML
 settings-file primitives backing Config/Repository, extracted from
-01_loader/test_01_loader.py when loaders/settings.py was split out of
-loaders/utils.py. Lives under tests/api/ because TestTomlOperations and
+01_loader/test_01_loader.py when loaders/_settings.py was split out of
+loaders/_utils.py. Lives under tests/api/ because TestTomlOperations and
 part of TestConfigFileOperations exercise the `.toml` branches, which
 require the `api` extra.
 """
@@ -12,11 +12,11 @@ import json
 import pytest
 import toml
 
-from i18n_tools.loaders.settings import (
-    _load_config_file,
+from i18n_tools.loaders._settings import (
     _load_toml,
-    _save_config_file,
     _save_toml,
+    load_config_file,
+    save_config_file,
 )
 
 
@@ -78,29 +78,29 @@ class TestConfigFileOperations:
             / destination
         )
         if valid_s:
-            data = _load_config_file(source_file)
+            data = load_config_file(source_file)
             if valid_d:
-                _save_config_file(destination_file, data)
+                save_config_file(destination_file, data)
             else:
                 with pytest.raises(Exception):
-                    _save_config_file(destination_file, data)
+                    save_config_file(destination_file, data)
         else:
             with pytest.raises(Exception):
-                _load_config_file(source_file)
+                load_config_file(source_file)
 
     def test_load_and_save_config_failed_path(self):
         with pytest.raises(Exception):
-            _load_config_file("non-existent-path/i18n-tools.json")
-            _save_config_file("non-existent-path/i18n-tools.json", {})
+            load_config_file("non-existent-path/i18n-tools.json")
+            save_config_file("non-existent-path/i18n-tools.json", {})
 
     def test_load_config_file_yml_extension(self, tmp_path):
-        """biface/i18n#26 — .yml is accepted by __check_config_extension()
-        but _load_config_file()'s if/elif only matched ".yaml", silently
-        falling through and returning None. _save_config_file() already
-        handled ".yml" correctly; _load_config_file() must match it."""
+        """biface/i18n#26 — .yml is accepted by _check_config_extension()
+        but load_config_file()'s if/elif only matched ".yaml", silently
+        falling through and returning None. save_config_file() already
+        handled ".yml" correctly; load_config_file() must match it."""
         config_file = tmp_path / "config.yml"
         config_file.write_text("key: value\n", encoding="utf-8")
-        result = _load_config_file(config_file)
+        result = load_config_file(config_file)
         assert result == {"key": "value"}
 
     def test_load_config_file_malformed_content_raises_specific_error(self, tmp_path):
@@ -111,4 +111,4 @@ class TestConfigFileOperations:
         config_file = tmp_path / "config.json"
         config_file.write_text("{not valid json", encoding="utf-8")
         with pytest.raises(json.JSONDecodeError):
-            _load_config_file(config_file)
+            load_config_file(config_file)

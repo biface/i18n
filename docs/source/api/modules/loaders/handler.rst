@@ -1,7 +1,10 @@
-Handler module
-==============
+Handler module (internal)
+=========================
 
-.. automodule:: i18n_tools.loaders.handler
+Intermediate layer for path and file type management. Internal
+module.
+
+.. automodule:: i18n_tools.loaders._handler
 
     .. autofunction:: build_path
     .. autofunction:: build_book_filename
@@ -24,11 +27,11 @@ Handler module
     .. autofunction:: update_catalog
     .. autofunction:: update_dictionary
 
-    .. autofunction:: _verify_paths_and_modules()
+    .. autofunction:: verify_paths_and_modules()
         :no-index:
-    .. autofunction:: _verify_available_languages()
+    .. autofunction:: verify_available_languages()
         :no-index:
     .. autofunction:: _verify_target_module()
         :no-index:
-    .. autofunction:: _verify_target_domain()
+    .. autofunction:: verify_target_domain()
         :no-index:

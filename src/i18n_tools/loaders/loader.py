@@ -35,13 +35,8 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TEMPLATE,
     TranslationFileFormat,
 )
-from i18n_tools.loaders.handler import (
-    _verify_available_languages,
-    _verify_paths_and_modules,
-    _verify_target_domain,
-)
-from i18n_tools.loaders.handler import build_book_filename as _build_book_filename
-from i18n_tools.loaders.handler import (
+from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
+from i18n_tools.loaders._handler import (
     build_path,
     build_translation_lang_files,
     check_json_integrity,
@@ -52,24 +47,29 @@ from i18n_tools.loaders.handler import (
     dump_dictionary,
     fetch_dictionary,
 )
-from i18n_tools.loaders.handler import file_exists as _file_exists
-from i18n_tools.loaders.handler import is_absolute_path as _is_absolute_path
-from i18n_tools.loaders.handler import (
+from i18n_tools.loaders._handler import file_exists as _file_exists
+from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
+from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
-from i18n_tools.loaders.handler import update_dictionary
-from i18n_tools.loaders.utils import (
-    _build_dictionary_path,
-    _check_domains,
-    _check_module,
-    _create_gzip,
-    _detect_format,
-    _exist_path,
-    _load_by_format,
-    _load_json,
-    _non_traversal_path,
-    _save_by_format,
-    _save_json,
+from i18n_tools.loaders._handler import (
+    update_dictionary,
+    verify_available_languages,
+    verify_paths_and_modules,
+    verify_target_domain,
+)
+from i18n_tools.loaders._utils import (
+    build_dictionary_path,
+    check_domains,
+    check_module,
+    create_gzip,
+    detect_format,
+    exist_path,
+    load_by_format,
+    load_json,
+    non_traversal_path,
+    save_by_format,
+    save_json,
 )
 from i18n_tools.locale import get_all_languages
 
@@ -99,7 +99,7 @@ def load_locale_json(file_path: str) -> dict[str, Any]:
     :raises FileNotFoundError: If the file is not found.
     :raises ValueError: If the file is not a valid JSON or fails the integrity check.
     """
-    data = _load_json(file_path)
+    data = load_json(file_path)
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
     return data
@@ -121,8 +121,8 @@ def load_book(file_path: str) -> dict[str, Any]:
     :raises FileNotFoundError: If the file does not exist.
     :raises ValueError: If the file fails the integrity check.
     """
-    fmt = _detect_format(file_path)
-    data = _load_by_format(file_path, fmt)
+    fmt = detect_format(file_path)
+    data = load_by_format(file_path, fmt)
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
     result = {}
@@ -161,7 +161,7 @@ def save_book(book: Any, file_path: str) -> None:
     """
     from i18n_tools.converter import message_to_i18n_tools_format
 
-    fmt = _detect_format(file_path)
+    fmt = detect_format(file_path)
     data: dict[str, Any] = {"metadata": book.metadata.to_dict()}
     for msg in book.messages.values():
         # load_locale_json / check_json_integrity expect each entry to be
@@ -169,7 +169,7 @@ def save_book(book: Any, file_path: str) -> None:
         # {"messages": ..., "metadata": ...} dict produced by
         # message_to_i18n_tools_format.  We extract only the "messages" key.
         data[msg.id] = message_to_i18n_tools_format(msg)["messages"]
-    _save_by_format(file_path, data, fmt)
+    save_by_format(file_path, data, fmt)
 
 
 def aggregate_locale_json(
@@ -234,7 +234,7 @@ def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
     :type data: dict
     :raises FileNotFoundError: If the directory for the file is not found.
     """
-    _save_json(file_path, data)
+    save_json(file_path, data)
 
 
 def save_aggregated_locale_json(
@@ -265,14 +265,14 @@ def save_aggregated_locale_json(
         # Save individual domain files
         for domain, domain_data in module_data.items():
             json_file_path = locales_path / f"{domain}.json"
-            _save_json(json_file_path, domain_data)
-            _create_gzip(json_file_path)
+            save_json(json_file_path, domain_data)
+            create_gzip(json_file_path)
             json_file_path.unlink()
 
         # Save aggregated module data
         module_json_path = module_dir / f"{module_name}.json"
-        _save_json(module_json_path, module_data)
-        _create_gzip(module_json_path)
+        save_json(module_json_path, module_data)
+        create_gzip(module_json_path)
         module_json_path.unlink()
 
 
@@ -280,7 +280,7 @@ def build_book_filename(
     domain: str, fmt: TranslationFileFormat | None = None
 ) -> tuple[str, str]:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.build_book_filename`.
+    Pass-through to :func:`i18n_tools.loaders._handler.build_book_filename`.
 
     Kept here so that `Book` (`models/corpus.py`) only ever talks to
     `loader.py`, consistent with the existing `load_book`/`save_book`
@@ -300,7 +300,7 @@ def build_book_filename(
 
 def file_exists(file_path: str) -> bool:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.file_exists`.
+    Pass-through to :func:`i18n_tools.loaders._handler.file_exists`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -316,7 +316,7 @@ def file_exists(file_path: str) -> bool:
 
 def is_absolute_path(path: str) -> bool:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.is_absolute_path`.
+    Pass-through to :func:`i18n_tools.loaders._handler.is_absolute_path`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -332,7 +332,7 @@ def is_absolute_path(path: str) -> bool:
 
 def normalize_module_identifier(path: str) -> str:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.normalize_module_identifier`.
+    Pass-through to :func:`i18n_tools.loaders._handler.normalize_module_identifier`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -442,12 +442,12 @@ def restore_module_from_archive(
     )
 
     # Check if the archive file exists
-    if _exist_path(archive_path):
+    if exist_path(archive_path):
         # Open the archive file in read mode with gzip compression
         with tarfile.open(archive_path, "r:gz") as tar:
             root = repository[["paths", "repository"]]
             # Only members inside this module's own tree are extracted.
-            members = _non_traversal_path(root, [top_level_module], tar.getmembers())
+            members = non_traversal_path(root, [top_level_module], tar.getmembers())
             # Extraction filters (PEP 706) were backported to 3.11.4, so a
             # version check on (3, 12) would skip the filter on interpreters
             # that support it. Detect the feature itself; 3.11.0-3.11.3
@@ -488,7 +488,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
         )
         module_template_directory = module_directory + "/" + I18N_TOOLS_TEMPLATE
 
-        if not _exist_path(module_template_directory):
+        if not exist_path(module_template_directory):
             create_directory(module_template_directory)
 
         # Iterate through each domain
@@ -540,7 +540,7 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         modules = repository[["paths", "modules"]]
 
         # Validate modules (raises ValueError, caught below)
-        _check_module(repository, modules)
+        check_module(repository, modules)
 
         # Get the list of languages from the repository
         languages = get_all_languages(repository[["languages", "hierarchy"]])
@@ -552,27 +552,27 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         for module in modules:
             # Validate domains for this module (raises ValueError, caught below)
             domains = repository[["domains", module]]
-            _check_domains(repository, module, domains)
+            check_domains(repository, module, domains)
 
             # Check module directory structure
             module_directory = build_path(
                 repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
             )
-            if not _exist_path(module_directory):
+            if not exist_path(module_directory):
                 return False
 
             # Check template directory
             module_template_directory = build_path(
                 module_directory, I18N_TOOLS_TEMPLATE
             )
-            if not _exist_path(module_template_directory):
+            if not exist_path(module_template_directory):
                 return False
 
             # Check each domain
             for domain in domains:
                 # Check template file
                 template_path = build_path(module_template_directory, f"{domain}.pot")
-                if not _exist_path(template_path):
+                if not exist_path(template_path):
                     return False
 
                 # Check each language
@@ -581,19 +581,19 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
                     language_directory = build_path(
                         module_directory, language, I18N_TOOLS_MESSAGES
                     )
-                    if not _exist_path(language_directory):
+                    if not exist_path(language_directory):
                         return False
 
                     # Check catalog file
                     catalog_path = build_path(language_directory, f"{domain}.po")
-                    if not _exist_path(catalog_path):
+                    if not exist_path(catalog_path):
                         return False
 
                     # Check dictionary file (default json for backward compatibility)
-                    dictionary_path = _build_dictionary_path(
+                    dictionary_path = build_dictionary_path(
                         language_directory, domain, None
                     )
-                    if not _exist_path(dictionary_path):
+                    if not exist_path(dictionary_path):
                         return False
 
         # All checks passed
@@ -634,8 +634,8 @@ def aggregate_dictionaries(
     module_directory = build_path(
         repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
     )
-    _save_json(module_directory + f"/{domain}_aggregated.json", domain_dictionary)
-    _create_gzip(module_directory + f"/{domain}_aggregated.json")
+    save_json(module_directory + f"/{domain}_aggregated.json", domain_dictionary)
+    create_gzip(module_directory + f"/{domain}_aggregated.json")
 
 
 def add_translation_set(
@@ -662,9 +662,9 @@ def add_translation_set(
     :raises FileNotFoundError: If any module path does not exist.
     """
     # Verifying components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, translation_data in translations.items():
 
@@ -713,9 +713,9 @@ def update_translation_set(
     :raises KeyError: If a msgid to be updated does not exist in the current translations.
     """
     # Verify components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, translation_data in translations.items():
 
@@ -766,9 +766,9 @@ def remove_translation_set(
     :raises FileNotFoundError: If any module path does not exist.
     """
     # Verify components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, msgids in translations.items():
 

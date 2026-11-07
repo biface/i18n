@@ -4,10 +4,7 @@ import pytest
 from babel.core import Locale
 
 from i18n_tools.__static__ import I18N_TOOLS_TRANSLATION_FILE_EXT
-from i18n_tools.loaders.handler import (
-    _verify_available_languages,
-    _verify_paths_and_modules,
-    _verify_target_domain,
+from i18n_tools.loaders._handler import (
     _verify_target_module,
     build_path,
     build_translation_lang_files,
@@ -24,6 +21,9 @@ from i18n_tools.loaders.handler import (
     remove_template,
     update_catalog,
     update_dictionary,
+    verify_available_languages,
+    verify_paths_and_modules,
+    verify_target_domain,
 )
 from i18n_tools.loaders.loader import (
     _update_json_translations,
@@ -719,14 +719,14 @@ class TestVerifyRepository:
             old_path = config.get_repository()["paths"]["repository"]
             config.get_repository()["paths"]["repository"] = modified_path
             with pytest.raises(exception):
-                _verify_paths_and_modules(config.get_repository())
+                verify_paths_and_modules(config.get_repository())
             config.get_repository()["paths"]["repository"] = old_path
         else:
             if valid:
-                _verify_paths_and_modules(config.get_repository())
+                verify_paths_and_modules(config.get_repository())
             else:
                 with pytest.raises(exception):
-                    _verify_paths_and_modules(config.get_repository())
+                    verify_paths_and_modules(config.get_repository())
 
     @pytest.mark.parametrize(
         "languages, valid, exception",
@@ -745,12 +745,12 @@ class TestVerifyRepository:
         self, tmp_module_repository, languages, valid, exception
     ):
         if valid:
-            _verify_available_languages(
+            verify_available_languages(
                 tmp_module_repository[4].get_repository(), languages
             )
         else:
             with pytest.raises(exception):
-                _verify_available_languages(
+                verify_available_languages(
                     tmp_module_repository[4].get_repository(), languages
                 )
 
@@ -795,12 +795,12 @@ class TestVerifyRepository:
         self, tmp_module_repository, module, domain, valid, exception, msg_error
     ):
         if valid:
-            _verify_target_domain(
+            verify_target_domain(
                 tmp_module_repository[4].get_repository(), module, domain
             )
         else:
             with pytest.raises(exception, match=msg_error):
-                _verify_target_domain(
+                verify_target_domain(
                     tmp_module_repository[4].get_repository(), module, domain
                 )
 

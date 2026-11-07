@@ -209,7 +209,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders.utils import _load_json, _load_text
+from i18n_tools.loaders._utils import load_json, load_text
 
 if TYPE_CHECKING:
     from i18n_tools.models.corpus import Message
@@ -1301,7 +1301,7 @@ def load_and_convert_po_to_i18next(
     :return: Dictionary in i18next format
     :rtype: dict[str, Any]
     """
-    catalog = _load_text(po_file_path)
+    catalog = load_text(po_file_path)
     return convert_catalog_to_i18next(catalog, flatten)
 
 
@@ -1321,7 +1321,7 @@ def load_and_convert_json_to_catalog(
     :return: Babel Catalog object
     :rtype: Catalog
     """
-    i18next_data = _load_json(json_file_path)
+    i18next_data = load_json(json_file_path)
     return convert_i18next_to_catalog(i18next_data, locale, domain)
 
 
@@ -1366,7 +1366,7 @@ def seek_translation(
 
     try:
         # Local import to avoid circular imports at module level
-        from i18n_tools.loaders.handler import fetch_dictionary
+        from i18n_tools.loaders._handler import fetch_dictionary
 
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():

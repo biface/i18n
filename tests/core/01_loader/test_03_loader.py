@@ -58,7 +58,7 @@ class TestLoadBook:
     def test_load_book_detects_yaml_format(self, tmp_path):
         """biface/i18n#67 — un fichier .yaml.i18t doit être chargé en YAML,
         pas toujours en JSON. Avant #67, load_book() ignorait le format
-        détecté et appelait systématiquement _load_json()."""
+        détecté et appelait systématiquement load_json()."""
         result = load_book(_write_yaml_i18t(tmp_path, VALID_DATA))
         assert set(result.keys()) == {"10001", "10002"}
         assert result["10001"]["messages"] == [["Un message"], ["Des messages"]]

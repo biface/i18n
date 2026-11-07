@@ -20,8 +20,8 @@ import yaml
 from ndict_tools import StrictNestedDictionary
 
 if TYPE_CHECKING:
-    # Only used in type annotations below (_load_text/_save_text/
-    # _load_machine/_save_machine return/accept a Catalog) — never
+    # Only used in type annotations below (load_text/save_text/
+    # load_machine/save_machine return/accept a Catalog) — never
     # instantiated in this module. Guarded so the real babel.messages
     # import stays local to each function that actually needs it
     # (DD-41, #120): this whole PO/MO path is dead in production
@@ -39,23 +39,23 @@ from ..__static__ import (
 # Generic empty files
 
 
-def __check_path(file_path: Path | str) -> Path:
+def check_path(file_path: Path | str) -> Path:
     if isinstance(file_path, str):
         file_path = Path(file_path)
     return file_path
 
 
-def _exist_path(path: Path | str) -> bool:
-    path = __check_path(path)
+def exist_path(path: Path | str) -> bool:
+    path = check_path(path)
     return path.exists()
 
 
-def _is_absolute_path(path: Path | str) -> bool:
-    path = __check_path(path)
+def is_absolute_path(path: Path | str) -> bool:
+    path = check_path(path)
     return path.is_absolute()
 
 
-def _create_empty_file(file_path: Path | str) -> None:
+def create_empty_file(file_path: Path | str) -> None:
     """
     Create an empty file.
 
@@ -66,13 +66,13 @@ def _create_empty_file(file_path: Path | str) -> None:
     :raises FileNotFoundError: File not found.
     """
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as empty_file:
         _ = empty_file.write("")
 
 
-def _create_directory(file_path: Path | str) -> None:
+def create_directory(file_path: Path | str) -> None:
     """
     Create a directory.
 
@@ -82,7 +82,7 @@ def _create_directory(file_path: Path | str) -> None:
     :rtype: None
     :raises FileExistsError: directory already exists.
     """
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     if not file_path.is_dir():
         file_path.mkdir(parents=True, exist_ok=True)
@@ -93,7 +93,7 @@ def _create_directory(file_path: Path | str) -> None:
 # JSON load and save files
 
 
-def _create_empty_json(file_path: Path | str) -> None:
+def create_empty_json(file_path: Path | str) -> None:
     """
     Create an empty JSON file without managing data structure and integrity and returns its content.
 
@@ -104,13 +104,13 @@ def _create_empty_json(file_path: Path | str) -> None:
     :raises FileNotFoundError: File not found.
     """
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as json_file:
         json.dump({}, json_file, ensure_ascii=False, indent=4)
 
 
-def _load_json(file_path: Path | str) -> dict[str, Any]:
+def load_json(file_path: Path | str) -> dict[str, Any]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
 
@@ -121,13 +121,13 @@ def _load_json(file_path: Path | str) -> dict[str, Any]:
     :raises FileNotFoundError: File not found.
     """
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "r", encoding="utf-8") as json_file:
         return json.load(json_file)
 
 
-def _save_json(file_path: Path | str, data: dict[str, Any]) -> None:
+def save_json(file_path: Path | str, data: dict[str, Any]) -> None:
     """
     Save a JSON file without managing data structure and integrity and returns its content.
 
@@ -139,7 +139,7 @@ def _save_json(file_path: Path | str, data: dict[str, Any]) -> None:
     :raises FileNotFoundError: File not found.
     """
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
@@ -151,7 +151,7 @@ def _load_yaml(file_path: Path | str) -> dict[str, Any]:
     :param file_path:
     :return:
     """
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "r", encoding="utf-8") as yaml_file:
         return yaml.load(yaml_file, Loader=yaml.SafeLoader)
@@ -164,13 +164,13 @@ def _save_yaml(file_path: Path | str, data: dict[str, Any]) -> None:
     :param data:
     :return:
     """
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as yaml_file:
         yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
 
 
-def _validate_translation_format(
+def validate_translation_format(
     fmt: TranslationFileFormat | None,
 ) -> TranslationFileFormat:
     """
@@ -184,30 +184,28 @@ def _validate_translation_format(
     return _fmt
 
 
-def _load_by_format(
-    file_path: Path | str, fmt: TranslationFileFormat
-) -> dict[str, Any]:
+def load_by_format(file_path: Path | str, fmt: TranslationFileFormat) -> dict[str, Any]:
     """
     Load a dictionary file according to the given format (json|yaml).
     """
     if fmt == "json":
-        return _load_json(file_path)
+        return load_json(file_path)
     return _load_yaml(file_path)
 
 
-def _save_by_format(
+def save_by_format(
     file_path: Path | str, data: dict[str, Any], fmt: TranslationFileFormat
 ) -> None:
     """
     Save a dictionary to a file according to the given format (json|yaml).
     """
     if fmt == "json":
-        _save_json(file_path, data)
+        save_json(file_path, data)
     else:
         _save_yaml(file_path, data)
 
 
-def _build_dictionary_path(
+def build_dictionary_path(
     base_path: Path | str, domain: str, fmt: TranslationFileFormat | None
 ) -> str:
     """
@@ -217,7 +215,7 @@ def _build_dictionary_path(
     - Validates fmt against I18N_TRANSLATION_FORMAT.
     - Returns a string path like: <base_path>/<domain>.<fmt>.<I18N_TOOLS_TRANSLATION_FILE_EXT>
     """
-    _fmt = _validate_translation_format(fmt)
+    _fmt = validate_translation_format(fmt)
     base = str(base_path)
     return base + f"/{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
 
@@ -225,7 +223,7 @@ def _build_dictionary_path(
 # PO file handling with polib
 
 
-def _load_text(file_path: Path | str) -> Catalog:
+def load_text(file_path: Path | str) -> Catalog:
     """
     Load a catalog from a PO file using Babel.
 
@@ -237,13 +235,13 @@ def _load_text(file_path: Path | str) -> Catalog:
     """
     from babel.messages.pofile import read_po
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "r", encoding="utf-8") as po_file:
         return read_po(po_file)
 
 
-def _save_text(file_path: Path | str, catalog: Catalog) -> None:
+def save_text(file_path: Path | str, catalog: Catalog) -> None:
     """
     Save a Catalog object to a PO file using Babel.
 
@@ -255,7 +253,7 @@ def _save_text(file_path: Path | str, catalog: Catalog) -> None:
     """
     from babel.messages.pofile import write_po
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "wb") as po_file:
         write_po(po_file, catalog, sort_output=True, include_previous=False)
@@ -264,7 +262,7 @@ def _save_text(file_path: Path | str, catalog: Catalog) -> None:
 # MO file handling with polib
 
 
-def _load_machine(file_path: Path | str) -> Catalog:
+def load_machine(file_path: Path | str) -> Catalog:
     """
     Load a catalog from a MO file using Babel.
 
@@ -276,13 +274,13 @@ def _load_machine(file_path: Path | str) -> Catalog:
     """
     from babel.messages.mofile import read_mo
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "rb") as mo_file:
         return read_mo(mo_file)
 
 
-def _save_machine(file_path: Path | str, catalog: Catalog) -> None:
+def save_machine(file_path: Path | str, catalog: Catalog) -> None:
     """
     Save a POFile object to a MO file.
 
@@ -294,13 +292,13 @@ def _save_machine(file_path: Path | str, catalog: Catalog) -> None:
     """
     from babel.messages.mofile import write_mo
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "wb") as mo_file:
         write_mo(mo_file, catalog)
 
 
-def _convert_catalog(file_path: Path | str) -> None:
+def convert_catalog(file_path: Path | str) -> None:
     """
     Convert a PO catalog to a MO catalog using Babel.
 
@@ -309,9 +307,9 @@ def _convert_catalog(file_path: Path | str) -> None:
     """
     from babel.messages.mofile import write_mo
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
-    catalog = _load_text(file_path)
+    catalog = load_text(file_path)
     mo_file_path = file_path.with_suffix(".mo")
     with open(mo_file_path, "wb") as mo_file:
         write_mo(mo_file, catalog)
@@ -320,7 +318,7 @@ def _convert_catalog(file_path: Path | str) -> None:
 # Utility functions
 
 
-def _build_path(base_path: Path | str, *sub_dirs: str) -> Path:
+def build_path(base_path: Path | str, *sub_dirs: str) -> Path:
     """
     Constructs a path by combining a base path with one or more subdirectories.
 
@@ -342,7 +340,7 @@ def _build_path(base_path: Path | str, *sub_dirs: str) -> Path:
     return base_path.resolve()
 
 
-def _create_tar_gz(
+def create_tar_gz(
     base_path: Path | str,
     archive_name: str,
     directory_to_archive: Path | str,
@@ -359,15 +357,15 @@ def _create_tar_gz(
     :return: None
     :rtype: None
     """
-    base_path = __check_path(base_path)
-    directory_to_archive = __check_path(directory_to_archive)
+    base_path = check_path(base_path)
+    directory_to_archive = check_path(directory_to_archive)
     tarfile_path = base_path / archive_name
 
     with tarfile.open(tarfile_path, "w:gz") as tar:
         tar.add(directory_to_archive, arcname=directory_to_archive.name)
 
 
-def _create_gzip(file_path: Path | str) -> None:
+def create_gzip(file_path: Path | str) -> None:
     """
     Create a compressed file using gzip functions.
 
@@ -376,14 +374,14 @@ def _create_gzip(file_path: Path | str) -> None:
     :return: Nothing
     :rtype: None
     """
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
     gz_file = file_path.with_suffix(file_path.suffix + ".gz")
     with open(file_path, "rb") as file_in:
         with gzip.open(gz_file, "wb") as file_out:
             shutil.copyfileobj(file_in, file_out)
 
 
-def _non_traversal_path(
+def non_traversal_path(
     root_path: str, module_list: list[str], members: list[tarfile.TarInfo]
 ) -> list[tarfile.TarInfo]:
     """
@@ -426,14 +424,14 @@ def _non_traversal_path(
     return safe_paths
 
 
-def _remove_file(file_path: Path | str) -> None:
+def remove_file(file_path: Path | str) -> None:
     """
     Remove a file from directory if it existe
 
     :param file_path:
     :return:
     """
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     if file_path.exists():
         os.remove(file_path)
@@ -441,7 +439,7 @@ def _remove_file(file_path: Path | str) -> None:
         raise FileNotFoundError(f'File "{file_path}" not found.')
 
 
-def _detect_format(path: Path | str) -> TranslationFileFormat:
+def detect_format(path: Path | str) -> TranslationFileFormat:
     """Detect serialisation format from file path extension (DD-34).
 
     Returns ``'yaml'`` if *path* ends with ``.yaml.i18t``,
@@ -455,7 +453,7 @@ def _detect_format(path: Path | str) -> TranslationFileFormat:
     return "yaml" if str(path).endswith(".yaml.i18t") else "json"
 
 
-def _normalize_module_identifier(path: str) -> str:
+def normalize_module_identifier(path: str) -> str:
     """
     Normalize a module identifier from a given string path.
 
@@ -498,7 +496,7 @@ def _normalize_module_identifier(path: str) -> str:
 # Other module specific and private tools
 
 
-def _check_module(repository: StrictNestedDictionary, module_list: list[str]) -> None:
+def check_module(repository: StrictNestedDictionary, module_list: list[str]) -> None:
     """
     This function verifies that a module or a list of modules are defined in the repository.
 
@@ -515,7 +513,7 @@ def _check_module(repository: StrictNestedDictionary, module_list: list[str]) ->
             )
 
 
-def _check_domains(
+def check_domains(
     repository: StrictNestedDictionary, module: str, domain_list: list[str]
 ) -> None:
     """
@@ -529,7 +527,7 @@ def _check_domains(
     :type domain_list: list[str]
     :raises: ValueError
     """
-    _check_module(repository, [module])
+    check_module(repository, [module])
     for domain in domain_list:
         if domain not in repository[["domains", module]]:
             raise ValueError(

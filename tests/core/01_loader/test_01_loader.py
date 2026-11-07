@@ -9,27 +9,27 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
 
-from i18n_tools.loaders.utils import (
-    _build_path,
-    _convert_catalog,
-    _create_directory,
-    _create_empty_file,
-    _create_empty_json,
-    _create_gzip,
-    _create_tar_gz,
-    _detect_format,
-    _exist_path,
-    _is_absolute_path,
-    _load_json,
-    _load_machine,
-    _load_text,
+from i18n_tools.loaders._utils import (
     _load_yaml,
-    _non_traversal_path,
-    _remove_file,
-    _save_json,
-    _save_machine,
-    _save_text,
     _save_yaml,
+    build_path,
+    convert_catalog,
+    create_directory,
+    create_empty_file,
+    create_empty_json,
+    create_gzip,
+    create_tar_gz,
+    detect_format,
+    exist_path,
+    is_absolute_path,
+    load_json,
+    load_machine,
+    load_text,
+    non_traversal_path,
+    remove_file,
+    save_json,
+    save_machine,
+    save_text,
 )
 
 
@@ -85,7 +85,7 @@ class TestExistPath:
     )
     def test_exist_paths(self, tmp_function_repository, conf_tests, path, expected):
         temp_file = tmp_function_repository[2][0] + "/" + path
-        assert _exist_path(temp_file) == expected
+        assert exist_path(temp_file) == expected
 
 
 class TestAbsolutePath:
@@ -112,40 +112,40 @@ class TestAbsolutePath:
         else:
             temp_file = path
 
-        assert _is_absolute_path(temp_file) == expected
+        assert is_absolute_path(temp_file) == expected
 
 
 class TestCreateEmptyFile:
     def test_create_empty_file(self, tmp_function_repository):
         temp_file = tmp_function_repository[3][1] / "empty.txt"
-        _create_empty_file(temp_file)
+        create_empty_file(temp_file)
         with open(temp_file, "r", encoding="utf-8") as f:
             content = f.read()
         assert content == ""
 
     def test_create_empty_file_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _create_empty_file("/nonexistent/path")
+            create_empty_file("/nonexistent/path")
 
     def test_create_empty_json(self, tmp_function_repository):
         temp_file = tmp_function_repository[3][1] / "another.json"
-        _create_empty_json(temp_file)
+        create_empty_json(temp_file)
         with open(temp_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         assert data == {}
 
     def test_create_empty_json_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _create_empty_json("/nonexistent/path")
+            create_empty_json("/nonexistent/path")
 
 
 class TestJsonOperations:
     def test_load_json(self, json_test_file):
-        assert _load_json(json_test_file) == {"key": "value"}
+        assert load_json(json_test_file) == {"key": "value"}
 
     def test_load_json_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _load_json("/nonexistent/path")
+            load_json("/nonexistent/path")
 
     def test_load_json_malformed_content_raises_json_decode_error(self, tmp_path):
         """biface/i18n#26 — before this fix, a malformed-but-present JSON
@@ -154,18 +154,18 @@ class TestJsonOperations:
         corrupt_file = tmp_path / "corrupt.json"
         corrupt_file.write_text("{not valid json at all", encoding="utf-8")
         with pytest.raises(json.JSONDecodeError):
-            _load_json(str(corrupt_file))
+            load_json(str(corrupt_file))
 
     def test_save_json(self, json_test_file):
         data = {"key": "new value"}
-        _save_json(json_test_file, data)
+        save_json(json_test_file, data)
         with open(json_test_file, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
 
     def test_save_json_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _save_json("/nonexistent/path", {})
+            save_json("/nonexistent/path", {})
 
 
 class TestYamlOperations:
@@ -190,34 +190,34 @@ class TestYamlOperations:
 
 class TestTextOperations:
     def test_load_text(self, text_test_file):
-        catalog = _load_text(str(text_test_file))
+        catalog = load_text(str(text_test_file))
         assert isinstance(catalog, Catalog)
         assert catalog.project == "i18n-tools"
         assert catalog.version == "1.0"
 
     def test_load_text_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _load_text("/nonexistent/path")
+            load_text("/nonexistent/path")
 
     def test_save_text(self, text_test_file):
-        catalog = _load_text(str(text_test_file))
+        catalog = load_text(str(text_test_file))
         catalog.add("Hello", "Bonjour", locations=[("main.py", 10)])
-        _save_text(text_test_file, catalog)
-        loaded_catalog = _load_text(str(text_test_file))
+        save_text(text_test_file, catalog)
+        loaded_catalog = load_text(str(text_test_file))
         assert loaded_catalog.project == "i18n-tools"
         assert "Hello" in loaded_catalog
 
     def test_save_text_raises_exception(self):
         po = Catalog()
         with pytest.raises(FileNotFoundError):
-            _save_text("/nonexistent/path", po)
+            save_text("/nonexistent/path", po)
 
 
 class TestMachineOperations:
     def test_load_machine(self, mo_test_file):
         file_path = mo_test_file
 
-        catalog = _load_machine(file_path)
+        catalog = load_machine(file_path)
 
         assert isinstance(catalog, Catalog)
         assert catalog.project == "i18n-tools"
@@ -225,7 +225,7 @@ class TestMachineOperations:
 
     def test_load_machine_raises_exception(self):
         with pytest.raises(FileNotFoundError):
-            _load_machine("/nonexistent/path")
+            load_machine("/nonexistent/path")
 
     def test_save_machine(self, tmp_path):
         # Crée un objet Catalog avec des données fictives
@@ -245,13 +245,13 @@ class TestMachineOperations:
         file_path = tmp_path / "test_save.mo"
 
         # Sauvegarde le catalogue dans le fichier
-        _save_machine(str(file_path), catalog)
+        save_machine(str(file_path), catalog)
 
         # Vérifie que le fichier a été créé
         assert file_path.exists()
 
         # Charge le fichier pour vérifier son contenu
-        loaded_catalog = _load_machine(str(file_path))
+        loaded_catalog = load_machine(str(file_path))
 
         # Vérifie que le catalogue chargé contient l'enregistrement ajouté
         assert "Hello" in loaded_catalog
@@ -259,7 +259,7 @@ class TestMachineOperations:
     def test_save_machine_raises_exception(self):
         po = Catalog()
         with pytest.raises(FileNotFoundError):
-            _save_machine("/nonexistent/path", po)
+            save_machine("/nonexistent/path", po)
 
 
 class TestConvertCatalog:
@@ -268,13 +268,13 @@ class TestConvertCatalog:
         po_file_path = text_test_file
         mo_file_path = po_file_path.replace(".po", ".mo")
         # Convertit le fichier .po en .mo
-        _convert_catalog(po_file_path)
+        convert_catalog(po_file_path)
 
         assert Path(mo_file_path).exists()
 
         # Charge le fichier .mo pour vérifier son contenu
 
-        loaded_catalog = _load_machine(str(mo_file_path))
+        loaded_catalog = load_machine(str(mo_file_path))
 
         # Vérifie que le catalogue chargé correspond au catalogue original
         assert loaded_catalog.project == "i18n-tools"
@@ -326,7 +326,7 @@ class TestNonTraversalPath:
         root_path = tmp_function_repository[3][1]
         all_members = safe_members + unsafe_members
 
-        safe_paths = _non_traversal_path(root_path, module_list, all_members)
+        safe_paths = non_traversal_path(root_path, module_list, all_members)
 
         # Check that only safe members are included
         assert len(safe_paths) == len(safe_members)
@@ -340,7 +340,7 @@ class TestNonTraversalPath:
 
 class TestCreateGzip:
     def test_create_gzip(self, json_test_file):
-        _create_gzip(json_test_file)
+        create_gzip(json_test_file)
         gzip_file_path = Path(json_test_file + ".gz")
         assert gzip_file_path.exists()
         with gzip.open(gzip_file_path, "rt", encoding="utf-8") as f_in:
@@ -359,7 +359,7 @@ class TestCreateTarGz:
             directory_to_archive = str(directory_to_archive)
 
         archive_name = "repository_archive.tar.gz"
-        _create_tar_gz(root_dir, archive_name, directory_to_archive)
+        create_tar_gz(root_dir, archive_name, directory_to_archive)
         assert (root_dir / Path(archive_name)).exists()
 
 
@@ -383,12 +383,12 @@ class TestBuildPath:
         expected_path = Path(str(tmp_function_repository[3][1]) + expected).resolve()
 
         # Build the path using the function
-        result_path = _build_path(tmp_function_repository[3][1], *subdir_list).resolve()
+        result_path = build_path(tmp_function_repository[3][1], *subdir_list).resolve()
 
         # Assert that the result matches the expected path
         assert result_path == expected_path
 
-        result_path = _build_path(
+        result_path = build_path(
             str(tmp_function_repository[3][1]), *subdir_list
         ).resolve()
 
@@ -408,11 +408,11 @@ class TestCreateDirectory:
     def test_create_directories(self, tmp_module_repository, dir_path, path):
         if not path:
             dir_path = tmp_module_repository[2][0] + "/" + dir_path
-            _create_directory(dir_path)
+            create_directory(dir_path)
             assert Path(dir_path).is_dir()
         else:
             dir_path = tmp_module_repository[2][1] / Path(dir_path)
-            _create_directory(dir_path)
+            create_directory(dir_path)
             assert dir_path.is_dir()
 
     @pytest.mark.parametrize(
@@ -432,16 +432,16 @@ class TestCreateDirectory:
         dir_path = tmp_module_repository[2][1] / Path(dir_path)
         if path:
             with pytest.raises(FileExistsError):
-                _create_directory(dir_path)
+                create_directory(dir_path)
         else:
-            _create_directory(dir_path)
+            create_directory(dir_path)
         assert dir_path.is_dir()
 
 
 class TestRemoveFile:
     def test_remove_failed_path(self):
         with pytest.raises(FileNotFoundError):
-            _remove_file("non-existent-path/i18n-tools.json")
+            remove_file("non-existent-path/i18n-tools.json")
 
 
 class TestDetectFormat:
@@ -457,4 +457,4 @@ class TestDetectFormat:
         ],
     )
     def test_detect_format(self, path, expected):
-        assert _detect_format(path) == expected
+        assert detect_format(path) == expected

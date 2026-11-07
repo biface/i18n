@@ -3,7 +3,7 @@ Low-level, private, and internal functions for loading and saving the
 *settings file* — the TOML/YAML/JSON descriptor backing Config/Repository
 (DD-18, DD-19, DD-20). Dispatch is by file extension.
 
-Split out of loaders/utils.py (DD-41, #119): core `.i18t` usage
+Split out of loaders/_utils.py (DD-41, #119): core `.i18t` usage
 (Message/Book/Corpus/Encyclopaedia/formatter) never touches the settings
 file and must not need `toml` — only reading or writing a `.toml`
 settings file does. `toml` is therefore imported lazily, inside the
@@ -11,7 +11,7 @@ settings file does. `toml` is therefore imported lazily, inside the
 ModuleNotFoundError pointing at `pip install pyi18t-tools[api]` (same
 pattern as api.py, config.py — DD-41, #118). Because `toml` is never
 imported at module level here, importing this module — or importing
-loaders/handler.py, which imports it — never requires `toml`.
+loaders/_handler.py, which imports it — never requires `toml`.
 `.yaml`/`.json` settings files remain fully usable without the `api`
 extra.
 
@@ -28,10 +28,10 @@ from typing import Any
 
 import yaml
 
-from .utils import __check_path
+from ._utils import check_path
 
 
-def __check_config_extension(ext: str) -> bool:
+def _check_config_extension(ext: str) -> bool:
     return ext.lstrip(".").lower() in ["json", "yaml", "yml", "toml"]
 
 
@@ -54,7 +54,7 @@ def _load_toml(file_path: Path | str) -> dict[str, Any]:
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
 
     with open(file_path, "r", encoding="utf-8") as toml_file:
         return toml.load(toml_file)
@@ -80,12 +80,12 @@ def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
-    file_path = __check_path(file_path)
+    file_path = check_path(file_path)
     with open(file_path, "w", encoding="utf-8") as toml_file:
         _ = toml.dump(data, toml_file)
 
 
-def _load_config_file(config_path: Path | str) -> dict[str, Any]:
+def load_config_file(config_path: Path | str) -> dict[str, Any]:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -99,10 +99,10 @@ def _load_config_file(config_path: Path | str) -> dict[str, Any]:
     :return: The configuration content as a dictionary.
     """
 
-    config_path = __check_path(config_path)
+    config_path = check_path(config_path)
     [file_extension] = config_path.suffixes
 
-    if not __check_config_extension(file_extension):
+    if not _check_config_extension(file_extension):
         raise ValueError(f"Unsupported configuration file format: {file_extension}")
 
     with open(config_path, "r", encoding="utf-8") as file:
@@ -113,7 +113,7 @@ def _load_config_file(config_path: Path | str) -> dict[str, Any]:
                 import toml
             except ModuleNotFoundError as e:
                 raise ModuleNotFoundError(
-                    "_load_config_file(): reading a '.toml' settings file "
+                    "load_config_file(): reading a '.toml' settings file "
                     + "requires the 'api' extra — "
                     + "install with: pip install pyi18t-tools[api]"
                 ) from e
@@ -122,10 +122,10 @@ def _load_config_file(config_path: Path | str) -> dict[str, Any]:
             return json.load(file)
     return (
         {}
-    )  # unreachable if __check_config_extension passed, but satisfies type checker
+    )  # unreachable if _check_config_extension passed, but satisfies type checker
 
 
-def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
+def save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
     """
     Helper function to save the configuration file based on its extension.
 
@@ -138,10 +138,10 @@ def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
     :return: None
     """
 
-    config_path = __check_path(config_path)
+    config_path = check_path(config_path)
     [file_extension] = config_path.suffixes
 
-    if not __check_config_extension(file_extension):
+    if not _check_config_extension(file_extension):
         raise ValueError(f"Unsupported configuration file format: {file_extension}")
 
     with open(config_path, "w", encoding="utf-8") as cf:
@@ -154,7 +154,7 @@ def _save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
                 import toml
             except ModuleNotFoundError as e:
                 raise ModuleNotFoundError(
-                    "_save_config_file(): writing a '.toml' settings file "
+                    "save_config_file(): writing a '.toml' settings file "
                     + "requires the 'api' extra — "
                     + "install with: pip install pyi18t-tools[api]"
                 ) from e

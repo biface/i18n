@@ -35,32 +35,16 @@ from ..__static__ import (
 )
 from ..__static__ import __version__ as i18n_tools_version
 from ..locale import get_all_languages, normalize_language_tag
-from .settings import _load_config_file, _save_config_file
-from .utils import (
-    _build_dictionary_path,
-    _build_path,
-    _check_domains,
-    _convert_catalog,
-    _create_directory,
-    _exist_path,
-    _is_absolute_path,
-    _load_by_format,
-    _load_text,
-    _normalize_module_identifier,
-    _remove_file,
-    _save_by_format,
-    _save_text,
-    _validate_translation_format,
-)
+from . import _settings, _utils
 
 
 def normalize_module_identifier(path: str) -> str:
     """Public API to normalize a module identifier from a filesystem path or identifier.
 
-    Delegates to the private loaders.utils helper so other layers (CLI, config)
+    Delegates to the internal loaders._utils helper so other layers (CLI, config)
     can prepare a proper module string before interacting with models.
     """
-    return _normalize_module_identifier(path)
+    return _utils.normalize_module_identifier(path)
 
 
 def check_json_integrity(data: dict[str, Any]) -> bool:
@@ -109,7 +93,7 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     :raises IOError: If the constructed path is invalid or does not exist.
     """
     # Construct the initial path
-    constructed_path = _build_path(base_path, *sub_dirs)
+    constructed_path = _utils.build_path(base_path, *sub_dirs)
 
     # Remove any '..' or other invalid elements
     cleaned_path = Path(*[part for part in constructed_path.parts if part != ".."])
@@ -145,7 +129,7 @@ def build_book_filename(
     :rtype: tuple[TranslationFileFormat, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
-    _fmt = _validate_translation_format(fmt)
+    _fmt = _utils.validate_translation_format(fmt)
     filename = f"{domain}.{_fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
     return _fmt, filename
 
@@ -161,11 +145,11 @@ def file_exists(file_path: str) -> bool:
     :return: True if the file exists, False otherwise.
     :rtype: bool
     """
-    return _exist_path(file_path)
+    return _utils.exist_path(file_path)
 
 
 def is_absolute_path(path: str) -> bool:
-    return _is_absolute_path(path)
+    return _utils.is_absolute_path(path)
 
 
 def create_directory(path: str) -> None:
@@ -178,7 +162,7 @@ def create_directory(path: str) -> None:
     :param path: The path to the directory to be created.
     :type path: str
     """
-    _create_directory(path)
+    _utils.create_directory(path)
 
 
 # Create operations
@@ -202,7 +186,7 @@ def create_template(
     """
     from babel.messages.catalog import Catalog
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -259,8 +243,8 @@ def create_template(
     ]
 
     template_file = path + f"/{domain}.pot"
-    if not _exist_path(template_file):
-        _save_text(template_file, catalog)
+    if not _utils.exist_path(template_file):
+        _utils.save_text(template_file, catalog)
     else:
         raise FileExistsError(
             f"The path '{template_file}' already exists. You cannot overwrite it."
@@ -286,7 +270,7 @@ def create_catalog(
     :type domain: str
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -298,9 +282,9 @@ def create_catalog(
     catalog_path = path + f"/{domain}.po"
     catalog.locale = Locale.parse(language, sep="-")
     catalog.domain = domain
-    if not _exist_path(catalog_path):
-        _save_text(catalog_path, catalog)
-        _convert_catalog(catalog_path)
+    if not _utils.exist_path(catalog_path):
+        _utils.save_text(catalog_path, catalog)
+        _utils.convert_catalog(catalog_path)
     else:
         raise FileExistsError(
             f"The path '{catalog_path}' already exists. You cannot overwrite it"
@@ -329,7 +313,7 @@ def create_dictionary(
     :param domain: The domain name.
     :type domain: str
     """
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -338,10 +322,10 @@ def create_dictionary(
         I18N_TOOLS_MESSAGES,
     )
     # Default behavior remains JSON when fmt is None
-    dictionary_path = _build_dictionary_path(path, domain, fmt)
-    _fmt = _validate_translation_format(fmt)
-    if not _exist_path(dictionary_path):
-        _save_by_format(dictionary_path, {}, _fmt)
+    dictionary_path = _utils.build_dictionary_path(path, domain, fmt)
+    _fmt = _utils.validate_translation_format(fmt)
+    if not _utils.exist_path(dictionary_path):
+        _utils.save_by_format(dictionary_path, {}, _fmt)
     else:
         raise FileExistsError(
             f"The path '{dictionary_path}' already exists. You cannot overwrite it"
@@ -369,7 +353,7 @@ def fetch_template(
     :rtype: str
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -377,7 +361,7 @@ def fetch_template(
         I18N_TOOLS_TEMPLATE,
     )
     template_file = path + f"/{domain}.pot"
-    catalog = _load_text(template_file)
+    catalog = _utils.load_text(template_file)
     catalog.domain = domain
     catalog.copyright_holder = "i18n-tools builder"
 
@@ -403,7 +387,7 @@ def fetch_catalog(
     :return: The translation catalog.
     :rtype: Catalog
     """
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -412,7 +396,7 @@ def fetch_catalog(
         I18N_TOOLS_MESSAGES,
     )
     catalog_path = path + f"/{domain}.po"
-    catalog = _load_text(catalog_path)
+    catalog = _utils.load_text(catalog_path)
     catalog.domain = domain
     catalog.copyright_holder = "i18n-tools builder"
 
@@ -443,7 +427,7 @@ def fetch_dictionary(
     :rtype: dict[str, Any]
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -451,9 +435,9 @@ def fetch_dictionary(
         language,
         I18N_TOOLS_MESSAGES,
     )
-    dictionary_path = _build_dictionary_path(path, domain, fmt)
-    _fmt = _validate_translation_format(fmt)
-    dictionary = _load_by_format(dictionary_path, _fmt)
+    dictionary_path = _utils.build_dictionary_path(path, domain, fmt)
+    _fmt = _utils.validate_translation_format(fmt)
+    dictionary = _utils.load_by_format(dictionary_path, _fmt)
 
     return dictionary
 
@@ -488,7 +472,7 @@ def update_catalog(
 
     # TODO: Must update template file as well
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -497,7 +481,7 @@ def update_catalog(
         I18N_TOOLS_MESSAGES,
     )
     catalog_path = path + f"/{domain}.po"
-    catalog = _load_text(catalog_path)
+    catalog = _utils.load_text(catalog_path)
 
     for key, value in data.items():
         if isinstance(value, dict):
@@ -538,8 +522,8 @@ def update_catalog(
         else:
             raise ValueError(f"{value} is not a dictionary")
 
-    _save_text(catalog_path, catalog)
-    _convert_catalog(catalog_path)
+    _utils.save_text(catalog_path, catalog)
+    _utils.convert_catalog(catalog_path)
 
 
 def update_dictionary(
@@ -567,7 +551,7 @@ def update_dictionary(
     :type data: dict[str, Any]
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -575,9 +559,9 @@ def update_dictionary(
         language,
         I18N_TOOLS_MESSAGES,
     )
-    dictionary_path = _build_dictionary_path(path, domain, fmt)
-    _fmt = _validate_translation_format(fmt)
-    dictionary = _load_by_format(dictionary_path, _fmt)
+    dictionary_path = _utils.build_dictionary_path(path, domain, fmt)
+    _fmt = _utils.validate_translation_format(fmt)
+    dictionary = _utils.load_by_format(dictionary_path, _fmt)
 
     if not check_json_integrity(data):
         raise ValueError(
@@ -587,7 +571,7 @@ def update_dictionary(
     for key, item in data.items():
         dictionary[key] = item
 
-    _save_by_format(dictionary_path, dictionary, _fmt)
+    _utils.save_by_format(dictionary_path, dictionary, _fmt)
 
 
 def dump_dictionary(
@@ -615,7 +599,7 @@ def dump_dictionary(
     :type data: dict[str, Any]
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -623,15 +607,15 @@ def dump_dictionary(
         language,
         I18N_TOOLS_MESSAGES,
     )
-    dictionary_path = _build_dictionary_path(path, domain, fmt)
-    _fmt = _validate_translation_format(fmt)
+    dictionary_path = _utils.build_dictionary_path(path, domain, fmt)
+    _fmt = _utils.validate_translation_format(fmt)
 
     if not check_json_integrity(data):
         raise ValueError(
             f"The dictionary {data} is not compatible with i18n-tools translations"
         )
 
-    _save_by_format(dictionary_path, data, _fmt)
+    _utils.save_by_format(dictionary_path, data, _fmt)
 
 
 # Delete operations
@@ -654,7 +638,7 @@ def remove_template(
     :raises FileNotFoundError: If the template file does not exist.
     """
 
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -662,7 +646,7 @@ def remove_template(
         I18N_TOOLS_TEMPLATE,
     )
     template_path = path + f"/{domain}.pot"
-    _remove_file(template_path)
+    _utils.remove_file(template_path)
 
 
 def remove_catalog(
@@ -693,8 +677,8 @@ def remove_catalog(
     )
     catalog_path = path + f"/{domain}.po"
     machine_path = path + f"/{domain}.mo"
-    _remove_file(catalog_path)
-    _remove_file(machine_path)
+    _utils.remove_file(catalog_path)
+    _utils.remove_file(machine_path)
 
 
 def remove_dictionary(
@@ -719,7 +703,7 @@ def remove_dictionary(
     :type domain: str
     :raises FileNotFoundError: If the dictionary file does not exist.
     """
-    _check_domains(repository, module, [domain])
+    _utils.check_domains(repository, module, [domain])
     path = build_path(
         repository[["paths", "repository"]],
         module,
@@ -727,8 +711,8 @@ def remove_dictionary(
         language,
         I18N_TOOLS_MESSAGES,
     )
-    dictionary_path = _build_dictionary_path(path, domain, fmt)
-    _remove_file(dictionary_path)
+    dictionary_path = _utils.build_dictionary_path(path, domain, fmt)
+    _utils.remove_file(dictionary_path)
 
 
 # Managing configuration files
@@ -748,9 +732,9 @@ def load_config(config_path: str | None = None) -> dict[str, Any]:
 
     # Si le chemin de configuration est fourni, utiliser ce chemin
     if config_path:
-        if not _exist_path(config_path):
+        if not _utils.exist_path(config_path):
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        return _load_config_file(config_path)
+        return _settings.load_config_file(config_path)
 
     # Sinon, rechercher dans les répertoires applicatifs (racine et répertoires locaux)
     search_dirs = [
@@ -768,7 +752,7 @@ def load_config(config_path: str | None = None) -> dict[str, Any]:
         for file_name in possible_files:
             config_file_path = directory / file_name
             if config_file_path.exists():
-                return _load_config_file(config_file_path)
+                return _settings.load_config_file(config_file_path)
 
     raise FileNotFoundError(
         "No configuration file found in the application directories (root or locales)."
@@ -785,7 +769,7 @@ def save_config(file_path: str, data: dict[str, Any]) -> None:
     :param data: The dictionary containing configuration data.
     """
 
-    _save_config_file(file_path, data)
+    _settings.save_config_file(file_path, data)
 
 
 def build_translation_lang_files(
@@ -810,7 +794,7 @@ def build_translation_lang_files(
     :type fmt: TranslationFileFormat | None
     :return: a tuple of a file path
     """
-    _fmt = _validate_translation_format(fmt)
+    _fmt = _utils.validate_translation_format(fmt)
     repository_path = repository[["paths", "repository"]]
     normalized_lang = normalize_language_tag(lang)
     lang_path = build_path(
@@ -826,7 +810,7 @@ def build_translation_lang_files(
     return json_file_path, po_file_path, pot_file
 
 
-def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
+def verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
     """
     Verify that the repository paths and modules exist.
 
@@ -840,7 +824,7 @@ def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
 
     repository_path = repository[["paths", "repository"]]
 
-    if not _is_absolute_path(repository_path):
+    if not _utils.is_absolute_path(repository_path):
         raise ValueError(
             f"The repository_path must be an absolute path: {repository[['paths', 'repository']]}"
         )
@@ -851,7 +835,7 @@ def _verify_paths_and_modules(repository: StrictNestedDictionary) -> None:
             raise FileNotFoundError(f"The module path does not exist: {module_path}")
 
 
-def _verify_available_languages(
+def verify_available_languages(
     repository: StrictNestedDictionary, languages: list[str]
 ) -> None:
     """
@@ -892,7 +876,7 @@ def _verify_target_module(
         )
 
 
-def _verify_target_domain(
+def verify_target_domain(
     repository: StrictNestedDictionary, target_module: str, target_domain: str
 ) -> None:
     """

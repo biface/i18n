@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
+from .loaders._utils import create_empty_file, create_empty_json
 from .loaders.loader import build_book_filename
-from .loaders.utils import _create_empty_file, _create_empty_json
 from .locale import get_all_languages, validate_and_normalize_language_tags
 
 
@@ -61,7 +61,7 @@ def check_repository(
             templates_path.mkdir(parents=True, exist_ok=True)
             pot_file = templates_path / f"{domain}.pot"
             if not pot_file.exists():
-                _create_empty_file(str(pot_file))
+                create_empty_file(str(pot_file))
 
             for lang in validated_languages:
                 lang_path = locales_path / lang / I18N_TOOLS_MESSAGES
@@ -76,10 +76,10 @@ def check_repository(
                 po_file = lang_path / f"{domain}.po"
 
                 if not json_file.exists():
-                    _create_empty_json(str(json_file))
+                    create_empty_json(str(json_file))
 
                 if not po_file.exists():
-                    _create_empty_file(str(po_file))
+                    create_empty_file(str(po_file))
 
 
 # TODO: look for json files to be gzipped in domains repository (used before making archives)

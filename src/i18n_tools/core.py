@@ -42,7 +42,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .exceptions import BookError
-from .loaders.handler import build_path
+from .loaders._handler import build_path
 from .locale import get_all_languages, normalize_language_tag
 from .models.corpus import Book, Corpus
 from .sync import check_repository
@@ -57,7 +57,7 @@ def _book_directory(repository: "Repository", module: str, lang: str) -> str:
 
     Reuses the same building blocks (``build_path`` and the
     ``I18N_TOOLS_LOCALE``/``I18N_TOOLS_MESSAGES`` constants) already used
-    internally by ``loaders.handler.build_translation_lang_files`` for the
+    internally by ``loaders._handler.build_translation_lang_files`` for the
     gettext-oriented (po/pot) paths — this helper only needs the
     directory itself, since ``Book.load()``/``Book.save()`` append their
     own filename.
