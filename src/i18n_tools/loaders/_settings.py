@@ -50,7 +50,7 @@ def _load_toml(file_path: Path | str) -> dict[str, Any]:
         import toml
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
-            "_load_toml() requires the 'api' extra — "
+            "reading a '.toml' settings file requires the 'api' extra — "
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
@@ -76,7 +76,7 @@ def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
         import toml
     except ModuleNotFoundError as e:
         raise ModuleNotFoundError(
-            "_save_toml() requires the 'api' extra — "
+            "writing a '.toml' settings file requires the 'api' extra — "
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
@@ -105,19 +105,12 @@ def load_config_file(config_path: Path | str) -> dict[str, Any]:
     if not _check_config_extension(file_extension):
         raise ValueError(f"Unsupported configuration file format: {file_extension}")
 
+    if file_extension == ".toml":
+        return _load_toml(config_path)
+
     with open(config_path, "r", encoding="utf-8") as file:
         if file_extension in {".yaml", ".yml"}:
             return yaml.safe_load(file)
-        elif file_extension == ".toml":
-            try:
-                import toml
-            except ModuleNotFoundError as e:
-                raise ModuleNotFoundError(
-                    "load_config_file(): reading a '.toml' settings file "
-                    + "requires the 'api' extra — "
-                    + "install with: pip install pyi18t-tools[api]"
-                ) from e
-            return toml.load(file)
         elif file_extension == ".json":
             return json.load(file)
     return (
@@ -144,18 +137,12 @@ def save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
     if not _check_config_extension(file_extension):
         raise ValueError(f"Unsupported configuration file format: {file_extension}")
 
+    if file_extension == ".toml":
+        _save_toml(config_path, data)
+        return
+
     with open(config_path, "w", encoding="utf-8") as cf:
         if file_extension == ".json":
             json.dump(data, cf, indent=4)
         elif file_extension in {".yaml", ".yml"}:
             yaml.safe_dump(data, cf, default_flow_style=False)
-        elif file_extension == ".toml":
-            try:
-                import toml
-            except ModuleNotFoundError as e:
-                raise ModuleNotFoundError(
-                    "save_config_file(): writing a '.toml' settings file "
-                    + "requires the 'api' extra — "
-                    + "install with: pip install pyi18t-tools[api]"
-                ) from e
-            _ = toml.dump(data, cf)
