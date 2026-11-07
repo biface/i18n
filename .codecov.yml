@@ -63,13 +63,19 @@ component_management:
       name: translation
       paths:
         - src/i18n_tools/fallback.py
-        - src/i18n_tools/formatter.py
+        - src/i18n_tools/formatter/**
         - src/i18n_tools/locale.py
     - component_id: package
       name: package
       paths:
         - src/i18n_tools/__init__.py
         - src/i18n_tools/__static__.py
+        - src/i18n_tools/_checks.py
+        - src/i18n_tools/_compat.py
+    - component_id: cli
+      name: cli
+      paths:
+        - src/i18n_tools/cli.py
 
 comment:
   layout: "header, diff, flags, components, files"
