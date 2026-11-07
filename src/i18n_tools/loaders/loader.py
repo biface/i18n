@@ -539,9 +539,8 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         # Get the list of modules from the repository
         modules = repository[["paths", "modules"]]
 
-        # Validate modules
-        if not _check_module(repository, modules):
-            return False
+        # Validate modules (raises ValueError, caught below)
+        _check_module(repository, modules)
 
         # Get the list of languages from the repository
         languages = get_all_languages(repository[["languages", "hierarchy"]])
@@ -551,10 +550,9 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
 
         # Check each module
         for module in modules:
-            # Validate domains for this module
+            # Validate domains for this module (raises ValueError, caught below)
             domains = repository[["domains", module]]
-            if not _check_domains(repository, module, domains):
-                return False
+            _check_domains(repository, module, domains)
 
             # Check module directory structure
             module_directory = build_path(

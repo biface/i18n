@@ -498,7 +498,7 @@ def _normalize_module_identifier(path: str) -> str:
 # Other module specific and private tools
 
 
-def _check_module(repository: StrictNestedDictionary, module_list: list[str]) -> bool:
+def _check_module(repository: StrictNestedDictionary, module_list: list[str]) -> None:
     """
     This function verifies that a module or a list of modules are defined in the repository.
 
@@ -506,8 +506,6 @@ def _check_module(repository: StrictNestedDictionary, module_list: list[str]) ->
     :type repository: StrictNestedDictionary
     :param module_list: The list of modules to verify.
     :type module_list: list[str]
-    :return: True (if not raised)
-    :rtype: bool
     :raises: ValueError
     """
     for module in module_list:
@@ -516,12 +514,10 @@ def _check_module(repository: StrictNestedDictionary, module_list: list[str]) ->
                 f'Module "{module}" not found in repository : "{repository[["paths", "modules"]]}".'
             )
 
-    return True
-
 
 def _check_domains(
     repository: StrictNestedDictionary, module: str, domain_list: list[str]
-) -> bool:
+) -> None:
     """
     This function verifies that a domain or a list of domains are defined in the repository.
 
@@ -531,8 +527,6 @@ def _check_domains(
     :type module: str
     :param domain_list: The list of domains to verify.
     :type domain_list: list[str]
-    :return: True
-    :rtype: bool
     :raises: ValueError
     """
     _check_module(repository, [module])
@@ -541,5 +535,3 @@ def _check_domains(
             raise ValueError(
                 f"Domain {domain} not found in repository : {repository[['domains', module]]}"
             )
-
-    return True
