@@ -1859,7 +1859,7 @@ class Book:
                         raise ValueError(
                             f"Language of message {entity.id} is not compatible with this book language"
                         )
-                elif isinstance(entity, tuple) or isinstance(entity, list):
+                elif is_type(entity, (tuple, list)):
                     for message in entity:
                         if message.metadata["language"] == self.language:
                             self.messages[message.id] = message
@@ -1958,7 +1958,7 @@ class Book:
         - total_words: total word count across all message strings (default, options, default_plurals, options_plurals)
         """
 
-        def count_words(text: str) -> int:
+        def count_words(text: object) -> int:
             # Simple whitespace-based word count; braces from placeholders are ignored for counting tokens
             if not isinstance(text, str) or text.strip() == "":
                 return 0

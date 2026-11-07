@@ -35,6 +35,7 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TEMPLATE,
     TranslationFileFormat,
 )
+from i18n_tools._checks import ensure_type
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import build_dictionary_path
 from i18n_tools.loaders._handler import build_path as _build_path
@@ -350,6 +351,7 @@ def normalize_module_identifier(path: str) -> str:
     :return: The normalized module identifier.
     :rtype: str
     """
+    ensure_type(path, str, f"path must be a string, not {type(path)}")
     return _normalize_module_identifier(path)
 
 

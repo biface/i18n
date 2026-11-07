@@ -465,9 +465,6 @@ def normalize_module_identifier(path: str) -> str:
 
     This function is private to loaders and used by public wrappers in handler.
     """
-    if not isinstance(path, str):
-        raise TypeError(f"path must be a string, not {type(path)}")
-
     p = PurePath(path)
 
     if p.is_absolute():

@@ -486,43 +486,39 @@ def update_catalog(
     catalog = _utils.load_text(catalog_path)
 
     for key, value in data.items():
-        if isinstance(value, dict):
-            # Handle pluralizable messages
-            string_value = value.get("string", "")
+        # Handle pluralizable messages
+        string_value = value.get("string", "")
 
-            # If the key is a tuple/list (pluralizable) and the string is not,
-            # convert the string to a tuple with appropriate number of elements
-            if isinstance(key, (tuple, list)) and not isinstance(
-                string_value, (tuple, list)
-            ):
-                # For pluralizable messages, string should be a tuple/list
-                # with the same number of elements as the key
-                if string_value:
-                    # If we have a string, use it as the first element (singular form)
-                    # and add empty strings for the plural forms
-                    string_value = tuple([string_value] + [""] * (len(key) - 1))
-                else:
-                    # If we don't have a string, create a tuple with empty strings
-                    string_value = tuple([""] * len(key))
+        # If the key is a tuple/list (pluralizable) and the string is not,
+        # convert the string to a tuple with appropriate number of elements
+        if isinstance(key, (tuple, list)) and not isinstance(
+            string_value, (tuple, list)
+        ):
+            # For pluralizable messages, string should be a tuple/list
+            # with the same number of elements as the key
+            if string_value:
+                # If we have a string, use it as the first element (singular form)
+                # and add empty strings for the plural forms
+                string_value = tuple([string_value] + [""] * (len(key) - 1))
+            else:
+                # If we don't have a string, create a tuple with empty strings
+                string_value = tuple([""] * len(key))
 
-            _ = catalog.add(
-                id=key,
-                string=string_value,
-                locations=[
-                    (
-                        (loc.split(":")[0], int(loc.split(":")[1]))
-                        if ":" in loc
-                        else (loc, 0)
-                    )
-                    for loc in value.get("locations", [])
-                    if isinstance(loc, str)
-                ],
-                previous_id=value.get("previous_id", ""),
-                flags=["python-format"],
-            )
-
-        else:
-            raise ValueError(f"{value} is not a dictionary")
+        _ = catalog.add(
+            id=key,
+            string=string_value,
+            locations=[
+                (
+                    (loc.split(":")[0], int(loc.split(":")[1]))
+                    if ":" in loc
+                    else (loc, 0)
+                )
+                for loc in value.get("locations", [])
+                if isinstance(loc, str)
+            ],
+            previous_id=value.get("previous_id", ""),
+            flags=["python-format"],
+        )
 
     _utils.save_text(catalog_path, catalog)
     _utils.convert_catalog(catalog_path)

@@ -505,10 +505,7 @@ def unified_format_to_catalog(
                 plural_strings.append(plural_forms.get(str(i), ""))
 
             # Create a tuple of message IDs (singular, plural)
-            if isinstance(message_id, str):
-                msg_id_tuple = (message_id, f"{message_id}_plural")
-            else:
-                msg_id_tuple = message_id
+            msg_id_tuple = (message_id, f"{message_id}_plural")
 
             _ = catalog.add(
                 id=msg_id_tuple,

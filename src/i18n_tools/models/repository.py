@@ -36,7 +36,7 @@ from typing import Any
 
 from ndict_tools import StrictNestedDictionary
 
-from .._checks import ensure_type
+from .._checks import ensure_type, is_type
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
 from .author import Author, Authors  # type: ignore[reportImportCycle]
@@ -265,7 +265,7 @@ class Repository(StrictNestedDictionary):
         - "%Y-%m-%d"
         """
         dt: datetime | None = None
-        if isinstance(value, str):
+        if is_type(value, str):
             # Try ISO 8601 first
             try:
                 dt = datetime.fromisoformat(value)
