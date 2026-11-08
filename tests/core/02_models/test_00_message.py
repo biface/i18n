@@ -630,6 +630,72 @@ class TestComparisons:
         )
 
 
+NOT_INTS = ["1", 1.0, True]
+
+INDEXED_CALLS = {
+    "get_variant": lambda m, bad: m.get_variant(bad),
+    "get_segment-segment": lambda m, bad: m.get_segment(bad, 0),
+    "get_segment-variant": lambda m, bad: m.get_segment(0, bad),
+    "update_variant": lambda m, bad: m.update_variant(bad, singular="x"),
+    "remove_variant": lambda m, bad: m.remove_variant(bad),
+    "add_segment-segment": lambda m, bad: m.add_segment("x", bad),
+    "add_segment-variant": lambda m, bad: m.add_segment("x", 1, bad),
+    "update_segment-segment": lambda m, bad: m.update_segment("x", bad),
+    "update_segment-variant": lambda m, bad: m.update_segment("x", 0, bad),
+    "remove_segment": lambda m, bad: m.remove_segment(bad),
+    "switch-source": lambda m, bad: m.switch(bad, 0),
+    "switch-destination": lambda m, bad: m.switch(0, bad),
+    "format-variant": lambda m, bad: m.format(bad),
+    "format-segment": lambda m, bad: m.format(0, bad),
+    "get_tokens": lambda m, bad: m.get_tokens(bad),
+}
+
+FIELD_CALLS = {
+    "update_principal": lambda m, fields: m.update_principal(**fields),
+    "add_variant": lambda m, fields: m.add_variant(**fields),
+    "update_variant": lambda m, fields: m.update_variant(1, **fields),
+}
+
+WRONG_FIELDS = {
+    "unknown-key": {"singular": "a", "plural": ["b"]},
+    "singular-type": {"singular": 1},
+    "plurals-type": {"singular": "a", "plurals": "b"},
+    "plural-type": {"singular": "a", "plurals": [1]},
+}
+
+
+class TestArgumentGuards:
+    """Every public entry point refuses arguments of the wrong type."""
+
+    @pytest.mark.parametrize("bad", NOT_INTS, ids=["str", "float", "bool"])
+    @pytest.mark.parametrize("call", INDEXED_CALLS.values(), ids=INDEXED_CALLS.keys())
+    def test_index_is_an_int(self, fr_message, call, bad):
+        before = fr_message.matrix
+        with pytest.raises(TypeError, match="must be an int"):
+            call(fr_message, bad)
+        assert fr_message.matrix == before
+
+    @pytest.mark.parametrize("fields", WRONG_FIELDS.values(), ids=WRONG_FIELDS.keys())
+    @pytest.mark.parametrize("call", FIELD_CALLS.values(), ids=FIELD_CALLS.keys())
+    def test_declension_fields(self, fr_message, call, fields):
+        before = fr_message.matrix
+        with pytest.raises(TypeError):
+            call(fr_message, fields)
+        assert fr_message.matrix == before
+
+    def test_update_variant_without_fields(self, fr_message):
+        with pytest.raises(ValueError, match="No field given"):
+            fr_message.update_variant(1)
+
+    def test_update_segment_text_is_a_string(self, fr_message):
+        with pytest.raises(TypeError, match="Segment text must be a string"):
+            fr_message.update_segment(None, 1)  # pyright: ignore[reportArgumentType]
+
+    def test_toggle_direction_is_a_string(self, fr_message):
+        with pytest.raises(ValueError, match="direction must be"):
+            fr_message.toggle(1)  # pyright: ignore[reportArgumentType]
+
+
 class TestMetadata:
     @pytest.mark.parametrize(
         "fixture_name, expected",
