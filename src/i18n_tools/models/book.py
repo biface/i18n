@@ -23,6 +23,11 @@ from i18n_tools.models.message import Message
 if TYPE_CHECKING:
     from i18n_tools.formatter.plurals import PluralRule
 
+# Root metadata keys of a .i18t file that are Book attributes, not metadata.
+_ROOT_ATTRIBUTE_KEYS = frozenset({"language", "domain"})
+# Root metadata keys derived from the messages, recomputed on load.
+_ROOT_DERIVED_KEYS = frozenset({"statistics", "count"})
+
 
 class Book:
     """
@@ -409,10 +414,17 @@ class Book:
 
     def load(self, path_directory: str) -> None:
         """
-        Load messages from a .i18t file into this Book instance.
+        Load messages and root metadata from a .i18t file into this Book instance.
 
         The file is located at ``path_directory/self.filename``.
         Each message is assigned the book language before insertion.
+
+        The root metadata of the file replaces the matching entries of
+        ``self.metadata`` and adds the keys this Book does not know, so
+        that a save after a load writes them back. ``language`` and
+        ``domain`` are attributes of the Book, not metadata: they are not
+        copied. ``statistics`` and ``count`` are derived from the messages
+        and recomputed after loading.
 
         :param path_directory: Directory containing the .i18t file.
         :type path_directory: str
@@ -420,8 +432,12 @@ class Book:
         :raises ValueError: If the file fails the integrity check.
         """
         file_path = path_directory + "/" + self.filename
-        data = _load_book(file_path)
-        for msgid, entry in data.items():
+        content = _load_book(file_path)
+        for key, value in content["metadata"].items():
+            if key in _ROOT_ATTRIBUTE_KEYS or key in _ROOT_DERIVED_KEYS:
+                continue
+            self.metadata[key] = value
+        for msgid, entry in content["entries"].items():
             kwargs = i18n_tools_format_to_message_dict(entry)
             msg = Message(id=msgid, **kwargs)
             if self.language is not None:

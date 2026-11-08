@@ -763,3 +763,77 @@ class TestBookSave:
         assert loaded.metadata["auto_comments"] == ["Extracted from app.py"]
         assert loaded.metadata["flags"] == ["fuzzy"]
         assert loaded.message == message.message
+
+    def test_save_writes_language_and_domain_at_root(self, tmp_path):
+        """The root metadata carries the book's language and domain."""
+        book = Book([_make_simple_message("fr-FR")], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        assert data["metadata"]["language"] == "fr-FR"
+        assert data["metadata"]["domain"] == "test"
+
+    def test_save_round_trip_keeps_root_metadata(self, tmp_path):
+        """Header fields and unknown root keys survive a save/load round trip."""
+        book = Book(
+            [_make_simple_message("fr-FR")],
+            domain="test",
+            language="fr-FR",
+            language_team="Équipe FR",
+            header_comment="Notes de l'équipe",
+        )
+        book.set_metadata("project_extra", "kept as is")
+        book.save(str(tmp_path))
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+
+        assert reloaded.metadata["language_team"] == "Équipe FR"
+        assert reloaded.metadata["header_comment"] == "Notes de l'équipe"
+        assert reloaded.metadata["project_extra"] == "kept as is"
+        assert as_plain(reloaded.metadata) == as_plain(book.metadata)
+
+    def test_load_keeps_language_and_domain_as_attributes(self, tmp_path):
+        """Root language and domain are not copied into Book.metadata."""
+        book = Book([_make_simple_message("fr-FR")], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+
+        assert "language" not in reloaded.metadata
+        assert "domain" not in reloaded.metadata
+
+    def test_load_recomputes_derived_root_metadata(self, tmp_path):
+        """Statistics and message count are recomputed, not read from the file."""
+        book = Book([_make_simple_message("fr-FR")], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        file = tmp_path / book.filename
+        data = json.loads(file.read_text("utf-8"))
+        data["metadata"]["statistics"] = {"total_words": 999, "total_messages": 42}
+        data["metadata"]["count"] = {"messages": 42}
+        file.write_text(json.dumps(data), encoding="utf-8")
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+
+        assert as_plain(reloaded.metadata["statistics"]) == as_plain(
+            book.metadata["statistics"]
+        )
+        assert reloaded.metadata[["count", "messages"]] == 1
+
+    def test_save_round_trip_keeps_message_context(self, tmp_path):
+        """The context of a message survives a save/load round trip."""
+        message = Message(
+            "10001", "Enregistrer", context="toolbar", metadata={"language": "fr-FR"}
+        )
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        assert data["10001"]["metadata"]["context"] == "toolbar"
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+        loaded = reloaded.get("10001")
+
+        assert loaded is not None
+        assert loaded.context == "toolbar"

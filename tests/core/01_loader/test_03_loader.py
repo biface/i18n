@@ -59,21 +59,31 @@ class TestLoadBook:
         """biface/i18n#67 — un fichier .yaml.i18t doit être chargé en YAML,
         pas toujours en JSON. Avant #67, load_book() ignorait le format
         détecté et appelait systématiquement load_json()."""
-        result = load_book(_write_yaml_i18t(tmp_path, VALID_DATA))
+        result = load_book(_write_yaml_i18t(tmp_path, VALID_DATA))["entries"]
         assert set(result.keys()) == {"10001", "10002"}
         assert result["10001"]["messages"] == [["Un message"], ["Des messages"]]
 
     def test_load_book_returns_filtered_dict(self, tmp_path):
         """Cas nominal : retourne un dict avec les bons msgids, clés réservées exclues."""
-        result = load_book(_write_i18t(tmp_path, VALID_DATA))
+        result = load_book(_write_i18t(tmp_path, VALID_DATA))["entries"]
         assert isinstance(result, dict)
         assert set(result.keys()) == {"10001", "10002"}
         assert ".i18n_tools" not in result
         assert "metadata" not in result
 
+    def test_load_book_returns_root_metadata(self, tmp_path):
+        """The root metadata of the file is returned apart from the entries."""
+        content = load_book(_write_i18t(tmp_path, VALID_DATA))
+        assert content["metadata"] == {"language": "fr-FR"}
+
+    def test_load_book_without_root_metadata(self, tmp_path):
+        """A file without root metadata yields an empty mapping."""
+        content = load_book(_write_i18t(tmp_path, {"10001": [["Un message"]]}))
+        assert content["metadata"] == {}
+
     def test_load_book_entry_structure(self, tmp_path):
         """Chaque entrée contient les clés 'messages' et 'metadata'."""
-        result = load_book(_write_i18t(tmp_path, VALID_DATA))
+        result = load_book(_write_i18t(tmp_path, VALID_DATA))["entries"]
         for entry in result.values():
             assert "messages" in entry
             assert "metadata" in entry
@@ -96,14 +106,14 @@ class TestLoadBook:
                 "metadata": {"locations": [["app.py", 12]], "flags": ["fuzzy"]},
             }
         }
-        result = load_book(_write_i18t(tmp_path, data))
+        result = load_book(_write_i18t(tmp_path, data))["entries"]
         assert result["10001"]["messages"] == data["10001"]["messages"]
         assert result["10001"]["metadata"] == data["10001"]["metadata"]
 
     def test_load_book_native_entry_without_metadata(self, tmp_path):
         """The metadata key of a native entry is optional."""
         data = {"10001": {"messages": [["Un message"]]}}
-        result = load_book(_write_i18t(tmp_path, data))
+        result = load_book(_write_i18t(tmp_path, data))["entries"]
         assert result["10001"] == {"messages": [["Un message"]], "metadata": {}}
 
     def test_load_book_mixed_entry_forms(self, tmp_path):
@@ -112,7 +122,7 @@ class TestLoadBook:
             "10001": {"messages": [["Un message"]], "metadata": {}},
             "10002": [["Un autre message"]],
         }
-        result = load_book(_write_i18t(tmp_path, data))
+        result = load_book(_write_i18t(tmp_path, data))["entries"]
         assert result["10002"] == {"messages": [["Un autre message"]], "metadata": {}}
 
     @pytest.mark.parametrize(

@@ -1072,6 +1072,7 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
         "metadata": {
             "version": message.metadata.get("version", "0.0.0"),
             "language": message.metadata.get("language", ""),
+            "context": message.context,
             "locations": [
                 [file, line] for file, line in message.metadata.get("location", [])
             ],
@@ -1145,8 +1146,10 @@ def i18n_tools_format_to_message_dict(
                         alt_idx
                     ]
 
-    # Process metadata
+    # Process metadata; the context is a Message attribute, stored on disk
+    # in the entry metadata.
     if metadata:
+        result["context"] = metadata.get("context", "")
         result["metadata"] = {
             "location": [(file, line) for file, line in metadata.get("locations", [])],
             "flags": metadata.get("flags", []),

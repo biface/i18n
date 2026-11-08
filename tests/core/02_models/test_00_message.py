@@ -3233,6 +3233,7 @@ class TestMessageFormat:
                     "metadata": {
                         "version": __version__,
                         "language": "fr-FR",
+                        "context": "",
                         "locations": [],
                         "flags": ["python-format"],
                         "user_comments": [
@@ -3255,6 +3256,7 @@ class TestMessageFormat:
                     "metadata": {
                         "version": __version__,
                         "language": "en",
+                        "context": "",
                         "locations": [],
                         "flags": ["python-format"],
                         "user_comments": ["Greeting message to one or more..."],

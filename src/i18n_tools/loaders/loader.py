@@ -23,7 +23,7 @@ objects required) or together with model instances (e.g. ``Book``,
 
 import tarfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypedDict
 
 from ndict_tools import StrictNestedDictionary
 
@@ -82,6 +82,20 @@ if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
 
 
+class BookFileContent(TypedDict):
+    """
+    Content of a ``.i18t`` file as returned by :func:`load_book`.
+
+    ``metadata`` is the root metadata of the file, as read: it may hold
+    ``language`` and ``domain`` alongside the book's own metadata.
+    ``entries`` maps each message identifier to its native entry
+    ``{"messages": matrix, "metadata": {...}}``.
+    """
+
+    metadata: dict[str, object]
+    entries: dict[str, dict[str, Any]]
+
+
 def load_locale_json(file_path: str) -> dict[str, Any]:
     """
     This function load a JSON file in the locales repository and containing i18next data. The structure of this
@@ -113,13 +127,15 @@ def load_locale_json(file_path: str) -> dict[str, Any]:
     return data
 
 
-def load_book(file_path: str) -> dict[str, Any]:
+def load_book(file_path: str) -> BookFileContent:
     """
-    Load a .i18t dictionary file and return its contents as a filtered dict (DD-15, DD-16, DD-34).
+    Load a .i18t dictionary file and return its root metadata and entries (DD-15, DD-16, DD-34).
 
     The serialisation format is detected from the file extension (DD-34),
-    symmetrically to :func:`save_book`. The reserved keys ``.i18n_tools``
-    and ``metadata`` are silently ignored.
+    symmetrically to :func:`save_book`. The reserved key ``.i18n_tools``
+    is ignored; the root ``metadata`` key is returned separately from the
+    message entries (an absent or non-dictionary value yields an empty
+    mapping).
 
     Entries are read in the native form ``{"messages": ..., "metadata":
     ...}`` or in the legacy flat form (the matrix alone), which yields an
@@ -127,9 +143,9 @@ def load_book(file_path: str) -> dict[str, Any]:
 
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
-    :return: Mapping of msgid to i18n_tools entry dict
-             ``{"messages": matrix, "metadata": {}}``.
-    :rtype: dict[str, Any]
+    :return: The root metadata and the mapping of msgid to i18n_tools
+             entry dict ``{"messages": matrix, "metadata": {...}}``.
+    :rtype: BookFileContent
     :raises FileNotFoundError: If the file does not exist.
     :raises ValueError: If the file fails the integrity check.
     """
@@ -137,18 +153,24 @@ def load_book(file_path: str) -> dict[str, Any]:
     data = load_by_format(file_path, fmt)
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
-    result = {}
+    root: object = data.get("metadata", {})
+    metadata: dict[str, object] = (
+        {str(key): value for key, value in root.items()}
+        if isinstance(root, dict)
+        else {}
+    )
+    content: BookFileContent = {"metadata": metadata, "entries": {}}
     for msgid, entry in data.items():
         if msgid in (".i18n_tools", "metadata"):
             continue
         if isinstance(entry, dict):
-            result[msgid] = {
+            content["entries"][msgid] = {
                 "messages": entry["messages"],
                 "metadata": entry.get("metadata", {}),
             }
         else:
-            result[msgid] = {"messages": entry, "metadata": {}}
-    return result
+            content["entries"][msgid] = {"messages": entry, "metadata": {}}
+    return content
 
 
 def save_book(book: Any, file_path: str) -> None:
@@ -159,10 +181,14 @@ def save_book(book: Any, file_path: str) -> None:
     extension. The structure written to disk follows the native .i18t format::
 
         {
-            "metadata": { ... },
+            "metadata": { "language": ..., "domain": ..., ... },
             "<msgid>": { "messages": [...], "metadata": { ... } },
             ...
         }
+
+    The root metadata holds the book's ``language`` and ``domain``, which
+    are attributes of the ``Book`` and not part of ``Book.metadata``, so
+    that a file can be checked against the place it is loaded from.
 
     :param book: The Book instance to persist.
     :type book: Book
@@ -180,7 +206,9 @@ def save_book(book: Any, file_path: str) -> None:
     from i18n_tools.converter import message_to_i18n_tools_format
 
     fmt = detect_format(file_path)
-    data: dict[str, Any] = {"metadata": book.metadata.to_dict()}
+    root: dict[str, object] = {"language": book.language, "domain": book.domain}
+    root.update(book.metadata.to_dict())
+    data: dict[str, Any] = {"metadata": root}
     for msg in book.messages.values():
         data[msg.id] = message_to_i18n_tools_format(msg)
     save_by_format(file_path, data, fmt)
