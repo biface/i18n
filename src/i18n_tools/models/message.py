@@ -3,7 +3,7 @@ Message: one identifier's translations and metadata, in one language.
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from ndict_tools import StrictNestedDictionary
@@ -25,14 +25,15 @@ class DeclensionFields(TypedDict, total=False):
     """
     Keyword contract for the texts of one declension.
 
-    The same keys describe the principal and every variant.
+    The same keys describe the principal and every variant. ``plurals``
+    accepts a list or a tuple; it is stored as a tuple.
     """
 
     singular: str
-    plurals: list[str]
+    plurals: list[str] | tuple[str, ...]
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class Declension:
     """
     One singular text and zero or more plural texts.
@@ -42,16 +43,20 @@ class Declension:
     with three plurals has four segments. An empty string marks an absent
     text.
 
+    A declension is immutable: a message changes its content by replacing
+    whole declensions, so that every change goes through the methods of
+    :class:`Message`.
+
     :param singular: Text of segment 0.
     :type singular: str
     :param plurals: Texts of segments 1 to n, in order.
-    :type plurals: list[str]
+    :type plurals: tuple[str, ...]
     :raises TypeError: If a text is not a string, or ``plurals`` is not a
-        list.
+        tuple.
     """
 
     singular: str = ""
-    plurals: list[str] = field(default_factory=list)
+    plurals: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         ensure_type(
@@ -61,8 +66,8 @@ class Declension:
         )
         ensure_type(
             self.plurals,
-            list,
-            f"Declension plurals must be a list, got {type(self.plurals)}",
+            tuple,
+            f"Declension plurals must be a tuple, got {type(self.plurals)}",
         )
         for text in self.plurals:
             ensure_type(
@@ -70,34 +75,36 @@ class Declension:
             )
 
     @property
-    def segments(self) -> list[str]:
+    def segments(self) -> tuple[str, ...]:
         """
         All texts of the declension, singular first.
 
-        :return: ``[singular, *plurals]``, a new list.
-        :rtype: list[str]
+        :return: ``(singular, *plurals)``.
+        :rtype: tuple[str, ...]
         """
-        return [self.singular, *self.plurals]
+        return (self.singular, *self.plurals)
 
     @classmethod
-    def from_segments(cls, segments: list[str]) -> "Declension":
+    def from_segments(cls, segments: list[str] | tuple[str, ...]) -> "Declension":
         """
         Build a declension from its texts, singular first.
 
         :param segments: ``[singular, *plurals]``; must not be empty.
-        :type segments: list[str]
+        :type segments: list[str] | tuple[str, ...]
         :return: The declension.
         :rtype: Declension
         :raises ValueError: If ``segments`` is empty.
-        :raises TypeError: If ``segments`` is not a list, or a text is not
-            a string.
+        :raises TypeError: If ``segments`` is neither a list nor a tuple, or
+            a text is not a string.
         """
         ensure_type(
-            segments, list, f"Declension segments must be a list, got {type(segments)}"
+            segments,
+            (list, tuple),
+            f"Declension segments must be a list or a tuple, got {type(segments)}",
         )
         if len(segments) == 0:
             raise ValueError("A declension has at least one segment (the singular)")
-        return cls(segments[0], list(segments[1:]))
+        return cls(segments[0], tuple(segments[1:]))
 
 
 def _ensure_coordinate(value: int | None, name: str) -> None:

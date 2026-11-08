@@ -13,36 +13,37 @@ class TestDeclension:
     def test_defaults(self):
         declension = Declension()
         assert declension.singular == ""
-        assert declension.plurals == []
-        assert declension.segments == [""]
+        assert declension.plurals == ()
+        assert declension.segments == ("",)
 
     def test_segments_singular_first(self):
-        declension = Declension("one file", ["two files", "{n} files"])
-        assert declension.segments == ["one file", "two files", "{n} files"]
+        declension = Declension("one file", ("two files", "{n} files"))
+        assert declension.segments == ("one file", "two files", "{n} files")
 
-    def test_segments_is_a_copy(self):
-        declension = Declension("one", ["two"])
-        declension.segments.append("three")
-        assert declension.plurals == ["two"]
+    def test_frozen(self):
+        declension = Declension("one", ("two",))
+        with pytest.raises(AttributeError):
+            declension.singular = "uno"  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(AttributeError):
+            declension.plurals = ("dos",)  # pyright: ignore[reportAttributeAccessIssue]
 
-    def test_default_plurals_not_shared(self):
-        first, second = Declension(), Declension()
-        first.plurals.append("x")
-        assert second.plurals == []
+    def test_hashable(self):
+        assert hash(Declension("a", ("b",))) == hash(Declension("a", ("b",)))
+        assert len({Declension("a", ("b",)), Declension("a", ("b",))}) == 1
 
     def test_equality_by_content(self):
-        assert Declension("a", ["b"]) == Declension("a", ["b"])
-        assert Declension("a", ["b"]) != Declension("a", ["c"])
+        assert Declension("a", ("b",)) == Declension("a", ("b",))
+        assert Declension("a", ("b",)) != Declension("a", ("c",))
 
     def test_from_segments(self):
-        assert Declension.from_segments(["a", "b", "c"]) == Declension("a", ["b", "c"])
-        assert Declension.from_segments(["a"]) == Declension("a", [])
+        assert Declension.from_segments(["a", "b", "c"]) == Declension("a", ("b", "c"))
+        assert Declension.from_segments(("a",)) == Declension("a", ())
 
     def test_from_segments_copies_input(self):
         segments = ["a", "b"]
         declension = Declension.from_segments(segments)
         segments.append("c")
-        assert declension.plurals == ["b"]
+        assert declension.plurals == ("b",)
 
     def test_from_segments_empty(self):
         with pytest.raises(ValueError):
@@ -50,16 +51,29 @@ class TestDeclension:
 
     @pytest.mark.parametrize(
         "args",
-        [(1, []), ("a", "b"), ("a", ["b", 2]), ("a", None)],
-        ids=["singular-int", "plurals-str", "plural-int", "plurals-none"],
+        [(1, ()), ("a", "b"), ("a", ("b", 2)), ("a", None), ("a", ["b"])],
+        ids=[
+            "singular-int",
+            "plurals-str",
+            "plural-int",
+            "plurals-none",
+            "plurals-list",
+        ],
     )
     def test_type_errors(self, args):
         with pytest.raises(TypeError):
             Declension(*args)
 
-    def test_from_segments_type_error(self):
+    @pytest.mark.parametrize(
+        "segments", ["abc", None, {"a"}], ids=["str", "none", "set"]
+    )
+    def test_from_segments_type_error(self, segments):
         with pytest.raises(TypeError):
-            Declension.from_segments("abc")  # pyright: ignore[reportArgumentType]
+            Declension.from_segments(segments)  # pyright: ignore[reportArgumentType]
+
+    def test_from_segments_plural_type_error(self):
+        with pytest.raises(TypeError):
+            Declension.from_segments(["a", 2])  # pyright: ignore[reportArgumentType]
 
     def test_public_export(self):
         assert PublicDeclension is Declension
