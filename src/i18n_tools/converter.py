@@ -1045,12 +1045,19 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
 
     # Add plural forms for main message
     plural_forms = message.default_plurals
-    max_plural = max(plural_forms.keys()) if plural_forms else 0
 
     # Add plural forms for alternatives
     alternative_plural_forms = message.options_plurals
 
-    # Determine the maximum number of plural forms needed
+    # One plural row per plural position used by any declension: a variant
+    # may have more plurals than the principal, missing cells are "".
+    max_plural = max(plural_forms.keys(), default=0)
+    for alt_idx in alternatives.keys():
+        if alt_idx in alternative_plural_forms:
+            max_plural = max(
+                max_plural, max(alternative_plural_forms[alt_idx].keys(), default=0)
+            )
+
     for i in range(1, max_plural + 1):
         plural_list = [plural_forms.get(i, "")]
 

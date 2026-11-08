@@ -837,3 +837,32 @@ class TestBookSave:
 
         assert loaded is not None
         assert loaded.context == "toolbar"
+
+    def test_save_round_trip_keeps_variant_plurals_beyond_principal(self, tmp_path):
+        """A variant with more plurals than the principal loses none on save."""
+        message = Message(
+            "10001",
+            "Une fleur",
+            options={1: "Une fleur rare"},
+            default_plurals={1: "Des fleurs"},
+            options_plurals={1: {1: "Des fleurs rares", 2: "Plusieurs fleurs rares"}},
+            metadata={"language": "fr-FR"},
+        )
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        assert data["10001"]["messages"] == [
+            ["Une fleur", "Une fleur rare"],
+            ["Des fleurs", "Des fleurs rares"],
+            ["", "Plusieurs fleurs rares"],
+        ]
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+        loaded = reloaded.get("10001")
+
+        assert loaded is not None
+        assert loaded.get_variant_plurals(1) == [
+            "Des fleurs rares",
+            "Plusieurs fleurs rares",
+        ]
