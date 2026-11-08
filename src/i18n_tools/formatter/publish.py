@@ -8,11 +8,9 @@ cell is absent (an empty string is the DD-02 semantic marker for "no
 content here", not intentional empty content), then substitutes
 ``{variable}`` placeholders.
 
-This module reads ``Message``'s raw attributes (``default``,
-``options``, ``default_plurals``, ``options_plurals``) directly rather
-than going through ``Message.format()``: the latter implements a
-different, narrower fallback and is left untouched (DD-27) as the
-existing, tested, single-cell selection API.
+This module reads the cells of ``Message.matrix`` rather than going
+through ``Message.format()``, which selects a single cell and does not
+apply this fallback.
 
 Key Responsibilities:
     - Resolve a plural row index automatically from a ``PluralRule``,
@@ -36,19 +34,14 @@ def _get_cell(message: "Message", plural_index: int, alternative: int) -> str:
     """
     Raw accessor for ``messages[plural_index][alternative]``.
 
-    :return: The cell's text, or ``""`` if absent — the DD-02 semantic
-        marker for "no content here".
+    :return: The cell's text, or ``""`` if the cell is empty or outside the
+        matrix — the DD-02 semantic marker for "no content here".
     :rtype: str
     """
-    if plural_index == 0:
-        if alternative == 0:
-            return message.default
-        return message.options.get(alternative, "")
-
-    if alternative == 0:
-        return message.default_plurals.get(plural_index, "")
-
-    return message.options_plurals.get(alternative, {}).get(plural_index, "")
+    matrix = message.matrix
+    if not (0 <= plural_index < len(matrix) and 0 <= alternative < len(matrix[0])):
+        return ""
+    return matrix[plural_index][alternative]
 
 
 def _resolve_cell(message: "Message", plural_index: int, alternative: int) -> str:
@@ -74,19 +67,18 @@ def _resolve_cell(message: "Message", plural_index: int, alternative: int) -> st
         if text:
             return text
 
-    return message.default
+    return message.matrix[0][0]
 
 
 def _plural_row_exists(message: "Message", plural_index: int) -> bool:
     """
-    Whether ``plural_index`` is a row that exists on ``message``.
+    Whether ``plural_index`` is a row of ``message``'s matrix.
 
-    Row 0 (singular) always exists. Row existence for plural rows is
-    determined from ``default_plurals``: per DD-02, all columns of a
-    given entry share the same row set, so ``default_plurals`` alone
-    defines which plural rows the entry has.
+    Row 0 (singular) always exists. The matrix has one row per plural
+    position used by any declension (DD-02: all columns share the same
+    row set).
     """
-    return plural_index == 0 or plural_index in message.default_plurals
+    return 0 <= plural_index < len(message.matrix)
 
 
 def publish(

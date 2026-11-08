@@ -204,7 +204,7 @@ import functools
 import re
 import warnings
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
@@ -1024,58 +1024,36 @@ def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
     return i18n_tools
 
 
+class MessageEntry(TypedDict):
+    """
+    The parts of a native ``.i18t`` entry that build a ``Message``.
+
+    Returned by :func:`i18n_tools_format_to_message_dict` and passed to
+    ``Message.from_matrix()``.
+    """
+
+    matrix: list[list[str]]
+    context: str
+    metadata: dict[str, Any]
+
+
 def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
     """
-    Convert a Message object directly to i18n_tools format without using unified format.
+    Convert a Message to a native ``.i18t`` entry.
+
+    The entry's ``messages`` is the message's matrix, one row per segment
+    and one column per declension, padded with empty strings.
+    ``singular_count`` is the number of declensions; ``plural_counts[i]``
+    the number of non-empty plurals of declension ``i``.
 
     :param message: A Message object
     :return: Dictionary in i18n_tools format
     :rtype: dict[str, Any]
     """
-    # Start with the singular form and alternatives
-    main_translation = message.default
-    alternatives = message.options
-
-    # Create the first list with main translation and alternatives
-    first_list = [main_translation]
-    # Add alternatives in order of their keys
-    for idx in sorted(alternatives.keys()):
-        first_list.append(alternatives[idx])
-    value_lists = [first_list]
-
-    # Add plural forms for main message
-    plural_forms = message.default_plurals
-
-    # Add plural forms for alternatives
-    alternative_plural_forms = message.options_plurals
-
-    # One plural row per plural position used by any declension: a variant
-    # may have more plurals than the principal, missing cells are "".
-    max_plural = max(plural_forms.keys(), default=0)
-    for alt_idx in alternatives.keys():
-        if alt_idx in alternative_plural_forms:
-            max_plural = max(
-                max_plural, max(alternative_plural_forms[alt_idx].keys(), default=0)
-            )
-
-    for i in range(1, max_plural + 1):
-        plural_list = [plural_forms.get(i, "")]
-
-        # Add plural forms for each alternative
-        for alt_idx in sorted(alternatives.keys()):
-            alt_plural = ""
-            if (
-                alt_idx in alternative_plural_forms
-                and i in alternative_plural_forms[alt_idx]
-            ):
-                alt_plural = alternative_plural_forms[alt_idx][i]
-            plural_list.append(alt_plural)
-
-        value_lists.append(plural_list)
-
-    # Create entry with new structure (messages and metadata)
+    matrix = message.matrix
+    declensions = len(matrix[0])
     return {
-        "messages": value_lists,
+        "messages": matrix,
         "metadata": {
             "version": message.metadata.get("version", "0.0.0"),
             "language": message.metadata.get("language", ""),
@@ -1086,10 +1064,10 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
             "flags": message.metadata.get("flags", []),
             "user_comments": message.metadata.get("user_comments", []),
             "auto_comments": message.metadata.get("auto_comments", []),
-            "singular_count": len(first_list),
+            "singular_count": declensions,
             "plural_counts": [
-                sum(1 for plural_list in value_lists[1:] if plural_list[column])
-                for column in range(len(first_list))
+                sum(1 for row in matrix[1:] if row[column])
+                for column in range(declensions)
             ],
         },
     }
@@ -1097,63 +1075,27 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
 
 def i18n_tools_format_to_message_dict(
     i18n_tools_entry: dict[str, Any],
-) -> dict[str, Any]:
+) -> MessageEntry:
     """
-    Convert an i18n_tools format entry to a dictionary suitable for Message instantiation
-    without using unified format.
+    Read a native ``.i18t`` entry into the parts that build a Message.
+
+    The matrix is taken as it is, empty cells included; the entry is
+    expected to have passed the load check (well-formed matrix of
+    strings). The context is stored on disk in the entry metadata.
 
     :param i18n_tools_entry: Dictionary in i18n_tools format
     :type i18n_tools_entry: dict[str, Any]
-    :return: Dictionary with Message constructor parameters
-    :rtype: dict[str, Any]
+    :return: Matrix, context and metadata for ``Message.from_matrix()``.
+    :rtype: MessageEntry
     """
-    result: dict[str, Any] = {
-        "default": "",
-        "options": {},
-        "default_plurals": {},
-        "options_plurals": {},
+    messages: list[list[str]] = i18n_tools_entry.get("messages", [])
+    metadata: dict[str, Any] = i18n_tools_entry.get("metadata", {})
+
+    result: MessageEntry = {
+        "matrix": [list(row) for row in messages],
         "context": "",
         "metadata": {},
     }
-
-    # Extract messages and metadata
-    messages: list[list[Any]] = i18n_tools_entry.get("messages", [])
-    metadata: dict[str, Any] = i18n_tools_entry.get("metadata", {})
-
-    # Process main translation and alternatives
-    if messages and len(messages) > 0 and len(messages[0]) > 0:
-        # Main translation is the first item in the first list
-        result["default"] = messages[0][0]
-
-        # Process alternatives (remaining items in the first list)
-        # Use 1-based indices for alternatives to match Message class expectations
-        for i, alt in enumerate(messages[0][1:], 1):
-            if alt:  # Only add non-empty alternatives
-                result["options"][i] = alt
-
-    # Process plural forms for main translation
-    for i, plural_list in enumerate(messages[1:], 1):
-        if plural_list and plural_list[0]:
-            result["default_plurals"][i] = plural_list[0]
-
-    # Process plural forms for alternatives
-    if messages and len(messages[0]) > 1:
-        # Use 1-based indices for alternative_plural_forms to match Message class expectations
-        for alt_idx, _ in enumerate(messages[0][1:], 1):
-            for plural_idx, plural_list in enumerate(messages[1:], 1):
-                if (
-                    plural_list
-                    and len(plural_list) > alt_idx  # Adjust index for 1-based
-                    and plural_list[alt_idx]
-                ):
-                    if alt_idx not in result["options_plurals"]:
-                        result["options_plurals"][alt_idx] = {}
-                    result["options_plurals"][alt_idx][plural_idx] = plural_list[
-                        alt_idx
-                    ]
-
-    # Process metadata; the context is a Message attribute, stored on disk
-    # in the entry metadata.
     if metadata:
         result["context"] = metadata.get("context", "")
         result["metadata"] = {

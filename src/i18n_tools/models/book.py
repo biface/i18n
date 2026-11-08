@@ -251,33 +251,15 @@ class Book:
         """
         Compute statistics from the messages contained in the book and store them in metadata.statistics.
         - total_messages: number of messages in the book
-        - total_words: total word count across all message strings (default, options, default_plurals, options_plurals)
+        - total_words: whitespace-separated words over every cell of every message matrix
         """
 
-        def count_words(text: object) -> int:
-            # Simple whitespace-based word count; braces from placeholders are ignored for counting tokens
-            if not isinstance(text, str) or text.strip() == "":
-                return 0
-            return len(text.split())
-
-        total_words = 0
-        for _id, message in self.messages.items():
-            # default
-            total_words += count_words(message.default)
-            # default plurals
-            if isinstance(message.default_plurals, dict):
-                for _t, seg in message.default_plurals.items():
-                    total_words += count_words(seg)
-            # options (singulars)
-            if isinstance(message.options, dict):
-                for _opt, seg in message.options.items():
-                    total_words += count_words(seg)
-            # options plurals
-            if isinstance(message.options_plurals, dict):
-                for _opt, plural_map in message.options_plurals.items():
-                    if isinstance(plural_map, dict):
-                        for _t, seg in plural_map.items():
-                            total_words += count_words(seg)
+        total_words = sum(
+            len(cell.split())
+            for message in self.messages.values()
+            for row in message.matrix
+            for cell in row
+        )
 
         self.metadata[["statistics", "total_messages"]] = len(self.messages)
         self.metadata[["statistics", "total_words"]] = total_words
@@ -441,8 +423,10 @@ class Book:
                 continue
             self.metadata[key] = value
         for msgid, entry in content["entries"].items():
-            kwargs = i18n_tools_format_to_message_dict(entry)
-            msg = Message(id=msgid, **kwargs)
+            parts = i18n_tools_format_to_message_dict(entry)
+            msg = Message.from_matrix(
+                msgid, parts["matrix"], parts["context"], parts["metadata"]
+            )
             if self.language is not None:
                 msg.add_language(self.language)
             self.messages[msgid] = msg

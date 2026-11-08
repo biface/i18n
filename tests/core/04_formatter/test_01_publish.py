@@ -7,6 +7,7 @@ import pytest
 from i18n_tools.exceptions import FormatterError, PluralIndexError
 from i18n_tools.formatter.plurals import PluralRule
 from i18n_tools.formatter.publish import publish
+from i18n_tools.models import Message
 
 
 class TestPublishSimplePath:
@@ -127,3 +128,20 @@ class TestPublishVariableSubstitution:
             },
         )
         assert publish(message) == "Static text"
+
+
+class TestPublishMatrixRows:
+    def test_row_used_only_by_a_variant_exists(self):
+        """A plural row filled only in a variant is a row of the message."""
+        message = Message(
+            "files",
+            "one file",
+            options={1: "one doc"},
+            options_plurals={1: {1: "two docs"}},
+        )
+        message.plural_rule = PluralRule("en", thresholds={2: 1})
+        assert publish(message, alternative=1, n=2) == "two docs"
+
+    def test_alternative_outside_the_matrix_falls_back(self):
+        message = Message.from_matrix("files", [["one file"]])
+        assert publish(message, alternative=3) == "one file"

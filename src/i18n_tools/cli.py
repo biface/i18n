@@ -107,7 +107,7 @@ def _load_book_from_path(path: str) -> Book:
     book = Book(language=language, domain=domain, format=fmt)
     try:
         book.load(directory)
-    except (FileNotFoundError, FormatError, ValueError) as e:
+    except (FileNotFoundError, FormatError) as e:
         raise CliError(str(e)) from e
     return book
 

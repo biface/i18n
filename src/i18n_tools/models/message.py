@@ -558,6 +558,117 @@ class Message:
         self.context = ""
         self.metadata = _build_empty_metadata()
 
+    @classmethod
+    def from_matrix(
+        cls,
+        id: str,
+        matrix: list[list[str]],
+        context: str = "",
+        metadata: dict[str, Any] | None = None,
+    ) -> "Message":
+        """
+        Build a message from its matrix.
+
+        The matrix has the orientation of the ``.i18t`` format: one row per
+        segment (row 0 holds the singulars), one column per declension
+        (column 0 is the principal). Every cell is kept, empty strings
+        included, so that ``Message.from_matrix(id, m).matrix == m``.
+
+        :param id: Identifier of the message.
+        :type id: str
+        :param matrix: Rows of texts; at least one row, all rows of the
+            same non-zero length.
+        :type matrix: list[list[str]]
+        :param context: Context of the message.
+        :type context: str
+        :param metadata: Metadata of the message, as accepted by the
+            constructor.
+        :type metadata: dict[str, Any] | None
+        :return: The message.
+        :rtype: Message
+        :raises TypeError: If ``id`` or ``context`` is not a string,
+            ``matrix`` or one of its rows is not a list, or a cell is not a
+            string.
+        :raises ValueError: If ``matrix`` is empty or not rectangular.
+        """
+        ensure_type(id, str, f"Message id must be a string, got {type(id)}")
+        ensure_type(
+            context, str, f"Message context must be a string, got {type(context)}"
+        )
+        ensure_type(matrix, list, f"Message matrix must be a list, got {type(matrix)}")
+        if len(matrix) == 0:
+            raise ValueError("A message matrix has at least one row (the singulars)")
+        for row in matrix:
+            ensure_type(
+                row, list, f"Message matrix row must be a list, got {type(row)}"
+            )
+            for cell in row:
+                ensure_type(
+                    cell, str, f"Message matrix cell must be a string, got {type(cell)}"
+                )
+        columns = len(matrix[0])
+        if columns == 0 or any(len(row) != columns for row in matrix):
+            raise ValueError(
+                "A message matrix is a non-empty rectangle: every row has the "
+                + "same number of cells, at least one"
+            )
+
+        options = {variant: matrix[0][variant] for variant in range(1, columns)}
+        default_plurals = {
+            segment: matrix[segment][0] for segment in range(1, len(matrix))
+        }
+        options_plurals = {
+            variant: {
+                segment: matrix[segment][variant] for segment in range(1, len(matrix))
+            }
+            for variant in range(1, columns)
+            if len(matrix) > 1
+        }
+        return cls(
+            id=id,
+            default=matrix[0][0],
+            options=options,
+            default_plurals=default_plurals,
+            options_plurals=options_plurals,
+            context=context,
+            metadata=metadata,
+        )
+
+    @property
+    def matrix(self) -> list[list[str]]:
+        """
+        The texts of the message as a matrix.
+
+        One row per segment (row 0 holds the singulars), one column per
+        declension (column 0 is the principal), as in the ``.i18t``
+        format. The matrix is a rectangle: a declension with fewer plurals
+        than another is padded with empty strings. The lists are new on
+        each access.
+
+        :return: The matrix of texts.
+        :rtype: list[list[str]]
+        """
+        variants = sorted(self.options.keys())
+        last_segment = max(self.default_plurals.keys(), default=0)
+        for variant in variants:
+            if variant in self.options_plurals:
+                last_segment = max(
+                    last_segment,
+                    max(self.options_plurals[variant].keys(), default=0),
+                )
+        matrix = [[self.default, *(self.options[variant] for variant in variants)]]
+        for segment in range(1, last_segment + 1):
+            row = [self.default_plurals.get(segment, "")]
+            for variant in variants:
+                plurals = (
+                    self.options_plurals[variant]
+                    if variant in self.options_plurals
+                    else {}
+                )
+                row.append(plurals.get(segment, ""))
+            matrix.append(row)
+        return matrix
+
     @property
     def message(self) -> list[list[str]]:
         """
@@ -1747,17 +1858,9 @@ class Message:
         Returns:
             Message: A new Message instance.
         """
-        # Convert i18n_tools format to unified format
         entry = i18n_tools_format_to_message_dict(i18n_tools_entry)
-
-        return cls(
-            id=message_id,
-            default=entry.get("default", ""),
-            default_plurals=entry.get("default_plurals", None),
-            options=entry.get("options", None),
-            options_plurals=entry.get("options_plurals", None),
-            context=entry.get("context", ""),
-            metadata=entry.get("metadata"),
+        return cls.from_matrix(
+            message_id, entry["matrix"], entry["context"], entry["metadata"]
         )
 
     @override

@@ -3634,3 +3634,68 @@ class TestMessageCreation:
     def test_failed_init(self):
         with pytest.raises(ValueError):
             Message("1001", "A failed", options={2: "Failed index"})
+
+
+class TestMessageMatrix:
+    def test_from_matrix_round_trip(self):
+        matrix = [["Fichier", "Document"], ["Fichiers", ""], ["Beaucoup", "Plein"]]
+        assert Message.from_matrix("1", matrix).matrix == matrix
+
+    def test_from_matrix_keeps_empty_cells(self):
+        matrix = [["", "Variante", ""], ["", "", "Pluriel"]]
+        message = Message.from_matrix("1", matrix, "ctx", {"language": "fr"})
+        assert message.matrix == matrix
+        assert message.context == "ctx"
+        assert message.metadata["language"] == "fr"
+
+    def test_from_matrix_single_cell(self):
+        assert Message.from_matrix("1", [["Seul"]]).matrix == [["Seul"]]
+
+    def test_from_matrix_copies_input(self):
+        matrix = [["a", "b"]]
+        message = Message.from_matrix("1", matrix)
+        matrix[0][1] = "changed"
+        assert message.matrix == [["a", "b"]]
+
+    def test_matrix_is_a_rectangle(self):
+        message = Message(
+            "1",
+            "Fichier",
+            options={1: "Document"},
+            default_plurals={1: "Fichiers"},
+            options_plurals={1: {1: "Documents", 2: "Beaucoup de documents"}},
+        )
+        assert message.matrix == [
+            ["Fichier", "Document"],
+            ["Fichiers", "Documents"],
+            ["", "Beaucoup de documents"],
+        ]
+
+    def test_matrix_returns_new_lists(self):
+        message = Message.from_matrix("1", [["a", "b"]])
+        message.matrix[0][0] = "changed"
+        assert message.matrix == [["a", "b"]]
+
+    @pytest.mark.parametrize(
+        "matrix",
+        [[], [[]], [["a", "b"], ["c"]]],
+        ids=["no-row", "empty-row", "ragged"],
+    )
+    def test_from_matrix_shape_errors(self, matrix):
+        with pytest.raises(ValueError):
+            Message.from_matrix("1", matrix)
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            (1, [["a"]]),
+            ("1", "a"),
+            ("1", ["a"]),
+            ("1", [["a", 2]]),
+            ("1", [["a"]], None),
+        ],
+        ids=["id-int", "matrix-str", "row-str", "cell-int", "context-none"],
+    )
+    def test_from_matrix_type_errors(self, args):
+        with pytest.raises(TypeError):
+            Message.from_matrix(*args)

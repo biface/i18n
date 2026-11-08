@@ -763,7 +763,40 @@ class TestBookSave:
         assert loaded.metadata["user_comments"] == ["Shown in the status bar"]
         assert loaded.metadata["auto_comments"] == ["Extracted from app.py"]
         assert loaded.metadata["flags"] == ["fuzzy"]
-        assert loaded.message == message.message
+        assert loaded.matrix == message.matrix
+
+    def test_load_keeps_an_empty_variant_before_a_filled_one(self, tmp_path):
+        """An empty singular in a variant column keeps its column on load."""
+        data = {
+            "10001": {
+                "messages": [
+                    ["Fichier", "", "Document"],
+                    ["Fichiers", "", "Documents"],
+                ],
+                "metadata": {},
+            }
+        }
+        (tmp_path / "test.json.i18t").write_text(json.dumps(data), encoding="utf-8")
+        book = Book(domain="test", language="fr-FR")
+        book.load(str(tmp_path))
+        loaded = book.get("10001")
+
+        assert loaded is not None
+        assert loaded.matrix == data["10001"]["messages"]
+
+    def test_save_round_trip_keeps_the_matrix(self, tmp_path):
+        """Empty cells, padding rows included, survive a save/load round trip."""
+        matrix = [["Un", "Une", ""], ["Des", "", "Plusieurs"], ["", "", ""]]
+        message = Message.from_matrix("10001", matrix, metadata={"language": "fr-FR"})
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+        loaded = reloaded.get("10001")
+
+        assert loaded is not None
+        assert loaded.matrix == matrix
 
     def test_save_writes_language_and_domain_at_root(self, tmp_path):
         """The root metadata carries the book's language and domain."""
