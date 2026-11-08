@@ -39,6 +39,8 @@ This module makes no imports from application layers (``loaders``,
  for the rationale.
 """
 
+from i18n_tools._counters import ContentCounters
+
 from .author import Author, Authors
 from .book import Book, FallbackBook
 from .corpus import Corpus
@@ -51,6 +53,7 @@ __all__ = [
     "Message",
     "Declension",
     "Location",
+    "ContentCounters",
     "Book",
     "Corpus",
     "FallbackBook",

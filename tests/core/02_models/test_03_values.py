@@ -4,9 +4,11 @@ Tests for the Declension and Location value types of models.message.
 
 import pytest
 
+from i18n_tools import ContentCounters as PublicContentCounters
 from i18n_tools import Declension as PublicDeclension
 from i18n_tools import Location as PublicLocation
-from i18n_tools.models import Declension, Location
+from i18n_tools._counters import count_content, describe_differences
+from i18n_tools.models import ContentCounters, Declension, Location
 
 
 class TestDeclension:
@@ -127,3 +129,87 @@ class TestLocation:
 
     def test_public_export(self):
         assert PublicLocation is Location
+
+
+class TestContentCounters:
+    def test_fields(self):
+        counters = ContentCounters(2, 1, ((True, False),))
+        assert counters.declensions == 2
+        assert counters.segments == 1
+        assert counters.filled == ((True, False),)
+
+    def test_exported(self):
+        assert PublicContentCounters is ContentCounters
+
+    def test_frozen_and_hashable(self):
+        counters = ContentCounters(1, 1, ((True,),))
+        with pytest.raises(AttributeError):
+            counters.segments = 2  # pyright: ignore[reportAttributeAccessIssue]
+        assert hash(counters) == hash(ContentCounters(1, 1, ((True,),)))
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            (True, 1, ((True,),)),
+            (1, "1", ((True,),)),
+            (1, 1, [(True,)]),
+            (1, 1, ([True],)),
+            (1, 1, ((1,),)),
+        ],
+        ids=["declensions-bool", "segments-str", "mask-list", "row-list", "cell-int"],
+    )
+    def test_wrong_types(self, args):
+        with pytest.raises(TypeError):
+            _ = ContentCounters(*args)
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            (0, 1, ((),)),
+            (1, 0, ()),
+            (1, 2, ((True,),)),
+            (2, 1, ((True,),)),
+        ],
+        ids=["no-declension", "no-segment", "rows", "cells"],
+    )
+    def test_inconsistent_values(self, args):
+        with pytest.raises(ValueError):
+            _ = ContentCounters(*args)
+
+
+class TestCountContent:
+    def test_padding_and_empty_texts_are_not_filled(self):
+        counters = count_content([["Fichier", "Document"], ["Fichiers", ""]])
+        assert counters == ContentCounters(
+            declensions=2, segments=2, filled=((True, True), (True, False))
+        )
+
+    @pytest.mark.parametrize("matrix", [[], [[]]], ids=["no-row", "empty-row"])
+    def test_empty_matrix(self, matrix):
+        with pytest.raises(ValueError):
+            _ = count_content(matrix)
+
+
+class TestDescribeDifferences:
+    def test_equal(self):
+        counters = count_content([["a", "b"]])
+        assert describe_differences(counters, counters) == []
+
+    def test_lost_and_added_texts(self):
+        recorded = count_content([["a", "b"], ["as", ""]])
+        observed = count_content([["a", ""], ["as", "bs"]])
+        assert describe_differences(recorded, observed) == [
+            "text (1, 0) lost",
+            "text (1, 1) added",
+        ]
+
+    def test_structure(self):
+        recorded = count_content([["a", "b"], ["as", "bs"]])
+        observed = count_content([["a"]])
+        assert describe_differences(recorded, observed) == [
+            "declensions: recorded 2, observed 1",
+            "segments: recorded 2, observed 1",
+            "text (1, 0) lost",
+            "text (0, 1) lost",
+            "text (1, 1) lost",
+        ]

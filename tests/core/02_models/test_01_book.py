@@ -9,6 +9,7 @@ import pytest
 from helpers import as_plain
 
 from i18n_tools import __version__
+from i18n_tools._finding import Finding
 from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.models.book import Book
@@ -945,3 +946,77 @@ class TestBookLoadIntegrity:
         file.write_text(json.dumps(data), encoding="utf-8")
         with pytest.raises(FormatError, match="domain 'other' is not 'test'"):
             Book(domain="test", language="fr-FR").load(str(tmp_path))
+
+
+class TestBookCheck:
+    @staticmethod
+    def _book(*messages: Message) -> Book:
+        for message in messages:
+            message.add_language("fr-FR")
+        return Book(list(messages), domain="test", language="fr-FR")
+
+    @staticmethod
+    def _message(identifier: str) -> Message:
+        return Message(
+            identifier,
+            Declension("Un fichier", ("Des fichiers",)),
+            [Declension("Un document", ("Des documents",))],
+        )
+
+    @staticmethod
+    def _counters_of(text: str):
+        return Message("x", Declension(text)).observed
+
+    def test_sound_messages(self):
+        complete = self._message("1")
+        complete.mark_complete()
+        assert self._book(complete, self._message("2")).check() == []
+
+    def test_draft_findings_are_info(self):
+        diverging = self._message("1")
+        diverging.mark_complete()
+        diverging.reopen()
+        diverging.update_segment("", 1, 1)
+        empty = Message("2", Declension("", ("Des fichiers",)))
+        assert self._book(diverging, empty).check() == [
+            Finding(
+                "info",
+                "1",
+                "content differs from the recorded counters: text (1, 1) lost",
+            ),
+            Finding("info", "2", "the principal singular is empty"),
+        ]
+
+    def test_complete_findings_are_errors(self):
+        recorded = self._message("0")
+        recorded.mark_complete()
+        assert recorded.recorded is not None
+        lost = Message(
+            "1",
+            Declension("Un fichier", ("Des fichiers",)),
+            [Declension("Un document", ("",))],
+            status="complete",
+            recorded=recorded.recorded,
+        )
+        unrecorded = Message("2", Declension("Un fichier"), status="complete")
+        empty = Message(
+            "3", Declension(""), status="complete", recorded=self._counters_of("")
+        )
+        assert self._book(lost, unrecorded, empty).check() == [
+            Finding(
+                "error",
+                "1",
+                "content differs from the recorded counters: text (1, 1) lost",
+            ),
+            Finding("error", "2", "complete without recorded counters"),
+            Finding("error", "3", "the principal singular is empty"),
+        ]
+
+    def test_check_never_raises_nor_warns(self, recwarn):
+        unrecorded = Message("1", Declension("Un fichier"), status="complete")
+        findings = self._book(unrecorded).check()
+        assert [finding.severity for finding in findings] == ["error"]
+        assert len(recwarn) == 0
+
+    def test_empty_book(self):
+        assert Book(domain="test", language="fr-FR").check() == []

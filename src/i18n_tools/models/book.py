@@ -12,6 +12,8 @@ from i18n_tools.__static__ import (
 )
 from i18n_tools._checks import is_type
 from i18n_tools._compat import override
+from i18n_tools._counters import describe_differences
+from i18n_tools._finding import Finding
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
 )
@@ -393,6 +395,47 @@ class Book:
             del self.messages[index]
             self.metadata[["count", "messages"]] = len(self.messages)
             self._compute_statistics()
+
+    def check(self) -> list[Finding]:
+        """
+        Check the integrity of the messages of this book.
+
+        A ``"draft"`` message is reported with severity ``"info"``: an
+        empty principal singular or content that differs from its recorded
+        counters is expected while a translation is in progress. The same
+        points on a ``"complete"`` message are integrity defects, reported
+        with severity ``"error"``, as is a complete message without
+        recorded counters. Nothing is raised.
+
+        :return: The findings, in message order; empty if nothing is wrong.
+        :rtype: list[Finding]
+        """
+        findings: list[Finding] = []
+        messages: list[Message] = list(self.messages.values())
+        for message in messages:
+            severity = "error" if message.status == "complete" else "info"
+            if message.principal.singular == "":
+                findings.append(
+                    Finding(severity, message.id, "the principal singular is empty")
+                )
+            if not message.has_divergence:
+                continue
+            recorded = message.recorded
+            if recorded is None:
+                findings.append(
+                    Finding(severity, message.id, "complete without recorded counters")
+                )
+                continue
+            differences = describe_differences(recorded, message.observed)
+            findings.append(
+                Finding(
+                    severity,
+                    message.id,
+                    "content differs from the recorded counters: "
+                    + "; ".join(differences),
+                )
+            )
+        return findings
 
     def load(self, path_directory: str) -> None:
         """

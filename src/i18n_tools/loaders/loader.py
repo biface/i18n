@@ -148,7 +148,7 @@ def load_book(
     The content is checked before it is returned, against ``language``
     and ``domain`` when given. Errors stop the load; warnings are issued
     as :class:`~i18n_tools.exceptions.I18nToolsWarning` and the content is
-    returned.
+    returned; information findings are neither raised nor issued.
 
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
@@ -173,6 +173,8 @@ def load_book(
         details = "\n".join(f"  - {e.where}: {e.message}" for e in errors)
         raise FormatError(f"Integrity check failed for file: {file_path}\n{details}")
     for finding in findings:
+        if finding.severity != "warning":
+            continue
         warnings.warn(
             f"{file_path}: {finding.where}: {finding.message}",
             I18nToolsWarning,

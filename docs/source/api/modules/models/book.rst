@@ -9,6 +9,7 @@ Book module
       .. automethod:: remove
       .. automethod:: load
       .. automethod:: save
+      .. automethod:: check
       .. automethod:: get_language
       .. automethod:: add_language
       .. automethod:: update_language

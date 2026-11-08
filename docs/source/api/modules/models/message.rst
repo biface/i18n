@@ -21,6 +21,12 @@ Message module
       .. autoproperty:: has_plurals
       .. automethod:: get_variant
       .. automethod:: get_segment
+      .. autoproperty:: status
+      .. autoproperty:: observed
+      .. autoproperty:: recorded
+      .. autoproperty:: has_divergence
+      .. automethod:: mark_complete
+      .. automethod:: reopen
       .. automethod:: add_principal
       .. automethod:: update_principal
       .. automethod:: remove_principal

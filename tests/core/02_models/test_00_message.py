@@ -1,7 +1,7 @@
 """
 Tests for the Message class of models.message, grouped by contract:
 construction, reading, principal, variants, segments, reordering, tokens,
-comparisons and metadata.
+comparisons, completion status, lock, argument guards and metadata.
 
 Fixtures (local conftest.py): ``fr_message`` (3 declensions x 3 segments),
 ``en_message``, ``draft_message`` (declensions of 3, 1 and 4 segments),
@@ -16,7 +16,8 @@ import pytest
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
-from i18n_tools.models import Declension, Message
+from i18n_tools.exceptions import MessageError
+from i18n_tools.models import ContentCounters, Declension, Message
 from i18n_tools.models.message import extract_tokens
 
 EMPTY_METADATA = {
@@ -628,6 +629,158 @@ class TestComparisons:
             "Message(id='2001', principal=Declension(singular='Bonjour {name}', "
             + "plurals=()), variants=[])"
         )
+
+
+FR_COUNTERS = ContentCounters(
+    declensions=3, segments=3, filled=((True,) * 3, (True,) * 3, (True,) * 3)
+)
+
+LOCKED_CALLS = {
+    "add_principal": lambda m: m.add_principal(singular="x"),
+    "update_principal": lambda m: m.update_principal(singular="x"),
+    "remove_principal": lambda m: m.remove_principal(),
+    "add_variant": lambda m: m.add_variant(singular="x"),
+    "update_variant": lambda m: m.update_variant(1, singular="x"),
+    "remove_variant": lambda m: m.remove_variant(1),
+    "add_segment": lambda m: m.add_segment("x", 1),
+    "update_segment": lambda m: m.update_segment("x", 1),
+    "remove_segment": lambda m: m.remove_segment(1),
+    "switch": lambda m: m.switch(0, 1),
+    "toggle": lambda m: m.toggle(),
+}
+
+
+class TestStatus:
+    def test_new_message_is_a_draft(self, fr_message):
+        assert fr_message.status == "draft"
+        assert fr_message.recorded is None
+        assert not fr_message.has_divergence
+
+    def test_observed(self, fr_message, draft_message):
+        assert fr_message.observed == FR_COUNTERS
+        assert draft_message.observed.filled[1] == (True, False, True)
+
+    def test_mark_complete_records_the_counters(self, fr_message):
+        fr_message.mark_complete()
+        assert fr_message.status == "complete"
+        assert fr_message.recorded == FR_COUNTERS
+        assert not fr_message.has_divergence
+
+    def test_mark_complete_empty_principal(self, fr_message):
+        fr_message.remove_principal()
+        with pytest.raises(MessageError, match="principal singular is empty"):
+            fr_message.mark_complete()
+        assert fr_message.status == "draft"
+        assert fr_message.recorded is None
+
+    def test_mark_complete_breaks_rule_1(self, draft_message):
+        with pytest.raises(MessageError, match=re.escape("segment counts [1, 3, 4]")):
+            draft_message.mark_complete()
+        assert draft_message.status == "draft"
+        assert draft_message.recorded is None
+
+    def test_mark_complete_twice(self, fr_message):
+        fr_message.mark_complete()
+        with pytest.raises(MessageError, match="already complete"):
+            fr_message.mark_complete()
+
+    def test_reopen_keeps_the_record(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.reopen()
+        assert fr_message.status == "draft"
+        assert fr_message.recorded == FR_COUNTERS
+
+    def test_reopen_a_draft(self, fr_message):
+        with pytest.raises(MessageError, match="already a draft"):
+            fr_message.reopen()
+
+    def test_reopened_draft_diverges_after_a_change(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.reopen()
+        fr_message.update_segment("", 2, 1)
+        assert fr_message.has_divergence
+
+    def test_accepting_a_change(self, fr_message):
+        """reopen() then mark_complete() records the current content."""
+        fr_message.mark_complete()
+        fr_message.reopen()
+        fr_message.update_segment("", 2, 1)
+        fr_message.mark_complete()
+        assert not fr_message.has_divergence
+        assert fr_message.recorded is not None
+        assert fr_message.recorded.filled[2] == (True, False, True)
+
+    def test_restored_complete_message(self, fr_message):
+        """A message read from a file is restored without mark_complete() checks."""
+        message = Message(
+            "3000", Declension(""), status="complete", recorded=FR_COUNTERS
+        )
+        assert message.status == "complete"
+        assert message.has_divergence
+
+    def test_complete_without_record_diverges(self):
+        message = Message("3000", Declension("a"), status="complete")
+        assert message.has_divergence
+
+    def test_draft_without_record_does_not_diverge(self):
+        assert not Message("3000", Declension("a")).has_divergence
+
+    @pytest.mark.parametrize("status", ["final", "", None])
+    def test_unknown_status(self, status):
+        with pytest.raises(ValueError, match="status must be"):
+            _ = Message("3000", status=status)
+
+    def test_recorded_wrong_type(self):
+        with pytest.raises(TypeError, match="recorded must be ContentCounters"):
+            _ = Message("3000", recorded=(3, 3))  # pyright: ignore[reportArgumentType]
+
+    def test_status_and_recorded_are_read_only(self, fr_message):
+        with pytest.raises(AttributeError):
+            fr_message.status = (
+                "complete"  # pyright: ignore[reportAttributeAccessIssue]
+            )
+        with pytest.raises(AttributeError):
+            fr_message.recorded = (
+                FR_COUNTERS  # pyright: ignore[reportAttributeAccessIssue]
+            )
+
+    def test_strict_equality_includes_status_and_record(self, fr_message):
+        other = _copy(fr_message)
+        fr_message.mark_complete()
+        assert other != fr_message
+        assert other.isomorph(fr_message)
+        other.mark_complete()
+        assert other == fr_message
+
+
+class TestLock:
+    @pytest.mark.parametrize("call", LOCKED_CALLS.values(), ids=LOCKED_CALLS.keys())
+    def test_complete_refuses_changes(self, fr_message, call):
+        fr_message.mark_complete()
+        before = fr_message.matrix
+        with pytest.raises(MessageError, match="is complete: reopen"):
+            call(fr_message)
+        assert fr_message.matrix == before
+        assert not fr_message.has_divergence
+
+    @pytest.mark.parametrize("call", LOCKED_CALLS.values(), ids=LOCKED_CALLS.keys())
+    def test_reopened_draft_accepts_changes(self, fr_message, call):
+        fr_message.mark_complete()
+        fr_message.reopen()
+        if call is LOCKED_CALLS["add_principal"]:
+            fr_message.remove_principal()
+        before = fr_message.matrix
+        call(fr_message)
+        assert fr_message.matrix != before
+
+    def test_complete_keeps_metadata_editable(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.context = "toolbar"
+        fr_message.add_location(12, "app.py")
+        fr_message.add_comment("user", "checked")
+        fr_message.update_metadata(flags=["fuzzy"])
+        assert fr_message.metadata["flags"] == ["fuzzy"]
+        assert not fr_message.has_divergence
 
 
 NOT_INTS = ["1", 1.0, True]

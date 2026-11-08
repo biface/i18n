@@ -9,11 +9,14 @@ the whole loaders layer had none — verified by coverage measurement
 
 import gzip
 import json
+import warnings
 
 import pytest
 import yaml
 
-from i18n_tools.exceptions import FormatError
+from i18n_tools._finding import Finding
+from i18n_tools.exceptions import FormatError, I18nToolsWarning
+from i18n_tools.loaders import loader as loader_module
 from i18n_tools.loaders.loader import (
     aggregate_locale_json,
     load_book,
@@ -88,6 +91,26 @@ class TestLoadBook:
         for entry in result.values():
             assert "messages" in entry
             assert "metadata" in entry
+
+    @pytest.mark.parametrize("severity, warned", [("info", False), ("warning", True)])
+    def test_load_book_warns_for_warnings_only(
+        self, tmp_path, monkeypatch, severity, warned
+    ):
+        """Information findings are neither raised nor issued as warnings."""
+        path = _write_i18t(tmp_path, VALID_DATA)
+        monkeypatch.setattr(
+            loader_module,
+            "inspect_book_data",
+            lambda data, language=None, domain=None: [
+                Finding(severity, "10001", "a finding")
+            ],
+        )
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always", I18nToolsWarning)
+            content = load_book(path)
+        assert set(content["entries"].keys()) == {"10001", "10002"}
+        issued = [w for w in record if issubclass(w.category, I18nToolsWarning)]
+        assert len(issued) == (1 if warned else 0)
 
     def test_load_book_file_not_found(self, tmp_path):
         """Fichier inexistant → FileNotFoundError."""

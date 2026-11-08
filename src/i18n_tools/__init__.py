@@ -29,6 +29,7 @@ __all__ = [
     "Message",
     "Declension",
     "Location",
+    "ContentCounters",
     "Book",
     "Corpus",
     "FallbackBook",
@@ -49,6 +50,7 @@ __all__ = [
 from i18n_tools.config import Config  # noqa: E402
 from i18n_tools.models import (  # noqa: E402
     Book,
+    ContentCounters,
     Corpus,
     Declension,
     Encyclopaedia,

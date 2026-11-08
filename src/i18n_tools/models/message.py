@@ -14,6 +14,8 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools.__static__ import __version__ as i18n_tools_version
 from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
+from i18n_tools._counters import ContentCounters, count_content
+from i18n_tools.exceptions import MessageError
 from i18n_tools.locale import normalize_language_tag
 
 if TYPE_CHECKING:
@@ -161,6 +163,10 @@ class Location:
 
 _DECLENSION_FIELDS = frozenset({"singular", "plurals"})
 _DIRECTIONS = frozenset({"natural", "reverse"})
+_STATUSES = frozenset({"draft", "complete"})
+
+MessageStatus = Literal["draft", "complete"]
+"""Completion status of a message."""
 
 
 def _ensure_int(value: object, name: str) -> None:
@@ -239,6 +245,11 @@ class Message:
     Declensions may have different numbers of segments while a message is
     edited. :attr:`matrix` pads the shorter ones with ``""``.
 
+    A message is ``"draft"`` or ``"complete"``. :meth:`mark_complete`
+    records the content counters and locks the texts and the structure;
+    :meth:`reopen` makes the message a draft again. Context, locations,
+    flags, comments and other metadata stay editable in both states.
+
     :ivar id: Language-neutral identifier of the message.
     :ivar context: Disambiguation context, kept for other formats.
     :ivar metadata: Version, language, locations, flags and comments.
@@ -251,6 +262,8 @@ class Message:
     plural_rule: "PluralRule | None"
     _principal: Declension
     _variants: list[Declension]
+    _status: MessageStatus
+    _recorded: ContentCounters | None
 
     # A message is mutable and compares by content: it is not hashable.
     __hash__: ClassVar[None] = None  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -262,9 +275,15 @@ class Message:
         variants: list[Declension] | tuple[Declension, ...] | None = None,
         context: str = "",
         metadata: dict[str, object] | None = None,
+        status: MessageStatus = "draft",
+        recorded: ContentCounters | None = None,
     ) -> None:
         """
         Create a message.
+
+        ``status`` and ``recorded`` restore a message read from a file:
+        a ``"complete"`` message built this way is not checked as
+        :meth:`mark_complete` would check it.
 
         :param id: Identifier of the message.
         :type id: str
@@ -278,7 +297,12 @@ class Message:
         :param metadata: Metadata values, as accepted by
             :meth:`add_metadata`.
         :type metadata: dict[str, object] | None
+        :param status: ``"draft"`` or ``"complete"``.
+        :type status: MessageStatus
+        :param recorded: Counters taken at the last validation point.
+        :type recorded: ContentCounters | None
         :raises TypeError: If an argument has the wrong type.
+        :raises ValueError: If ``status`` is neither value.
         :raises KeyError: If ``metadata`` holds an unknown key.
         """
         ensure_type(id, str, f"Message id must be a string, got {type(id)}")
@@ -306,12 +330,24 @@ class Message:
             (dict, type(None)),
             f"Message metadata must be a dict or None, got {type(metadata)}",
         )
+        if not is_type(status, str) or str(status) not in _STATUSES:
+            raise ValueError(
+                f"Message status must be 'draft' or 'complete', got {status!r}"
+            )
+        ensure_type(
+            recorded,
+            (ContentCounters, type(None)),
+            "Message recorded must be ContentCounters or None, "
+            + f"got {type(recorded)}",
+        )
         self.id = id
         self._principal = principal if principal is not None else Declension()
         self._variants = list(variants) if variants is not None else []
         self.context = context
         self.metadata = _build_empty_metadata()
         self.plural_rule = None
+        self._status = status
+        self._recorded = recorded
         if metadata is not None:
             self.add_metadata(**metadata)
 
@@ -493,6 +529,87 @@ class Message:
         segments = self._declensions()[variant].segments
         return segments[segment] if segment < len(segments) else ""
 
+    # --- Completion status and counters --------------------------------------
+
+    @property
+    def status(self) -> MessageStatus:
+        """
+        Completion status: ``"draft"`` or ``"complete"``.
+
+        :return: The status.
+        :rtype: MessageStatus
+        """
+        return self._status
+
+    @property
+    def observed(self) -> ContentCounters:
+        """
+        Counters computed from the current content.
+
+        :return: The counters, new on each access.
+        :rtype: ContentCounters
+        """
+        return count_content(self.matrix)
+
+    @property
+    def recorded(self) -> ContentCounters | None:
+        """
+        Counters taken at the last validation point, or read from a file.
+
+        :return: The counters, or None if the message was never validated.
+        :rtype: ContentCounters | None
+        """
+        return self._recorded
+
+    @property
+    def has_divergence(self) -> bool:
+        """
+        Whether the content no longer matches the recorded counters.
+
+        A ``"complete"`` message without recorded counters cannot be
+        verified and diverges. A draft without recorded counters does not.
+
+        :return: True if the message diverges.
+        :rtype: bool
+        """
+        if self._recorded is None:
+            return self._status == "complete"
+        return self._recorded != self.observed
+
+    def mark_complete(self) -> None:
+        """
+        Declare the content final: record its counters and lock it.
+
+        :raises MessageError: If the message is already complete, its
+            principal singular is empty, or its declensions do not all
+            have the same number of segments. The status is unchanged.
+        """
+        if self._status == "complete":
+            raise MessageError(f"Message '{self.id}' is already complete")
+        if self._principal.singular == "":
+            raise MessageError(
+                f"Message '{self.id}' cannot be complete: the principal singular "
+                + "is empty"
+            )
+        lengths = {len(declension.segments) for declension in self._declensions()}
+        if len(lengths) > 1:
+            raise MessageError(
+                f"Message '{self.id}' cannot be complete: its declensions have "
+                + f"different segment counts {sorted(lengths)}"
+            )
+        self._recorded = self.observed
+        self._status = "complete"
+
+    def reopen(self) -> None:
+        """
+        Make a complete message a draft again; the recorded counters are kept.
+
+        :raises MessageError: If the message is already a draft.
+        """
+        if self._status == "draft":
+            raise MessageError(f"Message '{self.id}' is already a draft")
+        self._status = "draft"
+
     # --- Changing the principal ----------------------------------------------
 
     def add_principal(self, **fields: Unpack[DeclensionFields]) -> None:
@@ -507,7 +624,9 @@ class Message:
         :raises ValueError: If the principal is present, or ``singular`` is
             missing or empty.
         :raises TypeError: If a field is unknown or has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         if self._principal.singular != "":
             raise ValueError(
                 f"Message '{self.id}' already has a principal: use update_principal()"
@@ -525,13 +644,18 @@ class Message:
         :type fields: DeclensionFields
         :raises ValueError: If no field is given or ``singular`` is empty.
         :raises TypeError: If a field is unknown or has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         self._principal = self._updated(self._principal, fields, "principal")
 
     def remove_principal(self) -> None:
         """
         Empty every text of the principal, keeping its number of segments.
+
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         self._principal = Declension("", tuple("" for _ in self._principal.plurals))
 
     # --- Changing the variants -----------------------------------------------
@@ -549,7 +673,9 @@ class Message:
         :rtype: int
         :raises ValueError: If ``singular`` is missing or empty.
         :raises TypeError: If a field is unknown or has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         variant = _apply_fields(Declension(), fields)
         if variant.singular == "":
             raise ValueError("A variant needs a non-empty singular")
@@ -568,7 +694,9 @@ class Message:
         :raises ValueError: If no field is given or ``singular`` is empty.
         :raises TypeError: If ``variant`` is not an int, or a field is
             unknown or has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         self._check_variant_index(variant)
         self._variants[variant - 1] = self._updated(
             self._variants[variant - 1], fields, f"variant {variant}"
@@ -582,7 +710,9 @@ class Message:
         :type variant: int
         :raises IndexError: If ``variant`` is 0 or out of range.
         :raises TypeError: If ``variant`` is not an int.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         self._check_variant_index(variant)
         del self._variants[variant - 1]
 
@@ -607,7 +737,9 @@ class Message:
         :raises ValueError: If ``segment`` is 0 (the singular row).
         :raises IndexError: If ``segment`` or ``variant`` is out of range.
         :raises TypeError: If an argument has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         ensure_type(text, str, f"Segment text must be a string, got {type(text)}")
         _ensure_int(segment, "segment")
         self._check_variant(variant)
@@ -642,7 +774,9 @@ class Message:
         :raises ValueError: If ``text`` is empty for ``(0, 0)``.
         :raises IndexError: If an index is outside the matrix.
         :raises TypeError: If an argument has the wrong type.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         ensure_type(text, str, f"Segment text must be a string, got {type(text)}")
         self._check_cell(segment, variant)
         if segment == 0 and variant == 0 and text == "":
@@ -663,7 +797,9 @@ class Message:
         :raises ValueError: If ``segment`` is 0 (the singular row).
         :raises IndexError: If ``segment`` is out of range.
         :raises TypeError: If ``segment`` is not an int.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         _ensure_int(segment, "segment")
         if segment == 0:
             raise ValueError("Segment 0 is the singular and cannot be removed")
@@ -688,7 +824,9 @@ class Message:
         :type destination: int
         :raises IndexError: If the indices are equal or out of range.
         :raises TypeError: If an index is not an int.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         self._check_variant(source)
         self._check_variant(destination)
         if source == destination:
@@ -709,7 +847,9 @@ class Message:
         :param direction: ``"natural"`` or ``"reverse"``.
         :type direction: Literal["natural", "reverse"]
         :raises ValueError: If ``direction`` is neither value.
+        :raises MessageError: If the message is complete.
         """
+        self._ensure_draft()
         if not is_type(direction, str) or str(direction) not in _DIRECTIONS:
             raise ValueError("direction must be either 'natural' or 'reverse'")
         declensions = self._declensions()
@@ -784,7 +924,8 @@ class Message:
 
     def equal(self, other: object) -> bool:
         """
-        Strict equality: same identifier, content, context and metadata.
+        Strict equality: same identifier, content, context, metadata,
+        status and recorded counters.
 
         :param other: The object to compare with.
         :type other: object
@@ -799,6 +940,8 @@ class Message:
             and self._variants == other._variants
             and self.context == other.context
             and self.metadata.to_dict() == other.metadata.to_dict()
+            and self._status == other._status
+            and self._recorded == other._recorded
         )
 
     def isomorph(self, other: object) -> bool:
@@ -852,6 +995,14 @@ class Message:
         )
 
     # --- Internal helpers ----------------------------------------------------
+
+    def _ensure_draft(self) -> None:
+        """Refuse a change of texts or structure on a complete message."""
+        if self._status == "complete":
+            raise MessageError(
+                f"Message '{self.id}' is complete: reopen() it before changing "
+                + "its texts or structure"
+            )
 
     def _declensions(self) -> list[Declension]:
         """Return ``[principal, *variants]``, in a new list."""

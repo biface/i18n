@@ -10,9 +10,8 @@ Key Responsibilities:
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, TypeGuard
+from typing import TYPE_CHECKING, Any, TypeGuard
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -37,6 +36,7 @@ from ..__static__ import (
     TranslationFileFormat,
 )
 from ..__static__ import __version__ as i18n_tools_version
+from .._finding import Finding
 from ..locale import (
     get_all_languages,
     is_valid_language_tag,
@@ -145,22 +145,6 @@ _ENTRY_KNOWN_KEYS = (
 
 ROOT = "root"
 """``where`` value of a finding about the root of the file."""
-
-
-@dataclass(frozen=True)
-class Finding:
-    """
-    One anomaly found in the content of a Book file.
-
-    :ivar severity: ``"error"`` makes the file unusable; ``"warning"``
-        reports a point the user has to look at, the file still loads.
-    :ivar where: ``ROOT`` or the identifier of the message entry.
-    :ivar message: What is wrong, in plain words.
-    """
-
-    severity: Literal["error", "warning"]
-    where: str
-    message: str
 
 
 def _is_int(value: object) -> bool:
