@@ -10,6 +10,7 @@ from helpers import as_plain
 
 from i18n_tools import __version__
 from i18n_tools.converter import message_to_i18n_tools_format
+from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.models.book import Book
 from i18n_tools.models.message import Message
 
@@ -678,12 +679,12 @@ class TestBookLoad:
             book.load(str(tmp_path))
 
     def test_book_load_integrity_error(self, tmp_path):
-        """Fichier à matrice mal formée → ValueError."""
+        """Fichier à matrice mal formée → FormatError."""
         (tmp_path / "test.json.i18t").write_text(
             json.dumps({"10001": "not-a-list"}), encoding="utf-8"
         )
         book = Book(language="fr-FR", domain="test")
-        with pytest.raises(ValueError):
+        with pytest.raises(FormatError):
             book.load(str(tmp_path))
 
 
@@ -785,7 +786,10 @@ class TestBookSave:
         book.save(str(tmp_path))
 
         reloaded = Book(domain="test", language="fr-FR")
-        reloaded.load(str(tmp_path))
+        with pytest.warns(
+            I18nToolsWarning, match="unknown metadata key 'project_extra' kept"
+        ):
+            reloaded.load(str(tmp_path))
 
         assert reloaded.metadata["language_team"] == "Équipe FR"
         assert reloaded.metadata["header_comment"] == "Notes de l'équipe"
@@ -814,8 +818,12 @@ class TestBookSave:
         file.write_text(json.dumps(data), encoding="utf-8")
 
         reloaded = Book(domain="test", language="fr-FR")
-        reloaded.load(str(tmp_path))
+        with pytest.warns(I18nToolsWarning) as record:
+            reloaded.load(str(tmp_path))
 
+        messages = [str(warning.message) for warning in record]
+        assert any("root: statistics are" in m for m in messages)
+        assert any("root: count is" in m for m in messages)
         assert as_plain(reloaded.metadata["statistics"]) == as_plain(
             book.metadata["statistics"]
         )
@@ -866,3 +874,39 @@ class TestBookSave:
             "Des fleurs rares",
             "Plusieurs fleurs rares",
         ]
+
+
+class TestBookLoadIntegrity:
+    """Book.load() checks the file against the Book's language and domain."""
+
+    @staticmethod
+    def _saved(tmp_path, language="fr-FR", domain="test"):
+        book = Book([_make_simple_message(language)], domain=domain, language=language)
+        book.save(str(tmp_path))
+        return tmp_path / book.filename
+
+    def test_load_own_file_issues_no_warning(self, tmp_path, recwarn):
+        self._saved(tmp_path)
+        Book(domain="test", language="fr-FR").load(str(tmp_path))
+        assert not [w for w in recwarn if issubclass(w.category, I18nToolsWarning)]
+
+    def test_load_same_family_language_warns(self, tmp_path):
+        self._saved(tmp_path, language="fr-BE")
+        book = Book(domain="test", language="fr-FR")
+        with pytest.warns(I18nToolsWarning, match="'fr-BE' differs from 'fr-FR'"):
+            book.load(str(tmp_path))
+        assert book.language == "fr-FR"
+
+    def test_load_other_family_language_fails(self, tmp_path):
+        self._saved(tmp_path, language="en-US")
+        book = Book(domain="test", language="fr-FR")
+        with pytest.raises(FormatError, match="not of the family of 'fr-FR'"):
+            book.load(str(tmp_path))
+
+    def test_load_other_domain_fails(self, tmp_path):
+        file = self._saved(tmp_path)
+        data = json.loads(file.read_text("utf-8"))
+        data["metadata"]["domain"] = "other"
+        file.write_text(json.dumps(data), encoding="utf-8")
+        with pytest.raises(FormatError, match="domain 'other' is not 'test'"):
+            Book(domain="test", language="fr-FR").load(str(tmp_path))

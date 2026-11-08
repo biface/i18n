@@ -8,6 +8,10 @@ All exceptions inherit from ``I18nToolsError``, which allows callers
 to catch any package error with a single ``except I18nToolsError`` clause,
 or to target a specific subclass for fine-grained handling.
 
+``I18nToolsWarning`` reports a point the user has to look at without
+stopping the operation; ``warnings.simplefilter("error",
+I18nToolsWarning)`` turns it into an exception.
+
 **License:**
 This file is distributed under the terms of the CeCILL-C Free Software
 License Agreement. By using, modifying, or redistributing this file,
@@ -61,3 +65,7 @@ class PluralIndexError(FormatterError):
 
 class PluralRuleError(FormatterError):
     """Raised when a PluralRule configuration is invalid (e.g. malformed thresholds)."""
+
+
+class I18nToolsWarning(UserWarning):
+    """Warned when data is usable but has a point the user has to look at."""

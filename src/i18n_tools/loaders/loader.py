@@ -22,6 +22,7 @@ objects required) or together with model instances (e.g. ``Book``,
 """
 
 import tarfile
+import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypedDict
 
@@ -36,6 +37,7 @@ from i18n_tools.__static__ import (
     TranslationFileFormat,
 )
 from i18n_tools._checks import ensure_type
+from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import build_dictionary_path
 from i18n_tools.loaders._handler import build_path as _build_path
@@ -58,6 +60,7 @@ from i18n_tools.loaders._handler import (
 )
 from i18n_tools.loaders._handler import fetch_dictionary as _fetch_dictionary
 from i18n_tools.loaders._handler import file_exists as _file_exists
+from i18n_tools.loaders._handler import inspect_book_data
 from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
 from i18n_tools.loaders._handler import load_by_format
 from i18n_tools.loaders._handler import load_config as _load_config
@@ -127,32 +130,54 @@ def load_locale_json(file_path: str) -> dict[str, Any]:
     return data
 
 
-def load_book(file_path: str) -> BookFileContent:
+def load_book(
+    file_path: str, language: str | None = None, domain: str | None = None
+) -> BookFileContent:
     """
     Load a .i18t dictionary file and return its root metadata and entries (DD-15, DD-16, DD-34).
 
     The serialisation format is detected from the file extension (DD-34),
     symmetrically to :func:`save_book`. The reserved key ``.i18n_tools``
     is ignored; the root ``metadata`` key is returned separately from the
-    message entries (an absent or non-dictionary value yields an empty
-    mapping).
+    message entries (an absent value yields an empty mapping).
 
     Entries are read in the native form ``{"messages": ..., "metadata":
     ...}`` or in the legacy flat form (the matrix alone), which yields an
     empty ``metadata``.
 
+    The content is checked before it is returned, against ``language``
+    and ``domain`` when given. Errors stop the load; warnings are issued
+    as :class:`~i18n_tools.exceptions.I18nToolsWarning` and the content is
+    returned.
+
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
+    :param language: The normalized language the file should hold, or
+        None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain the file should hold, or None to skip the
+        comparison.
+    :type domain: str | None
     :return: The root metadata and the mapping of msgid to i18n_tools
              entry dict ``{"messages": matrix, "metadata": {...}}``.
     :rtype: BookFileContent
     :raises FileNotFoundError: If the file does not exist.
-    :raises ValueError: If the file fails the integrity check.
+    :raises FormatError: If the content has errors; the message lists
+        every finding.
     """
     fmt = detect_format(file_path)
     data = load_by_format(file_path, fmt)
-    if not check_json_integrity(data):
-        raise ValueError(f"Integrity check failed for file: {file_path}")
+    findings = inspect_book_data(data, language, domain)
+    errors = [finding for finding in findings if finding.severity == "error"]
+    if errors:
+        details = "\n".join(f"  - {e.where}: {e.message}" for e in errors)
+        raise FormatError(f"Integrity check failed for file: {file_path}\n{details}")
+    for finding in findings:
+        warnings.warn(
+            f"{file_path}: {finding.where}: {finding.message}",
+            I18nToolsWarning,
+            stacklevel=2,
+        )
     root: object = data.get("metadata", {})
     metadata: dict[str, object] = (
         {str(key): value for key, value in root.items()}

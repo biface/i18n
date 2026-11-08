@@ -1087,11 +1087,10 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
             "user_comments": message.metadata.get("user_comments", []),
             "auto_comments": message.metadata.get("auto_comments", []),
             "singular_count": len(first_list),
-            "plural_counts": (
-                [len(plural_list) for plural_list in value_lists[1:]]
-                if len(value_lists) > 1
-                else []
-            ),
+            "plural_counts": [
+                sum(1 for plural_list in value_lists[1:] if plural_list[column])
+                for column in range(len(first_list))
+            ],
         },
     }
 

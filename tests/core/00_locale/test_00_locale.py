@@ -123,3 +123,35 @@ class TestGetAllLanguages:
         """Test the get_all_languages function."""
         result = get_all_languages(hierarchy)
         assert result == expected_output
+
+
+class TestLanguageFamilyAndScript:
+    @pytest.mark.parametrize(
+        "tag, family",
+        [
+            ("fr", "fr"),
+            ("fr-FR", "fr"),
+            ("fr-BE", "fr"),
+            ("en-US", "en"),
+            ("zh-Hant", "zh"),
+        ],
+    )
+    def test_language_family(self, tag, family):
+        from i18n_tools.locale import language_family
+
+        assert language_family(tag) == family
+
+    @pytest.mark.parametrize(
+        "tag, expected",
+        [
+            ("zh-Hant", ("Hant", True)),
+            ("sr-Latn", ("Latn", True)),
+            ("zh-TW", ("Hant", False)),
+            ("sr", ("Cyrl", False)),
+            ("fr-FR", ("Latn", False)),
+        ],
+    )
+    def test_language_script(self, tag, expected):
+        from i18n_tools.locale import language_script
+
+        assert language_script(tag) == expected

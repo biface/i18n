@@ -10,8 +10,9 @@ Key Responsibilities:
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, TypeGuard
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -36,7 +37,13 @@ from ..__static__ import (
     TranslationFileFormat,
 )
 from ..__static__ import __version__ as i18n_tools_version
-from ..locale import get_all_languages, normalize_language_tag
+from ..locale import (
+    get_all_languages,
+    is_valid_language_tag,
+    language_family,
+    language_script,
+    normalize_language_tag,
+)
 from . import _settings, _utils
 
 
@@ -49,7 +56,7 @@ def normalize_module_identifier(path: str) -> str:
     return _utils.normalize_module_identifier(path)
 
 
-def _check_matrix(matrix: object) -> bool:
+def _check_matrix(matrix: object) -> TypeGuard[list[list[object]]]:
     """
     Check the messages matrix of one translation entry.
 
@@ -104,6 +111,333 @@ def check_json_integrity(data: dict[str, Any]) -> bool:
         if not _check_matrix(matrix):
             return False
     return True
+
+
+# -----------------------------------------------------------------------------
+# Integrity of a Book file
+# -----------------------------------------------------------------------------
+
+# Root metadata keys of a Book file whose value is a string, then all known keys.
+_ROOT_TEXT_KEYS = frozenset(
+    {
+        "project_id_version",
+        "report_msgid_bugs_to",
+        "pot_creation_date",
+        "language_team",
+        "header_comment",
+    }
+)
+_ROOT_KNOWN_KEYS = _ROOT_TEXT_KEYS | {"language", "domain", "statistics", "count"}
+
+# Entry metadata keys whose value is a string or a list of strings, then all
+# known keys.
+_ENTRY_TEXT_KEYS = frozenset({"version", "language", "context"})
+_ENTRY_TEXT_LIST_KEYS = frozenset({"flags", "user_comments", "auto_comments"})
+_ENTRY_KNOWN_KEYS = (
+    _ENTRY_TEXT_KEYS
+    | _ENTRY_TEXT_LIST_KEYS
+    | {
+        "locations",
+        "singular_count",
+        "plural_counts",
+    }
+)
+
+ROOT = "root"
+"""``where`` value of a finding about the root of the file."""
+
+
+@dataclass(frozen=True)
+class Finding:
+    """
+    One anomaly found in the content of a Book file.
+
+    :ivar severity: ``"error"`` makes the file unusable; ``"warning"``
+        reports a point the user has to look at, the file still loads.
+    :ivar where: ``ROOT`` or the identifier of the message entry.
+    :ivar message: What is wrong, in plain words.
+    """
+
+    severity: Literal["error", "warning"]
+    where: str
+    message: str
+
+
+def _is_int(value: object) -> bool:
+    """Tell whether ``value`` is an int and not a bool."""
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _is_text_list(value: object) -> bool:
+    """Tell whether ``value`` is a list of strings."""
+    return isinstance(value, list) and all(isinstance(item, str) for item in value)
+
+
+def _is_location(value: object) -> bool:
+    """Tell whether ``value`` is a ``[file, line]`` pair, line >= 1."""
+    if not isinstance(value, list) or len(value) != 2:
+        return False
+    file, line = value
+    return isinstance(file, str) and _is_int(line) and line >= 1
+
+
+def _describe_script(tag: str) -> str:
+    """Describe the script of ``tag``, stating whether it is explicit."""
+    script, explicit = language_script(tag)
+    if script is None:
+        return "unknown script"
+    return f"{script} ({'explicit' if explicit else 'inferred'})"
+
+
+def _check_language(
+    value: object, expected: str | None, where: str, findings: list[Finding]
+) -> None:
+    """
+    Compare a language read from the file with the expected one.
+
+    An absent or empty language is accepted. A different language of the
+    same family is a warning, a different family an error.
+    """
+    if value is None or value == "":
+        return
+    if not isinstance(value, str):
+        findings.append(Finding("error", where, "language is not a string"))
+        return
+    if not is_valid_language_tag(value):
+        findings.append(Finding("error", where, f"invalid language tag '{value}'"))
+        return
+    if expected is None:
+        return
+    found = normalize_language_tag(value)
+    if found == expected:
+        return
+    if language_family(found) != language_family(expected):
+        findings.append(
+            Finding(
+                "error",
+                where,
+                f"language '{found}' is not of the family of '{expected}'",
+            )
+        )
+        return
+    message = f"language '{found}' differs from '{expected}' (same family)"
+    if language_script(found)[0] != language_script(expected)[0]:
+        message += (
+            f"; scripts differ: {_describe_script(found)}"
+            f" vs {_describe_script(expected)}"
+        )
+    findings.append(Finding("warning", where, message))
+
+
+def _is_text_matrix(matrix: list[list[object]]) -> TypeGuard[list[list[str]]]:
+    """Tell whether every cell of a well-formed matrix is a string."""
+    return all(isinstance(cell, str) for row in matrix for cell in row)
+
+
+def _check_counts(
+    matrix: list[list[str]], metadata: dict[str, object], where: str
+) -> list[Finding]:
+    """
+    Compare the stored counters of an entry with its matrix.
+
+    ``singular_count`` is the number of declensions (the length of the
+    singular row); ``plural_counts[i]`` the number of non-empty plurals of
+    declension ``i``. A mismatch is a warning: the counters are recomputed.
+    """
+    findings: list[Finding] = []
+    singular_count = len(matrix[0])
+    plural_counts = [
+        sum(1 for row in matrix[1:] if row[column] != "")
+        for column in range(singular_count)
+    ]
+    if "singular_count" in metadata:
+        stored = metadata["singular_count"]
+        if not _is_int(stored):
+            findings.append(Finding("error", where, "singular_count is not an int"))
+        elif stored != singular_count:
+            findings.append(
+                Finding(
+                    "warning",
+                    where,
+                    f"singular_count is {stored}, the matrix has {singular_count}",
+                )
+            )
+    if "plural_counts" in metadata:
+        stored = metadata["plural_counts"]
+        if not isinstance(stored, list) or not all(_is_int(n) for n in stored):
+            findings.append(
+                Finding("error", where, "plural_counts is not a list of int")
+            )
+        elif stored != plural_counts:
+            findings.append(
+                Finding(
+                    "warning",
+                    where,
+                    f"plural_counts is {stored}, the matrix has {plural_counts}",
+                )
+            )
+    return findings
+
+
+def _check_entry_metadata(
+    metadata: dict[str, object], expected_language: str | None, where: str
+) -> list[Finding]:
+    """Check the types of the known keys of an entry metadata."""
+    findings: list[Finding] = []
+    for key, value in metadata.items():
+        if key == "language":
+            _check_language(value, expected_language, where, findings)
+        elif key in _ENTRY_TEXT_KEYS:
+            if not isinstance(value, str):
+                findings.append(Finding("error", where, f"{key} is not a string"))
+        elif key in _ENTRY_TEXT_LIST_KEYS:
+            if not _is_text_list(value):
+                findings.append(
+                    Finding("error", where, f"{key} is not a list of strings")
+                )
+        elif key == "locations":
+            if not isinstance(value, list) or not all(
+                _is_location(item) for item in value
+            ):
+                findings.append(
+                    Finding(
+                        "error",
+                        where,
+                        "locations is not a list of [file, line] pairs",
+                    )
+                )
+        elif key not in _ENTRY_KNOWN_KEYS:
+            findings.append(
+                Finding("warning", where, f"unknown metadata key '{key}' ignored")
+            )
+    return findings
+
+
+def _count_words(matrix: list[list[str]]) -> int:
+    """Count the whitespace-separated words of every cell of a matrix."""
+    return sum(len(cell.split()) for row in matrix for cell in row)
+
+
+def _check_root(
+    root: object,
+    language: str | None,
+    domain: str | None,
+    total_messages: int,
+    total_words: int,
+) -> list[Finding]:
+    """Check the root metadata of a Book file."""
+    if not isinstance(root, dict):
+        return [Finding("error", ROOT, "metadata is not a mapping")]
+    findings: list[Finding] = []
+    for key, value in root.items():
+        if key == "language":
+            _check_language(value, language, ROOT, findings)
+        elif key == "domain":
+            if value is None or value == "":
+                continue
+            if not isinstance(value, str):
+                findings.append(Finding("error", ROOT, "domain is not a string"))
+            elif domain is not None and value != domain:
+                findings.append(
+                    Finding("error", ROOT, f"domain '{value}' is not '{domain}'")
+                )
+        elif key in _ROOT_TEXT_KEYS:
+            if not isinstance(value, str):
+                findings.append(Finding("error", ROOT, f"{key} is not a string"))
+        elif key == "statistics":
+            expected = {"total_messages": total_messages, "total_words": total_words}
+            if value != expected:
+                findings.append(
+                    Finding(
+                        "warning",
+                        ROOT,
+                        f"statistics are {value}, the content gives {expected}",
+                    )
+                )
+        elif key == "count":
+            expected_count = {"messages": total_messages}
+            if value != expected_count:
+                findings.append(
+                    Finding(
+                        "warning",
+                        ROOT,
+                        f"count is {value}, the content gives {expected_count}",
+                    )
+                )
+        elif key not in _ROOT_KNOWN_KEYS:
+            findings.append(
+                Finding("warning", ROOT, f"unknown metadata key '{key}' kept")
+            )
+    return findings
+
+
+def inspect_book_data(
+    data: dict[str, object], language: str | None = None, domain: str | None = None
+) -> list[Finding]:
+    """
+    Check the content of a Book file and list what is wrong with it.
+
+    Every entry other than the reserved ``.i18n_tools`` and ``metadata``
+    keys is a native entry ``{"messages": matrix, "metadata": {...}}`` or
+    a bare matrix (legacy form).
+
+    Errors: malformed matrix or non-string cell, wrong type of a known
+    metadata value, invalid language tag, a language of another family
+    than ``language``, a domain other than ``domain``.
+
+    Warnings: a language of the same family as ``language`` but different
+    (with the scripts when they differ), counters or statistics that do
+    not match the content, unknown metadata keys (kept at the root,
+    ignored in an entry).
+
+    An absent or empty language or domain is accepted.
+
+    :param data: The content of the file, as read.
+    :type data: dict[str, object]
+    :param language: The normalized language expected, or None to skip
+        the comparison.
+    :type language: str | None
+    :param domain: The domain expected, or None to skip the comparison.
+    :type domain: str | None
+    :return: The findings, errors and warnings, in file order.
+    :rtype: list[Finding]
+    """
+    findings: list[Finding] = []
+    total_messages = 0
+    total_words = 0
+    for where, value in data.items():
+        if where in (".i18n_tools", "metadata"):
+            continue
+        total_messages += 1
+        metadata: object = {}
+        if isinstance(value, dict):
+            if "messages" not in value:
+                findings.append(Finding("error", where, "no messages matrix"))
+                continue
+            matrix: object = value["messages"]
+            metadata = value.get("metadata", {})
+        else:
+            matrix = value
+        if not _check_matrix(matrix):
+            findings.append(Finding("error", where, "malformed messages matrix"))
+            continue
+        if not _is_text_matrix(matrix):
+            findings.append(Finding("error", where, "a matrix cell is not a string"))
+            continue
+        total_words += _count_words(matrix)
+        if not isinstance(metadata, dict):
+            findings.append(Finding("error", where, "metadata is not a mapping"))
+            continue
+        entry_metadata: dict[str, object] = {
+            str(key): item for key, item in metadata.items()
+        }
+        findings.extend(_check_entry_metadata(entry_metadata, language, where))
+        findings.extend(_check_counts(matrix, entry_metadata, where))
+    if "metadata" in data:
+        findings.extend(
+            _check_root(data["metadata"], language, domain, total_messages, total_words)
+        )
+    return findings
 
 
 def build_path(base_path: str, *sub_dirs: str) -> str:

@@ -42,6 +42,7 @@ from typing import NoReturn, TextIO
 
 from .config import Config
 from .core import synchronize
+from .exceptions import FormatError
 from .models.book import Book
 
 # Matches "<domain>.<format>.i18t", e.g. "messages.json.i18t" (DD-34).
@@ -106,7 +107,7 @@ def _load_book_from_path(path: str) -> Book:
     book = Book(language=language, domain=domain, format=fmt)
     try:
         book.load(directory)
-    except (FileNotFoundError, ValueError) as e:
+    except (FileNotFoundError, FormatError, ValueError) as e:
         raise CliError(str(e)) from e
     return book
 

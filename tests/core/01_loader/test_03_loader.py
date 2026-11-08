@@ -13,6 +13,7 @@ import json
 import pytest
 import yaml
 
+from i18n_tools.exceptions import FormatError
 from i18n_tools.loaders.loader import (
     aggregate_locale_json,
     load_book,
@@ -94,8 +95,8 @@ class TestLoadBook:
             load_book(str(tmp_path / "no_such_file.json.i18t"))
 
     def test_load_book_integrity_error(self, tmp_path):
-        """Matrice mal formée → ValueError."""
-        with pytest.raises(ValueError):
+        """Matrice mal formée → FormatError."""
+        with pytest.raises(FormatError):
             load_book(_write_i18t(tmp_path, INVALID_DATA))
 
     def test_load_book_native_entry_keeps_metadata(self, tmp_path):
@@ -144,7 +145,7 @@ class TestLoadBook:
     )
     def test_load_book_native_entry_integrity_error(self, tmp_path, entry):
         """A malformed native entry fails the integrity check."""
-        with pytest.raises(ValueError):
+        with pytest.raises(FormatError):
             load_book(_write_i18t(tmp_path, {"10001": entry}))
 
 

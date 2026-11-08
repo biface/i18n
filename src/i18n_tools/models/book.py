@@ -426,13 +426,16 @@ class Book:
         copied. ``statistics`` and ``count`` are derived from the messages
         and recomputed after loading.
 
+        The file is checked against the language and domain of this Book
+        (see ``loader.load_book()``).
+
         :param path_directory: Directory containing the .i18t file.
         :type path_directory: str
         :raises FileNotFoundError: If the file does not exist.
-        :raises ValueError: If the file fails the integrity check.
+        :raises FormatError: If the file content has errors.
         """
         file_path = path_directory + "/" + self.filename
-        content = _load_book(file_path)
+        content = _load_book(file_path, self.language, self.domain)
         for key, value in content["metadata"].items():
             if key in _ROOT_ATTRIBUTE_KEYS or key in _ROOT_DERIVED_KEYS:
                 continue
@@ -452,7 +455,9 @@ class Book:
 
         The file is written at ``path_directory/self.filename``.
         Delegates all I/O to ``save_book()`` in ``loader.py``,
-        following the same delegation pattern as ``load()``.
+        following the same delegation pattern as ``load()``. The message
+        count and the statistics are recomputed first, so that the file
+        never carries stale derived values.
 
         :param path_directory: Directory where the .i18t file will be written.
         :type path_directory: str
@@ -465,6 +470,8 @@ class Book:
         """
         from i18n_tools.loaders.loader import save_book as _save_book
 
+        self.metadata[["count", "messages"]] = len(self.messages)
+        self._compute_statistics()
         file_path = path_directory + "/" + self.filename
         _save_book(self, file_path)
 

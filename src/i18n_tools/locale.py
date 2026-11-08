@@ -35,6 +35,43 @@ def normalize_language_tag(tag: str) -> str:
     return langcodes.standardize_tag(tag)
 
 
+def language_family(tag: str) -> str:
+    """
+    Return the family of a language tag: its primary language subtag.
+
+    ``fr``, ``fr-FR`` and ``fr-BE`` share the family ``fr``; ``en-US`` is
+    of the family ``en``.
+
+    :param tag: A valid IETF language tag.
+    :type tag: str
+    :return: The primary language subtag, or an empty string if the tag
+        has none.
+    :rtype: str
+    """
+    return langcodes.Language.get(tag).language or ""
+
+
+def language_script(tag: str) -> tuple[str | None, bool]:
+    """
+    Return the script of a language tag and whether the tag states it.
+
+    An explicit script subtag (``zh-Hant``, ``sr-Latn``) is returned as
+    is. Otherwise the script is inferred from the CLDR likely subtags
+    (``zh-TW`` gives ``Hant``, ``sr`` gives ``Cyrl``), which is a guess:
+    Serbian is commonly written in both scripts.
+
+    :param tag: A valid IETF language tag.
+    :type tag: str
+    :return: The script code, or None if unknown, and True when the tag
+        carries it explicitly.
+    :rtype: tuple[str | None, bool]
+    """
+    language = langcodes.Language.get(tag)
+    if language.script:
+        return language.script, True
+    return language.maximize().script, False
+
+
 def validate_and_normalize_language_tags(tags: list[str]) -> list[str]:
     """
     Validate and normalize a list of language tags.
