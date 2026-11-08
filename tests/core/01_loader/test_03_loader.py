@@ -88,6 +88,55 @@ class TestLoadBook:
         with pytest.raises(ValueError):
             load_book(_write_i18t(tmp_path, INVALID_DATA))
 
+    def test_load_book_native_entry_keeps_metadata(self, tmp_path):
+        """A native entry keeps its matrix and its metadata."""
+        data = {
+            "10001": {
+                "messages": [["Un message", "Une variante"], ["Des messages", ""]],
+                "metadata": {"locations": [["app.py", 12]], "flags": ["fuzzy"]},
+            }
+        }
+        result = load_book(_write_i18t(tmp_path, data))
+        assert result["10001"]["messages"] == data["10001"]["messages"]
+        assert result["10001"]["metadata"] == data["10001"]["metadata"]
+
+    def test_load_book_native_entry_without_metadata(self, tmp_path):
+        """The metadata key of a native entry is optional."""
+        data = {"10001": {"messages": [["Un message"]]}}
+        result = load_book(_write_i18t(tmp_path, data))
+        assert result["10001"] == {"messages": [["Un message"]], "metadata": {}}
+
+    def test_load_book_mixed_entry_forms(self, tmp_path):
+        """Native and legacy entries can share one file."""
+        data = {
+            "10001": {"messages": [["Un message"]], "metadata": {}},
+            "10002": [["Un autre message"]],
+        }
+        result = load_book(_write_i18t(tmp_path, data))
+        assert result["10002"] == {"messages": [["Un autre message"]], "metadata": {}}
+
+    @pytest.mark.parametrize(
+        "entry",
+        [
+            {"metadata": {}},
+            {"messages": [["a", "b"], ["c"]]},
+            {"messages": [["a"]], "metadata": []},
+            {"messages": "not-a-list"},
+            {"messages": [[]]},
+        ],
+        ids=[
+            "no-messages",
+            "ragged-matrix",
+            "metadata-not-dict",
+            "matrix-not-list",
+            "empty-rows",
+        ],
+    )
+    def test_load_book_native_entry_integrity_error(self, tmp_path, entry):
+        """A malformed native entry fails the integrity check."""
+        with pytest.raises(ValueError):
+            load_book(_write_i18t(tmp_path, {"10001": entry}))
+
 
 class TestLoadLocaleJson:
     def test_load_locale_json_valid(self, tmp_path):

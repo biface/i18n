@@ -1072,7 +1072,9 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
         "metadata": {
             "version": message.metadata.get("version", "0.0.0"),
             "language": message.metadata.get("language", ""),
-            "locations": message.metadata.get("locations", []),
+            "locations": [
+                [file, line] for file, line in message.metadata.get("location", [])
+            ],
             "flags": message.metadata.get("flags", []),
             "user_comments": message.metadata.get("user_comments", []),
             "auto_comments": message.metadata.get("auto_comments", []),
@@ -1146,7 +1148,7 @@ def i18n_tools_format_to_message_dict(
     # Process metadata
     if metadata:
         result["metadata"] = {
-            "location": metadata.get("locations", []),
+            "location": [(file, line) for file, line in metadata.get("locations", [])],
             "flags": metadata.get("flags", []),
             "user_comments": metadata.get("user_comments", []),
             "auto_comments": metadata.get("auto_comments", []),

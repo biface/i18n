@@ -728,3 +728,38 @@ class TestBookSave:
         reloaded.load(str(tmp_path))
 
         assert set(reloaded.messages.keys()) == set(fr_fr_book.messages.keys())
+
+    def test_save_writes_native_entries(self, fr_fr_book, tmp_path):
+        """Book.save() writes each message as a messages/metadata entry."""
+        fr_fr_book.save(str(tmp_path))
+        data = json.loads((tmp_path / fr_fr_book.filename).read_text("utf-8"))
+        for msgid in fr_fr_book.messages.keys():
+            assert set(data[msgid].keys()) == {"messages", "metadata"}
+
+    def test_save_round_trip_keeps_message_metadata(self, tmp_path):
+        """Locations, flags and comments survive a save/load round trip."""
+        message = Message(
+            "10001",
+            "Un message",
+            options={1: "Une variante"},
+            default_plurals={1: "Des messages"},
+            metadata={"language": "fr-FR"},
+        )
+        message.add_location(12, "app.py")
+        message.add_location(40, "cli.py")
+        message.add_comment("user", "Shown in the status bar")
+        message.add_comment("auto", "Extracted from app.py")
+        message.metadata["flags"] = ["fuzzy"]
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+
+        reloaded = Book(domain="test", language="fr-FR")
+        reloaded.load(str(tmp_path))
+        loaded = reloaded.get("10001")
+
+        assert loaded is not None
+        assert loaded.metadata["location"] == [("app.py", 12), ("cli.py", 40)]
+        assert loaded.metadata["user_comments"] == ["Shown in the status bar"]
+        assert loaded.metadata["auto_comments"] == ["Extracted from app.py"]
+        assert loaded.metadata["flags"] == ["fuzzy"]
+        assert loaded.message == message.message

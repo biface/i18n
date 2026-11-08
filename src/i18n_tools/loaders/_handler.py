@@ -49,33 +49,60 @@ def normalize_module_identifier(path: str) -> str:
     return _utils.normalize_module_identifier(path)
 
 
+def _check_matrix(matrix: object) -> bool:
+    """
+    Check the messages matrix of one translation entry.
+
+    The matrix is a non-empty list of lists, with at least one non-empty
+    row, and every row has the same length.
+
+    :param matrix: The candidate matrix.
+    :type matrix: object
+    :return: True if the matrix is well-formed, False otherwise.
+    :rtype: bool
+    """
+    if not isinstance(matrix, list):
+        return False
+    lengths: set[int] = set()
+    for row in matrix:
+        if not isinstance(row, list):
+            return False
+        lengths.add(len(row))
+    return len(lengths) == 1 and lengths != {0}
+
+
 def check_json_integrity(data: dict[str, Any]) -> bool:
     """
-    Check the integrity of the JSON locale data.
+    Check the integrity of translation data.
 
-    :param data: The JSON locale data.
+    Every entry other than the reserved ``.i18n_tools`` and ``metadata``
+    keys takes one of two forms:
+
+    - ``{"messages": matrix, "metadata": {...}}``, the native ``.i18t``
+      entry; ``metadata`` is optional and must be a dictionary;
+    - a bare ``matrix``, the legacy flat form, still readable.
+
+    In both forms the matrix must pass the checks of ``_check_matrix()``.
+
+    :param data: The translation data.
     :type data: dict
     :return: True if the data is valid, False otherwise.
     :rtype: bool
     """
 
     for key, value in data.items():
-        if key != ".i18n_tools" and key != "metadata":
-            if not isinstance(value, list):
+        if key in (".i18n_tools", "metadata"):
+            continue
+        if isinstance(value, dict):
+            if "messages" not in value:
                 return False
-
-            # Check that each item in the list is a list
-            if not all(isinstance(item, list) for item in value):
+            if not isinstance(value.get("metadata", {}), dict):
                 return False
-
-            # Check that there is at least one non-empty list
-            if not any(len(item) > 0 for item in value):
-                return False
-
-            # Check that all lists have the same length
-            lengths = [len(item) for item in value]
-            if len(set(lengths)) != 1:
-                return False
+            matrix: object = value["messages"]
+        else:
+            matrix = value
+        if not _check_matrix(matrix):
+            return False
     return True
 
 

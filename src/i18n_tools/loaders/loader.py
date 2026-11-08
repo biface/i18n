@@ -121,6 +121,10 @@ def load_book(file_path: str) -> dict[str, Any]:
     symmetrically to :func:`save_book`. The reserved keys ``.i18n_tools``
     and ``metadata`` are silently ignored.
 
+    Entries are read in the native form ``{"messages": ..., "metadata":
+    ...}`` or in the legacy flat form (the matrix alone), which yields an
+    empty ``metadata``.
+
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
     :return: Mapping of msgid to i18n_tools entry dict
@@ -134,10 +138,16 @@ def load_book(file_path: str) -> dict[str, Any]:
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
     result = {}
-    for msgid, matrix in data.items():
+    for msgid, entry in data.items():
         if msgid in (".i18n_tools", "metadata"):
             continue
-        result[msgid] = {"messages": matrix, "metadata": {}}
+        if isinstance(entry, dict):
+            result[msgid] = {
+                "messages": entry["messages"],
+                "metadata": entry.get("metadata", {}),
+            }
+        else:
+            result[msgid] = {"messages": entry, "metadata": {}}
     return result
 
 
@@ -172,11 +182,7 @@ def save_book(book: Any, file_path: str) -> None:
     fmt = detect_format(file_path)
     data: dict[str, Any] = {"metadata": book.metadata.to_dict()}
     for msg in book.messages.values():
-        # load_locale_json / check_json_integrity expect each entry to be
-        # the raw messages matrix (a list of lists), not the full
-        # {"messages": ..., "metadata": ...} dict produced by
-        # message_to_i18n_tools_format.  We extract only the "messages" key.
-        data[msg.id] = message_to_i18n_tools_format(msg)["messages"]
+        data[msg.id] = message_to_i18n_tools_format(msg)
     save_by_format(file_path, data, fmt)
 
 
