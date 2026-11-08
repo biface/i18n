@@ -43,12 +43,14 @@ from .author import Author, Authors
 from .book import Book, FallbackBook
 from .corpus import Corpus
 from .encyclopaedia import Encyclopaedia
-from .message import Message
+from .message import Declension, Location, Message
 from .repository import Repository
 from .translator import Translator, Translators
 
 __all__ = [
     "Message",
+    "Declension",
+    "Location",
     "Book",
     "Corpus",
     "FallbackBook",

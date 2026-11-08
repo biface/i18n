@@ -3,11 +3,13 @@ Message: one identifier's translations and metadata, in one language.
 """
 
 import re
-from typing import TYPE_CHECKING, Any, Literal
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.__static__ import __version__ as i18n_tools_version
+from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
@@ -17,6 +19,138 @@ from i18n_tools.locale import normalize_language_tag
 
 if TYPE_CHECKING:
     from i18n_tools.formatter.plurals import PluralRule
+
+
+class DeclensionFields(TypedDict, total=False):
+    """
+    Keyword contract for the texts of one declension.
+
+    The same keys describe the principal and every variant.
+    """
+
+    singular: str
+    plurals: list[str]
+
+
+@dataclass(slots=True)
+class Declension:
+    """
+    One singular text and zero or more plural texts.
+
+    The principal of a message and each of its variants are declensions.
+    Segment 0 is the singular, segments 1 to n are the plurals: a singular
+    with three plurals has four segments. An empty string marks an absent
+    text.
+
+    :param singular: Text of segment 0.
+    :type singular: str
+    :param plurals: Texts of segments 1 to n, in order.
+    :type plurals: list[str]
+    :raises TypeError: If a text is not a string, or ``plurals`` is not a
+        list.
+    """
+
+    singular: str = ""
+    plurals: list[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        ensure_type(
+            self.singular,
+            str,
+            f"Declension singular must be a string, got {type(self.singular)}",
+        )
+        ensure_type(
+            self.plurals,
+            list,
+            f"Declension plurals must be a list, got {type(self.plurals)}",
+        )
+        for text in self.plurals:
+            ensure_type(
+                text, str, f"Declension plural must be a string, got {type(text)}"
+            )
+
+    @property
+    def segments(self) -> list[str]:
+        """
+        All texts of the declension, singular first.
+
+        :return: ``[singular, *plurals]``, a new list.
+        :rtype: list[str]
+        """
+        return [self.singular, *self.plurals]
+
+    @classmethod
+    def from_segments(cls, segments: list[str]) -> "Declension":
+        """
+        Build a declension from its texts, singular first.
+
+        :param segments: ``[singular, *plurals]``; must not be empty.
+        :type segments: list[str]
+        :return: The declension.
+        :rtype: Declension
+        :raises ValueError: If ``segments`` is empty.
+        :raises TypeError: If ``segments`` is not a list, or a text is not
+            a string.
+        """
+        ensure_type(
+            segments, list, f"Declension segments must be a list, got {type(segments)}"
+        )
+        if len(segments) == 0:
+            raise ValueError("A declension has at least one segment (the singular)")
+        return cls(segments[0], list(segments[1:]))
+
+
+def _ensure_coordinate(value: int | None, name: str) -> None:
+    """Check an optional location coordinate: None or an int >= 0."""
+    if value is None:
+        return
+    if is_type(value, bool) or not is_type(value, int):
+        raise TypeError(f"Location {name} must be an int or None, got {type(value)}")
+    if value < 0:
+        raise ValueError(f"Location {name} must be >= 0, got {value}")
+
+
+@dataclass(frozen=True, slots=True)
+class Location:
+    """
+    A place in source code that uses a message.
+
+    ``variant`` and ``segment`` locate the text the source code asks for,
+    with the addressing of the message: ``variant=0`` is the principal,
+    ``segment=0`` is the singular. A coordinate left to None is not fixed
+    at that call site; a location with no coordinate refers to the whole
+    message.
+
+    :param file: Path of the source file.
+    :type file: str
+    :param line: Line number in that file, starting at 1.
+    :type line: int
+    :param variant: Declension used at that call site, if fixed.
+    :type variant: int | None
+    :param segment: Segment used at that call site, if fixed.
+    :type segment: int | None
+    :raises TypeError: If a field has the wrong type.
+    :raises ValueError: If ``file`` is empty, ``line`` is below 1 or a
+        coordinate is negative.
+    """
+
+    file: str
+    line: int
+    variant: int | None = None
+    segment: int | None = None
+
+    def __post_init__(self) -> None:
+        ensure_type(
+            self.file, str, f"Location file must be a string, got {type(self.file)}"
+        )
+        if self.file == "":
+            raise ValueError("Location file must not be empty")
+        if is_type(self.line, bool) or not is_type(self.line, int):
+            raise TypeError(f"Location line must be an int, got {type(self.line)}")
+        if self.line < 1:
+            raise ValueError(f"Location line must be >= 1, got {self.line}")
+        _ensure_coordinate(self.variant, "variant")
+        _ensure_coordinate(self.segment, "segment")
 
 
 def _check_index_dict(dictionary: dict[int, Any]) -> bool:

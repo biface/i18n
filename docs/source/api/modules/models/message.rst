@@ -3,6 +3,13 @@ Message module
 
 .. automodule:: i18n_tools.models.message
 
+   .. autoclass:: Declension
+      :members: segments, from_segments
+
+   .. autoclass:: Location
+
+   .. autoclass:: DeclensionFields
+
    .. autoclass:: Message
 
       .. autoproperty:: message
