@@ -24,6 +24,19 @@ from helpers import copy_and_update_repository
 from i18n_tools.config import Config
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    """Turn every I18nToolsWarning into a test failure.
+
+    A test expecting the warning catches it with ``pytest.warns``. The
+    filter is added here, not in ``[tool.pytest.ini_options]``: pytest
+    resolves an ini filter category by importing its module before
+    pytest-cov starts measuring, which leaves the package unmeasured.
+    """
+    config.addinivalue_line(
+        "filterwarnings", "error::i18n_tools.exceptions.I18nToolsWarning"
+    )
+
+
 @pytest.fixture(scope="session")
 def system_lang() -> str:
     """Two-letter system locale language code (e.g. 'fr', 'en')."""
