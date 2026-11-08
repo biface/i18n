@@ -12,7 +12,7 @@ from i18n_tools import __version__
 from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.models.book import Book
-from i18n_tools.models.message import Message
+from i18n_tools.models.message import Declension, Message
 
 
 # Using fixtures: fr_fr_book, en_us_book, en_gb_book, it_it_book from local conftest.py
@@ -30,17 +30,14 @@ def fr_fr_i18t_directory(tmp_path, fr_fr_messages):
 def _make_simple_message(lang: str) -> Message:
     return Message(
         id="tmp1",
-        default="Hello world",
-        options={1: "Hello {who}"},
-        default_plurals={1: "Hello worlds"},
-        options_plurals={1: {1: "Hello {who}s"}},
+        principal=Declension("Hello world", ("Hello worlds",)),
+        variants=[Declension("Hello {who}", ("Hello {who}s",))],
         metadata={
             "version": __version__,
             "language": lang,
             "location": [],
             "flags": ["python-format"],
             "user_comments": [],
-            "count": {"singular": 1, "plurals": [1]},
         },
     )
 
@@ -84,9 +81,8 @@ class TestBook:
         assert book.language == language
         assert book.messages["1100"].metadata["language"] == language
 
-    # Be careful: messages created for books in the file conftest.py file have deliberately incorrect counters.
     @pytest.mark.parametrize(
-        "fixture_book, message_id, c_singular, c_plurals",
+        "fixture_book, message_id, declensions, plurals",
         [
             ("fr_fr_book", "1100", 4, [2, 2, 3, 2]),
             ("en_us_book", "1108", 4, [2, 2, 2, 2]),
@@ -94,13 +90,16 @@ class TestBook:
             ("it_it_book", "1104", 4, [2, 2, 2, 2]),
         ],
     )
-    def test_book_count(self, fixture_book, message_id, c_singular, c_plurals, request):
-        book = request.getfixturevalue(fixture_book)
-        assert book.messages[message_id].metadata[["count", "singular"]] == c_singular
-        assert book.messages[message_id].metadata[["count", "plurals"]] == c_plurals
+    def test_book_message_structure(
+        self, fixture_book, message_id, declensions, plurals, request
+    ):
+        message = request.getfixturevalue(fixture_book).messages[message_id]
+        all_declensions = (message.principal, *message.variants)
+        assert len(all_declensions) == declensions
+        assert [len(declension.plurals) for declension in all_declensions] == plurals
 
     @pytest.mark.parametrize(
-        "fixture_book, message_id, option, variables",
+        "fixture_book, message_id, variant, tokens",
         [
             ("fr_fr_book", "1100", 0, [[], [], []]),
             (
@@ -120,9 +119,9 @@ class TestBook:
             ("en_us_book", "1103", 1, [["automaton"], ["automaton"], ["automaton"]]),
         ],
     )
-    def test_book_variables(self, fixture_book, message_id, option, variables, request):
+    def test_book_tokens(self, fixture_book, message_id, variant, tokens, request):
         book = request.getfixturevalue(fixture_book)
-        assert book.messages[message_id].get_format_variables(option) == variables
+        assert book.messages[message_id].get_tokens(variant) == tokens
 
     def test_book_creation_domain_failed(self, fr_message):
         with pytest.raises(KeyError, match=re.escape("No domain specified")):
@@ -149,17 +148,14 @@ class TestBookGet:
             (
                 "fr_fr_book",
                 "1100",
-                [
-                    ("default", None, None, "Voici une fleur"),
-                    ("default_plurals", 1, None, "Voici des fleurs"),
-                ],
+                [(0, 0, "Voici une fleur"), (1, 0, "Voici des fleurs")],
             ),
             (
                 "fr_fr_book",
                 "1100",
                 [
-                    ("options", 2, None, "Voici une {flower} rare"),
-                    ("options_plurals", 2, 3, "Voici plusieurs {flower} rares"),
+                    (0, 2, "Voici une {flower} rare"),
+                    (3, 2, "Voici plusieurs {flower} rares"),
                 ],
             ),
             ("fr_fr_book", "1000", None),
@@ -170,13 +166,8 @@ class TestBookGet:
         if expected is None:
             assert book.get(id) == None
         else:
-            for attribute, opt, token, value in expected:
-                if opt is None:
-                    assert getattr(book.get(id), attribute) == value
-                elif token is None:
-                    assert getattr(book.get(id), attribute)[opt] == value
-                else:
-                    assert getattr(book.get(id), attribute)[[opt, token]] == value
+            for segment, variant, value in expected:
+                assert book.get(id).get_segment(segment, variant) == value
 
 
 class TestBookAdd:
@@ -188,74 +179,77 @@ class TestBookAdd:
                 [
                     Message(
                         id="1000",
-                        default="Voici un chiot",
-                        options={
-                            1: "Voici un joli {puppy}",
-                            2: "Voici un chiot {puppy} rare",
-                            3: "Voici un chiot {puppy} de la région {region}",
-                        },
-                        default_plurals={
-                            1: "Voici des chiots",
-                            2: "Voici deux chiots",
-                        },
-                        options_plurals={
-                            1: {
-                                1: "Voici de jolis chiots {puppy}",
-                                2: "Voici deux beaux chiots {puppy}",
-                            },
-                            2: {
-                                1: "Voici des chiots {puppy} rares",
-                                2: "Voici deux chiots {puppy} rares",
-                                3: "Voici plusieurs chiots {puppy} rares",
-                            },
-                            3: {
-                                1: "Voici des chiots {puppy} de la région {region}",
-                                2: "Voici deux chiots {puppy} de la région {region}",
-                            },
-                        },
+                        principal=Declension(
+                            "Voici un chiot", ("Voici des chiots", "Voici deux chiots")
+                        ),
+                        variants=[
+                            Declension(
+                                "Voici un joli {puppy}",
+                                (
+                                    "Voici de jolis chiots {puppy}",
+                                    "Voici deux beaux chiots {puppy}",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} rare",
+                                (
+                                    "Voici des chiots {puppy} rares",
+                                    "Voici deux chiots {puppy} rares",
+                                    "Voici plusieurs chiots {puppy} rares",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} de la région {region}",
+                                (
+                                    "Voici des chiots {puppy} de la région {region}",
+                                    "Voici deux chiots {puppy} de la région {region}",
+                                ),
+                            ),
+                        ],
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
-                            "count": {"singular": 3, "plurals": [2, 3, 2]},
                         },
                     ),
                     Message(
                         id="1001",
-                        default="Voici un chatton",
-                        options={
-                            1: "Voici un joli {kitten}",
-                            2: "Voici un chatton {kitten} rare",
-                            3: "Voici un chatton {kitten} de la région {region}",
-                        },
-                        default_plurals={
-                            1: "Voici des chattons",
-                            2: "Voici deux chattons",
-                        },
-                        options_plurals={
-                            1: {
-                                1: "Voici de jolis chattons {kitten}",
-                                2: "Voici deux beaux chattons {kitten}",
-                            },
-                            2: {
-                                1: "Voici des chattons {kitten} rares",
-                                2: "Voici deux chattons {kitten} rares",
-                                3: "Voici plusieurs chattons {kitten} rares",
-                            },
-                            3: {
-                                1: "Voici des chattons {kitten} de la région {region}",
-                                2: "Voici deux chattons {kitten} de la région {region}",
-                            },
-                        },
+                        principal=Declension(
+                            "Voici un chatton",
+                            ("Voici des chattons", "Voici deux chattons"),
+                        ),
+                        variants=[
+                            Declension(
+                                "Voici un joli {kitten}",
+                                (
+                                    "Voici de jolis chattons {kitten}",
+                                    "Voici deux beaux chattons {kitten}",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chatton {kitten} rare",
+                                (
+                                    "Voici des chattons {kitten} rares",
+                                    "Voici deux chattons {kitten} rares",
+                                    "Voici plusieurs chattons {kitten} rares",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chatton {kitten} de la région {region}",
+                                (
+                                    "Voici des chattons {kitten} de la région {region}",
+                                    "Voici deux chattons {kitten} de la région {region}",
+                                ),
+                            ),
+                        ],
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chattons"],
-                            "count": {"singular": 3, "plurals": [2, 3, 2]},
                         },
                     ),
                 ],
@@ -311,9 +305,11 @@ class TestBookAdd:
         book = request.getfixturevalue(fixture_book)
         book.add("test", messages)
         for msg_id, msg_main, msg_variants in expected:
-            assert book.get(msg_id).get_principal() == msg_main
+            assert list(book.get(msg_id).principal.segments) == msg_main
             for index, msg_variant in enumerate(msg_variants):
-                assert book.get(msg_id).get_variant(index + 1) == msg_variant
+                assert list(book.get(msg_id).get_variant(index + 1).segments) == (
+                    msg_variant
+                )
 
     @pytest.mark.parametrize(
         "fixture_book, domain, messages, expected",
@@ -330,38 +326,39 @@ class TestBookAdd:
                 [
                     Message(
                         id="1000",
-                        default="Voici un chiot",
-                        options={
-                            1: "Voici un joli {puppy}",
-                            2: "Voici un chiot {puppy} rare",
-                            3: "Voici un chiot {puppy} de la région {region}",
-                        },
-                        default_plurals={
-                            1: "Voici des chiots",
-                            2: "Voici deux chiots",
-                        },
-                        options_plurals={
-                            1: {
-                                1: "Voici de jolis chiots {puppy}",
-                                2: "Voici deux beaux chiots {puppy}",
-                            },
-                            2: {
-                                1: "Voici des chiots {puppy} rares",
-                                2: "Voici deux chiots {puppy} rares",
-                                3: "Voici plusieurs chiots {puppy} rares",
-                            },
-                            3: {
-                                1: "Voici des chiots {puppy} de la région {region}",
-                                2: "Voici deux chiots {puppy} de la région {region}",
-                            },
-                        },
+                        principal=Declension(
+                            "Voici un chiot", ("Voici des chiots", "Voici deux chiots")
+                        ),
+                        variants=[
+                            Declension(
+                                "Voici un joli {puppy}",
+                                (
+                                    "Voici de jolis chiots {puppy}",
+                                    "Voici deux beaux chiots {puppy}",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} rare",
+                                (
+                                    "Voici des chiots {puppy} rares",
+                                    "Voici deux chiots {puppy} rares",
+                                    "Voici plusieurs chiots {puppy} rares",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} de la région {region}",
+                                (
+                                    "Voici des chiots {puppy} de la région {region}",
+                                    "Voici deux chiots {puppy} de la région {region}",
+                                ),
+                            ),
+                        ],
                         metadata={
                             "version": __version__,
                             "language": "fr-BE",
                             "location": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
-                            "count": {"singular": 3, "plurals": [2, 3, 2]},
                         },
                     )
                 ],
@@ -373,38 +370,39 @@ class TestBookAdd:
                 [
                     Message(
                         id="1100",
-                        default="Voici un chiot",
-                        options={
-                            1: "Voici un joli {puppy}",
-                            2: "Voici un chiot {puppy} rare",
-                            3: "Voici un chiot {puppy} de la région {region}",
-                        },
-                        default_plurals={
-                            1: "Voici des chiots",
-                            2: "Voici deux chiots",
-                        },
-                        options_plurals={
-                            1: {
-                                1: "Voici de jolis chiots {puppy}",
-                                2: "Voici deux beaux chiots {puppy}",
-                            },
-                            2: {
-                                1: "Voici des chiots {puppy} rares",
-                                2: "Voici deux chiots {puppy} rares",
-                                3: "Voici plusieurs chiots {puppy} rares",
-                            },
-                            3: {
-                                1: "Voici des chiots {puppy} de la région {region}",
-                                2: "Voici deux chiots {puppy} de la région {region}",
-                            },
-                        },
+                        principal=Declension(
+                            "Voici un chiot", ("Voici des chiots", "Voici deux chiots")
+                        ),
+                        variants=[
+                            Declension(
+                                "Voici un joli {puppy}",
+                                (
+                                    "Voici de jolis chiots {puppy}",
+                                    "Voici deux beaux chiots {puppy}",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} rare",
+                                (
+                                    "Voici des chiots {puppy} rares",
+                                    "Voici deux chiots {puppy} rares",
+                                    "Voici plusieurs chiots {puppy} rares",
+                                ),
+                            ),
+                            Declension(
+                                "Voici un chiot {puppy} de la région {region}",
+                                (
+                                    "Voici des chiots {puppy} de la région {region}",
+                                    "Voici deux chiots {puppy} de la région {region}",
+                                ),
+                            ),
+                        ],
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
                             "location": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
-                            "count": {"singular": 3, "plurals": [2, 3, 2]},
                         },
                     )
                 ],
@@ -740,10 +738,9 @@ class TestBookSave:
     def test_save_round_trip_keeps_message_metadata(self, tmp_path):
         """Locations, flags and comments survive a save/load round trip."""
         message = Message(
-            "10001",
-            "Un message",
-            options={1: "Une variante"},
-            default_plurals={1: "Des messages"},
+            id="10001",
+            principal=Declension("Un message", ("Des messages",)),
+            variants=[Declension("Une variante")],
             metadata={"language": "fr-FR"},
         )
         message.add_location(12, "app.py")
@@ -865,7 +862,10 @@ class TestBookSave:
     def test_save_round_trip_keeps_message_context(self, tmp_path):
         """The context of a message survives a save/load round trip."""
         message = Message(
-            "10001", "Enregistrer", context="toolbar", metadata={"language": "fr-FR"}
+            id="10001",
+            principal=Declension("Enregistrer"),
+            context="toolbar",
+            metadata={"language": "fr-FR"},
         )
         book = Book([message], domain="test", language="fr-FR")
         book.save(str(tmp_path))
@@ -882,11 +882,13 @@ class TestBookSave:
     def test_save_round_trip_keeps_variant_plurals_beyond_principal(self, tmp_path):
         """A variant with more plurals than the principal loses none on save."""
         message = Message(
-            "10001",
-            "Une fleur",
-            options={1: "Une fleur rare"},
-            default_plurals={1: "Des fleurs"},
-            options_plurals={1: {1: "Des fleurs rares", 2: "Plusieurs fleurs rares"}},
+            id="10001",
+            principal=Declension("Une fleur", ("Des fleurs",)),
+            variants=[
+                Declension(
+                    "Une fleur rare", ("Des fleurs rares", "Plusieurs fleurs rares")
+                )
+            ],
             metadata={"language": "fr-FR"},
         )
         book = Book([message], domain="test", language="fr-FR")
@@ -903,10 +905,10 @@ class TestBookSave:
         loaded = reloaded.get("10001")
 
         assert loaded is not None
-        assert loaded.get_variant_plurals(1) == [
+        assert loaded.get_variant(1).plurals == (
             "Des fleurs rares",
             "Plusieurs fleurs rares",
-        ]
+        )
 
 
 class TestBookLoadIntegrity:

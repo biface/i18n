@@ -1,6 +1,7 @@
 import pytest
 
 from i18n_tools import __version__
+from i18n_tools.models import Declension
 from i18n_tools.models import Message as MessageModel
 
 
@@ -12,7 +13,6 @@ def _metadata(language: str = "en") -> dict:
         "flags": ["python-format"],
         "user_comments": [],
         "auto_comments": [],
-        "count": {"singular": 0, "plurals": []},
     }
 
 
@@ -20,9 +20,7 @@ def _metadata(language: str = "en") -> dict:
 def simple_message() -> MessageModel:
     """No alternatives, no plurals: exercises the plain path (row0/col0)."""
     return MessageModel(
-        id="greet",
-        default="Hello {name}",
-        metadata=_metadata(),
+        id="greet", principal=Declension("Hello {name}"), metadata=_metadata()
     )
 
 
@@ -31,10 +29,8 @@ def step1_message() -> MessageModel:
     """Every cell requested is directly present — no fallback needed."""
     return MessageModel(
         id="cart",
-        default="{count} item",
-        options={1: "{count} item (formal)"},
-        default_plurals={1: "{count} items"},
-        options_plurals={1: {1: "{count} items (formal)"}},
+        principal=Declension("{count} item", ("{count} items",)),
+        variants=[Declension("{count} item (formal)", ("{count} items (formal)",))],
         metadata=_metadata(),
     )
 
@@ -42,15 +38,13 @@ def step1_message() -> MessageModel:
 @pytest.fixture
 def step2_message() -> MessageModel:
     """
-    Row 1 exists, but options_plurals[1][1] is absent: falls back to
-    messages[1][0] (default_plurals[1]).
+    Row 1 exists, but variant 1 has no plural: falls back to
+    messages[1][0] (the principal plural).
     """
     return MessageModel(
         id="cart",
-        default="{count} item",
-        options={1: "{count} item (formal)"},
-        default_plurals={1: "{count} items"},
-        options_plurals={1: {}},
+        principal=Declension("{count} item", ("{count} items",)),
+        variants=[Declension("{count} item (formal)")],
         metadata=_metadata(),
     )
 
@@ -63,10 +57,8 @@ def step3_message() -> MessageModel:
     """
     return MessageModel(
         id="cart",
-        default="{count} item",
-        options={1: "{count} item (formal)"},
-        default_plurals={1: ""},
-        options_plurals={1: {}},
+        principal=Declension("{count} item", ("",)),
+        variants=[Declension("{count} item (formal)")],
         metadata=_metadata(),
     )
 
@@ -79,9 +71,7 @@ def step4_message() -> MessageModel:
     """
     return MessageModel(
         id="cart",
-        default="{count} item (singular main)",
-        options={1: ""},
-        default_plurals={1: ""},
-        options_plurals={1: {}},
+        principal=Declension("{count} item (singular main)", ("",)),
+        variants=[Declension("")],
         metadata=_metadata(),
     )

@@ -2,7 +2,7 @@ import pytest
 
 from i18n_tools.config import Config
 from i18n_tools.models.book import Book
-from i18n_tools.models.message import Message
+from i18n_tools.models.message import Declension, Message
 from i18n_tools.patterns import Singleton
 
 
@@ -36,7 +36,7 @@ def i18t_file(tmp_path):
     book = Book(language="fr-FR", domain="messages")
     message = Message(
         id="greet",
-        default="Bonjour",
+        principal=Declension("Bonjour"),
         metadata={
             "version": "0.9.0",
             "language": "fr-FR",
@@ -44,7 +44,6 @@ def i18t_file(tmp_path):
             "flags": [],
             "user_comments": [],
             "auto_comments": [],
-            "count": {"singular": 0, "plurals": []},
         },
     )
     book.add("messages", [message])

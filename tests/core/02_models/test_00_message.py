@@ -1,362 +1,638 @@
 """
-Test module for the Message class in the models module.
+Tests for the Message class of models.message, grouped by contract:
+construction, reading, principal, variants, segments, reordering, tokens,
+comparisons and metadata.
+
+Fixtures (local conftest.py): ``fr_message`` (3 declensions x 3 segments),
+``en_message``, ``draft_message`` (declensions of 3, 1 and 4 segments),
+``single_message`` (principal singular only), ``empty_message`` and the
+module-scoped ``empty_module_message``.
 """
 
+import copy
 import re
 
 import pytest
-from helpers import as_plain
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
-from i18n_tools.models import Message
+from i18n_tools.models import Declension, Message
+from i18n_tools.models.message import extract_tokens
+
+EMPTY_METADATA = {
+    "version": __version__,
+    "language": "",
+    "location": [],
+    "flags": ["python-format"],
+    "user_comments": [],
+    "auto_comments": [],
+}
+
+DRAFT_MATRIX = [
+    ["Une fleur", "Une {flower}", "Une {flower} rare"],
+    ["Des fleurs", "", "Des {flower} rares"],
+    ["Deux fleurs", "", "Deux {flower} rares"],
+    ["", "", "Plusieurs {flower} rares"],
+]
 
 
-class TestMessageGet:
-    @pytest.mark.parametrize(
-        "fixture_name, expected_language",
-        [("fr_message", "fr-FR"), ("en_message", "en"), ("empty_message", "")],
+def _copy(message: Message) -> Message:
+    """An equal message sharing no mutable metadata value with ``message``."""
+    return Message(
+        message.id,
+        message.principal,
+        message.variants,
+        message.context,
+        copy.deepcopy(message.metadata.to_dict()),
     )
-    def test_message_get_id(self, fixture_name, expected_language, request) -> None:
-        # Get the fixture dynamically using the request object
-        message = request.getfixturevalue(fixture_name)
 
-        # Test both the ID and language in a more direct way
-        assert message.get_id() == "1000"
-        assert message.metadata["language"] == expected_language
+
+class TestConstruction:
+    def test_defaults(self):
+        message = Message("3000")
+        assert message.id == "3000"
+        assert message.get_id() == "3000"
+        assert message.principal == Declension()
+        assert message.variants == ()
+        assert message.context == ""
+        assert message.plural_rule is None
+        assert message.metadata.to_dict() == EMPTY_METADATA
 
     @pytest.mark.parametrize(
-        "fixture_name, expect",
+        "variants",
         [
-            ("fr_message", ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"]),
-            ("en_message", ["Hello", "Hi everybody", "Hi everyone"]),
-            ("empty_message", [""]),
+            [Declension("a"), Declension("b", ("bs",))],
+            (Declension("a"), Declension("b", ("bs",))),
         ],
     )
-    def test_message_get_main(self, fixture_name, expect, request) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_principal() == expect
-        assert message.default == expect[0]
-        assert message.get_principal()[0] == expect[0]
+    def test_principal_and_variants(self, variants):
+        message = Message("3000", Declension("p", ("ps",)), variants, context="menu")
+        assert message.principal == Declension("p", ("ps",))
+        assert message.variants == (Declension("a"), Declension("b", ("bs",)))
+        assert message.context == "menu"
+
+    def test_variants_are_copied(self):
+        variants = [Declension("a")]
+        message = Message("3000", Declension("p"), variants)
+        variants.append(Declension("b"))
+        assert message.variants == (Declension("a"),)
+
+    def test_metadata(self):
+        message = Message("3000", metadata={"language": "fr-FR", "flags": []})
+        assert message.metadata["language"] == "fr-FR"
+        assert message.metadata["flags"] == []
+
+    def test_metadata_count_is_unknown(self):
+        """count is no longer a key of Message.metadata."""
+        with pytest.raises(KeyError, match="count"):
+            _ = Message("3000", metadata={"count": {"singular": 1, "plurals": []}})
 
     @pytest.mark.parametrize(
-        "fixture_name, expect",
+        "kwargs, expected",
         [
-            ("fr_message", ["Bonjour à tous", "Bonjour tout le monde"]),
-            ("en_message", ["Hi everybody", "Hi everyone"]),
-            ("empty_message", []),
+            ({"id": 3000}, "Message id must be a string"),
+            (
+                {"id": "3000", "principal": "p"},
+                "Message principal must be a Declension",
+            ),
+            ({"id": "3000", "variants": Declension("a")}, "Message variants must be"),
+            ({"id": "3000", "variants": ["a"]}, "Message variant must be a Declension"),
+            ({"id": "3000", "context": None}, "Message context must be a string"),
+            ({"id": "3000", "metadata": []}, "Message metadata must be a dict"),
         ],
     )
-    def test_message_get_main_plurals(self, fixture_name, expect, request) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_principal_plurals() == expect
+    def test_wrong_types(self, kwargs, expected):
+        with pytest.raises(TypeError, match=expected):
+            _ = Message(**kwargs)
+
+
+class TestFromMatrix:
+    def test_columns_become_declensions(self):
+        message = Message.from_matrix("2000", DRAFT_MATRIX)
+        assert message.principal == Declension(
+            "Une fleur", ("Des fleurs", "Deux fleurs", "")
+        )
+        assert message.variants == (
+            Declension("Une {flower}", ("", "", "")),
+            Declension(
+                "Une {flower} rare",
+                (
+                    "Des {flower} rares",
+                    "Deux {flower} rares",
+                    "Plusieurs {flower} rares",
+                ),
+            ),
+        )
+
+    def test_round_trip_keeps_empty_cells(self):
+        matrix = [["", "Doc"], ["Files", ""]]
+        assert Message.from_matrix("2000", matrix).matrix == matrix
+
+    def test_context_and_metadata(self):
+        message = Message.from_matrix(
+            "2000", [["Save"]], context="toolbar", metadata={"language": "en"}
+        )
+        assert message.context == "toolbar"
+        assert message.metadata["language"] == "en"
 
     @pytest.mark.parametrize(
-        "fixture_name, location, expect",
+        "matrix",
+        [[], [[]], [["a", "b"], ["c"]]],
+        ids=["no-row", "empty-row", "not-rectangular"],
+    )
+    def test_malformed_matrix(self, matrix):
+        with pytest.raises(ValueError):
+            _ = Message.from_matrix("2000", matrix)
+
+    @pytest.mark.parametrize(
+        "identifier, matrix",
         [
-            ("fr_message", 1, ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"]),
-            ("fr_message", 2, ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"]),
-            ("en_message", 1, ["Hello {name}", "Hi everybody", "Ladies"]),
-            ("en_message", 2, ["Hello {name}", "Hi everyone", "Gentlemen"]),
+            (2000, [["a"]]),
+            ("2000", "a"),
+            ("2000", [("a",)]),
+            ("2000", [["a", 1]]),
+        ],
+        ids=["id", "matrix", "row", "cell"],
+    )
+    def test_wrong_types(self, identifier, matrix):
+        with pytest.raises(TypeError):
+            _ = Message.from_matrix(identifier, matrix)
+
+
+class TestReading:
+    def test_principal_and_variants_are_read_only(self, fr_message):
+        with pytest.raises(AttributeError):
+            fr_message.principal = Declension(
+                "x"
+            )  # pyright: ignore[reportAttributeAccessIssue]
+        with pytest.raises(AttributeError):
+            fr_message.variants = ()  # pyright: ignore[reportAttributeAccessIssue]
+
+    def test_variants_is_a_tuple(self, fr_message):
+        assert isinstance(fr_message.variants, tuple)
+        assert len(fr_message.variants) == 2
+
+    def test_get_variant(self, fr_message):
+        assert fr_message.get_variant(2) == Declension(
+            "Bonjour M. {name}", ("Bonjour Messieurs", "Messieurs")
+        )
+
+    @pytest.mark.parametrize("variant", [0, 3, -1])
+    def test_get_variant_out_of_range(self, fr_message, variant):
+        with pytest.raises(IndexError):
+            _ = fr_message.get_variant(variant)
+
+    @pytest.mark.parametrize("variant", ["1", True, 1.0])
+    def test_get_variant_wrong_type(self, fr_message, variant):
+        with pytest.raises(TypeError, match="variant must be an int"):
+            _ = fr_message.get_variant(variant)
+
+    @pytest.mark.parametrize(
+        "segment, variant, expected",
+        [
+            (0, 0, "Une fleur"),
+            (2, 0, "Deux fleurs"),
+            (3, 0, ""),
+            (0, 1, "Une {flower}"),
+            (1, 1, ""),
+            (3, 2, "Plusieurs {flower} rares"),
         ],
     )
-    def test_message_get_variant(self, fixture_name, location, expect, request) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_variant(location) == expect
+    def test_get_segment(self, draft_message, segment, variant, expected):
+        assert draft_message.get_segment(segment, variant) == expected
+
+    @pytest.mark.parametrize("segment, variant", [(4, 0), (-1, 0), (0, 3), (0, -1)])
+    def test_get_segment_out_of_range(self, draft_message, segment, variant):
+        with pytest.raises(IndexError):
+            _ = draft_message.get_segment(segment, variant)
+
+    @pytest.mark.parametrize("segment, variant", [("0", 0), (0, None), (False, 0)])
+    def test_get_segment_wrong_type(self, draft_message, segment, variant):
+        with pytest.raises(TypeError):
+            _ = draft_message.get_segment(segment, variant)
+
+    def test_matrix_is_a_padded_rectangle(self, draft_message):
+        assert draft_message.matrix == DRAFT_MATRIX
+
+    def test_matrix_is_new_on_each_access(self, fr_message):
+        matrix = fr_message.matrix
+        matrix[0][0] = "changed"
+        assert fr_message.matrix[0][0] == "Bonjour"
 
     @pytest.mark.parametrize(
-        "fixture_name, location, expect",
+        "fixture_name, has_variants, has_plurals",
         [
-            ("fr_message", 5, "Alternative translation at index 5 not found"),
-            ("en_message", 6, "Alternative translation at index 6 not found"),
-            ("en_message", 3, "Alternative translation at index 3 not found"),
-            ("fr_message", 4, "Alternative translation at index 4 not found"),
+            ("fr_message", True, True),
+            ("draft_message", True, True),
+            ("single_message", False, False),
+            ("empty_message", False, False),
         ],
     )
-    def test_message_get_variant_failed(
-        self, fixture_name, location, expect, request
-    ) -> None:
+    def test_has_variants_has_plurals(
+        self, fixture_name, has_variants, has_plurals, request
+    ):
         message = request.getfixturevalue(fixture_name)
-        with pytest.raises(IndexError, match=re.escape(expect)):
-            assert message.get_variant(location) == ""
+        assert message.has_variants is has_variants
+        assert message.has_plurals is has_plurals
+
+    def test_structure_counts_even_when_empty(self):
+        message = Message("3000", Declension("", ("",)), [Declension("")])
+        assert message.has_variants
+        assert message.has_plurals
+
+
+class TestPrincipal:
+    def test_add_principal_when_absent(self, empty_message):
+        empty_message.add_principal(singular="Hello", plurals=["Hellos"])
+        assert empty_message.principal == Declension("Hello", ("Hellos",))
+
+    def test_add_principal_keeps_existing_segments(self, fr_message):
+        fr_message.remove_principal()
+        fr_message.add_principal(singular="Salut")
+        assert fr_message.principal == Declension("Salut", ("", ""))
+
+    def test_add_principal_when_present(self, fr_message):
+        with pytest.raises(ValueError, match="already has a principal"):
+            fr_message.add_principal(singular="Salut")
+
+    @pytest.mark.parametrize("fields", [{}, {"singular": ""}, {"plurals": ["a"]}])
+    def test_add_principal_needs_a_singular(self, empty_message, fields):
+        with pytest.raises(ValueError, match="non-empty singular"):
+            empty_message.add_principal(**fields)
+        assert empty_message.principal == Declension()
 
     @pytest.mark.parametrize(
-        "fixture_name, option, expected",
+        "fields",
         [
-            ("fr_message", 1, ["Bonjour Mesdames", "Mesdames"]),
-            ("en_message", 2, ["Hi everyone", "Gentlemen"]),
-            ("en_message", 1, ["Hi everybody", "Ladies"]),
-            ("fr_message", 2, ["Bonjour Messieurs", "Messieurs"]),
+            {"singular": "a", "plural": ["b"]},
+            {"singular": 1},
+            {"singular": "a", "plurals": "b"},
+            {"singular": "a", "plurals": [1]},
+        ],
+        ids=["unknown-key", "singular-type", "plurals-type", "plural-type"],
+    )
+    def test_add_principal_wrong_fields(self, empty_message, fields):
+        with pytest.raises(TypeError):
+            empty_message.add_principal(**fields)
+
+    @pytest.mark.parametrize(
+        "fields, expected",
+        [
+            (
+                {"singular": "Salut"},
+                Declension("Salut", ("Bonjour à tous", "Bonjour tout le monde")),
+            ),
+            ({"plurals": ("Salut à tous",)}, Declension("Bonjour", ("Salut à tous",))),
+            ({"singular": "Salut", "plurals": []}, Declension("Salut")),
         ],
     )
-    def test_message_get_variant_plurals(
-        self, fixture_name, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_variant_plurals(option) == expected
+    def test_update_principal(self, fr_message, fields, expected):
+        fr_message.update_principal(**fields)
+        assert fr_message.principal == expected
+
+    def test_update_principal_empty_singular(self, fr_message):
+        with pytest.raises(ValueError, match="cannot be empty"):
+            fr_message.update_principal(singular="")
+
+    def test_update_principal_without_fields(self, fr_message):
+        with pytest.raises(ValueError, match="No field given"):
+            fr_message.update_principal()
+
+    def test_update_absent_principal_plurals(self, empty_message):
+        empty_message.update_principal(plurals=["Files"])
+        assert empty_message.principal == Declension("", ("Files",))
+
+    def test_remove_principal_keeps_segment_count(self, fr_message):
+        fr_message.remove_principal()
+        assert fr_message.principal == Declension("", ("", ""))
+        assert len(fr_message.variants) == 2
+
+
+class TestVariants:
+    def test_add_variant_appends_and_returns_index(self, fr_message):
+        index = fr_message.add_variant(singular="Salut {name}", plurals=["Salut"])
+        assert index == 3
+        assert fr_message.get_variant(3) == Declension("Salut {name}", ("Salut",))
+
+    def test_add_variant_never_overwrites(self):
+        """Regression: add_variant() replaced variant 1 when the singular was empty."""
+        message = Message("y", variants=[Declension("Doc")])
+        assert message.add_variant(singular="Pièce") == 2
+        assert message.variants == (Declension("Doc"), Declension("Pièce"))
+
+    def test_add_variant_is_not_padded(self, fr_message):
+        _ = fr_message.add_variant(singular="Salut")
+        assert fr_message.get_variant(3) == Declension("Salut")
+        assert fr_message.matrix[1][3] == ""
+
+    @pytest.mark.parametrize("fields", [{}, {"singular": ""}])
+    def test_add_variant_needs_a_singular(self, fr_message, fields):
+        with pytest.raises(ValueError, match="non-empty singular"):
+            _ = fr_message.add_variant(**fields)
+        assert len(fr_message.variants) == 2
+
+    def test_update_variant(self, fr_message):
+        fr_message.update_variant(1, singular="Bonjour Madame {name}")
+        assert fr_message.get_variant(1) == Declension(
+            "Bonjour Madame {name}", ("Bonjour Mesdames", "Mesdames")
+        )
+
+    def test_update_variant_zero(self, fr_message):
+        """Regression: update_variant(0, ...) was a silent no-op."""
+        with pytest.raises(IndexError, match="Variant 0 is the principal"):
+            fr_message.update_variant(0, singular="Salut")
+        assert fr_message.principal.singular == "Bonjour"
+
+    @pytest.mark.parametrize("variant", [3, -1])
+    def test_update_variant_out_of_range(self, fr_message, variant):
+        with pytest.raises(IndexError):
+            fr_message.update_variant(variant, singular="Salut")
+
+    def test_update_variant_empty_singular(self, fr_message):
+        with pytest.raises(ValueError, match="cannot be empty"):
+            fr_message.update_variant(1, singular="")
+
+    def test_remove_variant_shifts_the_next_ones(self, fr_message):
+        second = fr_message.get_variant(2)
+        fr_message.remove_variant(1)
+        assert fr_message.variants == (second,)
+
+    @pytest.mark.parametrize("variant", [0, 3])
+    def test_remove_variant_out_of_range(self, fr_message, variant):
+        with pytest.raises(IndexError):
+            fr_message.remove_variant(variant)
+
+
+class TestSegments:
+    def test_add_segment_inserts_a_row(self, draft_message):
+        draft_message.add_segment("Trois {flower} rares", 3, 2)
+        assert draft_message.matrix == [
+            ["Une fleur", "Une {flower}", "Une {flower} rare"],
+            ["Des fleurs", "", "Des {flower} rares"],
+            ["Deux fleurs", "", "Deux {flower} rares"],
+            ["", "", "Trois {flower} rares"],
+            ["", "", "Plusieurs {flower} rares"],
+        ]
+        assert draft_message.principal == Declension(
+            "Une fleur", ("Des fleurs", "Deux fleurs", "")
+        )
+        assert draft_message.get_variant(1) == Declension("Une {flower}")
+
+    def test_add_segment_pads_a_short_target(self, draft_message):
+        draft_message.add_segment("Deux {flower}", 2, 1)
+        assert draft_message.get_variant(1) == Declension(
+            "Une {flower}", ("", "Deux {flower}")
+        )
+        assert [row[1] for row in draft_message.matrix] == [
+            "Une {flower}",
+            "",
+            "Deux {flower}",
+            "",
+            "",
+        ]
+
+    def test_add_segment_after_the_last_row(self, single_message):
+        single_message.add_segment("Bonjour à tous", 1)
+        assert single_message.principal == Declension(
+            "Bonjour {name}", ("Bonjour à tous",)
+        )
+
+    def test_add_segment_zero(self, draft_message):
+        with pytest.raises(ValueError, match="Segment 0 is the singular"):
+            draft_message.add_segment("x", 0)
+
+    @pytest.mark.parametrize("segment, variant", [(5, 0), (-1, 0), (1, 3)])
+    def test_add_segment_out_of_range(self, draft_message, segment, variant):
+        with pytest.raises(IndexError):
+            draft_message.add_segment("x", segment, variant)
+
+    def test_add_segment_wrong_text(self, draft_message):
+        with pytest.raises(TypeError, match="Segment text must be a string"):
+            draft_message.add_segment(None, 1)  # pyright: ignore[reportArgumentType]
 
     @pytest.mark.parametrize(
-        "fixture_name, option, expected",
+        "text, segment, variant",
         [
-            ("fr_message", 0, "Alternative translation at index 0 is out of range"),
-            ("en_message", -1, "Alternative translation at index -1 is out of range"),
-            ("en_message", 3, "Alternative translation at index 3 is out of range"),
-            ("fr_message", 4, "Alternative translation at index 4 is out of range"),
+            ("Trois fleurs", 3, 0),
+            ("Des {flower}", 1, 1),
+            ("", 0, 1),
+            ("", 2, 0),
         ],
     )
-    def test_message_get_variant_plurals_failed(
-        self, fixture_name, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            assert message.get_variant_plurals(option) == expected
+    def test_update_segment(self, draft_message, text, segment, variant):
+        rows = len(draft_message.matrix)
+        draft_message.update_segment(text, segment, variant)
+        assert draft_message.get_segment(segment, variant) == text
+        assert len(draft_message.matrix) == rows
+
+    def test_update_segment_extends_a_short_declension(self, draft_message):
+        draft_message.update_segment("Deux {flower}", 2, 1)
+        assert draft_message.get_variant(1) == Declension(
+            "Une {flower}", ("", "Deux {flower}")
+        )
+
+    def test_update_segment_principal_singular_empty(self, draft_message):
+        with pytest.raises(ValueError, match="cannot be emptied"):
+            draft_message.update_segment("", 0, 0)
+
+    @pytest.mark.parametrize("segment, variant", [(4, 0), (0, 3)])
+    def test_update_segment_out_of_range(self, draft_message, segment, variant):
+        with pytest.raises(IndexError):
+            draft_message.update_segment("x", segment, variant)
+
+    def test_remove_segment(self, draft_message):
+        draft_message.remove_segment(1)
+        assert draft_message.matrix == [
+            ["Une fleur", "Une {flower}", "Une {flower} rare"],
+            ["Deux fleurs", "", "Deux {flower} rares"],
+            ["", "", "Plusieurs {flower} rares"],
+        ]
+        assert draft_message.get_variant(1) == Declension("Une {flower}")
+
+    def test_remove_segment_zero(self, draft_message):
+        with pytest.raises(ValueError, match="cannot be removed"):
+            draft_message.remove_segment(0)
+
+    @pytest.mark.parametrize("segment", [4, -1])
+    def test_remove_segment_out_of_range(self, draft_message, segment):
+        with pytest.raises(IndexError):
+            draft_message.remove_segment(segment)
 
 
-class TestMessageGetSegment:
+class TestReordering:
+    def test_switch_principal_and_variant(self, fr_message):
+        principal, first, second = fr_message.principal, *fr_message.variants
+        fr_message.switch(0, 2)
+        assert fr_message.principal == second
+        assert fr_message.variants == (first, principal)
+
+    def test_switch_variants(self, fr_message):
+        principal, first, second = fr_message.principal, *fr_message.variants
+        fr_message.switch(2, 1)
+        assert fr_message.principal == principal
+        assert fr_message.variants == (second, first)
+
+    @pytest.mark.parametrize("source, destination", [(1, 1), (0, 3), (-1, 0)])
+    def test_switch_wrong_indices(self, fr_message, source, destination):
+        with pytest.raises(IndexError):
+            fr_message.switch(source, destination)
+
+    @pytest.mark.parametrize("direction", ["natural", "reverse"])
+    def test_toggle(self, fr_message, direction):
+        principal, first, second = fr_message.principal, *fr_message.variants
+        fr_message.toggle(direction)
+        if direction == "natural":
+            assert fr_message.principal == second
+            assert fr_message.variants == (principal, first)
+        else:
+            assert fr_message.principal == first
+            assert fr_message.variants == (second, principal)
+
+    def test_toggle_default_is_natural(self, fr_message):
+        second = fr_message.get_variant(2)
+        fr_message.toggle()
+        assert fr_message.principal == second
+
+    def test_toggle_without_variants(self, single_message):
+        single_message.toggle()
+        assert single_message.principal == Declension("Bonjour {name}")
+
+    def test_toggle_wrong_direction(self, fr_message):
+        with pytest.raises(ValueError, match="direction must be"):
+            fr_message.toggle("forward")  # pyright: ignore[reportArgumentType]
+
+
+class TestTokens:
     @pytest.mark.parametrize(
-        "fixture_name, expect",
-        [("fr_message", "Bonjour"), ("en_message", "Hello"), ("empty_message", "")],
-    )
-    def test_message_get_main_segment(self, fixture_name, expect, request) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_main_segment() == expect
-
-    @pytest.mark.parametrize(
-        "fixture_name, token, expect",
+        "variant, segment, tokens, expected",
         [
-            ("fr_message", 0, "Bonjour"),
-            ("en_message", 0, "Hello"),
-            ("empty_message", 0, ""),
-            ("fr_message", 1, "Bonjour à tous"),
-            ("en_message", 1, "Hi everybody"),
-            ("fr_message", 2, "Bonjour tout le monde"),
-            ("en_message", 2, "Hi everyone"),
+            (0, 0, {}, "Bonjour"),
+            (1, 0, {"name": "Curie"}, "Bonjour Mme Curie"),
+            (2, 1, {"name": "unused"}, "Bonjour Messieurs"),
         ],
     )
-    def test_message_get_main_segment_token(
-        self, fixture_name, token, expect, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_main_segment(token) == expect
+    def test_format(self, fr_message, variant, segment, tokens, expected):
+        assert fr_message.format(variant, segment, **tokens) == expected
+
+    def test_format_reads_the_exact_cell(self, draft_message):
+        """No fallback: an absent text formats to an empty string."""
+        assert draft_message.format(1, 1) == ""
+        assert draft_message.format(0, 3) == ""
+
+    def test_format_missing_token(self, single_message):
+        with pytest.raises(
+            KeyError, match=re.escape("Missing token 'name' for message '2001'")
+        ):
+            _ = single_message.format()
+
+    def test_format_malformed_text(self):
+        message = Message("3000", Declension("Hello {name"))
+        with pytest.raises(ValueError, match="Error formatting message '3000'"):
+            _ = message.format(name="Ana")
+
+    def test_format_out_of_range(self, draft_message):
+        with pytest.raises(IndexError):
+            _ = draft_message.format(3, 0)
 
     @pytest.mark.parametrize(
-        "fixture_name, token, expect",
+        "variant, expected",
         [
-            ("fr_message", 4, "Segment location '4' is out of range"),
-            ("en_message", -1, "Segment location '-1' is out of range"),
-            ("empty_message", 1, "Segment location '1' is out of range"),
+            (0, [[], [], []]),
+            (1, [["flower"]]),
+            (2, [["flower"], ["flower"], ["flower"], ["flower"]]),
         ],
     )
-    def test_message_get_main_segment_token_failed(
-        self, fixture_name, token, expect, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(IndexError, match=re.escape(expect)):
-            message.get_main_segment(token)
+    def test_get_tokens(self, draft_message, variant, expected):
+        assert draft_message.get_tokens(variant) == expected
 
+    def test_get_tokens_out_of_range(self, draft_message):
+        with pytest.raises(IndexError):
+            _ = draft_message.get_tokens(3)
+
+    @pytest.mark.parametrize(
+        "text, expected",
+        [
+            ("Hello", []),
+            ("Hello {name}", ["name"]),
+            ("{count} files in {folder}, {count}", ["count", "folder", "count"]),
+        ],
+    )
+    def test_extract_tokens(self, text, expected):
+        assert extract_tokens(text) == expected
+
+
+class TestComparisons:
+    def test_equal_same_content(self, fr_message):
+        other = _copy(fr_message)
+        assert other == fr_message
+        assert other.equal(fr_message)
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            lambda m: setattr(m, "id", "other"),
+            lambda m: setattr(m, "context", "other"),
+            lambda m: m.add_comment("user", "other"),
+            lambda m: m.update_principal(singular="other"),
+            lambda m: m.add_variant(singular="other"),
+        ],
+        ids=["id", "context", "metadata", "principal", "variants"],
+    )
+    def test_not_equal(self, fr_message, change):
+        other = _copy(fr_message)
+        change(other)
+        assert other != fr_message
+        assert not other.equal(fr_message)
+
+    def test_padding_is_not_strictly_equal(self, draft_message):
+        """A padded cell and a stored empty text give the same matrix only."""
+        reloaded = Message.from_matrix(
+            "2000", draft_message.matrix, "garden", {"language": "fr-FR"}
+        )
+        assert reloaded != draft_message
+        assert reloaded.isomorph(draft_message)
+
+    def test_not_a_message(self, fr_message):
+        assert fr_message != "1000"
+        assert not fr_message.equal("1000")
+        assert not fr_message.isomorph("1000")
+        assert not fr_message.similar("1000")
+
+    def test_isomorph_ignores_id_context_metadata(self, fr_message):
+        other = Message.from_matrix("other", fr_message.matrix, context="x")
+        assert other.isomorph(fr_message)
+        assert other != fr_message
+
+    def test_isomorph_compares_positions(self, fr_message):
+        other = Message.from_matrix(fr_message.id, fr_message.matrix)
+        other.switch(1, 2)
+        assert not other.isomorph(fr_message)
+        assert other.similar(fr_message)
+
+    def test_similar_compares_texts(self, fr_message, en_message):
+        assert not fr_message.similar(en_message)
+
+    def test_texts(self, draft_message):
+        assert draft_message.texts == frozenset(
+            text for row in DRAFT_MATRIX for text in row if text
+        )
+        assert Message("3000").texts == frozenset()
+
+    def test_unhashable(self, fr_message):
+        with pytest.raises(TypeError, match="unhashable"):
+            _ = hash(fr_message)
+
+    def test_str_and_repr(self, single_message):
+        assert str(single_message) == "Bonjour {name}"
+        assert repr(single_message) == (
+            "Message(id='2001', principal=Declension(singular='Bonjour {name}', "
+            + "plurals=()), variants=[])"
+        )
+
+
+class TestMetadata:
     @pytest.mark.parametrize(
         "fixture_name, expected",
-        [
-            ("fr_message", "Bonjour Mme {name}"),
-            ("en_message", "Hello {name}"),
-        ],
-    )
-    def test_message__get_variant_segment(
-        self, fixture_name, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_variant_segment() == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, option, token, expected",
-        [
-            ("fr_message", 1, 0, "Bonjour Mme {name}"),
-            ("fr_message", 2, 0, "Bonjour M. {name}"),
-            ("en_message", 1, 0, "Hello {name}"),
-            ("en_message", 2, 0, "Hello {name}"),
-            ("fr_message", 1, 1, "Bonjour Mesdames"),
-            ("fr_message", 2, 1, "Bonjour Messieurs"),
-            ("en_message", 1, 1, "Hi everybody"),
-            ("en_message", 2, 1, "Hi everyone"),
-            ("fr_message", 1, 2, "Mesdames"),
-            ("fr_message", 2, 2, "Messieurs"),
-            ("en_message", 1, 2, "Ladies"),
-            ("en_message", 2, 2, "Gentlemen"),
-        ],
-    )
-    def test_message_get_variant_segment_token(
-        self, fixture_name, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_variant_segment(option, token) == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, option, token, expected",
-        [
-            ("empty_message", 1, 0, "Alternative translation at index 1 not found"),
-            ("fr_message", 3, 0, "Alternative translation at index 3 not found"),
-            ("en_message", 0, 0, "Alternative translation at index 0 not found"),
-            (
-                "fr_message",
-                1,
-                -1,
-                "Segment location '-1' of variant option '1' is out of range",
-            ),
-            (
-                "en_message",
-                1,
-                4,
-                "Segment location '4' of variant option '1' is out of range",
-            ),
-        ],
-    )
-    def test_message_get_options_segment_failed(
-        self, fixture_name, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message.get_variant_segment(option, token)
-
-    @pytest.mark.parametrize(
-        "fixture_name, source, parameters, expected",
-        [
-            ("fr_message", "main", {}, "Bonjour"),
-            ("en_message", "main", {}, "Hello"),
-            ("empty_message", "main", {}, ""),
-            (
-                "fr_message",
-                "main",
-                {
-                    "token": 0,
-                },
-                "Bonjour",
-            ),
-            (
-                "en_message",
-                "main",
-                {
-                    "token": 0,
-                },
-                "Hello",
-            ),
-            (
-                "empty_message",
-                "main",
-                {
-                    "token": 0,
-                },
-                "",
-            ),
-            ("fr_message", "main", {"token": 1}, "Bonjour à tous"),
-            ("en_message", "main", {"token": 1}, "Hi everybody"),
-            ("fr_message", "main", {"token": 2}, "Bonjour tout le monde"),
-            ("en_message", "main", {"token": 2}, "Hi everyone"),
-            ("fr_message", "variant", {}, "Bonjour Mme {name}"),
-            ("en_message", "variant", {}, "Hello {name}"),
-            ("fr_message", "variant", {"option": 1, "token": 0}, "Bonjour Mme {name}"),
-            ("fr_message", "variant", {"option": 2, "token": 0}, "Bonjour M. {name}"),
-            ("en_message", "variant", {"option": 1, "token": 0}, "Hello {name}"),
-            ("en_message", "variant", {"option": 2, "token": 0}, "Hello {name}"),
-            ("fr_message", "variant", {"option": 1, "token": 1}, "Bonjour Mesdames"),
-            ("fr_message", "variant", {"option": 2, "token": 1}, "Bonjour Messieurs"),
-            ("en_message", "variant", {"option": 1, "token": 1}, "Hi everybody"),
-            ("en_message", "variant", {"option": 2, "token": 1}, "Hi everyone"),
-            ("fr_message", "variant", {"option": 1, "token": 2}, "Mesdames"),
-            ("fr_message", "variant", {"option": 2, "token": 2}, "Messieurs"),
-            ("en_message", "variant", {"option": 1, "token": 2}, "Ladies"),
-            ("en_message", "variant", {"option": 2, "token": 2}, "Gentlemen"),
-            # Default token = 0
-            ("fr_message", "variant", {"option": 1}, "Bonjour Mme {name}"),
-            ("fr_message", "variant", {"option": 2}, "Bonjour M. {name}"),
-            ("en_message", "variant", {"option": 1}, "Hello {name}"),
-            ("en_message", "variant", {"option": 2}, "Hello {name}"),
-            # Default option = 1
-            ("fr_message", "variant", {"token": 0}, "Bonjour Mme {name}"),
-            ("en_message", "variant", {"token": 0}, "Hello {name}"),
-            ("fr_message", "variant", {"token": 1}, "Bonjour Mesdames"),
-            ("en_message", "variant", {"token": 1}, "Hi everybody"),
-            ("fr_message", "variant", {"token": 2}, "Mesdames"),
-            ("en_message", "variant", {"token": 2}, "Ladies"),
-        ],
-    )
-    def test_message_get_segment(
-        self, fixture_name, source, parameters, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        parameters["source"] = source
-        assert message.get_segment(**parameters) == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, source, parameters, expected",
-        [
-            (
-                "empty_message",
-                "variant",
-                {"option": 1, "token": 0},
-                "Alternative translation at index 1 not found",
-            ),
-            (
-                "fr_message",
-                "variant",
-                {"option": 3, "token": 0},
-                "Alternative translation at index 3 not found",
-            ),
-            (
-                "en_message",
-                "variant",
-                {"option": 0, "token": 0},
-                "Alternative translation at index 0 not found",
-            ),
-            (
-                "fr_message",
-                "variant",
-                {"option": 1, "token": -1},
-                "Segment location '-1' of variant option '1' is out of range",
-            ),
-            (
-                "en_message",
-                "variant",
-                {"option": 1, "token": 4},
-                "Segment location '4' of variant option '1' is out of range",
-            ),
-            (
-                "fr_message",
-                "main",
-                {"token": 4},
-                "Segment location '4' is out of range",
-            ),
-            (
-                "en_message",
-                "main",
-                {"token": -1},
-                "Segment location '-1' is out of range",
-            ),
-            (
-                "empty_message",
-                "main",
-                {"token": 1},
-                "Segment location '1' is out of range",
-            ),
-            (
-                "empty_message",
-                "alternative",
-                {},
-                "The source 'alternative' is not defined : ['main', 'variant']",
-            ),
-        ],
-    )
-    def test_message_get_segment_failed(
-        self, fixture_name, source, parameters, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        parameters["source"] = source
-        with pytest.raises((KeyError, IndexError), match=re.escape(expected)):
-            message.get_segment(**parameters)
-
-
-class TestMessageGetMetadata:
-    @pytest.mark.parametrize(
-        "fixture_name, dict",
         [
             (
                 "fr_message",
@@ -367,3335 +643,205 @@ class TestMessageGetMetadata:
                     "flags": ["python-format"],
                     "user_comments": ["In French, Greeting message to one or more..."],
                     "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {"singular": 3, "plurals": [2, 2, 2]},
                 },
             ),
-            (
-                "empty_message",
-                {
-                    "version": __version__,
-                    "language": "",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": [],
-                    "auto_comments": [],
-                    "count": {"singular": 0, "plurals": [0]},
-                },
-            ),
-            (
-                "en_message",
-                {
-                    "version": __version__,
-                    "language": "en",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["Greeting message to one or more..."],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {"singular": 3, "plurals": [2, 2, 2]},
-                },
-            ),
+            ("empty_message", EMPTY_METADATA),
         ],
     )
-    def test_message_get_metadata_void(self, fixture_name, dict, request) -> None:
+    def test_get_metadata(self, fixture_name, expected, request):
         message = request.getfixturevalue(fixture_name)
-        mdict = message.get_metadata().to_dict()
-        assert mdict == dict
+        assert message.get_metadata().to_dict() == expected
 
     @pytest.mark.parametrize(
-        "fixture_name, path, expected",
+        "path, expected",
         [
-            ("fr_message", "version", __version__),
-            ("fr_message", "language", "fr-FR"),
-            ("fr_message", "flags", ["python-format"]),
-            ("fr_message", "count", {"singular": 3, "plurals": [2, 2, 2]}),
-            ("fr_message", ["count", "singular"], 3),
-            ("fr_message", ["count", "plurals"], [2, 2, 2]),
-            ("empty_message", "version", __version__),
-            ("empty_message", "language", ""),
-            ("empty_message", "flags", ["python-format"]),
-            ("empty_message", "count", {"singular": 0, "plurals": [0]}),
-            ("empty_message", ["count", "singular"], 0),
-            ("empty_message", ["count", "plurals"], [0]),
-            ("en_message", "version", __version__),
-            ("en_message", "language", "en"),
-            ("en_message", "flags", ["python-format"]),
-            ("en_message", "count", {"singular": 3, "plurals": [2, 2, 2]}),
-            ("en_message", ["count", "singular"], 3),
-            ("en_message", ["count", "plurals"], [2, 2, 2]),
+            ("version", __version__),
+            ("language", "fr-FR"),
+            (["flags"], ["python-format"]),
         ],
     )
-    def test_message_get_metadata(self, fixture_name, path, expected, request) -> None:
-        message = request.getfixturevalue(fixture_name)
-        assert as_plain(message.get_metadata(path)) == expected
+    def test_get_metadata_key(self, fr_message, path, expected):
+        assert fr_message.get_metadata(path) == expected
 
-    def test_message_get_metadata_failed(self, fr_message):
-        with pytest.raises(
-            KeyError,
-            match=re.escape("Metadata '['counts', 'singular']' is not a key or path"),
-        ):
-            fr_message.get_metadata(["counts", "singular"])
+    @pytest.mark.parametrize("path", ["count", ["count", "singular"], "languages"])
+    def test_get_metadata_unknown(self, fr_message, path):
+        with pytest.raises(KeyError, match="is not a key or path"):
+            _ = fr_message.get_metadata(path)
 
-
-class TestMessageAdd:
-    @pytest.mark.parametrize(
-        "fixture_name, options, expected",
-        [
-            ("empty_message", {"default": "Hello"}, [("default", "Hello")]),
-            (
-                "empty_message",
-                {"default": "Hello", "options": {1: "Bonjour Mme {name}"}},
-                [("default", "Hello"), ("options", {1: "Bonjour Mme {name}"})],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                ],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {1: "Bonjour tout le monde"},
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                    ("default_plurals", {1: "Bonjour tout le monde"}),
-                ],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                    ),
-                ],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames"},
-                    },
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                    ),
-                    (
-                        "options_plurals",
-                        {
-                            1: {1: "Bonjour Mesdames"},
-                        },
-                    ),
-                ],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames"},
-                        2: {1: "Bonjour Messieurs"},
-                    },
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                    ),
-                    (
-                        "options_plurals",
-                        {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
-                    ),
-                ],
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                    },
-                },
-                [
-                    ("default", "Hello"),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"}),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour tout le monde", 2: "Bonjour à tous"},
-                    ),
-                    (
-                        "options_plurals",
-                        {
-                            1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                            2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        },
-                    ),
-                ],
-            ),
-        ],
-    )
-    def test_message_add_message(
-        self, fixture_name, options, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        message.add_message(**options)
-        for attribute, value in expected:
-            assert as_plain(message.__getattribute__(attribute)) == value
-
-    @pytest.mark.parametrize(
-        "fixture_name, options, expected",
-        [
-            (
-                "fr_message",
-                {"options": "Hello"},
-                "At least one translation is required",
-            ),
-            (
-                "fr_message",
-                {"options": {1: "Bonjour Mme {name}"}},
-                "At least one translation is required",
-            ),
-            (
-                "empty_message",
-                {"default": "Hello", "options": {2: "Bonjour Mme {name}"}},
-                "The options value is malformed",
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {2: "Bonjour tout le monde"},
-                },
-                "The default_plurals value is malformed",
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        3: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                    },
-                },
-                "The options_plurals value is malformed",
-            ),
-        ],
-    )
-    def test_message_add_message_failed(
-        self, fixture_name, options, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            message.add_message(**options)
-
-    # 3.2 Testing adding main translation
-
-    @pytest.mark.parametrize(
-        "fixture_name, translation, expected",
-        [
-            ("empty_message", ["Hello"], ("Hello", {}, 1, [0])),
-            (
-                "empty_message",
-                ["Hello", "Hi everybody"],
-                ("Hello", {1: "Hi everybody"}, 1, [1]),
-            ),
-            (
-                "empty_message",
-                ["Hello", "Hi everybody", "Hi everyone"],
-                ("Hello", {1: "Hi everybody", 2: "Hi everyone"}, 1, [2]),
-            ),
-            ("empty_message", {"default": "Hello"}, ("Hello", {}, 1, [0])),
-            (
-                "empty_message",
-                {"default": "Hello", "default_plurals": {1: "Hi everybody"}},
-                ("Hello", {1: "Hi everybody"}, 1, [1]),
-            ),
-            (
-                "empty_message",
-                {
-                    "default": "Hello",
-                    "default_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                },
-                ("Hello", {1: "Hi everybody", 2: "Hi everyone"}, 1, [2]),
-            ),
-        ],
-    )
-    def test_message_add_main(
-        self, fixture_name, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        if isinstance(translation, dict):
-            message.add_principal(**translation)
-        else:
-            message.add_principal(translation)
-        assert message.default == expected[0]
-        assert message.default_plurals == expected[1]
-        assert message.metadata[["count", "singular"]] == expected[2]
-        assert message.metadata[["count", "plurals"]] == expected[3]
-
-    @pytest.mark.parametrize(
-        "fixture_name, translation, expected",
-        [
-            ("empty_message", None, "No translation specified"),
-            (
-                "empty_message",
-                [""],
-                "Singular of translation is required and cannot be None or empty : ''",
-            ),
-            (
-                "empty_message",
-                {"default": None},
-                "Singular of translation is required and cannot be None or empty : 'None'",
-            ),
-            (
-                "empty_message",
-                {"default": ""},
-                "Singular of translation is required and cannot be None or empty : ''",
-            ),
-            (
-                "empty_message",
-                {"default": "Hello", "default_plurals": {2: "Hi everybody"}},
-                "Plural forms is malformed : {2: 'Hi everybody'}",
-            ),
-        ],
-    )
-    def test_message_add_main_failed(
-        self, fixture_name, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            if isinstance(translation, dict):
-                message.add_principal(**translation)
-            else:
-                message.add_principal(translation)
-
-    @pytest.mark.parametrize(
-        "fixture_name, translation, expected",
-        [
-            (
-                "empty_message",
-                ["Hello {name}"],
-                ({1: "Hello {name}"}, {1: {}}, 2, [2, 0]),
-            ),
-            (
-                "empty_message",
-                {"options": "Hello {name}"},
-                ({1: "Hello {name}"}, {1: {}}, 2, [2, 0]),
-            ),
-            (
-                "empty_message",
-                ["Hello {name}", "Hi everybody"],
-                ({1: "Hello {name}"}, {1: {1: "Hi everybody"}}, 2, [2, 1]),
-            ),
-            (
-                "empty_message",
-                {
-                    "options": "Hello {name}",
-                    "options_plurals": ["Hi everybody"],
-                },
-                ({1: "Hello {name}"}, {1: {1: "Hi everybody"}}, 2, [2, 1]),
-            ),
-            (
-                "empty_message",
-                {
-                    "options": "Hello {name}",
-                    "options_plurals": {1: "Hi everybody"},
-                },
-                ({1: "Hello {name}"}, {1: {1: "Hi everybody"}}, 2, [2, 1]),
-            ),
-            (
-                "empty_message",
-                ["Hello {name}", "Hi everybody", "Hi everyone"],
-                (
-                    {1: "Hello {name}"},
-                    {1: {1: "Hi everybody", 2: "Hi everyone"}},
-                    2,
-                    [2, 2],
-                ),
-            ),
-            (
-                "empty_message",
-                {
-                    "options": "Hello {name}",
-                    "options_plurals": ["Hi everybody", "Hi everyone"],
-                },
-                (
-                    {1: "Hello {name}"},
-                    {1: {1: "Hi everybody", 2: "Hi everyone"}},
-                    2,
-                    [2, 2],
-                ),
-            ),
-            (
-                "empty_message",
-                {
-                    "options": "Hello {name}",
-                    "options_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                },
-                (
-                    {1: "Hello {name}"},
-                    {1: {1: "Hi everybody", 2: "Hi everyone"}},
-                    2,
-                    [2, 2],
-                ),
-            ),
-            (
-                "fr_message",
-                ["Cher {name}", "Chères et chers collègues", "Chers vous tous"],
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues", 2: "Chers vous tous"},
-                    },
-                    4,
-                    [2, 2, 2, 2],
-                ),
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": ["Chères et chers collègues", "Chers vous tous"],
-                },
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues", 2: "Chers vous tous"},
-                    },
-                    4,
-                    [2, 2, 2, 2],
-                ),
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": {
-                        1: "Chères et chers collègues",
-                        2: "Chers vous tous",
-                    },
-                },
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues", 2: "Chers vous tous"},
-                    },
-                    4,
-                    [2, 2, 2, 2],
-                ),
-            ),
-            (
-                "fr_message",
-                ["Cher {name}", "Chères et chers collègues"],
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues"},
-                    },
-                    4,
-                    [2, 2, 2, 1],
-                ),
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": ["Chères et chers collègues"],
-                },
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues"},
-                    },
-                    4,
-                    [2, 2, 2, 1],
-                ),
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": {1: "Chères et chers collègues"},
-                },
-                (
-                    {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}", 3: "Cher {name}"},
-                    {
-                        1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                        3: {1: "Chères et chers collègues"},
-                    },
-                    4,
-                    [2, 2, 2, 1],
-                ),
-            ),
-        ],
-    )
-    def test_message_add_variant(
-        self, fixture_name, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        if message.default == "":
-            message.add_principal(["Hello", "Hi everybody", "Hi everyone"])
-        if isinstance(translation, dict):
-            message.add_variant(**translation)
-        else:
-            message.add_variant(translation)
-        assert message.options == expected[0]
-        assert message.options_plurals.to_dict() == expected[1]
-        assert message.metadata[["count", "singular"]] == expected[2]
-        assert message.metadata[["count", "plurals"]] == expected[3]
-
-    @pytest.mark.parametrize(
-        "fixture_name, translation, expected",
-        [
-            ("en_message", None, "No variant translation is specified"),
-            (
-                "empty_message",
-                ["Hello {name}"],
-                "Cannot add an alternative translation, there presently is no translation",
-            ),
-            (
-                "fr_message",
-                [None, "Chères et chers collègues", "Chers vous tous"],
-                "Singular of a variant is required and cannot be None or empty : 'None'",
-            ),
-            (
-                "fr_message",
-                ["", "Chères et chers collègues", "Chers vous tous"],
-                "Singular of a variant is required and cannot be None or empty : ''",
-            ),
-            (
-                "fr_message",
-                {
-                    "options": None,
-                    "options_plurals": ["Chères et chers collègues", "Chers vous tous"],
-                },
-                "Singular of a variant is required and cannot be None or empty : 'None'",
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "",
-                    "options_plurals": {
-                        1: "Chères et chers collègues",
-                        2: "Chers vous tous",
-                    },
-                },
-                "Singular of a variant is required and cannot be None or empty : ''",
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": ("Chères et chers collègues", "Chers vous tous"),
-                },
-                "Plural of this variant is malformed : ('Chères et chers collègues', 'Chers vous tous')",
-            ),
-            (
-                "fr_message",
-                {
-                    "options": "Cher {name}",
-                    "options_plurals": {2: "Chères et chers collègues"},
-                },
-                "Plural of this variant is malformed : {2: 'Chères et chers collègues'}",
-            ),
-        ],
-    )
-    def test_message_add_variant_failed(
-        self, fixture_name, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            if isinstance(translation, dict):
-                message.add_variant(**translation)
-            else:
-                message.add_variant(translation)
-
-
-class TestMessageAddSegment:
-    @pytest.mark.parametrize(
-        "fixture_name, segment, token, expected",
-        [
-            ("empty_message", "Good morning", 0, "Good morning"),
-            ("en_message", "Good morning", 3, "Good morning"),
-        ],
-    )
-    def test_message_add_main_segment(
-        self, fixture_name, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        message.add_main_segment(segment, token)
-        assert message.get_principal()[token] == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, segment, token, expected",
-        [
-            (
-                "empty_message",
-                "Good morning",
-                -1,
-                "Plural form index (-1) is not in a valid range",
-            ),
-            (
-                "en_message",
-                "Good morning",
-                4,
-                "Plural form index (4) is not in a valid range",
-            ),
-            (
-                "fr_message",
-                "",
-                0,
-                "Singular of translation is required and cannot be None or empty : ''",
-            ),
-        ],
-    )
-    def test_message_add_main_segment_failed(
-        self, fixture_name, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            message.add_main_segment(segment, token)
-
-    @pytest.mark.parametrize(
-        "fixture_name, segment, expected",
-        [
-            ("empty_message", "Good morning", "Good morning"),
-            ("en_message", "Good morning", "Good morning"),
-        ],
-    )
-    def test_message_protected_add_default_segment(
-        self, fixture_name, segment, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        message._add_default_segment(segment)
-        assert message.default == expected
-
-    @pytest.mark.parametrize(
-        "plural, expected",
-        [
-            ("Good morning everyone", {1: "Good morning everyone"}),
-            ("Good morning all", {1: "Good morning everyone", 2: "Good morning all"}),
-        ],
-    )
-    def test_message_protected_add_default_plural_segment(
-        self, empty_module_message, plural, expected
-    ) -> None:
-        empty_module_message._add_default_plurals_segment(plural)
-        assert empty_module_message.default_plurals == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, segment, option, token, expected",
-        [
-            (
-                "empty_module_message",
-                "Good morning {name}",
-                1,
-                0,
-                "Good morning {name}",
-            ),
-            (
-                "empty_module_message",
-                "Good afternoon {name}",
-                2,
-                0,
-                "Good afternoon {name}",
-            ),
-            ("empty_module_message", "Good morning guys", 1, 1, "Good morning guys"),
-            ("empty_module_message", "Good morning all", 1, 2, "Good morning all"),
-            (
-                "empty_module_message",
-                "Good afternoon guys",
-                2,
-                1,
-                "Good afternoon guys",
-            ),
-            ("empty_module_message", "Good afternoon all", 2, 2, "Good afternoon all"),
-        ],
-    )
-    def test_message_add_variant_segment(
-        self, fixture_name, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        message.add_variant_segment(segment, option, token)
-        assert message.get_variant(option)[token] == expected
-
-    @pytest.mark.parametrize(
-        "fixture_name, segment, option, token, expected",
-        [
-            (
-                "empty_message",
-                "Good morning {name}",
-                0,
-                0,
-                "Option index (0) is not in a valid range",
-            ),
-            (
-                "en_message",
-                "Good morning {name}",
-                1,
-                -1,
-                "Segment index (-1) in options (1) is not in a valid range",
-            ),
-            (
-                "en_message",
-                "Good afternoon {name}",
-                4,
-                1,
-                "Option index (4) is not in a valid range",
-            ),
-        ],
-    )
-    def test_message_add_variant_segment_failed(
-        self, fixture_name, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_name)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message.add_variant_segment(segment, option, token)
-
-    # empty_module_message has a module scope and has been used in test of add_variant_segment,
-    # so options are not empty and indexes 1 and 2 are already stored.
-
-    @pytest.mark.parametrize(
-        "segment, expected",
-        [
-            ("Howdy", [(3, "Howdy")]),
-            ("Hi {name}", [(1, "Good morning {name}"), (3, "Howdy"), (4, "Hi {name}")]),
-        ],
-    )
-    def test_message_protected_add_options_segment(
-        self, empty_module_message, segment, expected
-    ) -> None:
-        empty_module_message._add_options_segment(segment)
-        for token, result in expected:
-            assert empty_module_message.options[token] == result
-
-    @pytest.mark.parametrize(
-        "options, alt_index, additional, expected",
-        [
-            (
-                {
-                    "default": "Good morning {name}",
-                    "options": {1: "Good afternoon Mme {name}"},
-                    "default_plurals": {1: "Good morning all", 2: "Good morning"},
-                },
-                2,
-                "Good afternoon all",
-                {2: {1: "Good afternoon all"}},
-            ),
-            (
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                },
-                1,
-                "Bonjour Mesdames",
-                {1: {1: "Bonjour Mesdames"}},
-            ),
-            (
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames"},
-                    },
-                },
-                2,
-                "Bonjour Messieurs",
-                {1: {1: "Bonjour Mesdames"}, 2: {1: "Bonjour Messieurs"}},
-            ),
-            (
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames"},
-                        2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                    },
-                },
-                1,
-                "Mesdames",
-                {
-                    1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                    2: {1: "Bonjour Messieurs", 2: "Messieurs"},
-                },
-            ),
-        ],
-    )
-    def test_message_add_options_plurals_segment(
-        self, empty_message, options, alt_index, additional, expected
-    ) -> None:
-        message = empty_message
-        message.add_message(**options)
-        message._add_options_plurals_segment(additional, alt_index)
-        assert as_plain(message.options_plurals) == expected
-
-    @pytest.mark.parametrize(
-        "options, alt_index, additional, error, expected",
-        [
-            (
-                {
-                    "default": "Hello",
-                    "options": {},
-                    "default_plurals": {},
-                },
-                0,
-                "Bonjour Mesdames",
-                IndexError,
-                "Option index (0) is not in a valid range",
-            ),
-            (
-                {
-                    "default": "Hello",
-                    "options": {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    "default_plurals": {
-                        1: "Bonjour tout le monde",
-                        2: "Bonjour à tous",
-                    },
-                    "options_plurals": {
-                        1: {1: "Bonjour Mesdames"},
-                    },
-                },
-                4,
-                "Bonjour Messieurs",
-                IndexError,
-                "Option index (4) is not in a valid range",
-            ),
-        ],
-    )
-    def test_message_add_options_plurals_segment_failed(
-        self, empty_message, options, alt_index, additional, error, expected
-    ) -> None:
-        message = empty_message
-        message.add_message(**options)
-        with pytest.raises(error, match=re.escape(expected)):
-            message._add_options_plurals_segment(additional, alt_index)
-
-
-class TestMessageAddMetadata:
     @pytest.mark.parametrize(
         "line, file, expected",
         [
             (126, "files.text", [("files.text", 126)]),
             (67, "explain.txt", [("files.text", 126), ("explain.txt", 67)]),
-            (
-                67,
-                "files.txt",
-                [("files.text", 126), ("explain.txt", 67), ("files.txt", 67)],
-            ),
         ],
     )
-    def test_message_add_metadata_location(
-        self, empty_module_message, line, file, expected
-    ) -> None:
-        message = empty_module_message
-        message.add_location(line, file)
-        assert message.metadata["location"] == expected
+    def test_add_location(self, empty_module_message, line, file, expected):
+        empty_module_message.add_location(line, file)
+        assert empty_module_message.metadata["location"] == expected
 
-    def test_message_add_metadata_language(self, empty_module_message) -> None:
-        message = empty_module_message
-        message.add_language("en-IE")
-        assert message.metadata["language"] == "en-IE"
+    def test_add_language(self, empty_message):
+        empty_message.add_language("en-IE")
+        assert empty_message.metadata["language"] == "en-IE"
 
-    def test_message_add_metadata_language_failed(self, empty_module_message) -> None:
-        message = empty_module_message
+    def test_add_language_invalid(self, empty_message):
         with pytest.raises(
             ValueError, match="Invalid language tag: ja.Latn/hepburn@heploc"
         ):
-            message.add_language("ja.Latn/hepburn@heploc")
+            empty_message.add_language("ja.Latn/hepburn@heploc")
 
-    @pytest.mark.parametrize(
-        "comment, mode, expected",
-        [
-            ("A first comment", "user", ["A first comment"]),
-            ("Another comment", "user", ["A first comment", "Another comment"]),
-            ("1000", "auto", ["1000"]),
-            ("1000_001", "auto", ["1000", "1000_001"]),
-        ],
-    )
-    def test_message_add_comment(
-        self, empty_module_message, comment, mode, expected
-    ) -> None:
-        message = empty_module_message
-        message.add_comment(mode, comment)
-        key = mode + "_comments"
-        assert message.metadata[key] == expected
+    @pytest.mark.parametrize("mode", ["user", "auto"])
+    def test_add_comment(self, empty_message, mode):
+        empty_message.add_comment(mode, "first")
+        empty_message.add_comment(mode, "second")
+        assert empty_message.metadata[mode + "_comments"] == ["first", "second"]
 
-    def test_message_add_comment_failed(self, fr_message) -> None:
-        with pytest.raises(ValueError):
+    def test_add_comment_empty(self, fr_message):
+        with pytest.raises(ValueError, match="Unable to add empty comment"):
             fr_message.add_comment("user", "")
 
     @pytest.mark.parametrize(
-        "alist, dictionary, expected",
+        "pairs, keywords",
         [
             (
-                [
-                    ["version", "0.2.0"],
-                    ["language", "fr-FR"],
-                    ["language", "fr-FR"],
-                    ["location", [("file.py", 132)]],
-                    ["flags", ["python-format"]],
-                    ["user_comments", ["A test for metadata"]],
-                    [["count", "singular"], 0],
-                    [["count", "plurals"], [0]],
-                ],
+                [["version", "0.2.0"], ["language", "fr-FR"], [["flags"], []]],
                 {},
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
             ),
-            (
-                [
-                    ["language", "fr-FR"],
-                    ["language", "fr-FR"],
-                    ["location", [("file.py", 132)]],
-                    ["flags", ["python-format"]],
-                    ["user_comments", ["A test for metadata"]],
-                    [["count", "singular"], 0],
-                    [["count", "plurals"], [0]],
-                ],
-                {
-                    "version": "0.2.0",
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
-            (
-                [
-                    ["location", [("file.py", 132)]],
-                    ["flags", ["python-format"]],
-                    ["user_comments", ["A test for metadata"]],
-                    [["count", "singular"], 0],
-                    [["count", "plurals"], [0]],
-                ],
-                {"version": "0.2.0", "language": "fr-FR"},
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
-            (
-                [
-                    ["flags", ["python-format"]],
-                    ["user_comments", ["A test for metadata"]],
-                    [["count", "singular"], 0],
-                    [["count", "plurals"], [0]],
-                ],
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
-            (
-                [
-                    ["user_comments", ["A test for metadata"]],
-                    [["count", "singular"], 0],
-                    [["count", "plurals"], [0]],
-                ],
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
-            (
-                [[["count", "singular"], 0], [["count", "plurals"], [0]]],
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
-            (
-                (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": [],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
-            ),
+            ([["version", "0.2.0"]], {"language": "fr-FR", "flags": []}),
+            ((), {"version": "0.2.0", "language": "fr-FR", "flags": []}),
             (
                 (),
                 StrictNestedDictionary(
-                    {
-                        "version": "0.2.0",
-                        "language": "fr-FR",
-                        "location": [("file.py", 132)],
-                        "flags": ["python-format"],
-                        "user_comments": ["A test for metadata"],
-                        "auto_comments": ["1000", "1000_001"],
-                        "count": {
-                            "singular": 0,
-                            "plurals": [0],
-                        },
-                    }
+                    {"version": "0.2.0", "language": "fr-FR", "flags": []}
                 ),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000", "1000_001"],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
             ),
         ],
     )
-    def test_message_add_metadata(self, alist, dictionary, expected) -> None:
-        message = Message("1001", "A test for metadata")
-        message.add_metadata(*alist, **dictionary)
-        control = message.metadata.to_dict()
-        assert control == expected
+    def test_add_metadata(self, single_message, pairs, keywords):
+        single_message.add_metadata(*pairs, **keywords)
+        assert single_message.metadata.to_dict() == {
+            **EMPTY_METADATA,
+            "version": "0.2.0",
+            "language": "fr-FR",
+            "flags": [],
+        }
 
     @pytest.mark.parametrize(
-        "alist, dictionary, expected",
+        "pairs, keywords, error, expected",
         [
             (
-                [["language:", "fr-Fr"]],
-                {
-                    "version": "0.2.0",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "count": {
-                        "singular": 0,
-                        "plurals": [0],
-                    },
-                },
+                [["language:", "fr-FR"]],
+                {},
+                KeyError,
                 "The path 'language:' is not a present key in the metadata dictionary",
             ),
             (
                 (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "count": {
-                        "plurals: [0]",
-                    },
-                },
-                "<class 'set'> type of {'plurals: [0]'} is not compatible metadata",
-            ),
-            (
-                (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "count": {"singular": 0, "plural": [0]},
-                },
-                "The path '['count', 'plural']' is not a present key in the metadata dictionary",
-            ),
-            (
-                (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "locations": [("file.py", 132)],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "count": {"singular": 0, "plurals": [0]},
-                },
+                {"locations": [("file.py", 132)]},
+                KeyError,
                 "The key 'locations' is not a present key in the metadata dictionary",
             ),
-        ],
-    )
-    def test_message_add_metadata_failed(self, alist, dictionary, expected) -> None:
-        message = Message("1001", "A test for metadata")
-        with pytest.raises((KeyError, TypeError), match=re.escape(expected)):
-            message.add_metadata(*alist, **dictionary)
-
-
-class TestMessageUpdate:
-    @pytest.mark.parametrize(
-        "options, expected",
-        [
-            ({"default": None}, [("default", "A test for update message")]),
-            ({"default": ""}, [("default", "A test for update message")]),
-            ({"default": "Another translation"}, [("default", "Another translation")]),
             (
-                {
-                    "default": "Hello",
-                    "default_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                },
-                [
-                    ("default", "Hello"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
+                (),
+                {"count": {"singular": 0, "plurals": [0]}},
+                KeyError,
+                "The path '['count', 'singular']' is not a present key in the "
+                + "metadata dictionary",
             ),
             (
-                {
-                    "default": "Good morning {name}",
-                    "default_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                    "options": {1: "Good afternoon {name}", 2: "Good evening {name}"},
-                },
-                [
-                    ("default", "Good morning {name}"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                    ("options", {1: "Good afternoon {name}", 2: "Good evening {name}"}),
-                ],
-            ),
-            (
-                {
-                    "default": "Good morning {name}",
-                    "default_plurals": {
-                        1: "Good morning everybody",
-                        2: "Good morning everyone",
-                    },
-                    "options": {1: "Good afternoon {name}", 2: "Good evening {name}"},
-                    "options_plurals": {
-                        1: {
-                            1: "Good afternoon everybody",
-                            2: "Good afternoon everyone",
-                        },
-                        2: {1: "Good evening everybody", 2: "Good evening everyone"},
-                    },
-                },
-                [
-                    ("default", "Good morning {name}"),
-                    (
-                        "default_plurals",
-                        {1: "Good morning everybody", 2: "Good morning everyone"},
-                    ),
-                    ("options", {1: "Good afternoon {name}", 2: "Good evening {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {
-                                    1: "Good afternoon everybody",
-                                    2: "Good afternoon everyone",
-                                },
-                                2: {
-                                    1: "Good evening everybody",
-                                    2: "Good evening everyone",
-                                },
-                            }
-                        ),
-                    ),
-                ],
+                (),
+                {"flags": {"python-format"}},
+                TypeError,
+                "<class 'set'> type of {'python-format'} is not compatible metadata",
             ),
         ],
     )
-    def test_message_update_message(self, options, expected) -> None:
-        message = Message("1001", "A test for update message")
-        message.update_message(**options)
-        for attr, value in expected:
-            assert getattr(message, attr) == value
+    def test_add_metadata_rejected(
+        self, single_message, pairs, keywords, error, expected
+    ):
+        with pytest.raises(error, match=re.escape(expected)):
+            single_message.add_metadata(*pairs, **keywords)
 
     @pytest.mark.parametrize(
-        "options, expected",
+        "pairs, keywords",
         [
-            (
-                {
-                    "default": "Hello",
-                    "default_plurals": {2: "Hi everybody", 3: "Hi everyone"},
-                },
-                "The 'default_plurals' value is malformed",
-            ),
-            (
-                {
-                    "default": "Good morning {name}",
-                    "default_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                    "options": {0: "Good afternoon {name}", 2: "Good evening {name}"},
-                },
-                "The 'options' value is malformed",
-            ),
-            (
-                {
-                    "default": "Good morning {name}",
-                    "default_plurals": {
-                        1: "Good morning everybody",
-                        2: "Good morning everyone",
-                    },
-                    "options": {1: "Good afternoon {name}", 2: "Good evening {name}"},
-                    "options_plurals": {
-                        1: {
-                            1: "Good afternoon everybody",
-                            2: "Good afternoon everyone",
-                        },
-                        3: {1: "Good evening everybody", 2: "Good evening everyone"},
-                    },
-                },
-                "The 'options_plurals' value is malformed",
-            ),
+            ([[["version"], "0.2.0"], [["language"], "fr"]], {}),
+            ([[["language"], "fr"]], {"version": "0.2.0"}),
+            ((), {"version": "0.2.0", "language": "fr"}),
         ],
     )
-    def test_message_update_message_failed(self, options, expected) -> None:
-        message = Message("1001", "A test for metadata")
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            message.update_message(**options)
-
-    # 4.2 Testing updating main translation
+    def test_update_metadata(self, fr_message, pairs, keywords):
+        fr_message.update_metadata(*pairs, **keywords)
+        assert fr_message.metadata["version"] == "0.2.0"
+        assert fr_message.metadata["language"] == "fr"
 
     @pytest.mark.parametrize(
-        "translation, expected",
-        [
-            (["Hello {name}"], [("default", "Hello {name}"), ("default_plurals", {})]),
-            (
-                ["Hello", "Hi everybody"],
-                [("default", "Hello"), ("default_plurals", {1: "Hi everybody"})],
-            ),
-            (
-                ["", "Hi everybody", "Hi everyone"],
-                [
-                    ("default", "Hi"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
-            ),
-            (
-                {"default": "Hello {name}"},
-                [("default", "Hello {name}"), ("default_plurals", {})],
-            ),
-            (
-                {"default": "Hello", "default_plurals": {1: "Hi everybody"}},
-                [("default", "Hello"), ("default_plurals", {1: "Hi everybody"})],
-            ),
-            (
-                {"default": "", "default_plurals": ["Hi everybody", "Hi everyone"]},
-                [
-                    ("default", "Hi"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
-            ),
-            (
-                {
-                    "default": "",
-                    "default_plurals": {1: "Hi everybody", 2: "Hi everyone"},
-                },
-                [
-                    ("default", "Hi"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
-            ),
-        ],
-    )
-    def test_message_update_main(self, translation, expected) -> None:
-        message = Message("1001", "Hi")
-        if isinstance(translation, dict):
-            message.update_principal(**translation)
-        else:
-            message.update_principal(translation)
-        for attr, value in expected:
-            assert getattr(message, attr) == value
-
-    @pytest.mark.parametrize(
-        "translation, expected",
-        [
-            (None, "No updates specified"),
-            ({}, "No updates specified"),
-            (
-                {"default": "Hello", "default_plurals": {0: "Hi everybody"}},
-                "plural translation context is malformed : {0: 'Hi everybody'}",
-            ),
-        ],
-    )
-    def test_message_update_main_failed(self, translation, expected) -> None:
-        message = Message("1001", "Hi")
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            if isinstance(translation, dict):
-                message.update_principal(**translation)
-            else:
-                message.update_principal(translation)
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, translation, expected",
+        "pairs, keywords, error, expected",
         [
             (
-                "en_message",
-                0,
-                ["Hi {name}"],
-                [
-                    ("default", "Hi {name}"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
-            ),
-            (
-                "en_message",
-                0,
-                {"default": "Hi {name}"},
-                [
-                    ("default", "Hi {name}"),
-                    ("default_plurals", {1: "Hi everybody", 2: "Hi everyone"}),
-                ],
-            ),
-            (
-                "fr_message",
-                1,
-                ["Chère Mme {name}"],
-                [
-                    ("default", "Bonjour"),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    ("options", {1: "Chère Mme {name}", 2: "Bonjour M. {name}"}),
-                ],
-            ),
-            (
-                "fr_message",
-                2,
-                ["Cher M. {name}", "Chers Messieurs", "Chers tous"],
-                [
-                    ("default", "Bonjour"),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Cher M. {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                                2: {1: "Chers Messieurs", 2: "Chers tous"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "fr_message",
-                1,
-                {"options": "Chère Mme {name}"},
-                [
-                    ("default", "Bonjour"),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    ("options", {1: "Chère Mme {name}", 2: "Bonjour M. {name}"}),
-                ],
-            ),
-            (
-                "fr_message",
-                2,
-                {
-                    "options": "Cher M. {name}",
-                    "options_plurals": {1: "Chers Messieurs", 2: "Chers tous"},
-                },
-                [
-                    ("default", "Bonjour"),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Cher M. {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                                2: {1: "Chers Messieurs", 2: "Chers tous"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "fr_message",
-                2,
-                {
-                    "options": "Cher M. {name}",
-                    "options_plurals": ["Chers Messieurs", "Chers tous"],
-                },
-                [
-                    ("default", "Bonjour"),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    ("options", {1: "Bonjour Mme {name}", 2: "Cher M. {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Bonjour Mesdames", 2: "Mesdames"},
-                                2: {1: "Chers Messieurs", 2: "Chers tous"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-        ],
-    )
-    def test_message_update_variant(
-        self, fixture_message, option, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        if isinstance(translation, dict):
-            message.update_variant(option, **translation)
-        else:
-            message.update_variant(option, translation)
-        for attr, value in expected:
-            assert getattr(message, attr) == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, translation, expected",
-        [
-            ("fr_message", 1, None, "No updates specified"),
-            ("en_message", 4, ["Hi {name}"], "Option '4' out of range"),
-            (
-                "fr_message",
-                2,
-                {
-                    "alternative_translation": "Cher M. {name}",
-                    "options_plurals": {2: "Chers Messieurs", 3: "Chers tous"},
-                },
-                "Plural translation context is malformed : {2: 'Chers Messieurs', 3: 'Chers tous'}",
-            ),
-        ],
-    )
-    def test_message_update_variant_failed(
-        self, fixture_message, option, translation, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises((ValueError, IndexError), match=re.escape(expected)):
-            if isinstance(translation, dict):
-                message.update_variant(option, **translation)
-            else:
-                message.update_variant(option, translation)
-
-
-class TestMessageUpdateSegment:
-    @pytest.mark.parametrize(
-        "fixture_message, segment, token, expected",
-        [
-            ("en_message", "Good morning", 0, [(0, "Good morning")]),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                [(0, "Hello"), (1, "Good morning everybody")],
-            ),
-        ],
-    )
-    def test_message_update_main_segment(
-        dself, fixture_message, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.update_main_segment(segment, token)
-        for token, text in expected:
-            assert message.get_principal()[token] == text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, token, expected",
-        [
-            ("empty_message", "", 0, "Empty text cannot be added"),
-            (
-                "fr_message",
-                "Good morning everybody",
-                -1,
-                "The token location (-1) is out of range",
-            ),
-            (
-                "fr_message",
-                "Good morning everybody",
-                4,
-                "The token location (4) is out of range",
-            ),
-            (
-                "fr_message",
-                "Bonjour",
-                0,
-                "The text value ('Bonjour') is already stored as default singular translation : 'Bonjour'",
-            ),
-            (
-                "en_message",
-                "Hi everyone",
-                2,
-                "The text value ('Hi everyone') is already stored as default plural index (2) : 'Hi everyone'",
-            ),
-        ],
-    )
-    def test_message_update_main_segment_failed(
-        self, fixture_message, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises((ValueError, IndexError), match=re.escape(expected)):
-            message.update_main_segment(segment, token)
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, expected",
-        [
-            ("en_message", "Good morning", [(0, "Good morning"), (1, "Hi everybody")]),
-            ("empty_message", "", [(0, "")]),
-        ],
-    )
-    def test_message_protected_update_default_segment(
-        self, fixture_message, segment, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._update_default_segment(segment)
-        for token, text in expected:
-            assert message.get_principal()[token] == text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, token, expected",
-        [
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                [(0, "Hello"), (1, "Good morning everybody")],
-            ),
-            ("fr_message", "", 2, [(0, "Bonjour"), (1, "Bonjour à tous"), (2, "")]),
-        ],
-    )
-    def test_message_protected_update_default_plurals_segment(
-        self, fixture_message, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._update_default_plurals_segment(segment, token)
-        for token, text in expected:
-            assert message.get_principal()[token] == text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, token, expected",
-        [
-            (
-                "en_message",
-                "Good morning everybody",
-                -1,
-                "The token location (-1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                3,
-                "The token location (3) is out of range",
-            ),
-            ("empty_message", "", 1, "The token location (1) is out of range"),
-        ],
-    )
-    def test_message_protected_update_default_plurals_segment_failed(
-        self, fixture_message, segment, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message._update_default_plurals_segment(segment, token)
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, token, expected",
-        [
-            (
-                "en_message",
-                "Good morning {name}",
-                1,
-                0,
-                [
-                    (1, 0, "Good morning {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Hi everybody"),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                1,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Good morning everybody"),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                2,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Hi everybody"),
-                    (1, 2, "Good morning everybody"),
-                ],
-            ),
-        ],
-    )
-    def test_message_update_variant_segment(
-        self, fixture_message, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.update_variant_segment(segment, option, token)
-        for expected_option, expected_token, expected_text in expected:
-            assert message.get_variant(expected_option)[expected_token] == expected_text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, token, expected",
-        [
-            ("en_message", "", 1, 0, "Empty text cannot be added"),
-            ("en_message", "", 1, 1, "Empty text cannot be added"),
-            (
-                "empty_message",
-                "Good morning everybody",
-                -1,
-                0,
-                "The variant location (-1) is out of range",
-            ),
-            (
-                "empty_message",
-                "Good morning everybody",
-                1,
-                0,
-                "The variant location (1) is out of range",
-            ),
-            (
-                "empty_message",
-                "Good morning everybody",
-                1,
-                1,
-                "The variant location (1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                -1,
-                "The token location (-1) of the variant location (1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                3,
-                "The token location (3) of the variant location (1) is out of range",
-            ),
-        ],
-    )
-    def test_message_update_variant_segment_failed(
-        self, fixture_message, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises((IndexError, ValueError), match=re.escape(expected)):
-            message.update_variant_segment(segment, option, token)
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, expected",
-        [
-            ("fr_message", "", 1, [(1, 0, "")]),
-            (
-                "en_message",
-                "Good morning {name}",
-                1,
-                [
-                    (1, 0, "Good morning {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Hi everybody"),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-            (
-                "en_message",
-                "Good afternoon {name}",
-                2,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Good afternoon {name}"),
-                    (1, 1, "Hi everybody"),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-        ],
-    )
-    def test_message_protected_update_options_segment(
-        self, fixture_message, segment, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._update_options_segment(segment, option)
-        for expected_option, expected_token, expected_text in expected:
-            assert message.get_variant(expected_option)[expected_token] == expected_text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, expected",
-        [
-            (
-                "empty_message",
-                "Good morning everybody",
-                -1,
-                "The variant location (-1) is out of range",
-            ),
-            (
-                "empty_message",
-                "Good morning everybody",
-                1,
-                "The variant location (1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                3,
-                "The variant location (3) is out of range",
-            ),
-        ],
-    )
-    def test_message_protected_update_options_segment_failed(
-        self, fixture_message, segment, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises((IndexError, ValueError), match=re.escape(expected)):
-            message._update_options_segment(segment, option)
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, token, expected",
-        [
-            (
-                "en_message",
-                "",
-                1,
-                1,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, ""),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                1,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Good morning everybody"),
-                    (1, 2, "Ladies"),
-                ],
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                2,
-                [
-                    (1, 0, "Hello {name}"),
-                    (2, 0, "Hello {name}"),
-                    (1, 1, "Hi everybody"),
-                    (1, 2, "Good morning everybody"),
-                ],
-            ),
-        ],
-    )
-    def test_message_protected_update_options_plurals_segment(
-        self, fixture_message, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._update_options_plurals_segment(segment, option, token)
-        for expected_option, expected_token, expected_text in expected:
-            assert message.get_variant(expected_option)[expected_token] == expected_text
-
-    @pytest.mark.parametrize(
-        "fixture_message, segment, option, token, expected",
-        [
-            (
-                "empty_message",
-                "Good morning everybody",
-                -1,
-                0,
-                "The variant location (-1) is out of range",
-            ),
-            (
-                "empty_message",
-                "Good morning everybody",
-                1,
-                0,
-                "The variant location (1) is out of range",
-            ),
-            (
-                "empty_message",
-                "Good morning everybody",
-                1,
-                1,
-                "The variant location (1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                -1,
-                "The token location (-1) of the variant location (1) is out of range",
-            ),
-            (
-                "en_message",
-                "Good morning everybody",
-                1,
-                3,
-                "The token location (3) of the variant location (1) is out of range",
-            ),
-        ],
-    )
-    def test_message_protected_update_options_plurals_segment_failed(
-        self, fixture_message, segment, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message._update_options_plurals_segment(segment, option, token)
-
-
-class TestMessageUpdateMetadata:
-    @pytest.mark.parametrize(
-        "fixture_message, alist, dictionary, expected",
-        [
-            (
-                "fr_message",
-                [
-                    [["version"], "0.2.0"],
-                    [["language"], "fr"],
-                    [["user_comments"], ["A test for metadata"]],
-                ],
+                [["language:", "fr-FR"]],
                 {},
-                {
-                    "version": "0.2.0",
-                    "language": "fr",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "fr_message",
-                [[["language"], "fr"], [["user_comments"], ["A test for metadata"]]],
-                {"version": "0.2.0"},
-                {
-                    "version": "0.2.0",
-                    "language": "fr",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "fr_message",
-                [[["user_comments"], ["A test for metadata"]]],
-                {"version": "0.2.0", "language": "fr"},
-                {
-                    "version": "0.2.0",
-                    "language": "fr",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "fr_message",
-                [],
-                {
-                    "version": "0.2.0",
-                    "language": "fr",
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000", "1000_001"],
-                },
-                {
-                    "version": "0.2.0",
-                    "language": "fr",
-                    "location": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["A test for metadata"],
-                    "auto_comments": ["1000", "1000_001"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "en_message",
-                [],
-                {"location": [("file.txt", 126)], "language": "en-GB"},
-                {
-                    "version": __version__,
-                    "language": "en-GB",
-                    "location": [("file.txt", 126)],
-                    "flags": ["python-format"],
-                    "user_comments": ["Greeting message to one or more..."],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "en_message",
-                [[["location"], [("file.txt", 126)]], [["language"], "en-GB"]],
-                {},
-                {
-                    "version": __version__,
-                    "language": "en-GB",
-                    "location": [("file.txt", 126)],
-                    "flags": ["python-format"],
-                    "user_comments": ["Greeting message to one or more..."],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                    "count": {
-                        "singular": 3,
-                        "plurals": [2, 2, 2],
-                    },
-                },
-            ),
-        ],
-    )
-    def test_message_update_metadata(
-        self, fixture_message, alist, dictionary, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.update_metadata(*alist, **dictionary)
-        control = message.metadata.to_dict()
-        assert control == expected
-
-    @pytest.mark.parametrize(
-        "alist, dictionary, expected",
-        [
-            (
-                [["language:", "fr-Fr"]],
-                {
-                    "version": "0.2.0",
-                    "location": [("file.py", 132)],
-                    "user_comments": ["A test for metadata"],
-                },
+                KeyError,
                 "The path 'language:' is not a present key in the metadata dictionary",
             ),
             (
                 (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "user_comments": ["A test for metadata"],
-                    "count": {
-                        "plurals: [0]",
-                    },
-                },
-                "<class 'set'> of {'plurals: [0]'} is not compatible metadata",
+                {"count": {"singular": 1}},
+                KeyError,
+                "The path '['count', 'singular']' is not a present key in the "
+                + "metadata dictionary",
             ),
             (
                 (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "user_comments": ["A test for metadata"],
-                    "count": {"singular": 0, "plural": [0]},
-                },
-                "The path '['count', 'plural']' is not a present key in the metadata dictionary",
-            ),
-            (
-                (),
-                {
-                    "version": "0.2.0",
-                    "language": "fr-FR",
-                    "locations": [("file.py", 132)],
-                    "user_comments": ["A test for metadata"],
-                },
-                "The key 'locations' is not a present key in the metadata dictionary",
-            ),
-            (
-                (),
-                {
-                    "version": __version__,
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "user_comments": ["A test for metadata"],
-                },
+                {"version": __version__},
+                ValueError,
                 f"The value ({__version__}) is already stored in the path '[version]'",
             ),
             (
-                [],
-                {
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                    "count": {"singular": 1},
-                },
-                "The value (1) is already stored in the path '['count', 'singular']'",
+                [[["language"], ""]],
+                {},
+                ValueError,
+                "The value () is already stored in the path '['language']'",
             ),
             (
-                [[["count", "singular"], 1]],
-                {
-                    "language": "fr-FR",
-                    "location": [("file.py", 132)],
-                },
-                "The value (1) is already stored in the path '['count', 'singular']'",
+                (),
+                {"flags": {"fuzzy"}},
+                TypeError,
+                "<class 'set'> of {'fuzzy'} is not compatible metadata",
             ),
         ],
     )
-    def test_message_update_metadata_failed(self, alist, dictionary, expected) -> None:
-        message = Message("1001", "A test for metadata")
-        with pytest.raises(
-            (KeyError, TypeError, ValueError), match=re.escape(expected)
-        ):
-            message.update_metadata(*alist, **dictionary)
-
-
-class TestMessageRemove:
-    @pytest.mark.parametrize(
-        "fixture_message, expected",
-        [
-            (
-                "fr_message",
-                [
-                    ("default", ""),
-                    ("default_plurals", {}),
-                    (
-                        "metadata",
-                        StrictNestedDictionary(
-                            {
-                                "version": __version__,
-                                "language": "",
-                                "location": [],
-                                "flags": ["python-format"],
-                                "user_comments": [],
-                                "auto_comments": [],
-                                "count": {
-                                    "singular": 0,
-                                    "plurals": [],
-                                },
-                            },
-                            default_setup={"indent": 2},
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "en_message",
-                [("options", {}), ("options_plurals", StrictNestedDictionary())],
-            ),
-            ("empty_message", [("default", ""), ("options", {})]),
-        ],
-    )
-    def test_message_remove_message(self, fixture_message, expected, request) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.remove_message()
-        for attribute, value in expected:
-            assert message.__getattribute__(attribute) == value
-
-    # 5.2 Testing main translations
+    def test_update_metadata_rejected(
+        self, single_message, pairs, keywords, error, expected
+    ):
+        with pytest.raises(error, match=re.escape(expected)):
+            single_message.update_metadata(*pairs, **keywords)
 
     @pytest.mark.parametrize(
-        "fixture_message, expected",
+        "key, expected",
         [
-            (
-                "fr_message",
-                [
-                    ("default", ""),
-                    ("default_plurals", {}),
-                    (
-                        "metadata",
-                        StrictNestedDictionary(
-                            {
-                                "version": __version__,
-                                "language": "fr-FR",
-                                "location": [],
-                                "flags": ["python-format"],
-                                "user_comments": [
-                                    "In French, Greeting message to one or more..."
-                                ],
-                                "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                                "count": {
-                                    "singular": 2,
-                                    "plurals": [0, 2, 2],
-                                },
-                            },
-                            default_setup={"indent": 2},
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "en_message",
-                [
-                    ("options", {1: "Hello {name}", 2: "Hello {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Hi everybody", 2: "Ladies"},
-                                2: {1: "Hi everyone", 2: "Gentlemen"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-            ("empty_message", [("default", ""), ("options", {})]),
+            ("language", {**EMPTY_METADATA, "language": ""}),
+            (None, EMPTY_METADATA),
         ],
     )
-    def test_message_remove_main(self, fixture_message, expected, request) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.remove_principal()
-        for attribute, value in expected:
-            assert message.__getattribute__(attribute) == value
+    def test_remove_metadata(self, fr_message, key, expected):
+        fr_message.remove_metadata(key)
+        if key is None:
+            assert fr_message.metadata.to_dict() == expected
+        else:
+            assert fr_message.metadata[key] == expected[key]
+            assert fr_message.metadata["flags"] == ["python-format"]
 
     @pytest.mark.parametrize(
-        "fixture_message, expected",
+        "key, expected",
         [
+            ("languages", "Metadata key 'languages' not found"),
             (
-                "fr_message",
-                [
-                    ("default", ""),
-                    (
-                        "default_plurals",
-                        {1: "Bonjour à tous", 2: "Bonjour tout le monde"},
-                    ),
-                    (
-                        "metadata",
-                        StrictNestedDictionary(
-                            {
-                                "version": __version__,
-                                "language": "fr-FR",
-                                "location": [],
-                                "flags": ["python-format"],
-                                "user_comments": [
-                                    "In French, Greeting message to one or more..."
-                                ],
-                                "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                                "count": {
-                                    "singular": 2,
-                                    "plurals": [2, 2, 2],
-                                },
-                            },
-                            default_setup={"indent": 2},
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "en_message",
-                [
-                    ("options", {1: "Hello {name}", 2: "Hello {name}"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Hi everybody", 2: "Ladies"},
-                                2: {1: "Hi everyone", 2: "Gentlemen"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-            ("empty_message", [("default", ""), ("options", {})]),
-        ],
-    )
-    def test_message_protected_remove_default_segment(
-        self, fixture_message, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._remove_default_segment()
-        for attribute, value in expected:
-            assert message.__getattribute__(attribute) == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, token, expected",
-        [
-            (
-                "fr_message",
-                2,
-                [
-                    ("default", "Bonjour"),
-                    ("default_plurals", {1: "Bonjour à tous"}),
-                    (
-                        "metadata",
-                        StrictNestedDictionary(
-                            {
-                                "version": __version__,
-                                "language": "fr-FR",
-                                "location": [],
-                                "flags": ["python-format"],
-                                "user_comments": [
-                                    "In French, Greeting message to one or more..."
-                                ],
-                                "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                                "count": {
-                                    "singular": 3,
-                                    "plurals": [1, 2, 2],
-                                },
-                            },
-                            default_setup={"indent": 2},
-                        ),
-                    ),
-                ],
-            ),
-            (
-                "en_message",
-                1,
-                [
-                    ("options", {1: "Hello {name}", 2: "Hello {name}"}),
-                    ("default_plurals", {1: "Hi everyone"}),
-                    (
-                        "options_plurals",
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Hi everybody", 2: "Ladies"},
-                                2: {1: "Hi everyone", 2: "Gentlemen"},
-                            }
-                        ),
-                    ),
-                ],
+                ["count", "plurals"],
+                "path '['count', 'plurals']' is not a present key in the metadata "
+                + "dictionary",
             ),
         ],
     )
-    def test_message_protected_remove_default_plurals_segment(
-        self, fixture_message, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._remove_default_plurals_segment(token)
-        for attribute, value in expected:
-            assert message.__getattribute__(attribute) == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, token, expected",
-        [
-            (
-                "fr_message",
-                -1,
-                "The location (-1) of the plural to be remove is out of range",
-            ),
-            (
-                "en_message",
-                3,
-                "The location (3) of the plural to be remove is out of range",
-            ),
-        ],
-    )
-    def test_message_protected_remove_default_plurals_segment_failed(
-        self, fixture_message, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message._remove_default_plurals_segment(token)
-
-    # 5.2 Testing variant translations
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, expected",
-        [
-            (
-                "fr_message",
-                1,
-                [
-                    ("default", None, "Bonjour"),
-                    ("options", 1, "Bonjour M. {name}"),
-                    ("options", None, {1: "Bonjour M. {name}"}),
-                    ("options_plurals", [1, 2], "Messieurs"),
-                    ("metadata", ["count", "singular"], 2),
-                    ("metadata", ["count", "plurals"], [2, 2]),
-                ],
-            ),
-            (
-                "en_message",
-                2,
-                [
-                    ("default", None, "Hello"),
-                    ("options", 1, "Hello {name}"),
-                    ("options", None, {1: "Hello {name}"}),
-                    ("options_plurals", [1, 2], "Ladies"),
-                    (
-                        "options_plurals",
-                        None,
-                        StrictNestedDictionary({1: {1: "Hi everybody", 2: "Ladies"}}),
-                    ),
-                    ("metadata", ["count", "singular"], 2),
-                ],
-            ),
-        ],
-    )
-    def test_message_remove_variant(
-        self, fixture_message, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.remove_variant(option)
-        for attribute, keys, value in expected:
-            if keys is None:
-                assert message.__getattribute__(attribute) == value
-            else:
-                assert message.__getattribute__(attribute)[keys] == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, expected",
-        [
-            ("empty_message", 1, "The variant location (1) is out of range"),
-            ("fr_message", -1, "The variant location (-1) is out of range"),
-            ("en_message", 3, "The variant location (3) is out of range"),
-        ],
-    )
-    def test_message_remove_variant_failure(
-        self, fixture_message, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message.remove_variant(option)
-
-    # 5.4 Testing components
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, expected",
-        [
-            (
-                "fr_message",
-                1,
-                [
-                    ("default", None, "Bonjour"),
-                    ("options", 1, "Bonjour M. {name}"),
-                    ("options", None, {1: "Bonjour M. {name}"}),
-                    ("options_plurals", [2, 2], "Messieurs"),
-                ],
-            ),
-            (
-                "en_message",
-                2,
-                [
-                    ("default", None, "Hello"),
-                    ("options", 1, "Hello {name}"),
-                    ("options", None, {1: "Hello {name}"}),
-                    ("options_plurals", [1, 2], "Ladies"),
-                    (
-                        "options_plurals",
-                        None,
-                        StrictNestedDictionary(
-                            {
-                                1: {1: "Hi everybody", 2: "Ladies"},
-                                2: {1: "Hi everyone", 2: "Gentlemen"},
-                            }
-                        ),
-                    ),
-                ],
-            ),
-        ],
-    )
-    def test_message_protected_remove_options_segment(
-        self, fixture_message, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._remove_options_segment(option)
-        for attribute, keys, value in expected:
-            if keys is None:
-                assert message.__getattribute__(attribute) == value
-            else:
-                assert message.__getattribute__(attribute)[keys] == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, expected",
-        [
-            ("empty_message", 1, "The variant location (1) is out of range"),
-            ("fr_message", -1, "The variant location (-1) is out of range"),
-            ("en_message", 3, "The variant location (3) is out of range"),
-        ],
-    )
-    def test_message_protected_remove_options_segment_failure(
-        self, fixture_message, option, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message._remove_options_segment(option)
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, token, expected",
-        [
-            (
-                "fr_message",
-                1,
-                2,
-                [
-                    ("default", None, "Bonjour"),
-                    ("options", 2, "Bonjour M. {name}"),
-                    (
-                        "options",
-                        None,
-                        {1: "Bonjour Mme {name}", 2: "Bonjour M. {name}"},
-                    ),
-                    ("options_plurals", [1, 1], "Bonjour Mesdames"),
-                    ("options_plurals", [2, 2], "Messieurs"),
-                    ("metadata", ["count", "singular"], 3),
-                ],
-            ),
-            (
-                "en_message",
-                2,
-                1,
-                [
-                    ("default", None, "Hello"),
-                    ("options", 1, "Hello {name}"),
-                    ("options", None, {1: "Hello {name}", 2: "Hello {name}"}),
-                    ("options_plurals", [1, 2], "Ladies"),
-                    (
-                        "options_plurals",
-                        None,
-                        StrictNestedDictionary(
-                            {1: {1: "Hi everybody", 2: "Ladies"}, 2: {1: "Gentlemen"}}
-                        ),
-                    ),
-                    ("metadata", ["count", "singular"], 3),
-                ],
-            ),
-            (
-                "fr_message",
-                1,
-                None,
-                [
-                    ("default", None, "Bonjour"),
-                    ("options", 1, "Bonjour M. {name}"),
-                    ("options", None, {1: "Bonjour M. {name}"}),
-                    ("options_plurals", [1, 1], "Bonjour Mesdames"),
-                    ("options_plurals", [2, 2], "Messieurs"),
-                    ("metadata", ["count", "singular"], 2),
-                    ("metadata", ["count", "plurals"], [2, 2, 2]),
-                ],
-            ),
-        ],
-    )
-    def test_message_protected_remove_options_plurals_segment(
-        self, fixture_message, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message._remove_options_plurals_segment(option, token)
-        for attribute, keys, value in expected:
-            if keys is None:
-                assert message.__getattribute__(attribute) == value
-            else:
-                assert message.__getattribute__(attribute)[keys] == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, option, token, expected",
-        [
-            ("empty_message", 1, 0, "The variant location (1) is out of range"),
-            ("fr_message", -1, 4, "The variant location (-1) is out of range"),
-            ("en_message", 3, 6, "The variant location (3) is out of range"),
-            ("fr_message", 1, -1, "The plural path [1, -1] is out of range"),
-            ("en_message", 2, 6, "The plural path [2, 6] is out of range"),
-        ],
-    )
-    def test_message_protected_remove_options_plurals_failure(
-        self, fixture_message, option, token, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message._remove_options_plurals_segment(option, token)
-
-    # 5.5 Testing metadata
-
-    @pytest.mark.parametrize(
-        "fixture_message, keys, expected",
-        [
-            ("fr_message", "language", [("language", "")]),
-            ("en_message", "version", [("language", "en"), ("version", __version__)]),
-            (
-                "fr_message",
-                None,
-                [
-                    ("version", __version__),
-                    ("language", ""),
-                    ("location", []),
-                    ("flags", ["python-format"]),
-                    ("user_comments", []),
-                    ("auto_comments", []),
-                    (["count", "singular"], 0),
-                    (
-                        ["count", "plurals"],
-                        [],
-                    ),
-                ],
-            ),
-        ],
-    )
-    def test_message_remove_metadata(
-        self, fixture_message, keys, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
-        message.remove_metadata(keys)
-        for path, value in expected:
-            assert message.metadata[path] == value
-
-    @pytest.mark.parametrize(
-        "fixture_message, keys, expected",
-        [
-            ("fr_message", "languages", "Metadata key 'languages' not found"),
-            (
-                "en_message",
-                ["count", "plural"],
-                "path '['count', 'plural']' is not a present key in the metadata dictionary",
-            ),
-        ],
-    )
-    def test_message_remove_metadata_failed(
-        self, fixture_message, keys, expected, request
-    ) -> None:
-        message = request.getfixturevalue(fixture_message)
+    def test_remove_metadata_unknown(self, fr_message, key, expected):
         with pytest.raises(KeyError, match=re.escape(expected)):
-            message.remove_metadata(keys)
-
-
-class TestMessageSwitchToggle:
-    @pytest.mark.parametrize(
-        "fixture_message, source, destination, expected",
-        [
-            (
-                "fr_message",
-                0,
-                2,
-                [
-                    ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
-                    ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
-                    ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
-                ],
-            ),
-            (
-                "en_message",
-                1,
-                2,
-                [
-                    ["Hello", "Hi everybody", "Hi everyone"],
-                    ["Hello {name}", "Hi everyone", "Gentlemen"],
-                    ["Hello {name}", "Hi everybody", "Ladies"],
-                ],
-            ),
-            (
-                "fr_message",
-                2,
-                1,
-                [
-                    ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
-                    ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
-                    ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
-                ],
-            ),
-            (
-                "en_message",
-                2,
-                1,
-                [
-                    ["Hello", "Hi everybody", "Hi everyone"],
-                    ["Hello {name}", "Hi everyone", "Gentlemen"],
-                    ["Hello {name}", "Hi everybody", "Ladies"],
-                ],
-            ),
-        ],
-    )
-    def test_message_switch(
-        self, fixture_message, source, destination, expected, request
-    ):
-        message = request.getfixturevalue(fixture_message)
-        message.switch(source, destination)
-        assert message.get_principal() == expected[0]
-        assert message.get_variant(1) == expected[1]
-        assert message.get_variant(2) == expected[2]
-
-    @pytest.mark.parametrize(
-        "fixture_message, source, destination, expected",
-        [
-            ("fr_message", 0, 0, "source (0) and destination (0) must be different"),
-            ("en_message", 3, 2, "The variant location (3) is out of range"),
-            ("fr_message", 0, -1, "The variant location (-1) is out of range"),
-            ("en_message", 2, 4, "The variant location (4) is out of range"),
-        ],
-    )
-    def test_message_switch_failed(
-        self, fixture_message, source, destination, expected, request
-    ):
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(IndexError, match=re.escape(expected)):
-            message.switch(source, destination)
-
-    @pytest.mark.parametrize(
-        "fixture_message, orientations, expected",
-        [
-            (
-                "fr_message",
-                ["natural"],
-                [
-                    ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
-                    ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
-                    ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
-                ],
-            ),
-            (
-                "en_message",
-                ["reverse"],
-                [
-                    ["Hello {name}", "Hi everybody", "Ladies"],
-                    ["Hello {name}", "Hi everyone", "Gentlemen"],
-                    ["Hello", "Hi everybody", "Hi everyone"],
-                ],
-            ),
-            (
-                "fr_message",
-                ["natural", "natural"],
-                [
-                    ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
-                    ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
-                    ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
-                ],
-            ),
-            (
-                "en_message",
-                ["reverse", "reverse"],
-                [
-                    ["Hello {name}", "Hi everyone", "Gentlemen"],
-                    ["Hello", "Hi everybody", "Hi everyone"],
-                    ["Hello {name}", "Hi everybody", "Ladies"],
-                ],
-            ),
-            (
-                "fr_message",
-                ["natural", "natural", "natural"],
-                [
-                    ["Bonjour", "Bonjour à tous", "Bonjour tout le monde"],
-                    ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
-                    ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
-                ],
-            ),
-            (
-                "en_message",
-                ["reverse", "reverse", "reverse"],
-                [
-                    ["Hello", "Hi everybody", "Hi everyone"],
-                    ["Hello {name}", "Hi everybody", "Ladies"],
-                    ["Hello {name}", "Hi everyone", "Gentlemen"],
-                ],
-            ),
-        ],
-    )
-    def test_message_toggle(self, fixture_message, orientations, expected, request):
-        message = request.getfixturevalue(fixture_message)
-        for orientation in orientations:
-            message.toggle(orientation)
-        assert message.get_principal() == expected[0]
-        assert message.get_variant(1) == expected[1]
-        assert message.get_variant(2) == expected[2]
-
-    @pytest.mark.parametrize(
-        "fixture_message, orientation, expected",
-        [
-            ("fr_message", "plus", "direction must be either 'natural' or 'reverse'"),
-            ("en_message", "minus", "direction must be either 'natural' or 'reverse'"),
-        ],
-    )
-    def test_message_toggle_failed(
-        self, fixture_message, orientation, expected, request
-    ):
-        message = request.getfixturevalue(fixture_message)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            message.toggle(orientation)
-
-    def test_message_toggle_none_natural(self, empty_message):
-        empty_message.toggle("natural")
-        assert empty_message.default == ""
-
-    def test_message_toggle_none_reverse(self, empty_message):
-        empty_message.toggle("reverse")
-        assert empty_message.default == ""
-
-
-class TestMessageFormat:
-    @pytest.mark.parametrize(
-        "params, expected",
-        [
-            ({"name": "John"}, "Hello, John!"),
-            ({"option": 1, "name": "John"}, "Hi, John!"),
-            ({"token": 1, "name": "user", "count": 5}, "Hello, 5 users!"),
-            ({"option": 1, "token": 1, "name": "user", "count": 3}, "Hi, 3 users!"),
-        ],
-    )
-    def test_message_format(self, params, expected) -> None:
-        """Test formatting a message with variables."""
-        message = Message(
-            id="greeting",
-            default="Hello, {name}!",
-            options={1: "Hi, {name}!"},
-            default_plurals={1: "Hello, {count} {name}s!"},
-            options_plurals={1: {1: "Hi, {count} {name}s!"}},
-        )
-
-        # Test formatting the main translation
-        assert message.format(**params) == expected
-
-    @pytest.mark.parametrize(
-        "params, expected",
-        [
-            ({}, "Missing variable 'name' for message 'greeting'"),
-            (
-                {"option": 1, "nom": "John"},
-                "Missing variable 'name' for message 'greeting'",
-            ),
-            (
-                {"option": 1, "token": 1, "name": "John", "compte": 3},
-                "Missing variable 'count' for message 'greeting'",
-            ),
-        ],
-    )
-    def test_message_format_failed(self, params, expected) -> None:
-        """Test formatting a message with variables."""
-
-        message = Message(
-            id="greeting",
-            default="Hello, {name}!",
-            options={1: "Hi, {name}!"},
-            default_plurals={1: "Hello, {count} {name}s!"},
-            options_plurals={1: {1: "Hi, {count} {name}s!"}},
-        )
-
-        # Test formatting the main translation
-        with pytest.raises(KeyError, match=re.escape(expected)):
-            message.format(**params)
-
-    # 7 Testing conversions
-
-    @pytest.mark.parametrize(
-        "fixture_message, expected",
-        [
-            (
-                "fr_message",
-                {
-                    "messages": [
-                        ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
-                        ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
-                        ["Bonjour tout le monde", "Mesdames", "Messieurs"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "language": "fr-FR",
-                        "context": "",
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": [
-                            "In French, Greeting message to one or more..."
-                        ],
-                        "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                        "singular_count": 3,
-                        "plural_counts": [2, 2, 2],
-                    },
-                },
-            ),
-            (
-                "en_message",
-                {
-                    "messages": [
-                        ["Hello", "Hello {name}", "Hello {name}"],
-                        ["Hi everybody", "Hi everybody", "Hi everyone"],
-                        ["Hi everyone", "Ladies", "Gentlemen"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "language": "en",
-                        "context": "",
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Greeting message to one or more..."],
-                        "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                        "singular_count": 3,
-                        "plural_counts": [2, 2, 2],
-                    },
-                },
-            ),
-        ],
-    )
-    def test_message_to_i18n_tools_format(self, fixture_message, expected, request):
-        message = request.getfixturevalue(fixture_message)
-        assert message.to_i18n_tools_format() == expected
-
-    @pytest.mark.parametrize(
-        "fixture_message, source, params",
-        [
-            (
-                "fr_message",
-                {
-                    "messages": [
-                        ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
-                        ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
-                        ["Bonjour tout le monde", "Mesdames", "Messieurs"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": [
-                            "In French, Greeting message to one or more..."
-                        ],
-                        "singular_count": 3,
-                        "plural_counts": [3, 3],
-                    },
-                },
-                (["default", None], ["options", 1], ["options", 2]),
-            ),
-            (
-                "en_message",
-                {
-                    "messages": [
-                        ["Hello", "Hello {name}", "Hello {name}"],
-                        ["Hi everybody", "Hi everybody", "Hi everyone"],
-                        ["Hi everyone", "Ladies", "Gentlemen"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Greeting message to one or more..."],
-                        "singular_count": 3,
-                        "plural_counts": [3, 3],
-                    },
-                },
-                (["default", None], ["options", 1], ["options", 2]),
-            ),
-            (
-                "fr_message",
-                {
-                    "messages": [
-                        ["Bonjour", "Bonjour Mme {name}", "Bonjour M. {name}"],
-                        ["Bonjour à tous", "Bonjour Mesdames", "Bonjour Messieurs"],
-                        ["Bonjour tout le monde", "Mesdames", "Messieurs"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "language": "fr-FR",
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": [
-                            "In French, Greeting message to one or more..."
-                        ],
-                        "singular_count": 3,
-                        "plural_counts": [3, 3],
-                    },
-                },
-                (
-                    ["default_plurals", 1],
-                    ["options_plurals", [1, 2]],
-                    ["metadata", "language"],
-                ),
-            ),
-            (
-                "en_message",
-                {
-                    "messages": [
-                        ["Hello", "Hello {name}", "Hello {name}"],
-                        ["Hi everybody", "Hi everybody", "Hi everyone"],
-                        ["Hi everyone", "Ladies", "Gentlemen"],
-                    ],
-                    "metadata": {
-                        "version": __version__,
-                        "language": "en",
-                        "locations": [],
-                        "flags": ["python-format"],
-                        "user_comments": ["Greeting message to one or more..."],
-                        "singular_count": 3,
-                        "plural_counts": [3, 3],
-                    },
-                },
-                (
-                    ["default_plurals", 1],
-                    ["options_plurals", [1, 2]],
-                    ["metadata", "language"],
-                ),
-            ),
-        ],
-    )
-    def test_message_class_from_i18n_tools(
-        self, fixture_message, source, params, request
-    ):
-        verification = request.getfixturevalue(fixture_message)
-        message = Message.from_i18n_tools("1000", source)
-        for attr, path in params:
-            if path is None:
-                assert message.__getattribute__(attr) == verification.__getattribute__(
-                    attr
-                )
-            else:
-                assert (
-                    message.__getattribute__(attr)[path]
-                    == verification.__getattribute__(attr)[path]
-                )
-
-    @pytest.mark.parametrize(
-        "option, result",
-        [(1, [["name"], ["count", "name"]]), (0, [["name"], ["count", "name"]])],
-    )
-    def test_message_get_format_variables(self, option, result):
-        message = message = Message(
-            id="greeting",
-            default="Hello, {name}!",
-            options={1: "Hi, {name}!"},
-            default_plurals={1: "Hello, {count} {name}s!"},
-            options_plurals={1: {1: "Hi, {count} {name}s!"}},
-        )
-        assert message.get_format_variables(option) == result
-
-    def test_message_get_format_variables_failed(self):
-        message = message = Message(
-            id="greeting",
-            default="Hello, {name}!",
-            options={1: "Hi, {name}!"},
-            default_plurals={1: "Hello, {count} {name}s!"},
-            options_plurals={1: {1: "Hi, {count} {name}s!"}},
-        )
-        with pytest.raises(
-            IndexError, match=re.escape("The variant location (2) is out of range")
-        ):
-            message.get_format_variables(2)
-
-
-class TestMessageProperties:
-    def test_has_variants_properties(self, fr_message, empty_message):
-        # Existing French message has options and options_plurals
-        assert fr_message.has_variants is True
-        # Empty message has no variants
-        assert empty_message.has_variants is False
-        # A message with only options should report variants
-        m = Message(id="x1", default="Hi", options={1: "Hello {who}"})
-        assert m.has_variants is True
-        # A message with only options_plurals should also report variants
-        m2 = Message(id="x2", default="Hi", options_plurals={1: {1: "Hellos"}})
-        assert m2.has_variants is True
-
-    def test_has_plurals_properties(self, fr_message, empty_message):
-        # Existing French message has default_plurals and options_plurals
-        assert fr_message.has_plurals is True
-        # Empty message has no plurals
-        assert empty_message.has_plurals is False
-        # A message with only default_plurals should report plurals
-        m = Message(id="x3", default="Hi", default_plurals={1: "Hellos"})
-        assert m.has_plurals is True
-        # A message with only options_plurals should report plurals
-        m2 = Message(id="x4", default="Hi", options_plurals={1: {1: "Hellos"}})
-        assert m2.has_plurals is True
-
-
-class TestMessageEquality:
-    def test_message_equality_true(self):
-        m1 = Message(
-            id="2000",
-            default="Hello",
-            options={1: "Hi {name}"},
-            default_plurals={1: "Hellos"},
-            options_plurals={1: {1: "Hi {name}s"}},
-            context="greet",
-            metadata={
-                "version": __version__,
-                "language": "en",
-                "location": [],
-                "flags": ["python-format"],
-                "user_comments": [],
-                "count": {"singular": 1, "plurals": [1]},
-            },
-        )
-        m2 = Message(
-            id="2000",
-            default="Hello",
-            options={1: "Hi {name}"},
-            default_plurals={1: "Hellos"},
-            options_plurals={1: {1: "Hi {name}s"}},
-            context="greet",
-            metadata={
-                "version": __version__,
-                "language": "en",
-                "location": [],
-                "flags": ["python-format"],
-                "user_comments": [],
-                "count": {"singular": 1, "plurals": [1]},
-            },
-        )
-        assert m1 == m2
-        assert m1.equals(m2) is True
-
-    def test_message_equality_false_on_property_difference(self, fr_message):
-        # Copy but with different default
-        m_other = Message(
-            id=fr_message.id,
-            default=fr_message.default + "!",
-            options=dict(fr_message.options),
-            default_plurals=dict(fr_message.default_plurals),
-            options_plurals=(
-                {k: dict(v) for k, v in fr_message.options_plurals.items()}
-                if isinstance(fr_message.options_plurals, dict)
-                else fr_message.options_plurals.to_dict()
-            ),
-            context=fr_message.context,
-            metadata=(
-                fr_message.metadata.to_dict()
-                if hasattr(fr_message.metadata, "to_dict")
-                else dict(fr_message.metadata)
-            ),
-        )
-        assert (fr_message == m_other) is False
-        assert fr_message.equals(m_other) is False
-
-    def test_message_equality_non_message(self):
-        m = Message(id="x", default="a")
-        assert (m == 1) is False or (m == 1) is NotImplemented  # ensure no crash
-        assert m.equals(1) is False
-
-        # --- Tests for similarity (is_similar) ---
-
-    def test_message_similarity_same_set_different_arrangement(self):
-        # m1: default has A, variant has B, plurals have C, variant plurals have D
-        m1 = Message(
-            id="s1",
-            default="Hello",
-            options={1: "Hi"},
-            default_plurals={1: "Hellos"},
-            options_plurals={1: {1: "His"}},
-        )
-        # m2: move strings around between default and variants but keep the same set
-        m2 = Message(
-            id="s2",
-            default="Hi",  # moved from variant to default
-            options={1: "Hello"},  # moved from default to variant
-            default_plurals={1: "His"},  # moved from variant plurals to default plurals
-            options_plurals={
-                1: {1: "Hellos"}
-            },  # moved from default plurals to variant plurals
-        )
-        # Exact equality should fail, but similarity should pass
-        assert (m1 == m2) is False
-        assert m1.is_similar(m2) is True
-
-    def test_message_similarity_false_on_content_difference(self):
-        m1 = Message(id="s3", default="Hello", options={1: "Hi"})
-        m2 = Message(id="s4", default="Hello", options={1: "Hey"})
-        assert m1.is_similar(m2) is False
-
-    def test_message_similarity_non_message(self):
-        m = Message(id="s5", default="Hello")
-        assert m.is_similar(123) is False
-
-
-class TestMessageCreation:
-
-    @pytest.mark.parametrize(
-        "fixture_name", ["fr_message", "en_message", "empty_message"]
-    )
-    def test_id(self, fixture_name, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.id == "1000"
-
-    @pytest.mark.parametrize(
-        "fixture_name, expect",
-        [("fr_message", "Bonjour"), ("en_message", "Hello"), ("empty_message", "")],
-    )
-    def test_default(self, fixture_name, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.default == expect
-
-    @pytest.mark.parametrize(
-        "fixture_name, loc, expect",
-        [
-            ("fr_message", 1, "Bonjour Mme {name}"),
-            ("en_message", 1, "Hello {name}"),
-            ("fr_message", 2, "Bonjour M. {name}"),
-            ("en_message", 2, "Hello {name}"),
-        ],
-    )
-    def test_options(self, fixture_name, loc, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.options[loc] == expect
-
-    def test_options_empty(self, empty_message):
-        assert empty_message.options == {}
-
-    @pytest.mark.parametrize(
-        "fixture_name, loc, expect",
-        [
-            ("fr_message", 1, "Bonjour à tous"),
-            ("en_message", 1, "Hi everybody"),
-            ("fr_message", 2, "Bonjour tout le monde"),
-            ("en_message", 2, "Hi everyone"),
-        ],
-    )
-    def test_default_forms(self, fixture_name, loc, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.default_plurals[loc] == expect
-
-    def test_plural_forms_empty(self, empty_message):
-        assert empty_message.default_plurals == {}
-
-    @pytest.mark.parametrize(
-        "fixture_name, loc, index, expect",
-        [
-            ("fr_message", 1, 2, "Mesdames"),
-            ("en_message", 1, 2, "Ladies"),
-            ("fr_message", 2, 1, "Bonjour Messieurs"),
-            ("en_message", 2, 1, "Hi everyone"),
-        ],
-    )
-    def test_alternative_plural_forms(self, fixture_name, loc, index, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.options_plurals[[loc, index]] == expect
-
-    def test_alternative_plural_forms_empty(self, empty_message):
-        assert empty_message.options_plurals.similar({})
-
-    @pytest.mark.parametrize(
-        "fixture_name", ["fr_message", "en_message", "empty_message"]
-    )
-    def test_metadata_version(self, fixture_name, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.metadata["version"] == __version__
-
-    @pytest.mark.parametrize(
-        "fixture_name, expect",
-        [("fr_message", "fr-FR"), ("en_message", "en"), ("empty_message", "")],
-    )
-    def test_metadata_language(self, fixture_name, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.metadata["language"] == expect
-
-    @pytest.mark.parametrize(
-        "fixture_name, key, expect",
-        [
-            ("fr_message", "singular", 3),
-            ("fr_message", "plurals", [2, 2, 2]),
-            ("en_message", "singular", 3),
-            ("en_message", "plurals", [2, 2, 2]),
-            ("empty_message", "singular", 0),
-            ("empty_message", "plurals", [0]),
-        ],
-    )
-    def test_metadata_counts(self, fixture_name, key, expect, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.metadata["count"][key] == expect
-
-    def test_failed_init(self):
-        with pytest.raises(ValueError):
-            Message("1001", "A failed", options={2: "Failed index"})
-
-
-class TestMessageMatrix:
-    def test_from_matrix_round_trip(self):
-        matrix = [["Fichier", "Document"], ["Fichiers", ""], ["Beaucoup", "Plein"]]
-        assert Message.from_matrix("1", matrix).matrix == matrix
-
-    def test_from_matrix_keeps_empty_cells(self):
-        matrix = [["", "Variante", ""], ["", "", "Pluriel"]]
-        message = Message.from_matrix("1", matrix, "ctx", {"language": "fr"})
-        assert message.matrix == matrix
-        assert message.context == "ctx"
-        assert message.metadata["language"] == "fr"
-
-    def test_from_matrix_single_cell(self):
-        assert Message.from_matrix("1", [["Seul"]]).matrix == [["Seul"]]
-
-    def test_from_matrix_copies_input(self):
-        matrix = [["a", "b"]]
-        message = Message.from_matrix("1", matrix)
-        matrix[0][1] = "changed"
-        assert message.matrix == [["a", "b"]]
-
-    def test_matrix_is_a_rectangle(self):
-        message = Message(
-            "1",
-            "Fichier",
-            options={1: "Document"},
-            default_plurals={1: "Fichiers"},
-            options_plurals={1: {1: "Documents", 2: "Beaucoup de documents"}},
-        )
-        assert message.matrix == [
-            ["Fichier", "Document"],
-            ["Fichiers", "Documents"],
-            ["", "Beaucoup de documents"],
-        ]
-
-    def test_matrix_returns_new_lists(self):
-        message = Message.from_matrix("1", [["a", "b"]])
-        message.matrix[0][0] = "changed"
-        assert message.matrix == [["a", "b"]]
-
-    @pytest.mark.parametrize(
-        "matrix",
-        [[], [[]], [["a", "b"], ["c"]]],
-        ids=["no-row", "empty-row", "ragged"],
-    )
-    def test_from_matrix_shape_errors(self, matrix):
-        with pytest.raises(ValueError):
-            Message.from_matrix("1", matrix)
-
-    @pytest.mark.parametrize(
-        "args",
-        [
-            (1, [["a"]]),
-            ("1", "a"),
-            ("1", ["a"]),
-            ("1", [["a", 2]]),
-            ("1", [["a"]], None),
-        ],
-        ids=["id-int", "matrix-str", "row-str", "cell-int", "context-none"],
-    )
-    def test_from_matrix_type_errors(self, args):
-        with pytest.raises(TypeError):
-            Message.from_matrix(*args)
+            fr_message.remove_metadata(key)

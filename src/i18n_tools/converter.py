@@ -1103,10 +1103,6 @@ def i18n_tools_format_to_message_dict(
             "flags": metadata.get("flags", []),
             "user_comments": metadata.get("user_comments", []),
             "auto_comments": metadata.get("auto_comments", []),
-            "count": {
-                "singular": metadata.get("singular_count", 1),
-                "plurals": metadata.get("plural_counts", []),
-            },
             "language": metadata.get("language", ""),
             "version": metadata.get("version", "0.0.0"),
         }

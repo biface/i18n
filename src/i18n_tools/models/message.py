@@ -1,20 +1,19 @@
 """
-Message: one identifier's translations and metadata, in one language.
+Message: one identifier's texts, context and metadata, in one language.
+
+The content of a message is a principal declension and zero or more
+variant declensions (:class:`Declension`).
 """
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, Unpack
 
 from ndict_tools import StrictNestedDictionary
 
 from i18n_tools.__static__ import __version__ as i18n_tools_version
 from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
-from i18n_tools.converter import (
-    i18n_tools_format_to_message_dict,
-    message_to_i18n_tools_format,
-)
 from i18n_tools.locale import normalize_language_tag
 
 if TYPE_CHECKING:
@@ -160,20 +159,40 @@ class Location:
         _ensure_coordinate(self.segment, "segment")
 
 
-def _check_index_dict(dictionary: dict[int, Any]) -> bool:
-    """
-    Validate that dictionary keys are within the range [1, len(dictionary)].
+_DECLENSION_FIELDS = frozenset({"singular", "plurals"})
+_DIRECTIONS = frozenset({"natural", "reverse"})
 
-    Args:
-        dictionary (dict[int, Any]): The dictionary to validate.
 
-    Returns:
-        bool: True if all keys are within the valid range, False otherwise.
+def _ensure_int(value: object, name: str) -> None:
+    """Raise TypeError unless ``value`` is an int (a bool is refused)."""
+    if is_type(value, bool) or not is_type(value, int):
+        raise TypeError(f"{name} must be an int, got {type(value)}")
+
+
+def _apply_fields(base: Declension, fields: DeclensionFields) -> Declension:
     """
-    for key in dictionary.keys():
-        if key not in range(1, len(dictionary) + 1):
-            return False
-    return True
+    Return ``base`` with the texts given in ``fields`` replaced.
+
+    :param base: The declension to start from.
+    :type base: Declension
+    :param fields: ``singular`` and/or ``plurals``.
+    :type fields: DeclensionFields
+    :return: A new declension.
+    :rtype: Declension
+    :raises TypeError: If a key is unknown, ``plurals`` is neither a list
+        nor a tuple, or a text is not a string.
+    """
+    unknown = sorted(set(fields) - _DECLENSION_FIELDS)
+    if unknown:
+        raise TypeError(f"Unknown declension field(s): {', '.join(unknown)}")
+    singular = fields.get("singular", base.singular)
+    plurals = fields.get("plurals", base.plurals)
+    ensure_type(
+        plurals,
+        (list, tuple),
+        f"Declension plurals must be a list or a tuple, got {type(plurals)}",
+    )
+    return Declension(singular, tuple(plurals))
 
 
 def _build_empty_metadata() -> StrictNestedDictionary:
@@ -183,380 +202,118 @@ def _build_empty_metadata() -> StrictNestedDictionary:
             "language": "",
             "location": [],
             "flags": ["python-format"],
-            # "comments": {"user": [], "auto": []},
             "user_comments": [],
             "auto_comments": [],
-            "count": {
-                "singular": 0,
-                "plurals": [],
-            },
         },
         default_setup={"indent": 2},
     )
 
 
-def extract_variables(text: str) -> list[str]:
+def extract_tokens(text: str) -> list[str]:
     """
-    Extract variable names from a formatted string.
+    List the tokens of a text, in order of appearance.
 
-    Args:
-        text (str): The formatted string.
+    A token is a placeholder variable written ``{name}``.
 
-    Returns:
-        list[str]: List of variable names.
+    :param text: The text to read.
+    :type text: str
+    :return: The token names, repeated if a token appears several times.
+    :rtype: list[str]
     """
-    # Find all {variable} patterns in the string
-    pattern = r"\{([^{}]+)\}"
-    return re.findall(pattern, text)
+    return re.findall(r"\{([^{}]+)\}", text)
 
 
 class Message:
     """
-    A class for handling internationalization messages using the i18n_tools specifications.
+    One identifier's texts, context and metadata, in one language.
 
-    This class provides functionality to create, store, and format messages for
-    internationalization purposes. It uses the native i18n_tools format for storing
-    messages and supports formatting using f-strings with variables.
+    The content of a message is a principal declension and zero or more
+    variant declensions. A text is addressed by ``(variant, segment)``:
+    ``variant=0`` is the principal, ``variant=1`` the first variant;
+    ``segment=0`` is the singular, ``segment=1`` the first plural.
 
-    **Terminology:**
+    The principal always exists as a structure: an absent principal is a
+    declension whose singular is ``""``. ``""`` marks an absent text
+    anywhere in the content.
 
-        * message is the content of a translation and its options
-        * translation is the list of singular message and its plurals, each element of the list is a *token*
-        * alternative is a different *option* of the translation in the message
-        * component  is a token inside a translation or an alternative
-        * option is an alternative translation
+    Declensions may have different numbers of segments while a message is
+    edited. :attr:`matrix` pads the shorter ones with ``""``.
 
-        message va devenir translation,
-        translation va devenir variant,
-        component va devenir segment
-
-
-    Attributes:
-
-        id (str): A unique identifier assigned to each message, ensuring that messages can be easily referenced and managed within the translation system.
-        default (str): The primary text of the message, serving as the default translation when no specific alternatives or plural forms are required.
-        options (dict[int, str]): A collection of alternative translations that can be used in different contexts or scenarios, allowing for flexibility in message presentation based on specific needs.
-        default_plurals (dict[int, str]): A set of translations that account for different pluralization rules, accommodating languages with multiple plural forms.
-        options_plurals (dict[int, dict[int, str]]): Plural forms associated with alternative translations, providing comprehensive support for various linguistic pluralization requirements.
-        context (str): Additional information that clarifies the usage context of the message, helping to disambiguate messages with similar or identical text. It is maintained for compatibility with other format.
-        metadata (StrictNestedDictionary): The metadata attribute of the Message class contains detailed information about the translation, aiding in its management and usage. The structure of the metadata is as follows:
-
-            - version (str): Indicates the version of the metadata structure, allowing for future changes in format while maintaining backward compatibility.
-            - language (str): Is the IETF Language Tag code used in the message. It is built with language code library.
-            - location (List[Tuple[int, str]]): A list of source file locations where the message is used, including the file path and line number. This helps in tracking the usage of the message within the codebase.
-            - flags (list[str]): A set of indicators that provide additional information about the message, such as whether it is fuzzy or uses a specific format like Python-format.
-            - comments (str): Notes or comments from translators, offering insights or additional context about the message.
-            - count (dict[str, Any]): Counting translation of standard and alternatives.
-
-                - singular (int): The number of times the singular form of the message is used, helping in understanding the frequency and importance of the message.
-                - plurals (list[int]): A list of counts for the different plural forms of the message, providing information on the usage of each plural form.
+    :ivar id: Language-neutral identifier of the message.
+    :ivar context: Disambiguation context, kept for other formats.
+    :ivar metadata: Version, language, locations, flags and comments.
+    :ivar plural_rule: Rule resolving a count to a segment, or None.
     """
 
     id: str
-    default: str
-    options: dict[int, str]
-    default_plurals: dict[int, str]
-    options_plurals: StrictNestedDictionary
     context: str
     metadata: StrictNestedDictionary
     plural_rule: "PluralRule | None"
+    _principal: Declension
+    _variants: list[Declension]
 
-    def __check_plural_forms__(self, value: dict[int, str] | None = None) -> bool:
-        """
-        Check if the plural_forms attribute or the provided value has the correct data structure.
-
-        Args:
-            value (dict[int, str] | None, optional): The value to check. If None, checks self.plural_forms. Defaults to None.
-
-        Returns:
-            bool: True if the structure is valid, False otherwise.
-        """
-        # Determine which value to check
-        data_to_check = value if value is not None else self.default_plurals
-
-        return _check_index_dict(data_to_check)
-
-    def __check_alternatives__(self, value: dict[int, str] | None = None) -> bool:
-        """
-        Check if the alternatives attribute or the provided value has the correct data structure.
-
-        Args:
-            value (dict[int, str] | None, optional): The value to check. If None, checks self.alternatives. Defaults to None.
-
-        Returns:
-            bool: True if the structure is valid, False otherwise.
-        """
-        # Determine which value to check
-        data_to_check = value if value is not None else self.options
-
-        # Check that all keys are integers and all values are strings
-        return _check_index_dict(data_to_check)
-
-    def __check_alternative_plural_forms__(
-        self, value: dict[int, Any] | StrictNestedDictionary | None = None
-    ) -> bool:
-        """
-        Check if the alternative_plural_forms attribute or the provided value has the correct data structure.
-
-        Args:
-            value (dict[int, Any] | StrictNestedDictionary | None, optional): The value to check. If None, checks self.alternative_plural_forms. Defaults to None.
-
-        Returns:
-            bool: True if the structure is valid, False otherwise.
-        """
-
-        # Determine which value to check
-        data_to_check = value if value is not None else self.options_plurals
-        __check = _check_index_dict(data_to_check)
-
-        # Check that all keys are integers and all values are dictionaries
-        if __check:
-            for val in data_to_check.values():
-                __check = _check_index_dict(val)
-
-        return __check
-
-    def __check_metadata__(self, value: dict[str, Any]) -> bool:
-        """
-        Check if the metadata attribute or the provided value has the correct data structure.
-
-        Args:
-            value (dict[str, Any] | None, optional): The value to check. If None, checks self.metadata. Defaults to None.
-
-        Returns:
-            bool: True if the structure is valid, False otherwise.
-        """
-        __check = True
-
-        if isinstance(value, StrictNestedDictionary):
-            paths = value.paths()
-        else:
-            paths = StrictNestedDictionary(value).paths()
-
-        for path in paths:
-            if path not in self.metadata.paths():
-                __check = False
-
-        return __check
-
-    def __count_singular__(self) -> int:
-        """
-        Get the count of singulars in translation and alternatives.
-
-        Returns:
-            int: The count of presently stored singulars.
-        """
-        count = 1 if len(self.default) > 0 else 0
-        count += len(self.options) if len(self.options) > 0 else 0
-
-        return count
-
-    def __count_plurals__(self) -> list[int]:
-        """
-        Get the list of plurals for each singular or alternative singular.
-
-        Returns:
-            list[int]: The list of count of plurals for each singular.
-        """
-        counts = [len(self.default_plurals)]
-        for index in range(1, len(self.options) + 1):
-            if index in self.options_plurals.keys():
-                counts.append(len(self.options_plurals[index]))
-            else:
-                counts.append(0)
-
-        return counts
-
-    # --- Internal helpers for factorization ---
-    def _assert_valid_option(self, option: int) -> None:
-        """Ensure the given option index refers to an existing variant.
-
-        Raises IndexError with a consistent message if out of range.
-        """
-        if not (0 < option <= len(self.options)):
-            raise IndexError(f"The variant location ({option}) is out of range")
-
-    def _assert_valid_token_in_option(self, option: int, index: int) -> None:
-        """Ensure the given token index refers to an existing plural of an option.
-
-        Expects the option to exist. Raises IndexError if token is out of range.
-        """
-        if not (0 < index <= len(self.options_plurals[option])):
-            raise IndexError(
-                f"The token location ({index}) of the variant location ({option}) is out of range"
-            )
-
-    def _assert_valid_default_plural_token(self, index: int) -> None:
-        """Ensure the given token index refers to an existing default plural.
-        Raises IndexError if token is out of range.
-        """
-        if not (0 < index <= len(self.default_plurals)):
-            raise IndexError(f"The token location ({index}) is out of range")
-
-    def _refresh_counts(self, singular: bool = False, plurals: bool = False) -> None:
-        """Refresh metadata counts.
-        If both flags are False, refresh both counts; otherwise refresh selected ones.
-        """
-        if not singular and not plurals:
-            self.metadata[["count", "singular"]] = self.__count_singular__()
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-            return
-        if singular:
-            self.metadata[["count", "singular"]] = self.__count_singular__()
-        if plurals:
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
+    # A message is mutable and compares by content: it is not hashable.
+    __hash__: ClassVar[None] = None  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __init__(
         self,
         id: str,
-        default: str = "",
-        options: dict[int, str] | None = None,
-        default_plurals: dict[int, str] | None = None,
-        options_plurals: dict[int, dict[int, str]] | None = None,
+        principal: Declension | None = None,
+        variants: list[Declension] | tuple[Declension, ...] | None = None,
         context: str = "",
-        metadata: dict[str, Any] | None = None,
-    ):
+        metadata: dict[str, object] | None = None,
+    ) -> None:
         """
-        Initialize a new Message instance.
+        Create a message.
 
-        Args:
-            id (str): The unique identifier for the message.
-            default (str, optional): The main translation text. Defaults to "".
-            options (dict[int, str], optional): Alternative translations. Defaults to None.
-            default_plurals (dict[int, str], optional): Plural forms of the main translation. Defaults to None.
-            options_plurals (dict[int, dict[int, str]], optional): Plural forms for alternative translations. Defaults to None.
-            context (str, optional): Context information for the translation. Defaults to "".
-            metadata (dict[str, Any], optional): Metadata about the translation. Defaults to None.
+        :param id: Identifier of the message.
+        :type id: str
+        :param principal: The principal declension; None gives an absent
+            principal, ``Declension()``.
+        :type principal: Declension | None
+        :param variants: The variant declensions, in order.
+        :type variants: list[Declension] | tuple[Declension, ...] | None
+        :param context: Context of the message.
+        :type context: str
+        :param metadata: Metadata values, as accepted by
+            :meth:`add_metadata`.
+        :type metadata: dict[str, object] | None
+        :raises TypeError: If an argument has the wrong type.
+        :raises KeyError: If ``metadata`` holds an unknown key.
         """
+        ensure_type(id, str, f"Message id must be a string, got {type(id)}")
+        ensure_type(
+            principal,
+            (Declension, type(None)),
+            f"Message principal must be a Declension or None, got {type(principal)}",
+        )
+        ensure_type(
+            variants,
+            (list, tuple, type(None)),
+            f"Message variants must be a list, a tuple or None, got {type(variants)}",
+        )
+        for variant in variants or ():
+            ensure_type(
+                variant,
+                Declension,
+                f"Message variant must be a Declension, got {type(variant)}",
+            )
+        ensure_type(
+            context, str, f"Message context must be a string, got {type(context)}"
+        )
+        ensure_type(
+            metadata,
+            (dict, type(None)),
+            f"Message metadata must be a dict or None, got {type(metadata)}",
+        )
         self.id = id
-        self.default = default
-        self.options = {}
-        self.default_plurals = {}
-        self.options_plurals = StrictNestedDictionary()
+        self._principal = principal if principal is not None else Declension()
+        self._variants = list(variants) if variants is not None else []
         self.context = context
         self.metadata = _build_empty_metadata()
         self.plural_rule = None
-
-        # Process standard attributes with a parameterized loop
-
-        for attr_name, attr_value, check_method in [
-            ("options", options, self.__check_alternatives__),
-            ("default_plurals", default_plurals, self.__check_plural_forms__),
-            (
-                "options_plurals",
-                (
-                    StrictNestedDictionary(options_plurals)
-                    if options_plurals is not None and len(options_plurals) > 0
-                    else None
-                ),
-                self.__check_alternative_plural_forms__,
-            ),
-        ]:
-            if attr_value is not None:
-                if check_method(attr_value):
-                    setattr(self, attr_name, attr_value)
-                else:
-                    raise ValueError(f"The {attr_name} value is malformed")
-
         if metadata is not None:
             self.add_metadata(**metadata)
-
-        # Update counters in metadata
-
-        self.metadata[["count", "singular"]] = self.__count_singular__()
-        self.metadata[["count", "plurals"]] = self.__count_plurals__()
-
-        # End of __init__
-
-    # Managing messages
-
-    def get_id(self) -> str:
-        """
-        Get the unique identifier for the message.
-
-        Returns:
-            str: The message identifier.
-        """
-        return self.id
-
-    def add_message(self, **kwargs) -> None:
-        """
-        Add translation-related attributes to the message.
-
-        Args:
-            **kwargs: Keyword arguments corresponding to message attributes to set.
-                Supported keys: "translation" (str), "options" (dict[int, str]),
-                "default_plurals" (dict[int, str]), "options_plurals" (dict[int, dict[int, str]]).
-
-        Raises:
-            ValueError: If "translation" is missing or empty, or if a provided attribute value is malformed.
-        """
-        __translation = kwargs.pop("default", None)
-
-        if __translation is None:
-            raise ValueError("At least one translation is required")
-        else:
-            self.default = __translation
-
-            # Process attributes with a parameterized loop using validation methods
-            for attr_name, check_method in [
-                ("options", self.__check_alternatives__),
-                ("default_plurals", self.__check_plural_forms__),
-                ("options_plurals", self.__check_alternative_plural_forms__),
-            ]:
-                value = kwargs.pop(attr_name, None)
-                if value is not None:
-                    if check_method(value):
-                        if attr_name == "options_plurals":
-                            setattr(self, attr_name, StrictNestedDictionary(value))
-                        else:
-                            setattr(self, attr_name, value)
-                    else:
-                        raise ValueError(f"The {attr_name} value is malformed")
-
-    def update_message(self, **kwargs) -> None:
-        """
-        Update translation-related attributes to the message.
-
-        Args:
-            **kwargs: Keyword arguments corresponding to message attributes to set.
-                Supported keys: "translation" (str), "options" (dict[int, str]),
-                "default_plurals" (dict[int, str]), "options_plurals" (dict[int, dict[int, str]]).
-
-        Raises:
-            ValueError: If "translation" is missing or empty, or if a provided attribute value is malformed.
-        """
-
-        translation = kwargs.pop("default", None)
-        if translation is not None and translation != "":
-            self.default = translation
-
-        for attr_name, check_method in [
-            ("options", self.__check_alternatives__),
-            ("default_plurals", self.__check_plural_forms__),
-            ("options_plurals", self.__check_alternative_plural_forms__),
-        ]:
-            value = kwargs.pop(attr_name, None)
-            if value is not None:
-                if check_method(value):
-                    if attr_name == "options_plurals":
-                        value = StrictNestedDictionary(value)
-                    setattr(self, attr_name, value)
-                else:
-                    raise ValueError(f"The '{attr_name}' value is malformed")
-
-    def remove_message(self) -> None:
-        """
-        Removes all translations in Message instance and setup to default emtpy values including metadata.
-        :return:
-        """
-        self.id = ""
-        self.default = ""
-        self.options = {}
-        self.default_plurals = {}
-        self.options_plurals = StrictNestedDictionary()
-        self.context = ""
-        self.metadata = _build_empty_metadata()
 
     @classmethod
     def from_matrix(
@@ -564,15 +321,16 @@ class Message:
         id: str,
         matrix: list[list[str]],
         context: str = "",
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, object] | None = None,
     ) -> "Message":
         """
         Build a message from its matrix.
 
         The matrix has the orientation of the ``.i18t`` format: one row per
         segment (row 0 holds the singulars), one column per declension
-        (column 0 is the principal). Every cell is kept, empty strings
-        included, so that ``Message.from_matrix(id, m).matrix == m``.
+        (column 0 is the principal). Each column becomes a declension with
+        all its cells, empty strings included, so that
+        ``Message.from_matrix(id, m).matrix == m``.
 
         :param id: Identifier of the message.
         :type id: str
@@ -583,7 +341,7 @@ class Message:
         :type context: str
         :param metadata: Metadata of the message, as accepted by the
             constructor.
-        :type metadata: dict[str, Any] | None
+        :type metadata: dict[str, object] | None
         :return: The message.
         :rtype: Message
         :raises TypeError: If ``id`` or ``context`` is not a string,
@@ -592,9 +350,6 @@ class Message:
         :raises ValueError: If ``matrix`` is empty or not rectangular.
         """
         ensure_type(id, str, f"Message id must be a string, got {type(id)}")
-        ensure_type(
-            context, str, f"Message context must be a string, got {type(context)}"
-        )
         ensure_type(matrix, list, f"Message matrix must be a list, got {type(matrix)}")
         if len(matrix) == 0:
             raise ValueError("A message matrix has at least one row (the singulars)")
@@ -612,27 +367,48 @@ class Message:
                 "A message matrix is a non-empty rectangle: every row has the "
                 + "same number of cells, at least one"
             )
-
-        options = {variant: matrix[0][variant] for variant in range(1, columns)}
-        default_plurals = {
-            segment: matrix[segment][0] for segment in range(1, len(matrix))
-        }
-        options_plurals = {
-            variant: {
-                segment: matrix[segment][variant] for segment in range(1, len(matrix))
-            }
-            for variant in range(1, columns)
-            if len(matrix) > 1
-        }
+        declensions = [
+            Declension(matrix[0][column], tuple(row[column] for row in matrix[1:]))
+            for column in range(columns)
+        ]
         return cls(
             id=id,
-            default=matrix[0][0],
-            options=options,
-            default_plurals=default_plurals,
-            options_plurals=options_plurals,
+            principal=declensions[0],
+            variants=declensions[1:],
             context=context,
             metadata=metadata,
         )
+
+    def get_id(self) -> str:
+        """
+        Get the identifier of the message.
+
+        :return: The identifier.
+        :rtype: str
+        """
+        return self.id
+
+    # --- Reading the content -------------------------------------------------
+
+    @property
+    def principal(self) -> Declension:
+        """
+        The principal declension (variant 0).
+
+        :return: The principal; its singular is ``""`` when it is absent.
+        :rtype: Declension
+        """
+        return self._principal
+
+    @property
+    def variants(self) -> tuple[Declension, ...]:
+        """
+        The variant declensions, variant 1 first.
+
+        :return: The variants.
+        :rtype: tuple[Declension, ...]
+        """
+        return tuple(self._variants)
 
     @property
     def matrix(self) -> list[list[str]]:
@@ -648,781 +424,484 @@ class Message:
         :return: The matrix of texts.
         :rtype: list[list[str]]
         """
-        variants = sorted(self.options.keys())
-        last_segment = max(self.default_plurals.keys(), default=0)
-        for variant in variants:
-            if variant in self.options_plurals:
-                last_segment = max(
-                    last_segment,
-                    max(self.options_plurals[variant].keys(), default=0),
+        declensions = self._declensions()
+        rows = max(len(declension.segments) for declension in declensions)
+        return [
+            [
+                (
+                    declension.segments[segment]
+                    if segment < len(declension.segments)
+                    else ""
                 )
-        matrix = [[self.default, *(self.options[variant] for variant in variants)]]
-        for segment in range(1, last_segment + 1):
-            row = [self.default_plurals.get(segment, "")]
-            for variant in variants:
-                plurals = (
-                    self.options_plurals[variant]
-                    if variant in self.options_plurals
-                    else {}
-                )
-                row.append(plurals.get(segment, ""))
-            matrix.append(row)
-        return matrix
+                for declension in declensions
+            ]
+            for segment in range(rows)
+        ]
 
     @property
-    def message(self) -> list[list[str]]:
+    def has_variants(self) -> bool:
         """
-        The list of translations in Message instance.
+        Whether the message has at least one variant.
 
-        :return: The list of translations in Message instance.
-        :rtype: list[list[str]]
+        :return: True if there is a variant, empty or not.
+        :rtype: bool
         """
-        msg = [self.principal]
-        msg.extend(self.variants)
-        return msg
+        return len(self._variants) > 0
 
-    @message.setter
-    def message(self, value: list[list[str]]) -> None:
+    @property
+    def has_plurals(self) -> bool:
         """
-        Set the translations in Message instance.
+        Whether a declension of the message has a plural segment.
 
-        :param value: the list of translations in Message instance.
-        :return: nothing (void function)
-        :rtype: None
+        The test is structural: a plural segment counts even if its text is
+        empty.
+
+        :return: True if the matrix has more than one row.
+        :rtype: bool
         """
-        self.principal = value[0]
-        self.variants = value[1:]
+        return any(len(declension.plurals) > 0 for declension in self._declensions())
 
-    # Managing main
-
-    def get_principal(self) -> list[str]:
+    def get_variant(self, variant: int) -> Declension:
         """
-        Get the main translation and its plural forms.
+        Get a variant declension.
 
-        Returns:
-            list[str]: A formatted list containing the main translation and all plural forms.
+        :param variant: Index of the variant, 1 for the first one.
+        :type variant: int
+        :return: The variant.
+        :rtype: Declension
+        :raises TypeError: If ``variant`` is not an int.
+        :raises IndexError: If ``variant`` is 0 (the principal) or out of
+            range.
         """
-        translations = [self.default]
-        if self.default_plurals:
-            translations.extend(self.default_plurals.values())
-        return translations
+        self._check_variant_index(variant)
+        return self._variants[variant - 1]
 
-    def get_principal_plurals(self) -> list[str]:
+    def get_segment(self, segment: int, variant: int = 0) -> str:
         """
-        Get the main translation's plural forms.
+        Get one text of the message, read from the matrix.
 
-        Returns:
-            list[str]: The list of plural forms.
+        :param segment: Segment of the text, 0 for the singular.
+        :type segment: int
+        :param variant: Declension of the text, 0 for the principal.
+        :type variant: int
+        :return: The text; ``""`` for an absent text or a padding cell.
+        :rtype: str
+        :raises TypeError: If an index is not an int.
+        :raises IndexError: If an index is outside the matrix.
         """
-        plurals = []
-        if self.default_plurals:
-            plurals.extend(self.default_plurals.values())
-        return plurals
+        self._check_cell(segment, variant)
+        segments = self._declensions()[variant].segments
+        return segments[segment] if segment < len(segments) else ""
 
-    def add_principal(self, *args, **kwargs) -> None:
-        """
-        Add the main translation or its plural forms and update the metadata counters..
-        :param args: is a list of translation components
-        :type args: list
-        :param kwargs: if no args, is a dictionary of translation components
-        :type kwargs: dict
-        :return: Nothing (void function)
-        :rtype: None
-        """
-        if args and len(args) == 1 and isinstance(args[0], list):
-            translation = args[0]
-            if translation[0] != "":
-                self.default = translation[0]
-                self.metadata[["count", "singular"]] = self.__count_singular__()
-            else:
-                raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{translation[0]}'"
-                )
-            if len(translation) > 1:
-                for index, token in enumerate(translation[1:]):
-                    self.default_plurals[index + 1] = token
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        elif kwargs:
-            alt_singular = kwargs.pop("default", None)
-            if alt_singular is not None and alt_singular != "":
-                self.default = alt_singular
-                self.metadata[["count", "singular"]] = self.__count_singular__()
-            else:
-                raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{alt_singular}'"
-                )
-            plural = kwargs.pop("default_plurals", None)
-            if plural is not None:
-                if isinstance(plural, dict) and self.__check_plural_forms__(plural):
-                    self.default_plurals = plural
-                else:
-                    raise (ValueError(f"Plural forms is malformed : {plural}"))
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        else:
-            raise (ValueError("No translation specified"))
+    # --- Changing the principal ----------------------------------------------
 
-    def update_principal(self, *args, **kwargs) -> None:
+    def add_principal(self, **fields: Unpack[DeclensionFields]) -> None:
         """
-        Update segments of a translation
-        :param args: list of translation component
-        :param kwargs: dictionary of translation components
-        :return: nothing (void function)
+        Give the message its principal.
+
+        The principal must be absent (empty singular). Plurals not given
+        keep their current segments.
+
+        :param fields: ``singular`` (required, not empty) and ``plurals``.
+        :type fields: DeclensionFields
+        :raises ValueError: If the principal is present, or ``singular`` is
+            missing or empty.
+        :raises TypeError: If a field is unknown or has the wrong type.
         """
-        if args and len(args) == 1 and isinstance(args[0], list):
-            translation = args[0]
-            if translation[0] is not None and translation[0] != "":
-                self.default = translation[0]
+        if self._principal.singular != "":
+            raise ValueError(
+                f"Message '{self.id}' already has a principal: use update_principal()"
+            )
+        principal = _apply_fields(self._principal, fields)
+        if principal.singular == "":
+            raise ValueError("A principal needs a non-empty singular")
+        self._principal = principal
 
-            if len(translation) > 1:
-                for index, text in enumerate(translation[1:]):
-                    if text is not None and text != "":
-                        self.default_plurals[index + 1] = text
-        elif kwargs:
-            pop_text = kwargs.pop("default", None)
-            if pop_text is not None and pop_text != "":
-                self.default = pop_text
+    def update_principal(self, **fields: Unpack[DeclensionFields]) -> None:
+        """
+        Replace texts of the principal.
 
-            pop_plurals = kwargs.pop("default_plurals", None)
-            if pop_plurals is not None:
-                if isinstance(pop_plurals, dict) and self.__check_plural_forms__(
-                    pop_plurals
-                ):
-                    self.default_plurals = pop_plurals
-                elif isinstance(pop_plurals, list):
-                    d_pop_plural = {}
-                    for index, text in enumerate(pop_plurals):
-                        d_pop_plural[index + 1] = text
-                    self.default_plurals = d_pop_plural
-                else:
-                    raise (
-                        ValueError(
-                            f"plural translation context is malformed : {pop_plurals}"
-                        )
-                    )
-        else:
-            raise (ValueError("No updates specified"))
+        :param fields: ``singular`` (not empty) and/or ``plurals``.
+        :type fields: DeclensionFields
+        :raises ValueError: If no field is given or ``singular`` is empty.
+        :raises TypeError: If a field is unknown or has the wrong type.
+        """
+        self._principal = self._updated(self._principal, fields, "principal")
 
     def remove_principal(self) -> None:
         """
-        Removes the main translation from message and update metadata
-        :return: nothing (void function)
-        :rtype: None
+        Empty every text of the principal, keeping its number of segments.
         """
-        self.default = ""
-        self.default_plurals = {}
-        self.metadata[["count", "singular"]] = self.__count_singular__()
-        self.metadata[["count", "plurals"]] = self.__count_plurals__()
+        self._principal = Declension("", tuple("" for _ in self._principal.plurals))
 
-    def _remove_default_segment(self):
+    # --- Changing the variants -----------------------------------------------
+
+    def add_variant(self, **fields: Unpack[DeclensionFields]) -> int:
         """
-        Protected function to empties self.default.
+        Append a variant.
 
-        :return: nothing (void function)
-        :rtype: None
+        The variant keeps the segments it is given: it is not padded to the
+        segment count of the other declensions.
+
+        :param fields: ``singular`` (required, not empty) and ``plurals``.
+        :type fields: DeclensionFields
+        :return: The index of the new variant.
+        :rtype: int
+        :raises ValueError: If ``singular`` is missing or empty.
+        :raises TypeError: If a field is unknown or has the wrong type.
         """
-        self.default = ""
-        self.metadata[["count", "singular"]] = self.__count_singular__()
+        variant = _apply_fields(Declension(), fields)
+        if variant.singular == "":
+            raise ValueError("A variant needs a non-empty singular")
+        self._variants.append(variant)
+        return len(self._variants)
 
-    def _remove_default_plurals_segment(self, index: int) -> None:
+    def update_variant(self, variant: int, **fields: Unpack[DeclensionFields]) -> None:
         """
-        Protected function to empties self.default_plurals.
-        :param index: the location index (token) of the plural to be removed
-        :type index: int
-        :return: nothing (void function)
-        :rtype: None
-        :raises IndexError: if the token is out of range
+        Replace texts of a variant.
+
+        :param variant: Index of the variant, 1 for the first one.
+        :type variant: int
+        :param fields: ``singular`` (not empty) and/or ``plurals``.
+        :type fields: DeclensionFields
+        :raises IndexError: If ``variant`` is 0 or out of range.
+        :raises ValueError: If no field is given or ``singular`` is empty.
+        :raises TypeError: If ``variant`` is not an int, or a field is
+            unknown or has the wrong type.
         """
-        if 0 < index <= len(self.default_plurals):
-            del self.default_plurals[index]
+        self._check_variant_index(variant)
+        self._variants[variant - 1] = self._updated(
+            self._variants[variant - 1], fields, f"variant {variant}"
+        )
 
-            reshaped_dict: dict[int, str] = {}
-            for idx, key in enumerate(sorted(self.default_plurals.keys()), start=1):
-                reshaped_dict[idx] = self.default_plurals[key]
-            self.default_plurals = reshaped_dict
+    def remove_variant(self, variant: int) -> None:
+        """
+        Remove a variant; the following variants move down by one.
 
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        else:
-            raise IndexError(
-                f"The location ({index}) of the plural to be remove is out of range"
+        :param variant: Index of the variant, 1 for the first one.
+        :type variant: int
+        :raises IndexError: If ``variant`` is 0 or out of range.
+        :raises TypeError: If ``variant`` is not an int.
+        """
+        self._check_variant_index(variant)
+        del self._variants[variant - 1]
+
+    # --- Changing segments ---------------------------------------------------
+
+    def add_segment(self, text: str, segment: int, variant: int = 0) -> None:
+        """
+        Insert a plural row at ``segment`` in every declension.
+
+        ``text`` goes to declension ``variant``, the others get ``""``.
+        The rows from ``segment`` on move down by one. A declension that
+        does not reach ``segment`` is left as it is, unless it receives the
+        text.
+
+        :param text: Text of the new segment in declension ``variant``.
+        :type text: str
+        :param segment: Position of the new row, from 1 to the current
+            number of rows.
+        :type segment: int
+        :param variant: Declension receiving the text, 0 for the principal.
+        :type variant: int
+        :raises ValueError: If ``segment`` is 0 (the singular row).
+        :raises IndexError: If ``segment`` or ``variant`` is out of range.
+        :raises TypeError: If an argument has the wrong type.
+        """
+        ensure_type(text, str, f"Segment text must be a string, got {type(text)}")
+        _ensure_int(segment, "segment")
+        self._check_variant(variant)
+        if segment == 0:
+            raise ValueError("Segment 0 is the singular: add_segment() inserts plurals")
+        rows = len(self.matrix)
+        if segment < 0 or segment > rows:
+            raise IndexError(f"Segment {segment} is out of range 1..{rows}")
+        declensions = self._declensions()
+        for index, declension in enumerate(declensions):
+            segments = list(declension.segments)
+            if len(segments) >= segment:
+                segments.insert(segment, text if index == variant else "")
+            elif index == variant:
+                segments.extend("" for _ in range(segment - len(segments)))
+                segments.append(text)
+            else:
+                continue
+            self._set_declension(index, Declension.from_segments(segments))
+
+    def update_segment(self, text: str, segment: int, variant: int = 0) -> None:
+        """
+        Replace one text of the message.
+
+        :param text: The new text; ``""`` marks an absent text, refused for
+            the principal singular.
+        :type text: str
+        :param segment: Segment of the text, 0 for the singular.
+        :type segment: int
+        :param variant: Declension of the text, 0 for the principal.
+        :type variant: int
+        :raises ValueError: If ``text`` is empty for ``(0, 0)``.
+        :raises IndexError: If an index is outside the matrix.
+        :raises TypeError: If an argument has the wrong type.
+        """
+        ensure_type(text, str, f"Segment text must be a string, got {type(text)}")
+        self._check_cell(segment, variant)
+        if segment == 0 and variant == 0 and text == "":
+            raise ValueError(
+                "The principal singular cannot be emptied: use remove_principal()"
             )
+        segments = list(self._declensions()[variant].segments)
+        segments.extend("" for _ in range(segment + 1 - len(segments)))
+        segments[segment] = text
+        self._set_declension(variant, Declension.from_segments(segments))
+
+    def remove_segment(self, segment: int) -> None:
+        """
+        Remove the plural row ``segment`` from every declension.
+
+        :param segment: Row to remove, 1 for the first plural.
+        :type segment: int
+        :raises ValueError: If ``segment`` is 0 (the singular row).
+        :raises IndexError: If ``segment`` is out of range.
+        :raises TypeError: If ``segment`` is not an int.
+        """
+        _ensure_int(segment, "segment")
+        if segment == 0:
+            raise ValueError("Segment 0 is the singular and cannot be removed")
+        rows = len(self.matrix)
+        if segment < 0 or segment >= rows:
+            raise IndexError(f"Segment {segment} is out of range 1..{rows - 1}")
+        for index, declension in enumerate(self._declensions()):
+            if len(declension.segments) > segment:
+                segments = list(declension.segments)
+                del segments[segment]
+                self._set_declension(index, Declension.from_segments(segments))
+
+    # --- Reordering declensions ----------------------------------------------
+
+    def switch(self, source: int, destination: int) -> None:
+        """
+        Exchange two declensions; 0 is the principal.
+
+        :param source: Index of the first declension.
+        :type source: int
+        :param destination: Index of the second declension.
+        :type destination: int
+        :raises IndexError: If the indices are equal or out of range.
+        :raises TypeError: If an index is not an int.
+        """
+        self._check_variant(source)
+        self._check_variant(destination)
+        if source == destination:
+            raise IndexError(
+                f"source ({source}) and destination ({destination}) must be different"
+            )
+        declensions = self._declensions()
+        self._set_declension(source, declensions[destination])
+        self._set_declension(destination, declensions[source])
+
+    def toggle(self, direction: Literal["natural", "reverse"] = "natural") -> None:
+        """
+        Rotate the declensions by one position.
+
+        ``"natural"`` moves 0 to 1, 1 to 2, ..., n to 0; ``"reverse"``
+        moves 1 to 0, 2 to 1, ..., 0 to n. Nothing changes without variants.
+
+        :param direction: ``"natural"`` or ``"reverse"``.
+        :type direction: Literal["natural", "reverse"]
+        :raises ValueError: If ``direction`` is neither value.
+        """
+        if not is_type(direction, str) or str(direction) not in _DIRECTIONS:
+            raise ValueError("direction must be either 'natural' or 'reverse'")
+        declensions = self._declensions()
+        if direction == "natural":
+            rotated = [declensions[-1], *declensions[:-1]]
+        else:
+            rotated = [*declensions[1:], declensions[0]]
+        self._principal = rotated[0]
+        self._variants = rotated[1:]
+
+    # --- Tokens --------------------------------------------------------------
+
+    def format(self, variant: int = 0, segment: int = 0, **tokens: object) -> str:
+        """
+        Substitute the tokens of one text.
+
+        The text is the exact cell ``(variant, segment)``; an absent text
+        gives ``""``. There is no fallback to another cell: the column
+        fallback belongs to ``formatter.publish()``.
+
+        :param variant: Declension of the text, 0 for the principal.
+        :type variant: int
+        :param segment: Segment of the text, 0 for the singular.
+        :type segment: int
+        :param tokens: Values of the tokens.
+        :type tokens: object
+        :return: The formatted text.
+        :rtype: str
+        :raises IndexError: If an index is outside the matrix.
+        :raises KeyError: If a token of the text has no value.
+        :raises ValueError: If the text cannot be formatted.
+        """
+        text = self.get_segment(segment, variant)
+        try:
+            return text.format(**tokens)
+        except KeyError as e:
+            missing = str(e).strip("'")
+            raise KeyError(f"Missing token '{missing}' for message '{self.id}'") from e
+        except Exception as e:
+            raise ValueError(f"Error formatting message '{self.id}': {e}") from e
+
+    def get_tokens(self, variant: int = 0) -> list[list[str]]:
+        """
+        List the tokens of each segment of one declension.
+
+        :param variant: Declension to read, 0 for the principal.
+        :type variant: int
+        :return: One list of token names per segment of the declension.
+        :rtype: list[list[str]]
+        :raises IndexError: If ``variant`` is out of range.
+        :raises TypeError: If ``variant`` is not an int.
+        """
+        self._check_variant(variant)
+        return [extract_tokens(text) for text in self._declensions()[variant].segments]
+
+    # --- Comparisons ---------------------------------------------------------
 
     @property
-    def principal(self) -> list[str]:
+    def texts(self) -> frozenset[str]:
         """
-        The components of the main or default translation (principal) as a list of sentences.
+        The non-empty texts of the message, wherever they are.
 
-        :return: a list of sentences
-        :rtype: list[str]
+        :return: The set of texts.
+        :rtype: frozenset[str]
         """
-        return self.get_principal()
+        return frozenset(
+            text
+            for declension in self._declensions()
+            for text in declension.segments
+            if text
+        )
 
-    @principal.setter
-    def principal(self, value: list[str]) -> None:
+    def equal(self, other: object) -> bool:
         """
-        Adds the principal of the translation.
+        Strict equality: same identifier, content, context and metadata.
 
-        :param value: a list of sentences constitutive of the default translation
-        :type value: list[str]
-        :return: nothing (void function)
-        :rtype: None
+        :param other: The object to compare with.
+        :type other: object
+        :return: True if ``other`` is an equal Message.
+        :rtype: bool
         """
-        self.add_principal(value)
+        if not isinstance(other, Message):
+            return False
+        return (
+            self.id == other.id
+            and self._principal == other._principal
+            and self._variants == other._variants
+            and self.context == other.context
+            and self.metadata.to_dict() == other.metadata.to_dict()
+        )
 
-    # Managing variant
-
-    def get_variant(self, option: int) -> list[str]:
+    def isomorph(self, other: object) -> bool:
         """
-        Get the alternative translation and its plural forms for a specific location index.
+        Whether ``other`` is a Message with the same matrix.
 
-        Args:
-            option (int): The location index of the alternative translation.
+        Identifier, context and metadata are ignored.
 
-        Returns:
-            list[str]: A list containing the alternative translation and all its plural forms.
-
-        Raises:
-            IndexError: If the specified location index doesn't exist.
+        :param other: The object to compare with.
+        :type other: object
+        :return: True if both matrices are equal.
+        :rtype: bool
         """
-        alternatives = []
-        try:
-            # Add the main alternative translation
-            alternatives.append(self.options[option])
+        return isinstance(other, Message) and self.matrix == other.matrix
 
-            # Add plural forms if they exist
-            if option in self.options_plurals:
-                alternatives.extend(self.options_plurals[option].values())
-
-            return alternatives
-        except KeyError:
-            raise IndexError(f"Alternative translation at index {option} not found")
-
-    def get_variant_plurals(self, option: int = 0) -> list[str]:
+    def similar(self, other: object) -> bool:
         """
-        Get the alternative translation's plural forms.
-        :param option: Option number of the alternative translation.
-        :return: the list of plural forms.
-        :rtype: list[str]
+        Whether ``other`` is a Message with the same non-empty texts.
+
+        Where a text is stored (principal or variant, which segment) is
+        ignored, as are the identifier, context and metadata.
+
+        :param other: The object to compare with.
+        :type other: object
+        :return: True if both sets of texts are equal.
+        :rtype: bool
         """
-        if option > len(self.options_plurals) or option <= 0:
-            raise IndexError(
-                f"Alternative translation at index {option} is out of range"
-            )
+        return isinstance(other, Message) and self.texts == other.texts
 
-        return list(self.options_plurals[option].values())
+    @override
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Message):
+            return NotImplemented
+        return self.equal(other)
 
-    def add_variant(self, *args, **kwargs) -> None:
+    @override
+    def __str__(self) -> str:
         """
-        Add an optional (alternative) translation and its plural forms and update the metadata counters.
+        The principal singular.
 
-        :param args:
-        :param kwargs:
-        :return:
-        """
-        option = self.metadata[["count", "singular"]] + 1
-
-        if option == 1:
-            raise ValueError(
-                "Cannot add an alternative translation, there presently is no translation"
-            )
-
-        # Settings option index correctly and extracting
-        option -= 1
-
-        if args and len(args) == 1 and isinstance(args[0], list):
-            # Managing alternate translation in args
-            translation = args[0]
-            if translation[0] is not None and translation[0] != "":
-                self.options[option] = translation[0]
-                self.metadata[["count", "singular"]] = self.__count_singular__()
-            else:
-                raise ValueError(
-                    f"Singular of a variant is required and cannot be None or empty : '{translation[0]}'"
-                )
-            # Managing alternate plurals in args
-            if len(translation) > 1:
-                for index, text in enumerate(translation[1:]):
-                    self.options_plurals[[option, index + 1]] = text
-            else:
-                self.options_plurals.update({option: {}})
-
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        elif kwargs:
-            # Managing alternate translation in kwargs (obliviate if args is not None)
-            alt_singular = kwargs.pop("options", None)
-            if alt_singular is not None and alt_singular != "":
-                self.options[option] = alt_singular
-                self.metadata[["count", "singular"]] = self.__count_singular__()
-            else:
-                raise ValueError(
-                    f"Singular of a variant is required and cannot be None or empty : '{alt_singular}'"
-                )
-            # Managing alternate plurals
-            alt_plural = kwargs.pop("options_plurals", None)
-            if alt_plural is not None:
-                if isinstance(alt_plural, dict) and _check_index_dict(alt_plural):
-                    self.options_plurals.update({option: alt_plural})
-                elif isinstance(alt_plural, list):
-                    d_alt_plural = {}
-                    for index, text in enumerate(alt_plural):
-                        d_alt_plural[index + 1] = text
-                    self.options_plurals.update({option: d_alt_plural})
-                else:
-                    raise (
-                        ValueError(
-                            f"Plural of this variant is malformed : {alt_plural}"
-                        )
-                    )
-            else:
-                self.options_plurals.update({option: {}})
-            self.metadata[["count", "plurals"]] = self.__count_plurals__()
-        else:
-            raise (ValueError("No variant translation is specified"))
-
-    def update_variant(self, option: int = 0, *args, **kwargs) -> None:
-        """
-        Update alternative translation
-        :param option: index of alternative translation
-        :type option: int
-        :param args: list of alternative translation components
-        :type args: list
-        :param kwargs: dictionary of alternative translation components
-        :type kwargs: dictionary
-        :return: nothing (void function)
-        """
-        if option == 0:
-            self.update_principal(*args, **kwargs)
-        elif option > len(self.options) or option <= 0:
-            raise (IndexError(f"Option '{option}' out of range"))
-        elif args and len(args) == 1 and isinstance(args[0], list):
-            translation = args[0]
-            if translation[0] is not None and translation[0] != "":
-                self.options[option] = translation[0]
-
-            if len(translation) > 1:
-                for index, text in enumerate(translation[1:]):
-                    if text is not None and text != "":
-                        self.options_plurals[[option, index + 1]] = text
-        elif kwargs:
-            pop_text = kwargs.pop("options", None)
-            if pop_text is not None and pop_text != "":
-                self.options[option] = pop_text
-
-            pop_plurals = kwargs.pop("options_plurals", None)
-            if pop_plurals is not None:
-                if isinstance(pop_plurals, dict) and _check_index_dict(pop_plurals):
-                    self.options_plurals.update({option: pop_plurals})
-                elif isinstance(pop_plurals, list):
-                    d_pop_plural = {}
-                    for index, text in enumerate(pop_plurals):
-                        d_pop_plural[index + 1] = text
-                    self.options_plurals.update({option: d_pop_plural})
-                else:
-                    raise (
-                        ValueError(
-                            f"Plural translation context is malformed : {pop_plurals}"
-                        )
-                    )
-        else:
-            raise (ValueError("No updates specified"))
-
-    # managing segments in translations
-
-    def get_main_segment(self, index: int = 0) -> str:
-        """
-        Private function to get token in the main translation
-        :param index: segment's location in the main translation
-        :type index: int
-        :return: the corresponding segment located at the token location
+        :return: The principal singular.
         :rtype: str
         """
-        __translation = self.get_principal()
-        if len(__translation) > index >= 0:
-            return __translation[index]
+        return self._principal.singular
+
+    @override
+    def __repr__(self) -> str:
+        return (
+            f"Message(id={self.id!r}, principal={self._principal!r}, "
+            + f"variants={self._variants!r})"
+        )
+
+    # --- Internal helpers ----------------------------------------------------
+
+    def _declensions(self) -> list[Declension]:
+        """Return ``[principal, *variants]``, in a new list."""
+        return [self._principal, *self._variants]
+
+    def _set_declension(self, variant: int, declension: Declension) -> None:
+        """Store ``declension`` at index ``variant`` (0 is the principal)."""
+        if variant == 0:
+            self._principal = declension
         else:
-            raise (IndexError(f"Segment location '{index}' is out of range"))
+            self._variants[variant - 1] = declension
 
-    def get_variant_segment(self, option: int = 1, index: int = 0) -> str:
-        """
-        Private function to get token in the variant translation
-        :param option: segment's option in the variant translation
-        :type option: int
-        :param index: segment's location in the variant option
-        :type index: int
-        :return: the corresponding segment located at the token location of the variant option
-        """
-        try:
-            __translation = self.get_variant(option)
-
-            if len(__translation) > index >= 0:
-                return __translation[index]
-            else:
-                raise (
-                    IndexError(
-                        f"Segment location '{index}' of variant option '{option}' is out of range"
-                    )
-                )
-        except IndexError as e:
-            raise (e)
-
-    def get_segment(self, **kwargs) -> str:
-        """
-        Get the message string from the message.
-
-        Args:
-            kwargs (dict): contains mandatory keys to access each kind of segment in main and variant translation.
-                these keys are such as target (default, variant, plurals) and positions (option and token)
-        Returns:
-            str: The content of the message.
-
-        Raises:
-            KeyError: If a mandatory key is missing
-            IndexError: If a mandatory key is out of range
-        """
-
-        # parameter processing
-        source = kwargs.pop("source", None)
-        token = kwargs.pop("token", 0)
-        option = kwargs.pop("option", 1)
-
-        if source not in ["main", "variant"]:
-            raise KeyError(
-                f"The source '{source}' is not defined : ['main', 'variant']"
+    def _check_variant(self, variant: int) -> None:
+        """Check a declension index, 0 (principal) included."""
+        _ensure_int(variant, "variant")
+        if variant < 0 or variant > len(self._variants):
+            raise IndexError(
+                f"Variant {variant} is out of range 0..{len(self._variants)}"
             )
 
-        if source == "main":
-            return self.get_main_segment(token)
-        else:
-            return self.get_variant_segment(option=option, index=token)
+    def _check_variant_index(self, variant: int) -> None:
+        """Check a variant index: from 1 to the number of variants."""
+        _ensure_int(variant, "variant")
+        if variant == 0:
+            raise IndexError("Variant 0 is the principal: use the principal methods")
+        if variant < 0 or variant > len(self._variants):
+            raise IndexError(
+                f"Variant {variant} is out of range 1..{len(self._variants)}"
+            )
 
-    def add_main_segment(self, segment: str, index: int = 0) -> None:
-        """
-        Add a plural form to the message. This function is securing text adding by not allowing emptied texts. If you
-        need to add en empty string use the _add_default_segement method.
+    def _check_cell(self, segment: int, variant: int) -> None:
+        """Check that ``(variant, segment)`` is inside the matrix."""
+        _ensure_int(segment, "segment")
+        self._check_variant(variant)
+        rows = len(self.matrix)
+        if segment < 0 or segment >= rows:
+            raise IndexError(f"Segment {segment} is out of range 0..{rows - 1}")
 
-        Args:
-            index (int): location of segment in the main translation, if token = 0 change self.default is is None
-            segment (str): The text for the plural form.
+    def _updated(
+        self, declension: Declension, fields: DeclensionFields, name: str
+    ) -> Declension:
+        """Apply ``fields`` to ``declension`` for an update_* method."""
+        if not fields:
+            raise ValueError(f"No field given to update the {name}")
+        updated = _apply_fields(declension, fields)
+        if "singular" in fields and updated.singular == "":
+            raise ValueError(f"The singular of the {name} cannot be empty")
+        return updated
 
-        Raises:
-            ValueError: If the index is less than or equal to 0.
-        """
-        if index == 0:
-            if segment != "":
-                self.default = segment
-            else:
-                raise ValueError(
-                    f"Singular of translation is required and cannot be None or empty : '{segment}'"
-                )
-        elif 0 < index <= len(self.default_plurals) + 1:
-            self.default_plurals[index] = segment
-        else:
-            raise ValueError(f"Plural form index ({index}) is not in a valid range")
-
-    def _add_default_segment(self, segment: str) -> None:
-        """
-        Protected method to add a default text to the message. This function is simply present for homogeneity since
-        self.default = segment will work.
-
-        :param segment: the text to add
-        :return: nothing (void function)
-        """
-        self.default = segment
-
-    def _add_default_plurals_segment(self, segment: str) -> None:
-        """
-        Protected method to add an item in the default plural form to the message.
-        :param segment:
-        :return:
-        """
-
-        self.default_plurals[len(self.default_plurals) + 1] = segment
-
-    def add_variant_segment(
-        self, segment: str, option: int = 1, token: int = 0
-    ) -> None:
-        """
-        Add an alternative translation to the message.
-
-        Args:
-            token (int): The index of the alternative translation.
-            segment (str): The alternative translation text.
-            option (int): The option of the alternative translation.
-
-        Raises:
-            ValueError: If the index is less than or equal to 0.
-        """
-        if 0 < option <= len(self.options) + 1:
-            if token == 0:
-                self.options[option] = segment
-            elif 0 < token <= len(self.options_plurals) + 1:
-                self.options_plurals[[option, token]] = segment
-            else:
-                raise IndexError(
-                    f"Segment index ({token}) in options ({option}) is not in a valid range"
-                )
-        else:
-            raise IndexError(f"Option index ({option}) is not in a valid range")
-
-    def _add_options_segment(self, segment: str) -> None:
-        """
-        Protected function to add an alternative translation corresponding of the next option index of the message .
-
-        :param segment: The alternative translation text.
-        :return:
-        """
-
-        self.options[len(self.options) + 1] = segment
-
-    def _add_options_plurals_segment(self, segment: str, option: int) -> None:
-        """
-        Add a plural form to an alternative translation.
-
-        Args:
-            segment (str): The alternative translation text.
-            option (int): The index of the alternative translation.
-        Raises:
-            ValueError: If alt_index or plural_index is less than or equal to 0.
-            KeyError: If the alternative translation at alt_index doesn't exist.
-        """
-
-        if 0 < option <= len(self.options) + 1:
-            if option == len(self.options) + 1:
-                # Adding a new range of option, token is 1
-                __token = 1
-            else:
-                # Adding a new segment in an existing option
-                if self.options_plurals.get(option) is None:
-                    # Plurals does not exist
-                    __token = 1
-                else:
-                    __token = len(self.options_plurals[option]) + 1
-            self.options_plurals[[option, __token]] = segment
-        else:
-            raise IndexError(f"Option index ({option}) is not in a valid range")
-
-    def update_main_segment(self, segment: str, index: int = 0) -> None:
-        """
-        Update an existing element (singular or one of the plurals) of the main translation of the message.
-
-        :param segment: the text to add
-        :type segment: str
-        :param index: the location in the main translation list of the element to be updated.
-        :type index: int
-        :return: nothing (void method)
-        :raises IndexError: If token is out of range.
-        :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
-        """
-        if segment != "":
-            if 0 == index:
-                if self.default != segment:
-                    self.default = segment
-                else:
-                    raise ValueError(
-                        f"The text value ('{segment}') is already stored as default singular translation : '{self.default}'"
-                    )
-            else:
-                self._assert_valid_default_plural_token(index)
-                if self.default_plurals.get(index) != segment:
-                    self.default_plurals[index] = segment
-                else:
-                    raise ValueError(
-                        f"The text value ('{segment}') is already stored as default plural index ({index}) : '{self.default_plurals[index]}'"
-                    )
-        else:
-            raise ValueError("Empty text cannot be added")
-
-    def _update_default_segment(self, segment: str) -> None:
-        """
-        Protected method to update the default singular translation of the message. This function is simply present
-        for homogeneity since self.default = segment will work.
-
-        :param segment: the text to update
-        :return: nothing (void method)
-        """
-        self.default = segment
-
-    def _update_default_plurals_segment(self, segment: str, index: int) -> None:
-        """
-        Protected method to update the default plural translation of the message.
-
-        :param segment: the text to update
-        :param index: the location in the main translation list of the element to be updated.
-        :return: nothing (void method)
-        :raise IndexError: If token is out of range.
-        """
-        self._assert_valid_default_plural_token(index)
-        self.default_plurals[index] = segment
-
-    def update_variant_segment(
-        self, segment: str, option: int = 1, index: int = 0
-    ) -> None:
-        """
-        Update an existing element (singular or one of the plurals) of (option) the variant translation of the message.
-        :param segment: the text to update
-        :param option: the index of the variant translation to update.
-        :param index: the index of the element to be updated in the variant translation.
-        :return: nothing (void method)
-        :raises IndexError: If option or token is out of range.
-        :raises ValueError: If the segment is already stored in message at the requested locations or if it is emtpy.
-        """
-        if segment != "":
-            self._assert_valid_option(option)
-            if index == 0:
-                self.options[option] = segment
-            else:
-                self._assert_valid_token_in_option(option, index)
-                self.options_plurals[[option, index]] = segment
-        else:
-            raise ValueError("Empty text cannot be added")
-
-    def _update_options_segment(self, segment: str, option: int) -> None:
-        """
-        Protected method to update one of the (option) variant translation singular of the message.
-        :param segment:
-        :param option:
-        :return: nothing (void method)
-        :raises IndexError: If option is out of range.
-        """
-        self._assert_valid_option(option)
-        self.options[option] = segment
-
-    def _update_options_plurals_segment(
-        self, segment: str, option: int, index: int
-    ) -> None:
-        """
-        Protected function to update one of the (option) variant plural (token) translation singular of the message.
-        :param segment: the text to update
-        :param option: the variant index
-        :param index: the index of the element to be updated in the variant plural.
-        :return: nothing (void method)
-        :raises IndexError: If option or toaken is out of range.
-        """
-        self._assert_valid_option(option)
-        self._assert_valid_token_in_option(option, index)
-        self.options_plurals[[option, index]] = segment
-
-    def remove_variant(self, option: int) -> None:
-        """
-        Removes the option variant of translation and keeps indices coherent.
-
-        This method ensures that after removal, both self.options and
-        self.options_plurals have contiguous indices starting from 1 so that
-        validation checks (__check_alternatives__ and __check_alternative_plural_forms__)
-        remain true. For example, if option 2 is removed and there were 4 options,
-        then former option 3 becomes 2 and former option 4 becomes 3.
-
-        :param option: the index of the variant translation to remove.
-        :type option: int
-        :return: nothing (void method)
-        :rtype: None
-        :raises IndexError: If option is out of range.
-        """
-        # Validate option exists
-        self._assert_valid_option(option)
-        previous_length = len(self.options)
-
-        # 1) Remove the selected option and its plurals if present
-        del self.options[option]
-        if option in self.options_plurals.keys():
-            del self.options_plurals[option]
-
-        # 2) Reindex self.options to keep keys contiguous starting from 1
-        if option < previous_length:
-            # Preserve insertion order by iterating values in key order
-            reshaped_dict: dict[int, str] = {}
-            for idx, key in enumerate(sorted(self.options.keys()), start=1):
-                reshaped_dict[idx] = self.options[key]
-            self.options = reshaped_dict
-
-            old_plurals = self.options_plurals
-            new_plurals = StrictNestedDictionary()
-            for key in sorted(old_plurals.keys()):
-                # Shift down indices greater than removed option
-                new_key = key if key < option else key - 1
-                # Ensure we skip any potential non-positive key (defensive)
-                if new_key > 0:
-                    # Copy the inner dict as is (inner indices remain coherent)
-                    inner = (
-                        dict(old_plurals[key])
-                        if isinstance(old_plurals[key], dict)
-                        else old_plurals[key]
-                    )
-                    new_plurals.update({new_key: inner})
-            self.options_plurals = new_plurals
-
-        # 4) Refresh metadata counters
-        self._refresh_counts()
-
-    def _remove_options_segment(self, option: int) -> None:
-        """
-        Protected method to remove the option variant translation of the message.
-        :param option: the index of the variant translation to remove.
-        :type option: int
-        :return: nothing (void method)
-        :rtype: None
-        :raises IndexError: If option is out of range.
-        """
-        self._assert_valid_option(option)
-        previous_length = len(self.options)
-        del self.options[option]
-
-        if option < previous_length:
-            # Preserve insertion order by iterating values in key order
-            reshaped_dict: dict[int, str] = {}
-            for idx, key in enumerate(sorted(self.options.keys()), start=1):
-                reshaped_dict[idx] = self.options[key]
-            self.options = reshaped_dict
-
-        self._refresh_counts(singular=True)
-
-    def _remove_options_plurals_segment(
-        self, option: int, index: int | None = None
-    ) -> None:
-        """
-        Protected method to remove one of the plural (token) of one of the variant (option) translation of the message.
-        :param option: the index of the variant translation to be reached.
-        :param index: the index of the plural translation to be removed.
-        :return: nothing (void method)
-        :rtype: None
-        :raises IndexError: If option or token is out of range.
-        """
-        self._assert_valid_option(option)
-        if index is None:
-            self._remove_options_segment(option)
-        elif self.options_plurals.paths().__contains__([option, index]):
-            del self.options_plurals[[option, index]]
-            reshaped_dict: dict[int, str] = {}
-            for idx, key in enumerate(
-                sorted(self.options_plurals[option].keys()), start=1
-            ):
-                reshaped_dict[idx] = self.options_plurals[[option, key]]
-            self.options_plurals.update({option: reshaped_dict})
-            self._refresh_counts(plurals=True)
-        else:
-            raise IndexError(f"The plural path [{option}, {index}] is out of range")
-
-    @property
-    def variants(self) -> list[list[str]]:
-        """
-        The list of variants in the repository.
-        :return:
-        """
-        variants = []
-        for index in range(1, len(self.options) + 1):
-            variants.append(self.get_variant(index))
-        return variants
-
-    @variants.setter
-    def variants(self, variants: list[list[str]]) -> None:
-        """
-        The list of variants in the repository.
-        :param variants:
-        :return:
-        """
-        for index, variant in enumerate(variants):
-            self.update_variant(index + 1, variant)
-
-    # Managing metadata
+    # --- Metadata ------------------------------------------------------------
 
     def get_metadata(self, key: list[str] | str | None = None) -> dict[str, Any] | Any:
         """
@@ -1481,7 +960,7 @@ class Message:
         key = mode + "_comments"
         self.metadata[key].append(comment)
 
-    def add_metadata(self, *args: tuple[list[str], Any], **kwargs) -> None:
+    def add_metadata(self, *args: tuple[list[str], Any], **kwargs: object) -> None:
         """
         Set metadata for the message.
 
@@ -1493,16 +972,11 @@ class Message:
             ValueError: If key_or_dict is malformed and value is None.
         """
 
-        if not self.__check_metadata__(self.metadata):
-            self.metadata = _build_empty_metadata()
-
         if args:
             for path, value in args:
                 if (
-                    isinstance(path, str) and self.metadata.paths().__contains__([path])
-                ) or (
-                    isinstance(path, list) and self.metadata.paths().__contains__(path)
-                ):
+                    is_type(path, str) and self.metadata.paths().__contains__([path])
+                ) or (is_type(path, list) and self.metadata.paths().__contains__(path)):
                     self.metadata[path] = value
                 else:
                     raise KeyError(
@@ -1525,14 +999,14 @@ class Message:
                             )
                         else:
                             self.metadata[path] = sub_value
-                elif isinstance(key, str) and self.metadata.is_key(key):
+                elif is_type(key, str) and self.metadata.is_key(key):
                     self.metadata[key] = value
                 else:
                     raise KeyError(
                         f"The key '{key}' is not a present key in the metadata dictionary"
                     )
 
-    def update_metadata(self, *args: tuple[list[str], Any], **kwargs) -> None:
+    def update_metadata(self, *args: tuple[list[str], Any], **kwargs: object) -> None:
         """
         Update the message's metadata with new values.
 
@@ -1544,10 +1018,8 @@ class Message:
         if args:
             for path, value in args:
                 if (
-                    isinstance(path, str) and self.metadata.paths().__contains__([path])
-                ) or (
-                    isinstance(path, list) and self.metadata.paths().__contains__(path)
-                ):
+                    is_type(path, str) and self.metadata.paths().__contains__([path])
+                ) or (is_type(path, list) and self.metadata.paths().__contains__(path)):
                     if self.metadata[path] == value:
                         raise ValueError(
                             f"The value ({value}) is already stored in the path '{path}'"
@@ -1578,7 +1050,7 @@ class Message:
                             )
                         else:
                             self.metadata[path] = sub_value
-                elif isinstance(key, str) and self.metadata.is_key(key):
+                elif is_type(key, str) and self.metadata.is_key(key):
                     if self.metadata[key] == value:
                         raise ValueError(
                             f"The value ({value}) is already stored in the path '[{key}]'"
@@ -1614,358 +1086,3 @@ class Message:
             raise KeyError(f"Metadata key '{key}' not found")
         else:
             self.metadata[key] = ref_meta[key]
-
-    def switch(self, source: int, destination: int) -> None:
-        """
-        Switch the position of two translations (singular and their plural forms).
-
-        - Index 0 refers to the default translation.
-        - Positive indices (1..len(options)) refer to variant options.
-
-        This swaps both the singular text and the associated plural forms between
-        the two specified positions.
-
-        :param source: Index of the source translation (0 for default).
-        :param destination: Index of the destination translation (0 for default).
-        :raises IndexError: If indices are equal or out of range.
-        :return: None
-        """
-        # Disallow swapping the same index
-        if source == destination:
-            raise IndexError(
-                f"source ({source}) and destination ({destination}) must be different"
-            )
-
-        # Validate indices
-        if source != 0:
-            self._assert_valid_option(source)
-        if destination != 0:
-            self._assert_valid_option(destination)
-
-        # Helper to get singular and plurals for an index
-        def get_pair(index: int) -> tuple[str, dict[int, str]]:
-            if index == 0:
-                return self.default, dict(self.default_plurals)
-            # index > 0
-            singular = self.options[index]
-            plurals = (
-                dict(self.options_plurals[index])
-                if index in self.options_plurals.keys()
-                else {}
-            )
-            return singular, plurals
-
-        # Helper to set singular and plurals for an index
-        def set_pair(index: int, singular: str, plurals: dict[int, str]) -> None:
-            if index == 0:
-                self.default = singular
-                self.default_plurals = dict(plurals)
-            else:
-                self.options[index] = singular
-                # Ensure we set the plural mapping (even if empty) for coherence
-                self.options_plurals.update({index: dict(plurals)})
-
-        # Fetch pairs
-        src_s, src_p = get_pair(source)
-        dst_s, dst_p = get_pair(destination)
-
-        # Swap them
-        set_pair(source, dst_s, dst_p)
-        set_pair(destination, src_s, src_p)
-
-        # Refresh counts metadata (singular count unchanged, plural list ordering may change)
-        self._refresh_counts()
-
-    def toggle(self, direction: str = "natural") -> None:
-        """
-        Rotate all translations (default and variants) together with their plural forms.
-
-        - "natural": 0 -> 1, 1 -> 2, ..., n -> 0
-        - "reverse": 0 -> n, 1 -> 0, 2 -> 1, ...
-
-        Index 0 refers to the default translation; indices 1..n are the variant options.
-        The rotation preserves option ordering integrity (contiguous indices starting at 1)
-        and moves corresponding plural forms along with each singular.
-
-        :param direction: Either "natural" (default) or "reverse".
-        :raises ValueError: If direction is invalid.
-        :return: None
-        """
-        if direction not in {"natural", "reverse"}:
-            raise ValueError("direction must be either 'natural' or 'reverse'")
-
-        n = len(self.options)
-        # Nothing to rotate if no variants exist
-        if n == 0:
-            return
-
-        # Helper to fetch a pair (singular, plurals) for index
-        def get_pair(index: int) -> tuple[str, dict[int, str]]:
-            if index == 0:
-                return self.default, dict(self.default_plurals)
-            singular = self.options[index]
-            plurals = (
-                dict(self.options_plurals[index])
-                if index in self.options_plurals.keys()
-                else {}
-            )
-            return singular, plurals
-
-        # Build the current ordered list of (singular, plurals)
-        pairs: list[tuple[str, dict[int, str]]] = [get_pair(0)] + [
-            get_pair(i) for i in range(1, n + 1)
-        ]
-
-        # Apply rotation
-        if direction == "reverse":
-            rotated = pairs[1:] + pairs[:1]
-        else:  # reverse
-            rotated = [pairs[-1]] + pairs[:-1]
-
-        # Assign back: new default and options
-        new_default_s, new_default_p = rotated[0]
-        self.default = new_default_s
-        self.default_plurals = dict(new_default_p)
-
-        new_options: dict[int, str] = {}
-        new_plurals = StrictNestedDictionary()
-        for idx in range(1, n + 1):
-            s, p = rotated[idx]
-            new_options[idx] = s
-            # Ensure each option has a mapping (possibly empty) for coherence
-            new_plurals.update({idx: dict(p)})
-
-        self.options = new_options
-        self.options_plurals = new_plurals
-
-        # Refresh metadata counts (structure unchanged, indices may carry different texts)
-        self._refresh_counts()
-
-    def format(self, option: int = 0, token: int = 0, **kwargs: object) -> str:
-        """
-        Format the message with the provided variables.
-
-        Args:
-            option (int, optional): The alternative index to use. Defaults to 0.
-            token (int, optional): The plural form index to use. Defaults to 0.
-            **kwargs: Variables to use for formatting.
-
-        Returns:
-            str: The formatted message.
-        """
-        # Determine which text to format based on alternative and plural_index
-        if option > 0 and option in self.options:
-            if (
-                token > 0
-                and option in self.options_plurals
-                and token in self.options_plurals[option]
-            ):
-                text = self.options_plurals[option][token]
-            else:
-                text = self.options[option]
-        elif token > 0 and token in self.default_plurals:
-            text = self.default_plurals[token]
-        else:
-            text = self.default
-
-        # Format the text using the provided variables
-        try:
-            return text.format(**kwargs)
-        except KeyError as e:
-            missing_var = str(e).strip("'")
-            raise KeyError(f"Missing variable '{missing_var}' for message '{self.id}'")
-        except Exception as e:
-            raise ValueError(f"Error formatting message '{self.id}': {str(e)}")
-
-    def get_format_variables(self, option: int = 0) -> list[list[str]]:
-        """
-        This function returns the list of named variables in singular and plurals text to format. By default if option is
-        equal to zero the default translation will be explored.
-
-        :param option: the  index of option text to explore
-        :type option: int
-        :return: a tuple of list of variables
-        :rtype: list[list[str]]
-        :raises IndexError: If option is out of range.
-        :raises ValueError: If no variables extracted is out of range.
-        """
-
-        if option != 0:
-            self._assert_valid_option(option)
-            translations = self.get_variant(option)
-        else:
-            translations = self.get_principal()
-
-        extraction = []
-        for t in translations:
-            extraction.append(extract_variables(t))
-
-        return extraction
-
-    @property
-    def has_variants(self) -> bool:
-        """
-        Indique s'il existe des variantes (options) pour cette traduction.
-        Retourne True si au moins une variante (options) ou des pluriels de variantes (options_plurals) existent.
-        """
-        try:
-            return (isinstance(self.options, dict) and len(self.options) > 0) or (
-                isinstance(self.options_plurals, (dict, StrictNestedDictionary))
-                and len(self.options_plurals) > 0
-            )
-        except Exception:
-            return False
-
-    @property
-    def has_plurals(self) -> bool:
-        """
-        Indique s'il existe des formes plurielles pour cette traduction.
-        Retourne True si des pluriels par défaut (default_plurals) existent ou si
-        au moins une variante possède des pluriels (options_plurals).
-        """
-        try:
-            default_has = (
-                isinstance(self.default_plurals, dict) and len(self.default_plurals) > 0
-            )
-            variant_has = (
-                isinstance(self.options_plurals, (dict, StrictNestedDictionary))
-                and len(self.options_plurals) > 0
-            )
-            return default_has or variant_has
-        except Exception:
-            return False
-
-    def to_i18n_tools_format(self) -> dict[str, Any]:
-        """
-        Convert the Message to i18n_tools format.
-
-        Returns:
-            dict[str, Any]: The message in i18n_tools format.
-        """
-        return message_to_i18n_tools_format(self)
-
-    @classmethod
-    def from_i18n_tools(
-        cls, message_id: str, i18n_tools_entry: dict[str, Any]
-    ) -> "Message":
-        """
-        Create a Message instance from an i18n_tools format entry.
-
-        Args:
-            message_id (str): The message ID.
-            i18n_tools_entry (dict[str, Any]): The i18n_tools format entry.
-
-        Returns:
-            Message: A new Message instance.
-        """
-        entry = i18n_tools_format_to_message_dict(i18n_tools_entry)
-        return cls.from_matrix(
-            message_id, entry["matrix"], entry["context"], entry["metadata"]
-        )
-
-    @override
-    def __str__(self) -> str:
-        """
-        Return the string representation of the message.
-
-        Returns:
-            str: The message translation.
-        """
-        return self.default
-
-    @override
-    def __repr__(self) -> str:
-        """
-        Return the representation of the message.
-
-        Returns:
-            str: The message representation.
-        """
-        return f"Message(id='{self.id}', translation='{self.default}')"
-
-    # Equality based on exact properties
-    @override
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Message):
-            return NotImplemented
-
-        # Normalize potentially nested dictionaries for comparison
-        def to_plain(d: object) -> object:
-            if isinstance(d, StrictNestedDictionary):
-                return d.to_dict() if hasattr(d, "to_dict") else dict(d)
-            return d
-
-        return (
-            self.id == other.id
-            and self.default == other.default
-            and self.context == other.context
-            and to_plain(self.options) == to_plain(other.options)
-            and to_plain(self.default_plurals) == to_plain(other.default_plurals)
-            and to_plain(self.options_plurals) == to_plain(other.options_plurals)
-            and to_plain(self.metadata) == to_plain(other.metadata)
-        )
-
-    def equals(self, other: object) -> bool:
-        """
-        Vérifie si deux messages sont égaux en comparant exactement toutes leurs propriétés.
-        Retourne True si et seulement si toutes les propriétés sont identiques.
-        """
-        try:
-            return bool(self == other)
-        except Exception:
-            return False
-
-    @property
-    def translations_set(self) -> set[Any]:
-        """
-        Construit un ensemble de toutes les chaînes de traduction présentes dans ce message,
-        en agrégeant le texte principal, ses pluriels, ainsi que toutes les variantes et leurs pluriels.
-        L'objectif est de permettre une comparaison d'équivalence indépendante du rangement en
-        « main » (default/default_plurals) ou « variant » (options/options_plurals).
-        """
-        texts = set()
-        # Default
-        if isinstance(self.default, str) and self.default:
-            texts.add(self.default)
-        # Default plurals
-        dp = self.default_plurals
-        if isinstance(dp, StrictNestedDictionary):
-            dp = dp.to_dict()
-        if isinstance(dp, dict):
-            for v in dp.values():
-                if isinstance(v, str) and v:
-                    texts.add(v)
-        # Options (variants)
-        opts = self.options
-        if isinstance(opts, StrictNestedDictionary):
-            opts = opts.to_dict()
-        if isinstance(opts, dict):
-            for v in opts.values():
-                if isinstance(v, str) and v:
-                    texts.add(v)
-        # Options plurals
-        op = self.options_plurals
-        if isinstance(op, StrictNestedDictionary):
-            op = op.to_dict()
-        if isinstance(op, dict):
-            for inner in op.values():
-                if isinstance(inner, StrictNestedDictionary):
-                    inner = inner.to_dict()
-                if isinstance(inner, dict):
-                    for v in inner.values():
-                        if isinstance(v, str) and v:
-                            texts.add(v)
-        return texts
-
-    def is_similar(self, other: object) -> bool:
-        """
-        Deux messages sont « semblables » s'ils possèdent le même ensemble de traductions,
-        indépendamment de l'endroit où elles sont rangées (principal vs variantes).
-        Cette comparaison ignore id, context, metadata et l'organisation entre default/options.
-        """
-        if not isinstance(other, Message):
-            return False
-        try:
-            return self.translations_set == other.translations_set
-        except Exception:
-            return False

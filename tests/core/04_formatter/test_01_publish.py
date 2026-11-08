@@ -7,7 +7,7 @@ import pytest
 from i18n_tools.exceptions import FormatterError, PluralIndexError
 from i18n_tools.formatter.plurals import PluralRule
 from i18n_tools.formatter.publish import publish
-from i18n_tools.models import Message
+from i18n_tools.models import Declension, Message
 
 
 class TestPublishSimplePath:
@@ -39,7 +39,7 @@ class TestPublishColumnFallback:
     def test_step2_falls_back_to_main_column_same_row(self, step2_message):
         rule = PluralRule("en", thresholds={5: 1})
         step2_message.plural_rule = rule
-        # options_plurals[1][1] absent -> falls back to default_plurals[1]
+        # cell (1, 1) absent -> falls back to the principal plural (1, 0)
         result = publish(step2_message, alternative=1, n=5, count=5)
         assert result == "5 items"
 
@@ -70,7 +70,7 @@ class TestPublishPluralRuleResolution:
 
     def test_resolved_row_missing_raises_plural_index_error(self, step1_message):
         # Threshold points at row 4, which does not exist on this message
-        # (default_plurals only has key 1).
+        # (the principal has a single plural).
         step1_message.plural_rule = PluralRule("en", thresholds={9: 4})
         with pytest.raises(PluralIndexError, match="does not exist on message 'cart'"):
             publish(step1_message, n=9, count=9)
@@ -86,8 +86,8 @@ class TestPublishColumnFallbackWithoutPluralRule:
     def test_falls_through_to_default_when_alternative_empty(self, step3_message):
         # plural_index stays 0 (no rule set): step1 (row0,col1) is empty,
         # step2 doesn't apply (plural_index == 0), step3 (row0,col1) is
-        # the same empty cell again -> step4, message.default.
-        step3_message.options[1] = ""
+        # the same empty cell again -> step4, the principal singular.
+        step3_message.update_segment("", 0, 1)
         assert publish(step3_message, alternative=1, count=1) == "1 item"
 
     def test_falls_through_to_default_when_row_empty_and_alternative_is_0(
@@ -95,7 +95,7 @@ class TestPublishColumnFallbackWithoutPluralRule:
     ):
         # plural_index resolved to 1, alternative left at 0: step1/step2
         # both hit the same empty row1/col0 cell, step3 doesn't apply
-        # (alternative == 0) -> step4, message.default.
+        # (alternative == 0) -> step4, the principal singular.
         step4_message.plural_rule = PluralRule("en", thresholds={5: 1})
         result = publish(step4_message, n=5, count=5)
         assert result == "5 item (singular main)"
@@ -106,7 +106,7 @@ class TestPublishVariableSubstitution:
         assert publish(simple_message, name="Ana", unused="x") == "Hello Ana"
 
     def test_malformed_placeholder_raises_formatter_error(self, simple_message):
-        simple_message.default = "Hello {name"  # unclosed brace
+        simple_message.update_principal(singular="Hello {name")  # unclosed brace
         with pytest.raises(FormatterError, match="Error formatting message 'greet'"):
             publish(simple_message, name="Ana")
 
@@ -116,7 +116,7 @@ class TestPublishVariableSubstitution:
 
         message = MessageModel(
             id="static",
-            default="Static text",
+            principal=Declension("Static text"),
             metadata={
                 "version": __version__,
                 "language": "en",
@@ -124,7 +124,6 @@ class TestPublishVariableSubstitution:
                 "flags": [],
                 "user_comments": [],
                 "auto_comments": [],
-                "count": {"singular": 0, "plurals": []},
             },
         )
         assert publish(message) == "Static text"
@@ -134,10 +133,9 @@ class TestPublishMatrixRows:
     def test_row_used_only_by_a_variant_exists(self):
         """A plural row filled only in a variant is a row of the message."""
         message = Message(
-            "files",
-            "one file",
-            options={1: "one doc"},
-            options_plurals={1: {1: "two docs"}},
+            id="files",
+            principal=Declension("one file"),
+            variants=[Declension("one doc", ("two docs",))],
         )
         message.plural_rule = PluralRule("en", thresholds={2: 1})
         assert publish(message, alternative=1, n=2) == "two docs"

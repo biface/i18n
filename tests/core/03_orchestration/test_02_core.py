@@ -13,7 +13,7 @@ from i18n_tools.core import (
     synchronize,
 )
 from i18n_tools.exceptions import BookError
-from i18n_tools.models.message import Message
+from i18n_tools.models.message import Declension, Message
 from i18n_tools.models.repository import Repository
 
 
@@ -67,7 +67,7 @@ class TestLoadBook:
 class TestSaveBook:
     def test_round_trip_a_message(self, synchronized_repository):
         book = load_book(synchronized_repository, "app", "ui", "fr-FR")
-        msg = Message(id="greeting", default="Bonjour")
+        msg = Message(id="greeting", principal=Declension("Bonjour"))
         msg.add_language("fr-FR")
         book.messages["greeting"] = msg
 
@@ -75,7 +75,7 @@ class TestSaveBook:
 
         reloaded = load_book(synchronized_repository, "app", "ui", "fr-FR")
         assert list(reloaded.messages.keys()) == ["greeting"]
-        assert reloaded.messages["greeting"].default == "Bonjour"
+        assert reloaded.messages["greeting"].principal.singular == "Bonjour"
 
     def test_raises_if_book_has_no_language(self, synchronized_repository):
         """Book.language may stay unset while the Book is being built,
@@ -114,17 +114,16 @@ class TestSaveCorpus:
 
         for lang in ("fr-FR", "en"):
             book = corpus.get_real_book(lang)
-            msg = Message(id="greeting", default=f"hi-{lang}")
+            msg = Message(id="greeting", principal=Declension(f"hi-{lang}"))
             msg.add_language(lang)
             book.messages["greeting"] = msg
 
         save_corpus(corpus, synchronized_repository, "app")
 
         reloaded = load_corpus(synchronized_repository, "app", "ui")
-        assert reloaded.get_real_book("fr-FR").messages["greeting"].default == (
-            "hi-fr-FR"
-        )
-        assert reloaded.get_real_book("en").messages["greeting"].default == "hi-en"
+        for lang in ("fr-FR", "en"):
+            greeting = reloaded.get_real_book(lang).messages["greeting"]
+            assert greeting.principal.singular == f"hi-{lang}"
         # Untouched language stays empty
         assert len(reloaded.get_real_book("fr-BE").messages) == 0
 
@@ -138,9 +137,9 @@ class TestLoadCorpusThenGetBookWithRepository:
     ):
         corpus = load_corpus(synchronized_repository, "app", "ui")
         book = corpus.get_real_book("fr-FR")
-        msg = Message(id="greeting", default="Bonjour")
+        msg = Message(id="greeting", principal=Declension("Bonjour"))
         msg.add_language("fr-FR")
         book.messages["greeting"] = msg
 
         fallback_book = corpus.get_book("fr-CH", repository=synchronized_repository)
-        assert fallback_book.get_message("greeting").default == "Bonjour"
+        assert fallback_book.get_message("greeting").principal.singular == "Bonjour"
