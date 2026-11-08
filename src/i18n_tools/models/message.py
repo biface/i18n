@@ -247,7 +247,8 @@ class Message:
 
     A message is ``"draft"`` or ``"complete"``. :meth:`mark_complete`
     records the content counters and locks the texts and the structure;
-    :meth:`reopen` makes the message a draft again. Context, locations,
+    :meth:`reopen` makes the message a draft again; :meth:`record` records
+    the counters of a draft (a draft save). Context, locations,
     flags, comments and other metadata stay editable in both states.
 
     :ivar id: Language-neutral identifier of the message.
@@ -358,6 +359,8 @@ class Message:
         matrix: list[list[str]],
         context: str = "",
         metadata: dict[str, object] | None = None,
+        status: MessageStatus = "draft",
+        recorded: ContentCounters | None = None,
     ) -> "Message":
         """
         Build a message from its matrix.
@@ -378,6 +381,11 @@ class Message:
         :param metadata: Metadata of the message, as accepted by the
             constructor.
         :type metadata: dict[str, object] | None
+        :param status: Status of the message, as accepted by the
+            constructor.
+        :type status: MessageStatus
+        :param recorded: Recorded counters, as accepted by the constructor.
+        :type recorded: ContentCounters | None
         :return: The message.
         :rtype: Message
         :raises TypeError: If ``id`` or ``context`` is not a string,
@@ -413,6 +421,8 @@ class Message:
             variants=declensions[1:],
             context=context,
             metadata=metadata,
+            status=status,
+            recorded=recorded,
         )
 
     def get_id(self) -> str:
@@ -599,6 +609,23 @@ class Message:
             )
         self._recorded = self.observed
         self._status = "complete"
+
+    def record(self) -> None:
+        """
+        Record the counters of a draft, as they are now.
+
+        Saving a draft is a validation point: ``Book.save()`` calls this
+        method for each draft once the file is written. The counters of a
+        complete message are recorded by :meth:`mark_complete` only.
+
+        :raises MessageError: If the message is complete.
+        """
+        if self._status == "complete":
+            raise MessageError(
+                f"Message '{self.id}' is complete: its counters are recorded "
+                + "by mark_complete()"
+            )
+        self._recorded = self.observed
 
     def reopen(self) -> None:
         """

@@ -12,7 +12,9 @@ and the package.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import cast
 
 from i18n_tools._checks import ensure_type, is_type
 
@@ -99,6 +101,56 @@ def count_content(matrix: list[list[str]]) -> ContentCounters:
         segments=len(matrix),
         filled=tuple(tuple(text != "" for text in row) for row in matrix),
     )
+
+
+def counters_to_entry(counters: ContentCounters) -> dict[str, object]:
+    """
+    The counters as ``.i18t`` entry metadata.
+
+    :param counters: The counters to write.
+    :type counters: ContentCounters
+    :return: ``singular_count``, ``segment_count`` and ``fill_mask`` (a
+        list of lists of booleans, matrix orientation).
+    :rtype: dict[str, object]
+    """
+    return {
+        "singular_count": counters.declensions,
+        "segment_count": counters.segments,
+        "fill_mask": [list(row) for row in counters.filled],
+    }
+
+
+def counters_from_entry(metadata: Mapping[str, object]) -> ContentCounters | None:
+    """
+    Read the counters of ``.i18t`` entry metadata.
+
+    :param metadata: The entry metadata.
+    :type metadata: Mapping[str, object]
+    :return: The counters, or None if one of the keys is missing or a
+        value is malformed.
+    :rtype: ContentCounters | None
+    """
+    declensions = metadata.get("singular_count")
+    segments = metadata.get("segment_count")
+    mask = metadata.get("fill_mask")
+    if (
+        not isinstance(declensions, int)
+        or not isinstance(segments, int)
+        or not isinstance(mask, list)
+    ):
+        return None
+    rows: list[tuple[bool, ...]] = []
+    for row in cast(list[object], mask):
+        if not isinstance(row, list):
+            return None
+        cells = cast(list[object], row)
+        if not all(isinstance(cell, bool) for cell in cells):
+            return None
+        rows.append(tuple(cell is True for cell in cells))
+    try:
+        return ContentCounters(declensions, segments, tuple(rows))
+    except (TypeError, ValueError):
+        return None
 
 
 def describe_differences(

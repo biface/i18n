@@ -684,6 +684,31 @@ class TestStatus:
         with pytest.raises(MessageError, match="already complete"):
             fr_message.mark_complete()
 
+    def test_record_a_draft(self, draft_message):
+        draft_message.record()
+        assert draft_message.recorded == draft_message.observed
+        assert draft_message.status == "draft"
+        draft_message.update_segment("Trois fleurs", 3, 0)
+        assert draft_message.has_divergence
+
+    def test_record_a_complete_message(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.reopen()
+        fr_message.update_segment("", 2, 1)
+        fr_message.mark_complete()
+        recorded = fr_message.recorded
+        with pytest.raises(MessageError, match="recorded by mark_complete"):
+            fr_message.record()
+        assert fr_message.recorded == recorded
+
+    def test_from_matrix_restores_status_and_record(self, fr_message):
+        message = Message.from_matrix(
+            "1000", fr_message.matrix, status="complete", recorded=FR_COUNTERS
+        )
+        assert message.status == "complete"
+        assert message.recorded == FR_COUNTERS
+        assert not message.has_divergence
+
     def test_reopen_keeps_the_record(self, fr_message):
         fr_message.mark_complete()
         fr_message.reopen()

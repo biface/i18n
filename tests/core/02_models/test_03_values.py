@@ -7,7 +7,12 @@ import pytest
 from i18n_tools import ContentCounters as PublicContentCounters
 from i18n_tools import Declension as PublicDeclension
 from i18n_tools import Location as PublicLocation
-from i18n_tools._counters import count_content, describe_differences
+from i18n_tools._counters import (
+    count_content,
+    counters_from_entry,
+    counters_to_entry,
+    describe_differences,
+)
 from i18n_tools.models import ContentCounters, Declension, Location
 
 
@@ -213,3 +218,41 @@ class TestDescribeDifferences:
             "text (0, 1) lost",
             "text (1, 1) lost",
         ]
+
+
+class TestEntryMapping:
+    def test_to_entry(self):
+        counters = count_content([["a", "b"], ["as", ""]])
+        assert counters_to_entry(counters) == {
+            "singular_count": 2,
+            "segment_count": 2,
+            "fill_mask": [[True, True], [True, False]],
+        }
+
+    def test_round_trip(self):
+        counters = count_content([["a", ""], ["", "bs"], ["ass", "bss"]])
+        assert counters_from_entry(counters_to_entry(counters)) == counters
+
+    @pytest.mark.parametrize(
+        "metadata",
+        [
+            {"singular_count": 1, "segment_count": 1},
+            {"singular_count": True, "segment_count": 1, "fill_mask": [[True]]},
+            {"singular_count": 1, "segment_count": "1", "fill_mask": [[True]]},
+            {"singular_count": 1, "segment_count": 1, "fill_mask": [True]},
+            {"singular_count": 1, "segment_count": 1, "fill_mask": [[1]]},
+            {"singular_count": 2, "segment_count": 1, "fill_mask": [[True]]},
+            {"singular_count": 1, "segment_count": 1, "fill_mask": "x"},
+        ],
+        ids=[
+            "missing-mask",
+            "bool-count",
+            "str-count",
+            "row-not-list",
+            "cell-not-bool",
+            "shape",
+            "mask-not-list",
+        ],
+    )
+    def test_from_entry_malformed(self, metadata):
+        assert counters_from_entry(metadata) is None

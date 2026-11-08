@@ -11,7 +11,7 @@ from helpers import as_plain
 from i18n_tools import __version__
 from i18n_tools._finding import Finding
 from i18n_tools.converter import message_to_i18n_tools_format
-from i18n_tools.exceptions import FormatError, I18nToolsWarning
+from i18n_tools.exceptions import FormatError, I18nToolsWarning, MessageError
 from i18n_tools.models.book import Book
 from i18n_tools.models.message import Declension, Message
 
@@ -1020,3 +1020,143 @@ class TestBookCheck:
 
     def test_empty_book(self):
         assert Book(domain="test", language="fr-FR").check() == []
+
+
+class TestBookCounters:
+    """Status and content counters on disk (DD-45)."""
+
+    @staticmethod
+    def _message(identifier: str = "10001") -> Message:
+        return Message(
+            identifier,
+            Declension("Un fichier", ("Des fichiers",)),
+            [Declension("Un document", ("Des documents",))],
+            metadata={"language": "fr-FR"},
+        )
+
+    @staticmethod
+    def _entry(tmp_path, book: Book, identifier: str = "10001") -> dict:
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        return data[identifier]
+
+    @staticmethod
+    def _reload(tmp_path) -> Book:
+        book = Book(domain="test", language="fr-FR")
+        book.load(str(tmp_path))
+        return book
+
+    def test_draft_round_trip(self, tmp_path):
+        message = self._message()
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        metadata = self._entry(tmp_path, book)["metadata"]
+        assert metadata["status"] == "draft"
+        assert metadata["singular_count"] == 2
+        assert metadata["segment_count"] == 2
+        assert metadata["fill_mask"] == [[True, True], [True, True]]
+        assert "plural_counts" not in metadata
+        assert message.recorded == message.observed
+        loaded = self._reload(tmp_path).get("10001")
+        assert loaded is not None
+        assert loaded.status == "draft"
+        assert loaded.recorded == message.recorded
+
+    def test_complete_round_trip(self, tmp_path, recwarn):
+        message = self._message()
+        message.mark_complete()
+        Book([message], domain="test", language="fr-FR").save(str(tmp_path))
+        loaded = self._reload(tmp_path).get("10001")
+        assert loaded is not None
+        assert loaded.status == "complete"
+        assert loaded.recorded == message.recorded
+        assert not loaded.has_divergence
+        assert not [w for w in recwarn if issubclass(w.category, I18nToolsWarning)]
+
+    def test_saving_a_draft_records_it(self, tmp_path):
+        message = self._message()
+        message.record()
+        message.update_segment("", 1, 1)
+        assert message.has_divergence
+        Book([message], domain="test", language="fr-FR").save(str(tmp_path))
+        assert not message.has_divergence
+
+    def test_padded_draft_round_trip(self, tmp_path):
+        message = Message(
+            "10001",
+            Declension("Un fichier"),
+            [Declension("Un document", ("Des documents",))],
+            metadata={"language": "fr-FR"},
+        )
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        assert self._entry(tmp_path, book)["metadata"]["fill_mask"] == [
+            [True, True],
+            [False, True],
+        ]
+        loaded = self._reload(tmp_path).get("10001")
+        assert loaded is not None
+        assert not loaded.has_divergence
+
+    @pytest.mark.parametrize("recorded", [True, False], ids=["diverging", "unrecorded"])
+    def test_save_refuses_a_diverging_complete_message(self, tmp_path, recorded):
+        sound = self._message("10000")
+        sound.mark_complete()
+        draft = self._message("10002")
+        book = Book([sound, draft], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        before = (tmp_path / book.filename).read_text("utf-8")
+        draft.update_segment("", 1, 1)
+        broken = Message(
+            "10001",
+            Declension("Un fichier", ("",)),
+            status="complete",
+            recorded=sound.recorded if recorded else None,
+            metadata={"language": "fr-FR"},
+        )
+        book.add("test", [broken])
+        with pytest.raises(MessageError, match="10001 diverge"):
+            book.save(str(tmp_path))
+        assert (tmp_path / book.filename).read_text("utf-8") == before
+        assert draft.has_divergence
+
+    def test_save_accepts_a_diverging_draft(self, tmp_path):
+        message = self._message()
+        message.record()
+        message.update_segment("", 1, 1)
+        Book([message], domain="test", language="fr-FR").save(str(tmp_path))
+        loaded = self._reload(tmp_path).get("10001")
+        assert loaded is not None
+        assert loaded.matrix == message.matrix
+
+    def test_load_a_diverging_complete_message(self, tmp_path):
+        message = self._message()
+        message.mark_complete()
+        book = Book([message], domain="test", language="fr-FR")
+        book.save(str(tmp_path))
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        data["10001"]["messages"][1][1] = ""
+        del data["metadata"]["statistics"]
+        (tmp_path / book.filename).write_text(json.dumps(data), encoding="utf-8")
+        reloaded = Book(domain="test", language="fr-FR")
+        with pytest.warns(I18nToolsWarning, match=re.escape("text (1, 1) lost")):
+            reloaded.load(str(tmp_path))
+        loaded = reloaded.get("10001")
+        assert loaded is not None
+        assert loaded.has_divergence
+        assert [finding.severity for finding in reloaded.check()] == ["error"]
+        with pytest.raises(MessageError):
+            reloaded.save(str(tmp_path))
+
+    def test_writer_writes_the_record_of_a_complete_message(self):
+        """The writer never replaces the record of a complete message."""
+        reference = self._message()
+        reference.mark_complete()
+        diverging = Message(
+            "10001",
+            Declension("Un fichier", ("",)),
+            [Declension("Un document", ("",))],
+            status="complete",
+            recorded=reference.recorded,
+        )
+        metadata = message_to_i18n_tools_format(diverging)["metadata"]
+        assert metadata["fill_mask"] == [[True, True], [True, True]]

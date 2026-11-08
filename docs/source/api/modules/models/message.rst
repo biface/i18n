@@ -26,6 +26,7 @@ Message module
       .. autoproperty:: recorded
       .. autoproperty:: has_divergence
       .. automethod:: mark_complete
+      .. automethod:: record
       .. automethod:: reopen
       .. automethod:: add_principal
       .. automethod:: update_principal

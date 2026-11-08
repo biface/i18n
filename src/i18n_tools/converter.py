@@ -204,11 +204,16 @@ import functools
 import re
 import warnings
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar, cast
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
+from i18n_tools._counters import (
+    ContentCounters,
+    counters_from_entry,
+    counters_to_entry,
+)
 from i18n_tools.loaders.loader import load_json, load_text
 
 if TYPE_CHECKING:
@@ -1035,6 +1040,8 @@ class MessageEntry(TypedDict):
     matrix: list[list[str]]
     context: str
     metadata: dict[str, Any]
+    status: Literal["draft", "complete"]
+    recorded: ContentCounters | None
 
 
 def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
@@ -1042,18 +1049,26 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
     Convert a Message to a native ``.i18t`` entry.
 
     The entry's ``messages`` is the message's matrix, one row per segment
-    and one column per declension, padded with empty strings.
-    ``singular_count`` is the number of declensions; ``plural_counts[i]``
-    the number of non-empty plurals of declension ``i``.
+    and one column per declension, padded with empty strings. The entry
+    metadata holds the status and the content counters of the message:
+    ``singular_count`` (declensions), ``segment_count`` (rows) and
+    ``fill_mask`` (``fill_mask[segment][variant]`` is true for a
+    non-empty text). A complete message writes its recorded counters, a
+    draft its observed counters, since saving a draft records them.
+    ``plural_counts`` is no longer written.
 
     :param message: A Message object
     :return: Dictionary in i18n_tools format
     :rtype: dict[str, Any]
     """
-    matrix = message.matrix
-    declensions = len(matrix[0])
+    recorded = message.recorded
+    counters = (
+        recorded
+        if message.status == "complete" and recorded is not None
+        else message.observed
+    )
     return {
-        "messages": matrix,
+        "messages": message.matrix,
         "metadata": {
             "version": message.metadata.get("version", "0.0.0"),
             "language": message.metadata.get("language", ""),
@@ -1064,13 +1079,15 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
             "flags": message.metadata.get("flags", []),
             "user_comments": message.metadata.get("user_comments", []),
             "auto_comments": message.metadata.get("auto_comments", []),
-            "singular_count": declensions,
-            "plural_counts": [
-                sum(1 for row in matrix[1:] if row[column])
-                for column in range(declensions)
-            ],
+            "status": message.status,
+            **counters_to_entry(counters),
         },
     }
+
+
+def _read_status(value: object) -> Literal["draft", "complete"]:
+    """Read an entry status; anything but ``"complete"`` is a draft."""
+    return "complete" if value == "complete" else "draft"
 
 
 def i18n_tools_format_to_message_dict(
@@ -1083,9 +1100,15 @@ def i18n_tools_format_to_message_dict(
     expected to have passed the load check (well-formed matrix of
     strings). The context is stored on disk in the entry metadata.
 
+    A ``status`` other than ``"complete"``, missing or not, reads as
+    ``"draft"``. The recorded counters are read when ``singular_count``,
+    ``segment_count`` and ``fill_mask`` are all present and well formed;
+    otherwise ``recorded`` is None. ``plural_counts`` is ignored.
+
     :param i18n_tools_entry: Dictionary in i18n_tools format
     :type i18n_tools_entry: dict[str, Any]
-    :return: Matrix, context and metadata for ``Message.from_matrix()``.
+    :return: Matrix, context, metadata, status and recorded counters for
+        ``Message.from_matrix()``.
     :rtype: MessageEntry
     """
     messages: list[list[str]] = i18n_tools_entry.get("messages", [])
@@ -1095,9 +1118,13 @@ def i18n_tools_format_to_message_dict(
         "matrix": [list(row) for row in messages],
         "context": "",
         "metadata": {},
+        "status": "draft",
+        "recorded": None,
     }
     if metadata:
         result["context"] = metadata.get("context", "")
+        result["status"] = _read_status(metadata.get("status"))
+        result["recorded"] = counters_from_entry(metadata)
         result["metadata"] = {
             "location": [(file, line) for file, line in metadata.get("locations", [])],
             "flags": metadata.get("flags", []),

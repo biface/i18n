@@ -9,6 +9,7 @@ the whole loaders layer had none — verified by coverage measurement
 
 import gzip
 import json
+import re
 import warnings
 
 import pytest
@@ -287,3 +288,134 @@ class TestSaveAggregatedLocaleJson:
         assert (locales / "usage.json.gz").exists()
         # Submodule aggregate is named after the last path segment ("sub").
         assert (module_dir / "sub.json.gz").exists()
+
+
+# ---------------------------------------------------------------------------
+# Status and recorded counters of an entry (DD-45)
+# ---------------------------------------------------------------------------
+
+RECORD_MATRIX = [["Un fichier", "Un document"], ["Des fichiers", ""]]
+SOUND_RECORD = {
+    "singular_count": 2,
+    "segment_count": 2,
+    "fill_mask": [[True, True], [True, False]],
+}
+
+
+def _load_entry(tmp_path, entry_metadata):
+    """Load a file holding one entry; return the I18nToolsWarning messages."""
+    data = {
+        "metadata": {"language": "fr-FR"},
+        "10001": {"messages": RECORD_MATRIX, "metadata": entry_metadata},
+    }
+    path = _write_i18t(tmp_path, data)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always", I18nToolsWarning)
+        load_book(path)
+    return [str(w.message) for w in record if issubclass(w.category, I18nToolsWarning)]
+
+
+class TestLoadBookRecord:
+    @pytest.mark.parametrize(
+        "entry_metadata",
+        [
+            {},
+            {"singular_count": 2},
+            {"plural_counts": [1, 0]},
+            {"plural_counts": "not checked"},
+            {"status": "draft", **SOUND_RECORD},
+            {"status": "complete", **SOUND_RECORD},
+            {
+                "status": "draft",
+                **SOUND_RECORD,
+                "fill_mask": [[True, True], [True, True]],
+            },
+        ],
+        ids=[
+            "legacy-no-status",
+            "legacy-singular-count",
+            "legacy-plural-counts",
+            "plural-counts-ignored",
+            "sound-draft",
+            "sound-complete",
+            "diverging-draft-is-info",
+        ],
+    )
+    def test_loads_without_warning(self, tmp_path, entry_metadata):
+        assert _load_entry(tmp_path, entry_metadata) == []
+
+    @pytest.mark.parametrize(
+        "entry_metadata, expected",
+        [
+            (
+                {"status": "final", **SOUND_RECORD},
+                "status 'final' is not 'draft' or 'complete': read as draft",
+            ),
+            (
+                {
+                    "status": "complete",
+                    **SOUND_RECORD,
+                    "fill_mask": [[True, True], [True, True]],
+                },
+                "content differs from the recorded counters: text (1, 1) lost",
+            ),
+            ({"status": "complete"}, "complete without recorded counters"),
+            (
+                {"status": "complete", "singular_count": 2, "segment_count": 2},
+                "complete without recorded counters",
+            ),
+            (
+                {"status": "draft", **SOUND_RECORD, "segment_count": 0},
+                "counters ignored (segment_count is not an int >= 1)",
+            ),
+        ],
+        ids=[
+            "unknown-status",
+            "diverging-complete",
+            "complete-without-counters",
+            "complete-incomplete-counters",
+            "draft-damaged-counters",
+        ],
+    )
+    def test_warns(self, tmp_path, entry_metadata, expected):
+        messages = _load_entry(tmp_path, entry_metadata)
+        assert len(messages) == 1
+        assert messages[0].endswith(f"10001: {expected}")
+
+    @pytest.mark.parametrize(
+        "change, expected",
+        [
+            ({"singular_count": "2"}, "singular_count is not an int >= 1"),
+            ({"segment_count": True}, "segment_count is not an int >= 1"),
+            ({"fill_mask": "mask"}, "fill_mask is not a list of lists"),
+            ({"fill_mask": [[True, True], [True]]}, "fill_mask is not a rectangle"),
+            (
+                {"fill_mask": [[True, 1], [True, False]]},
+                "fill_mask holds a value that is not a boolean",
+            ),
+            ({"segment_count": 3}, "fill_mask has 2 rows, segment_count is 3"),
+            ({"singular_count": 1}, "fill_mask has 2 columns, singular_count is 1"),
+        ],
+        ids=[
+            "count-str",
+            "count-bool",
+            "mask-str",
+            "ragged",
+            "non-bool",
+            "rows",
+            "columns",
+        ],
+    )
+    def test_damaged_counters_of_a_complete_entry_fail(
+        self, tmp_path, change, expected
+    ):
+        data = {
+            "10001": {
+                "messages": RECORD_MATRIX,
+                "metadata": {"status": "complete", **SOUND_RECORD, **change},
+            }
+        }
+        with pytest.raises(
+            FormatError, match=re.escape(f"damaged counters: {expected}")
+        ):
+            load_book(_write_i18t(tmp_path, data))

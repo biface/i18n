@@ -17,6 +17,7 @@ from i18n_tools._finding import Finding
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
 )
+from i18n_tools.exceptions import MessageError
 from i18n_tools.loaders.loader import build_book_filename
 from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
@@ -468,7 +469,12 @@ class Book:
         for msgid, entry in content["entries"].items():
             parts = i18n_tools_format_to_message_dict(entry)
             msg = Message.from_matrix(
-                msgid, parts["matrix"], parts["context"], parts["metadata"]
+                msgid,
+                parts["matrix"],
+                parts["context"],
+                parts["metadata"],
+                parts["status"],
+                parts["recorded"],
             )
             if self.language is not None:
                 msg.add_language(self.language)
@@ -486,8 +492,16 @@ class Book:
         count and the statistics are recomputed first, so that the file
         never carries stale derived values.
 
+        A complete message that diverges from its recorded counters, or
+        has none, is never written over the last sound state: the save is
+        refused before anything is written. Drafts carry no such
+        requirement. Once the file is written, each draft records its
+        counters (``Message.record()``): saving a draft is a validation
+        point.
+
         :param path_directory: Directory where the .i18t file will be written.
         :type path_directory: str
+        :raises MessageError: If a complete message diverges.
         :raises FileNotFoundError: If ``path_directory`` does not exist.
 
         References
@@ -497,10 +511,24 @@ class Book:
         """
         from i18n_tools.loaders.loader import save_book as _save_book
 
+        messages: list[Message] = list(self.messages.values())
+        diverging = [
+            message.id
+            for message in messages
+            if message.status == "complete" and message.has_divergence
+        ]
+        if diverging:
+            raise MessageError(
+                f"Book '{self.domain}' not saved: complete message(s) "
+                + f"{', '.join(diverging)} diverge from their recorded counters"
+            )
         self.metadata[["count", "messages"]] = len(self.messages)
         self._compute_statistics()
         file_path = path_directory + "/" + self.filename
         _save_book(self, file_path)
+        for message in messages:
+            if message.status == "draft":
+                message.record()
 
 
 class FallbackBook:

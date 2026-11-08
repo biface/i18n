@@ -36,6 +36,7 @@ from ..__static__ import (
     TranslationFileFormat,
 )
 from ..__static__ import __version__ as i18n_tools_version
+from .._counters import count_content, counters_from_entry, describe_differences
 from .._finding import Finding
 from ..locale import (
     get_all_languages,
@@ -138,7 +139,10 @@ _ENTRY_KNOWN_KEYS = (
     | _ENTRY_TEXT_LIST_KEYS
     | {
         "locations",
+        "status",
         "singular_count",
+        "segment_count",
+        "fill_mask",
         "plural_counts",
     }
 )
@@ -218,48 +222,115 @@ def _is_text_matrix(matrix: list[list[object]]) -> TypeGuard[list[list[str]]]:
     return all(isinstance(cell, str) for row in matrix for cell in row)
 
 
-def _check_counts(
+def _record_defects(metadata: dict[str, object]) -> list[str]:
+    """
+    List what is malformed in the counter keys present in an entry.
+
+    A counter must be an int of at least 1; the fill mask a rectangle of
+    booleans whose shape matches the counters present. Missing keys are
+    not defects here.
+    """
+    defects: list[str] = []
+    counts: dict[str, int] = {}
+    for key in ("singular_count", "segment_count"):
+        if key not in metadata:
+            continue
+        value = metadata[key]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            defects.append(f"{key} is not an int >= 1")
+        else:
+            counts[key] = value
+    if "fill_mask" not in metadata:
+        return defects
+    mask = metadata["fill_mask"]
+    if (
+        not isinstance(mask, list)
+        or len(mask) == 0
+        or not all(isinstance(row, list) for row in mask)
+    ):
+        defects.append("fill_mask is not a list of lists")
+        return defects
+    rows: list[list[object]] = [list(row) for row in mask]
+    widths = {len(row) for row in rows}
+    if len(widths) != 1 or widths == {0}:
+        defects.append("fill_mask is not a rectangle")
+    elif not all(isinstance(cell, bool) for row in rows for cell in row):
+        defects.append("fill_mask holds a value that is not a boolean")
+    else:
+        if counts.get("segment_count", len(rows)) != len(rows):
+            defects.append(
+                f"fill_mask has {len(rows)} rows, segment_count is "
+                + f"{counts['segment_count']}"
+            )
+        width = widths.pop()
+        if counts.get("singular_count", width) != width:
+            defects.append(
+                f"fill_mask has {width} columns, singular_count is "
+                + f"{counts['singular_count']}"
+            )
+    return defects
+
+
+def _check_record(
     matrix: list[list[str]], metadata: dict[str, object], where: str
 ) -> list[Finding]:
     """
-    Compare the stored counters of an entry with its matrix.
+    Check the status and the recorded counters of an entry (DD-45).
 
-    ``singular_count`` is the number of declensions (the length of the
-    singular row); ``plural_counts[i]`` the number of non-empty plurals of
-    declension ``i``. A mismatch is a warning: the counters are recomputed.
+    A ``status`` other than ``"draft"`` or ``"complete"`` is read as a
+    draft, with a warning. An entry without ``status`` is a draft.
+
+    For a complete entry, a malformed record is an error, a missing or
+    incomplete record a warning, and counters that disagree with the
+    matrix a warning naming the lost or added texts. For a draft, a
+    malformed record is a warning (the record is ignored), a missing or
+    incomplete record is accepted, and a disagreement is information.
+    ``plural_counts`` is not checked.
     """
     findings: list[Finding] = []
-    singular_count = len(matrix[0])
-    plural_counts = [
-        sum(1 for row in matrix[1:] if row[column] != "")
-        for column in range(singular_count)
-    ]
-    if "singular_count" in metadata:
-        stored = metadata["singular_count"]
-        if not _is_int(stored):
-            findings.append(Finding("error", where, "singular_count is not an int"))
-        elif stored != singular_count:
+    status = metadata.get("status", "draft")
+    if status not in ("draft", "complete"):
+        findings.append(
+            Finding(
+                "warning",
+                where,
+                f"status {status!r} is not 'draft' or 'complete': read as draft",
+            )
+        )
+        status = "draft"
+    complete = status == "complete"
+    defects = _record_defects(metadata)
+    if defects:
+        if complete:
+            findings.extend(
+                Finding("error", where, f"damaged counters: {defect}")
+                for defect in defects
+            )
+        else:
             findings.append(
                 Finding(
                     "warning",
                     where,
-                    f"singular_count is {stored}, the matrix has {singular_count}",
+                    "counters ignored (" + "; ".join(defects) + ")",
                 )
             )
-    if "plural_counts" in metadata:
-        stored = metadata["plural_counts"]
-        if not isinstance(stored, list) or not all(_is_int(n) for n in stored):
+        return findings
+    recorded = counters_from_entry(metadata)
+    if recorded is None:
+        if complete:
             findings.append(
-                Finding("error", where, "plural_counts is not a list of int")
+                Finding("warning", where, "complete without recorded counters")
             )
-        elif stored != plural_counts:
-            findings.append(
-                Finding(
-                    "warning",
-                    where,
-                    f"plural_counts is {stored}, the matrix has {plural_counts}",
-                )
+        return findings
+    differences = describe_differences(recorded, count_content(matrix))
+    if differences:
+        findings.append(
+            Finding(
+                "warning" if complete else "info",
+                where,
+                "content differs from the recorded counters: " + "; ".join(differences),
             )
+        )
     return findings
 
 
@@ -416,7 +487,7 @@ def inspect_book_data(
             str(key): item for key, item in metadata.items()
         }
         findings.extend(_check_entry_metadata(entry_metadata, language, where))
-        findings.extend(_check_counts(matrix, entry_metadata, where))
+        findings.extend(_check_record(matrix, entry_metadata, where))
     if "metadata" in data:
         findings.extend(
             _check_root(data["metadata"], language, domain, total_messages, total_words)
