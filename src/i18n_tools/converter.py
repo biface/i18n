@@ -212,7 +212,7 @@ from ndict_tools import StrictNestedDictionary
 from i18n_tools.loaders.loader import load_json, load_text
 
 if TYPE_CHECKING:
-    from i18n_tools.models.corpus import Message
+    from i18n_tools.models.message import Message
 
 _F = TypeVar("_F", bound=Callable[..., Any])
 

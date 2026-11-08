@@ -10,7 +10,8 @@ from helpers import as_plain
 
 from i18n_tools import __version__
 from i18n_tools.converter import message_to_i18n_tools_format
-from i18n_tools.models.corpus import Book, Message
+from i18n_tools.models.book import Book
+from i18n_tools.models.message import Message
 
 
 # Using fixtures: fr_fr_book, en_us_book, en_gb_book, it_it_book from local conftest.py
@@ -715,7 +716,7 @@ class TestBookSave:
         ----------
         - biface/i18n#57 : Book.save() persistence (DD-06, DD-15, DD-16)
         """
-        from i18n_tools.models.corpus import Book
+        from i18n_tools.models.book import Book
 
         fr_fr_book.save(str(tmp_path))
 

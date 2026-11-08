@@ -42,7 +42,7 @@ from typing import NoReturn, TextIO
 
 from .config import Config
 from .core import synchronize
-from .models.corpus import Book
+from .models.book import Book
 
 # Matches "<domain>.<format>.i18t", e.g. "messages.json.i18t" (DD-34).
 _FILENAME_PATTERN = re.compile(r"^(?P<domain>.+)\.(?P<fmt>json|yaml)\.i18t$")

@@ -290,7 +290,7 @@ def build_book_filename(
     """
     Pass-through to :func:`i18n_tools.loaders._handler.build_book_filename`.
 
-    Kept here so that `Book` (`models/corpus.py`) only ever talks to
+    Kept here so that `Book` (`models/book.py`) only ever talks to
     `loader.py`, consistent with the existing `load_book`/`save_book`
     pattern (DD-06, DD-08) — never directly to `handler.py`.
 

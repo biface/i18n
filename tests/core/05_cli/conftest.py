@@ -1,7 +1,8 @@
 import pytest
 
 from i18n_tools.config import Config
-from i18n_tools.models.corpus import Book, Message
+from i18n_tools.models.book import Book
+from i18n_tools.models.message import Message
 from i18n_tools.patterns import Singleton
 
 

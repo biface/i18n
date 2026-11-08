@@ -11,7 +11,9 @@ References
 import pytest
 
 from i18n_tools.exceptions import MessageNotFoundError
-from i18n_tools.models.corpus import Book, Corpus, Encyclopaedia, FallbackBook
+from i18n_tools.models.book import Book, FallbackBook
+from i18n_tools.models.corpus import Corpus
+from i18n_tools.models.encyclopaedia import Encyclopaedia
 
 # ---------------------------------------------------------------------------
 # TestCorpusInit

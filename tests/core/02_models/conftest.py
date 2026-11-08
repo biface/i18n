@@ -2,7 +2,8 @@ import pytest
 
 from i18n_tools import __version__
 from i18n_tools.models import Message as MessageModel
-from i18n_tools.models.corpus import Book, Message
+from i18n_tools.models.book import Book
+from i18n_tools.models.message import Message
 
 
 @pytest.fixture

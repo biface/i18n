@@ -44,7 +44,8 @@ from typing import TYPE_CHECKING
 from .exceptions import BookError
 from .loaders.loader import build_path
 from .locale import get_all_languages, normalize_language_tag
-from .models.corpus import Book, Corpus
+from .models.book import Book
+from .models.corpus import Corpus
 from .sync import check_repository
 
 if TYPE_CHECKING:

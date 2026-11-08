@@ -13,7 +13,7 @@ from i18n_tools.core import (
     synchronize,
 )
 from i18n_tools.exceptions import BookError
-from i18n_tools.models.corpus import Message
+from i18n_tools.models.message import Message
 from i18n_tools.models.repository import Repository
 
 
