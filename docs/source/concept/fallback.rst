@@ -38,12 +38,29 @@ inside one message. When no book of the chain holds the identifier,
 Drafts take part in the chain: a translation in progress is trusted to
 answer, so a partly translated language still serves the texts it has.
 
-.. code-block:: text
+In the example below, the hierarchy declares ``fr-FR`` under ``fr`` and
+the terminal fallback is ``en``. A request in ``fr-CH`` walks the chain
+``fr-CH``, ``fr``, ``fr-FR``, ``en``; ``fr-FR`` is the first language that
+holds the identifier, so its message answers and ``en`` is not consulted.
 
-    hierarchy: fr-FR declared under fr     terminal fallback: en
-    requested: fr-CH        chain: fr-CH -> fr -> fr-FR -> en
-    fr-CH holds no "files.missing", fr-FR does
-    -> the message of fr-FR answers, with all its declensions and segments
+.. mermaid::
+
+    flowchart LR
+        request(["files.missing<br/>requested in fr-CH"])
+        frCH["fr-CH<br/>does not hold it"]
+        fr["fr<br/>does not hold it"]
+        frFR["fr-FR<br/>holds it"]
+        en["en<br/>not consulted"]
+        answer[["message of fr-FR<br/>all its declensions and segments"]]
+        request --> frCH --> fr --> frFR
+        frFR -.-> en
+        frFR ==> answer
+        classDef miss stroke-dasharray: 5 5
+        classDef hit stroke-width: 3px
+        classDef idle opacity: 0.5
+        class frCH,fr miss
+        class frFR,answer hit
+        class en idle
 
 
 Column fallback
@@ -61,13 +78,39 @@ The first non-empty text is used. The principal singular is the last
 resort: ``mark_complete()`` refuses a message whose principal singular is
 empty.
 
-.. code-block:: text
+.. mermaid::
 
-    messages:
-      segment 0   "File {name} is missing."   "File {name} is missing from {repository}."
-      segment 1   "{n} files are missing."    ""
+    flowchart TD
+        cell["(variant, segment)"]
+        same_segment["(0, segment)<br/>principal, same segment"]
+        singular["(variant, 0)<br/>same variant, singular"]
+        principal["(0, 0)<br/>principal singular"]
+        text(["text used"])
+        cell -- empty --> same_segment
+        same_segment -- empty --> singular
+        singular -- empty --> principal
+        cell -- text --> text
+        same_segment -- text --> text
+        singular -- text --> text
+        principal --> text
 
-    (variant 1, segment 1)  ->  ""  ->  (0, 1)  "{n} files are missing."
+With the message below, the cell ``(1, 1)`` is empty: its text comes
+from step 2, ``(0, 1)``, and reads "{n} files are missing.".
+
+.. list-table::
+   :header-rows: 1
+   :stub-columns: 1
+   :widths: 20 40 40
+
+   * -
+     - variant 0 (principal)
+     - variant 1
+   * - segment 0
+     - ``File {name} is missing.``
+     - ``File {name} is missing from {repository}.``
+   * - segment 1
+     - ``{n} files are missing.``
+     - *(empty)*
 
 ``formatter.publish()`` applies the column fallback before it substitutes
 the placeholders. The cross-language check of rule 2 reads cells the
@@ -79,5 +122,18 @@ Two fallbacks, one order
 
 The two fallbacks are independent and apply in a fixed order: first the
 language fallback chooses the message, then the column fallback chooses
-the text inside it. A cell left empty in ``fr-CH`` is therefore filled
-from another cell of the ``fr-CH`` message, never from ``fr-FR``.
+the text inside it.
+
+.. mermaid::
+
+    flowchart LR
+        request(["identifier<br/>language<br/>(variant, segment)"])
+        language["language fallback<br/>FallbackBook.get_message()"]
+        message[["message"]]
+        column["column fallback"]
+        text(["text"])
+        publish["placeholders substituted<br/>publish()"]
+        request --> language --> message --> column --> text --> publish
+
+A cell left empty in the ``fr-CH`` message is therefore filled from
+another cell of that message, never from ``fr-FR``.
