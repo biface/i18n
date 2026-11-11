@@ -18,10 +18,10 @@ Book module
       .. automethod:: add_domain
       .. automethod:: update_domain
       .. automethod:: remove_domain
-      .. automethod:: get_format
-      .. automethod:: add_format
-      .. automethod:: update_format
-      .. automethod:: remove_format
+      .. automethod:: get_file_format
+      .. automethod:: add_file_format
+      .. automethod:: update_file_format
+      .. automethod:: remove_file_format
       .. automethod:: set_metadata
       .. automethod:: __set_filename
          :no-index:

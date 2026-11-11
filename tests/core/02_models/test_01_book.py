@@ -457,11 +457,11 @@ class TestBookMetadata:
         # Core attributes now stored on instance
         assert isinstance(book.language, str)
         assert isinstance(book.domain, str)
-        assert isinstance(book.format, str)
+        assert isinstance(book.file_format, str)
         # These keys should NOT be in metadata anymore
         assert not book.metadata.is_key("language")
         assert not book.metadata.is_key("domain")
-        assert not book.metadata.is_key("format")
+        assert not book.metadata.is_key("file_format")
         # Default values for remaining metadata
         assert book.metadata.get("project_id_version", None) == "i18n-tools 1.0"
         assert book.metadata.get("report_msgid_bugs_to", None) == "bugs@example.com"
@@ -565,7 +565,7 @@ class TestBookAttributes:
         book = request.getfixturevalue(fixture_book)
         assert book.get_language() == expected_lang
         assert book.get_domain() == expected_domain
-        assert book.get_format() == expected_format
+        assert book.get_file_format() == expected_format
 
     def test_add_attribute_methods_fail_when_already_set(self, fr_fr_book):
         # add_language when already set
@@ -574,9 +574,11 @@ class TestBookAttributes:
         # add_domain when already set
         with pytest.raises(ValueError, match="Domain is already set for this book"):
             fr_fr_book.add_domain("test")
-        # add_format when already set
-        with pytest.raises(ValueError, match="Format is already set for this book"):
-            fr_fr_book.add_format("json")
+        # add_file_format when already set
+        with pytest.raises(
+            ValueError, match="File format is already set for this book"
+        ):
+            fr_fr_book.add_file_format("json")
 
     def test_remove_attributes_then_add_again(self):
         # create a minimal empty book
@@ -592,27 +594,35 @@ class TestBookAttributes:
         book.add_domain("d2")
         assert book.domain == "d2"
 
-        book.remove_format()
-        assert book.format is None
-        book.add_format("yaml")
-        assert book.format == "yaml"
+        book.remove_file_format()
+        assert book.file_format is None
+        book.add_file_format("yaml")
+        assert book.file_format == "yaml"
 
     def test_constructor_and_setters_validate_format_consistently(self):
-        """biface/i18n#66 — before this fix, Book(format=...) accepted any
-        value silently (no call to the format validator), while
-        add_format()/update_format() raised ValueError on the same input.
+        """biface/i18n#66 — before this fix, Book(file_format=...) accepted
+        any value silently (no call to the format validator), while
+        add_file_format()/update_file_format() raised ValueError on the same
+        input.
         All three now go through build_book_filename() and must behave
         identically."""
         with pytest.raises(ValueError, match="Unknown format 'banana'"):
-            Book(domain="d", language="fr-FR", format="banana")
+            Book(domain="d", language="fr-FR", file_format="banana")
 
         book = Book(domain="d", language="fr-FR")
         with pytest.raises(ValueError, match="Unknown format 'banana'"):
-            book.update_format("banana")
+            book.update_file_format("banana")
 
-        book.remove_format()
+        book.remove_file_format()
         with pytest.raises(ValueError, match="Unknown format 'banana'"):
-            book.add_format("banana")
+            book.add_file_format("banana")
+
+    def test_constructor_sets_file_format(self):
+        """Book(file_format=...) sets the attribute and the filename."""
+        book = Book(domain="d", language="fr-FR", file_format="yaml")
+        assert book.file_format == "yaml"
+        assert book.get_file_format() == "yaml"
+        assert book.filename == "d.yaml.i18t"
 
 
 class TestBookUpdate:
@@ -637,10 +647,10 @@ class TestBookUpdate:
     def test_update_domain_and_format_success(self, fr_fr_book):
         fr_fr_book.update_domain("animals")
         assert fr_fr_book.domain == "animals"
-        assert fr_fr_book.format == "json"
+        assert fr_fr_book.file_format == "json"
         assert fr_fr_book.filename == "animals.json.i18t"
-        fr_fr_book.update_format("yaml")
-        assert fr_fr_book.format == "yaml"
+        fr_fr_book.update_file_format("yaml")
+        assert fr_fr_book.file_format == "yaml"
         assert fr_fr_book.filename == "animals.yaml.i18t"
 
 
@@ -723,7 +733,7 @@ class TestBookSave:
         reloaded = Book(
             domain=fr_fr_book.domain,
             language=fr_fr_book.language,
-            format=fr_fr_book.format,
+            file_format=fr_fr_book.file_format,
         )
         reloaded.load(str(tmp_path))
 

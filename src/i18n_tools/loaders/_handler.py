@@ -548,9 +548,9 @@ def build_book_filename(
     This is the single place where the default-format and filename-building
     rules for a translation dictionary are applied — used by `Book`
     (via `loader.py`, never imported here directly, DD-06) to keep its own
-    format default/validation consistent across its constructor and its
-    `add_format()`/`update_format()` methods, and reusable from `core.py`,
-    `sync.py`, or a future CLI without constructing a `Book` first.
+    file format default/validation consistent across its constructor and
+    its `add_file_format()`/`update_file_format()` methods, and reusable
+    from `core.py`, `sync.py`, or a future CLI without constructing a `Book` first.
 
     :param domain: The translation domain name.
     :type domain: str

@@ -347,7 +347,7 @@ def save_aggregated_locale_json(
 
 def build_book_filename(
     domain: str, fmt: TranslationFileFormat | None = None
-) -> tuple[str, str]:
+) -> tuple[TranslationFileFormat, str]:
     """
     Pass-through to :func:`i18n_tools.loaders._handler.build_book_filename`.
 
@@ -361,7 +361,7 @@ def build_book_filename(
                 "json" if ``None``.
     :type fmt: TranslationFileFormat | None
     :return: A ``(format, filename)`` tuple.
-    :rtype: tuple[str, str]
+    :rtype: tuple[TranslationFileFormat, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
     return _build_book_filename(domain, fmt)

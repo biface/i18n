@@ -104,7 +104,7 @@ def _load_book_from_path(path: str) -> Book:
         (file missing, integrity check failed).
     """
     directory, language, domain, fmt = _parse_i18t_path(path)
-    book = Book(language=language, domain=domain, format=fmt)
+    book = Book(language=language, domain=domain, file_format=fmt)
     try:
         book.load(directory)
     except (FileNotFoundError, FormatError) as e:
@@ -142,7 +142,7 @@ def cmd_info(path: str) -> str:
     lines = [
         f"Domain:       {book.domain}",
         f"Language:     {book.language}",
-        f"Format:       {book.format}",
+        f"Format:       {book.file_format}",
         f"Messages:     {len(book.messages)}",
         f"Total words:  {stats.get('total_words', 0)}",
     ]

@@ -51,7 +51,7 @@ class Book:
 
     - language (str): Normalized language tag of this book (e.g. "fr-FR").
     - domain (str): Functional or logical domain grouping the messages.
-    - format (str): Serialization/storage format hint (e.g. "json").
+    - file_format (TranslationFileFormat): Storage file format (e.g. "json").
     - messages (StrictNestedDictionary): Mapping of message.id -> Message.
     - metadata (StrictNestedDictionary): Additional data such as
       project_id_version, report_msgid_bugs_to, pot_creation_date, language_team,
@@ -59,7 +59,7 @@ class Book:
 
     Notes
 
-    - The keys "language", "domain" and "format" are NOT present in metadata
+    - The keys "language", "domain" and "file_format" are NOT present in metadata
       anymore; they are stored as instance attributes.
     - Statistics are available under metadata["statistics"], with
       "total_messages" and "total_words".
@@ -70,7 +70,7 @@ class Book:
     language: str | None
     domain: str | None
     messages: StrictNestedDictionary
-    format: str | None
+    file_format: TranslationFileFormat | None
     metadata: StrictNestedDictionary
 
     def __init__(
@@ -90,7 +90,8 @@ class Book:
           KeyError("No language specified") is raised.
         - domain (str, required): Domain for the book. If not provided,
           KeyError("No domain specified") is raised.
-        - format (str, optional): Serialization/storage format hint. Default: "json".
+        - file_format (TranslationFileFormat, optional): Storage file format.
+          Default: "json".
         - project_id_version (str, optional): Default "i18n-tools 1.0".
         - report_msgid_bugs_to (str, optional): Default "bugs@example.com".
         - pot_creation_date (str, optional): Default empty string.
@@ -98,9 +99,10 @@ class Book:
         - header_comment (str, optional): Default empty string.
 
         Behavior
-        - Stores language, domain, and format as instance attributes (not in metadata).
+        - Stores language, domain, and file_format as instance attributes (not in
+          metadata).
         - Builds metadata as a StrictNestedDictionary with the keys above (except
-          language/domain/format) and an initial statistics section:
+          language/domain/file_format) and an initial statistics section:
           metadata["statistics"] = {"total_words": 0, "total_messages": 0}.
         - Loads any provided Message instances into the book if their
           metadata["language"] equals the normalized book language; otherwise
@@ -134,11 +136,11 @@ class Book:
         self.messages = StrictNestedDictionary()
 
         # Core metadata for naming and storage format
-        self.format, self.filename = build_book_filename(
-            self.domain, kwargs.pop("format", None)
+        self.file_format, self.filename = build_book_filename(
+            self.domain, kwargs.pop("file_format", None)
         )
 
-        # Build metadata dictionary (without language, domain, format)
+        # Build metadata dictionary (without language, domain, file_format)
         self.metadata = StrictNestedDictionary(
             project_id_version=kwargs.pop("project_id_version", "i18n-tools 1.0"),
             report_msgid_bugs_to=kwargs.pop("report_msgid_bugs_to", "bugs@example.com"),
@@ -171,15 +173,19 @@ class Book:
         # Compute statistics based on current messages
         self._compute_statistics()
 
-    # --- Attribute management for language, domain, and format ---
+    # --- Attribute management for language, domain, and file format ---
     def __set_filename(self) -> None:
         """
         This private function is used to set or update filename, if one of these component changes.
         :return: nothing
         """
-        if self.domain is not None and self.format is not None:
+        if self.domain is not None and self.file_format is not None:
             self.filename = (
-                self.domain + "." + self.format + "." + I18N_TOOLS_TRANSLATION_FILE_EXT
+                self.domain
+                + "."
+                + self.file_format
+                + "."
+                + I18N_TOOLS_TRANSLATION_FILE_EXT
             )
 
     def get_language(self) -> str | None:
@@ -227,27 +233,27 @@ class Book:
         """Unset the book domain (may leave the book unusable until reset)."""
         self.domain = None
 
-    def get_format(self) -> str | None:
-        """Return the serialization/storage format hint."""
-        return self.format
+    def get_file_format(self) -> TranslationFileFormat | None:
+        """Return the storage file format of this book."""
+        return self.file_format
 
-    def add_format(self, fmt: TranslationFileFormat) -> None:
-        """Set the format if not already set."""
-        if getattr(self, "format", None) is not None:
-            raise ValueError("Format is already set for this book")
+    def add_file_format(self, fmt: TranslationFileFormat) -> None:
+        """Set the file format if not already set."""
+        if getattr(self, "file_format", None) is not None:
+            raise ValueError("File format is already set for this book")
         if self.domain is None:
-            raise ValueError("Domain must be set before setting the format")
-        self.format, self.filename = build_book_filename(self.domain, fmt)
+            raise ValueError("Domain must be set before setting the file format")
+        self.file_format, self.filename = build_book_filename(self.domain, fmt)
 
-    def update_format(self, fmt: TranslationFileFormat) -> None:
-        """Update the format hint."""
+    def update_file_format(self, fmt: TranslationFileFormat) -> None:
+        """Update the file format."""
         if self.domain is None:
-            raise ValueError("Domain must be set before updating the format")
-        self.format, self.filename = build_book_filename(self.domain, fmt)
+            raise ValueError("Domain must be set before updating the file format")
+        self.file_format, self.filename = build_book_filename(self.domain, fmt)
 
-    def remove_format(self) -> None:
-        """Unset the format hint."""
-        self.format = None
+    def remove_file_format(self) -> None:
+        """Unset the file format."""
+        self.file_format = None
         self.filename = ""
 
     def _compute_statistics(self) -> None:
