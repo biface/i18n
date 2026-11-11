@@ -55,3 +55,5 @@ Message module
       .. automethod:: remove_metadata
 
    .. autofunction:: extract_tokens
+
+.. autoclass:: i18n_tools.models.ContentCounters

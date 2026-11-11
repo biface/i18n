@@ -13,6 +13,10 @@ This section provides detailed documentation for the **i18n-tools** API, includi
    modules/locale.rst
    modules/loaders/index
    modules/models/index
+   modules/core
+   modules/findings
+   modules/exceptions
+   modules/cli
    modules/config
    modules/converter
    modules/formatter

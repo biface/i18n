@@ -29,3 +29,9 @@ Book module
          :no-index:
       .. automethod:: __iter__
          :no-index:
+
+   .. autoclass:: FallbackBook
+
+      .. automethod:: get_message
+      .. autoproperty:: language
+      .. autoproperty:: domain
