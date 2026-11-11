@@ -4,10 +4,13 @@ Corpus: the Books of one domain across languages.
 
 from typing import TYPE_CHECKING, Any
 
+from i18n_tools._cells import resolve_cell
 from i18n_tools._checks import ensure_type
 from i18n_tools._compat import override
+from i18n_tools._finding import Finding
 from i18n_tools.locale import normalize_language_tag
 from i18n_tools.models.book import Book, FallbackBook
+from i18n_tools.models.message import Message, extract_tokens
 
 if TYPE_CHECKING:
     from i18n_tools.models.repository import Repository
@@ -32,6 +35,8 @@ class Corpus:
     - ``coverage()``  — coverage rate per language (0.0–1.0)
     - ``missing(lang)`` — identifiers absent in ``lang`` but present elsewhere
     - ``languages``   — list of loaded languages
+    - ``check()``     — structure and token names of each message across
+      languages
 
     References
     ----------
@@ -249,6 +254,107 @@ class Corpus:
         present = set(self._books[normalized].messages.keys())
         return sorted(all_ids - present)
 
+    def check(self) -> list[Finding]:
+        """
+        Check that each message has the same structure and the same token
+        names in every language.
+
+        The fallback chain resolves a whole message: a language holding
+        the identifier answers with its own message, a language without
+        it answers with the message of another language. Comparing the
+        messages resolved for every language therefore amounts to
+        comparing the messages of the same identifier held by the books.
+        Only ``"complete"`` messages are compared: a ``"draft"`` takes
+        part in the fallback chain but carries no integrity obligation.
+
+        Two complete messages of the same identifier must have the same
+        number of declensions and of segments. When they do, each cell
+        ``(variant, segment)`` must carry the same set of token names in
+        both. The text of a cell is read after the column fallback, so
+        an absent text is compared through the text that replaces it at
+        publication. Token order and repetitions are not compared.
+
+        Each mismatch is reported with severity ``"error"`` and the
+        identifier of the message. Nothing is raised and the books are
+        not modified.
+
+        :return: The findings, by identifier; empty if nothing is wrong.
+        :rtype: list[Finding]
+        """
+        findings: list[Finding] = []
+        identifiers: set[str] = set()
+        for book in self._books.values():
+            identifiers.update(str(key) for key in book.messages.keys())
+        for msg_id in sorted(identifiers):
+            complete: list[tuple[str, Message]] = []
+            for language, book in self._books.items():
+                message = book.get(msg_id)
+                if message is not None and message.status == "complete":
+                    complete.append((language, message))
+            if len(complete) < 2:
+                continue
+            findings.extend(_compare_messages(msg_id, complete))
+        return findings
+
     @override
     def __repr__(self) -> str:
         return f"Corpus(domain='{self._domain}', languages={self.languages})"
+
+
+def _compare_messages(
+    msg_id: str, messages: list[tuple[str, Message]]
+) -> list[Finding]:
+    """
+    Compare the structure, then the token names, of the complete messages
+    of one identifier.
+
+    :param msg_id: Identifier shared by the messages.
+    :type msg_id: str
+    :param messages: ``(language, message)`` pairs, at least two.
+    :type messages: list[tuple[str, Message]]
+    :return: One finding for a structure mismatch, or one finding per
+        cell whose token names differ.
+    :rtype: list[Finding]
+    """
+    shapes = {
+        language: (message.observed.declensions, message.observed.segments)
+        for language, message in messages
+    }
+    if len(set(shapes.values())) > 1:
+        described = ", ".join(
+            f"{language} {declensions}x{segments}"
+            for language, (declensions, segments) in shapes.items()
+        )
+        return [
+            Finding(
+                "error",
+                msg_id,
+                "structure differs across languages (declensions x segments): "
+                + described,
+            )
+        ]
+    declensions, segments = next(iter(shapes.values()))
+    matrices = [(language, message.matrix) for language, message in messages]
+    findings: list[Finding] = []
+    for segment in range(segments):
+        for variant in range(declensions):
+            tokens = {
+                language: frozenset(
+                    extract_tokens(resolve_cell(matrix, segment, variant))
+                )
+                for language, matrix in matrices
+            }
+            if len(set(tokens.values())) == 1:
+                continue
+            described = ", ".join(
+                f"{language} {sorted(names)}" for language, names in tokens.items()
+            )
+            findings.append(
+                Finding(
+                    "error",
+                    msg_id,
+                    f"tokens of cell (variant {variant}, segment {segment}) "
+                    + f"differ across languages: {described}",
+                )
+            )
+    return findings
