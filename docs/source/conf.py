@@ -29,6 +29,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
     # contributions
+    'sphinxcontrib.mermaid',
 ]
 
 templates_path = ['_templates']
