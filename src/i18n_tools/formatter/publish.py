@@ -2,128 +2,125 @@
 Publish Module
 ==============
 
-Implements ``publish()`` (DD-27): selects a cell from a ``Message``'s
-plural/alternative matrix, falling back through up to four steps when a
-cell is absent (an empty string is the DD-02 semantic marker for "no
+Implements ``publish()`` (DD-27): selects a cell ``(segment, variant)``
+from a ``Message``'s matrix, falling back through up to four steps when
+a cell is absent (an empty string is the DD-02 semantic marker for "no
 content here", not intentional empty content), then substitutes
-``{variable}`` placeholders.
+``{token}`` placeholders.
 
 This module reads the cells of ``Message.matrix`` rather than going
 through ``Message.format()``, which selects a single cell and does not
 apply this fallback.
 
 Key Responsibilities:
-    - Resolve a plural row index automatically from a ``PluralRule``,
-      when the ``Message`` has one and a count is given.
+    - Take the segment as given, or resolve it from a count through the
+      ``Message``'s ``PluralRule``.
+    - Refuse an address outside the matrix (``PluralIndexError``,
+      ``VariantIndexError``).
     - Apply the DD-27 four-step column fallback to select a cell.
-    - Substitute variables and surface formatting errors as
+    - Substitute tokens and surface formatting errors as
       ``FormatterError``.
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from ..exceptions import FormatterError, PluralIndexError
-
-if TYPE_CHECKING:
-    from ..models import Message
+from .._checks import ensure_type, is_type
+from ..exceptions import FormatterError, PluralIndexError, VariantIndexError
+from ..models import Message
 
 
-def _get_cell(message: "Message", plural_index: int, alternative: int) -> str:
+def _ensure_int(value: object, name: str, optional: bool = False) -> None:
+    """Raise TypeError unless ``value`` is an int (or None if optional)."""
+    if optional and value is None:
+        return
+    if is_type(value, bool) or not is_type(value, int):
+        expected = "an int or None" if optional else "an int"
+        raise TypeError(f"publish() {name} must be {expected}, got {type(value)}")
+
+
+def _resolve_cell(matrix: list[list[str]], segment: int, variant: int) -> str:
     """
-    Raw accessor for ``messages[plural_index][alternative]``.
+    Apply the DD-27 four-step column fallback on a valid address:
 
-    :return: The cell's text, or ``""`` if the cell is empty or outside the
-        matrix — the DD-02 semantic marker for "no content here".
-    :rtype: str
+        1. ``(segment, variant)``
+        2. -> ``(segment, 0)``
+        3. -> ``(0, variant)``
+        4. -> ``(0, 0)`` (guaranteed non-empty by convention)
     """
-    matrix = message.matrix
-    if not (0 <= plural_index < len(matrix) and 0 <= alternative < len(matrix[0])):
-        return ""
-    return matrix[plural_index][alternative]
-
-
-def _resolve_cell(message: "Message", plural_index: int, alternative: int) -> str:
-    """
-    Apply the DD-27 four-step column fallback:
-
-        1. ``messages[plural_index][alternative]``
-        2. -> ``messages[plural_index][0]``
-        3. -> ``messages[0][alternative]``
-        4. -> ``messages[0][0]`` (guaranteed non-empty by convention)
-    """
-    text = _get_cell(message, plural_index, alternative)
-    if text:
-        return text
-
-    if plural_index != 0:
-        text = _get_cell(message, plural_index, 0)
+    for row, column in ((segment, variant), (segment, 0), (0, variant)):
+        text = matrix[row][column]
         if text:
             return text
-
-    if alternative != 0:
-        text = _get_cell(message, 0, alternative)
-        if text:
-            return text
-
-    return message.matrix[0][0]
-
-
-def _plural_row_exists(message: "Message", plural_index: int) -> bool:
-    """
-    Whether ``plural_index`` is a row of ``message``'s matrix.
-
-    Row 0 (singular) always exists. The matrix has one row per plural
-    position used by any declension (DD-02: all columns share the same
-    row set).
-    """
-    return 0 <= plural_index < len(message.matrix)
+    return matrix[0][0]
 
 
 def publish(
-    message: "Message", alternative: int = 0, n: int | None = None, **kwargs: object
+    message: Message,
+    variant: int = 0,
+    segment: int | None = None,
+    n: int | None = None,
+    **tokens: object,
 ) -> str:
     """
-    Format a message: resolve the cell to use (DD-27 four-step column
-    fallback, with automatic plural-row resolution via DD-40's
-    ``PluralRule`` when applicable), then substitute variables.
+    Format a message: select the cell ``(segment, variant)``, apply the
+    DD-27 four-step column fallback, then substitute the tokens.
+
+    The segment is either given, or resolved from ``n`` by
+    ``message.plural_rule`` (DD-40); without both, it is 0 (the
+    singular). ``segment`` and ``n`` exclude each other. Ports with sum
+    types model this choice as one argument (singular, segment or count).
 
     :param message: The ``Message`` to format.
     :type message: Message
-    :param alternative: The alternative (column) index to use. Defaults
-        to 0 (the main text).
-    :type alternative: int
-    :param n: Count driving automatic plural-row resolution via
-        ``message.plural_rule``. Ignored if ``message.plural_rule`` is
-        ``None``.
+    :param variant: The declension to use, 0 for the principal.
+    :type variant: int
+    :param segment: The segment to use, 0 for the singular.
+    :type segment: int | None
+    :param n: Count resolved to a segment by ``message.plural_rule``.
+        Ignored if the message has no plural rule.
     :type n: int | None
-    :param kwargs: Variables substituted into the resolved text via
+    :param tokens: Values substituted into the text via
         ``str.format_map``.
     :return: The formatted message.
     :rtype: str
-    :raises PluralIndexError: If ``message.plural_rule`` resolves a
-        plural row index that does not exist on ``message``.
-    :raises FormatterError: If variable substitution fails (a required
-        variable is missing, or the resolved text is malformed).
+    :raises TypeError: If ``message`` is not a Message, or ``variant``,
+        ``segment`` or ``n`` is not an int.
+    :raises ValueError: If both ``segment`` and ``n`` are given.
+    :raises PluralIndexError: If the segment, given or resolved, is not a
+        row of the matrix.
+    :raises VariantIndexError: If ``variant`` is not a column of the
+        matrix.
+    :raises FormatterError: If a token has no value or the text is
+        malformed.
     """
-    plural_index = 0
-    if message.plural_rule is not None and n is not None:
-        plural_index = message.plural_rule(n)
-        if not _plural_row_exists(message, plural_index):
-            raise PluralIndexError(
-                f"PluralRule resolved plural row {plural_index} for n={n}, "
-                + f"which does not exist on message '{message.id}'"
-            )
+    ensure_type(
+        message, Message, f"publish() message must be a Message, got {type(message)}"
+    )
+    _ensure_int(variant, "variant")
+    _ensure_int(segment, "segment", optional=True)
+    _ensure_int(n, "n", optional=True)
+    if segment is not None and n is not None:
+        raise ValueError("publish() takes segment or n, not both")
 
-    text = _resolve_cell(message, plural_index, alternative)
+    row = 0
+    if segment is not None:
+        row = segment
+    elif n is not None and message.plural_rule is not None:
+        row = message.plural_rule(n)
 
+    matrix = message.matrix
+    if not 0 <= row < len(matrix):
+        raise PluralIndexError(message.id, row, len(matrix))
+    if not 0 <= variant < len(matrix[0]):
+        raise VariantIndexError(message.id, variant, len(matrix[0]))
+
+    text = _resolve_cell(matrix, row, variant)
     try:
-        return text.format_map(kwargs)
+        return text.format_map(tokens)
     except KeyError as e:
-        missing_var = str(e).strip("'")
+        missing = str(e).strip("'")
         raise FormatterError(
-            f"Missing variable '{missing_var}' for message '{message.id}'"
+            f"Missing token '{missing}' for message '{message.id}'"
         ) from e
     except Exception as e:
         raise FormatterError(f"Error formatting message '{message.id}': {e}") from e

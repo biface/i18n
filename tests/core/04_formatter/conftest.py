@@ -18,7 +18,7 @@ def _metadata(language: str = "en") -> dict:
 
 @pytest.fixture
 def simple_message() -> MessageModel:
-    """No alternatives, no plurals: exercises the plain path (row0/col0)."""
+    """No variant, no plural: exercises the plain path (row 0, column 0)."""
     return MessageModel(
         id="greet", principal=Declension("Hello {name}"), metadata=_metadata()
     )
@@ -52,8 +52,8 @@ def step2_message() -> MessageModel:
 @pytest.fixture
 def step3_message() -> MessageModel:
     """
-    Row 1 exists (key present) but both its cells are empty markers:
-    falls through to messages[0][alternative] (options[1]).
+    Row 1 exists but both its cells are empty markers: falls through to
+    the singular of the variant, messages[0][variant].
     """
     return MessageModel(
         id="cart",
