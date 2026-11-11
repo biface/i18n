@@ -10,6 +10,100 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 
 ## v0.11.0 — Unreleased
 
+### ⚠️ Breaking Changes
+No deprecated aliases are kept: the library is pre-alpha and its public
+API is frozen only at v1.0.0.
+
+- **`Message` rebuilt on declensions** (DD-43). Content is a principal
+  `Declension` (`singular`, `plurals`) plus variant `Declension`s,
+  addressed by `(variant, segment)`, `variant=0` being the principal and
+  `segment=0` the singular. Renamed or replaced:
+  - attributes `default`/`default_plurals` → `principal`;
+    `options`/`options_plurals` → `variants` (a tuple);
+  - property `message` (transposed) → `matrix` (`.i18t` orientation,
+    one row per segment, one column per declension);
+  - `get_principal()`/`get_principal_plurals()` → `principal`,
+    `principal.plurals`; `get_variant(option)`/`get_variant_plurals()` →
+    `get_variant(variant)`, which takes variants 1 to n (variant 0
+    raises `IndexError`, as for `update_variant()`/`remove_variant()`);
+  - `get_main_segment()`/`get_variant_segment()`/`get_segment(source,
+    token, option)` → `get_segment(segment, variant=0)`;
+    `add_/update_main_segment()`/`add_/update_variant_segment()` →
+    `add_segment()`, `update_segment()`, `remove_segment()` taking
+    `(text, segment, variant=0)`;
+  - keyword keys `default`/`options`/`default_plurals`/`options_plurals`
+    → `singular`/`plurals`, the same for the principal and the variants;
+  - `get_format_variables()`/`extract_variables()` → `get_tokens()`/
+    `extract_tokens()`. *Token* now means a placeholder variable
+    (`{name}`), no longer a plural position.
+  (#157)
+- `Message.format(variant=0, segment=0, **tokens)` formats exactly the
+  cell asked for, with no column fallback; the fallback belongs to
+  `formatter.publish()`. (#157)
+- `formatter.publish(message, variant=0, segment=None, n=None,
+  **tokens)` replaces `alternative`/`plural_index`. `segment` and `n` are
+  exclusive (`ValueError`). An old keyword is no longer recognised and is
+  passed on as a token: `publish(m, alternative=1)` formats variant 0.
+  (#157)
+- `PluralIndexError(message_id, segment, segments)`: the constructor
+  takes structured fields, also available as attributes. (#157)
+- `Message.add_location(file, line, variant=None, segment=None)`
+  replaces `add_location(line, file)`; the in-memory metadata key is
+  `locations` (was `location`) and holds `Location` values, exposed by
+  `Message.locations`. (#157)
+- `count` is removed from `Message.metadata`; `add_metadata()`/
+  `update_metadata()` reject it. `Message.observed`/`Message.recorded`
+  replace it. (#161)
+- `Book.format` → `Book.file_format`: attribute, constructor keyword and
+  the `*_format()` accessors, now `get_/add_/update_/remove_file_format()`.
+  `Book(format="yaml")` is ignored silently and gives a JSON book
+  (unknown keywords are refused in a later run, #133). (#157)
+- Loading a `.i18t` file with an error in its content raises
+  `FormatError` (was `ValueError`). (#157)
+- `.i18t` entry metadata: `plural_counts` is replaced by `status`,
+  `segment_count` and `fill_mask`. It is still read, and ignored; it
+  disappears at the next save. Comments are `user_comments` and
+  `auto_comments`. (#161)
+- `i18n-tools validate <path>` prints every finding of the file (errors,
+  warnings, information) after a summary line, and exits with status 1
+  when one of them is an error, the report being the error message.
+  (#157)
+
+### ✨ New Features
+- `Declension`, `Location` and `ContentCounters`, exported by
+  `i18n_tools.models` and the package. (#157, #161)
+- `Message.from_matrix(id, matrix, context, metadata, status,
+  recorded)` builds a message from its matrix, empty cells included.
+  Three comparisons: `equal()` (strict, used by `==`), `isomorph()`
+  (same matrix), `similar()` (same non-empty texts). (#157)
+- Completion status (DD-45): a message is `draft` or `complete`.
+  `mark_complete()` checks that the principal singular is set and that
+  every declension has the same number of segments, records the content
+  counters and locks texts and structure (`MessageError`); `reopen()`
+  unlocks. `observed`, `recorded` and `has_divergence` compare the
+  content with the counters recorded at the last validation point.
+  (#161)
+- `Book.save()` records the counters of each draft and refuses, before
+  writing, a book holding a complete message that diverges or has no
+  recorded counters. (#161)
+- Integrity checks returning findings (severity, place, message,
+  language): `Book.check()`; `Corpus.check()`, which compares the
+  complete messages of each identifier across languages (structure, then
+  placeholder names per cell after the column fallback);
+  `loader.inspect_book_file()`, which checks a file without loading it;
+  `core.inspect_corpus()`, which checks every configured language of a
+  module/domain, then the corpus. (#157, #161)
+- Loading a `.i18t` file checks its content: errors stop the load,
+  anomalies that leave it usable are issued as `I18nToolsWarning` (new).
+  (#157)
+- `i18n-tools validate --config C --module M --domain D` checks a
+  module/domain across its configured languages. (#157)
+- `VariantIndexError(message_id, variant, variants)` for a variant that
+  does not exist. (#157)
+- `.i18t` locations may carry coordinates: `[file, line, variant,
+  segment]`, `null` for a coordinate not fixed; `[file, line]` is still
+  read and written. (#157)
+
 ### 🐛 Bug Fixes
 - `Config.add_author()`/`get_author()`/`remove_author()`: email
   addresses are normalized before they are stored or looked up —
@@ -20,6 +114,57 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   is no longer found by `get_author()`/`remove_author()`, nor detected
   as a duplicate by `add_author()`, until it is corrected by hand. `email-validator>=2.0` is now required by the
   `[api]` extra. (#158)
+- `core.save_book()` refuses a Book without language with `BookError`.
+  (#129)
+- Archive extraction uses `filter="data"` whenever `tarfile` provides it
+  (detected by feature, PEP 706 backport included). (#140)
+- `.i18t` entries are written and read in the native form
+  `{"messages": ..., "metadata": ...}`; root `language`/`domain`, entry
+  `context`, flags, comments and locations survive a save and a load.
+  (#157)
+- The writer no longer truncates a variant with more plurals than the
+  principal. (#157)
+
+### 📚 Documentation
+- Documentation tree in four parts: concepts, guides, reference
+  (including the Python API) and project. `concept/format.rst` moves to
+  `reference/format.rst`. (#144)
+- `.i18t` format specification rewritten from what the package reads and
+  writes, with normative wording and complete JSON/YAML examples. (#147)
+- Concept pages on message integrity and on the language and column
+  fallbacks, with Mermaid diagrams (`sphinxcontrib-mermaid` added to the
+  `docs` group). (#157, #161)
+- API pages for `core`, findings, exceptions and `CliError`; `Corpus`,
+  `FallbackBook` and `ContentCounters` documented. (#146)
+
+### 🔧 Maintenance
+- Python 3.11 floor (`requires-python = ">=3.11"`); CI matrix 3.11 to
+  3.14, 3.15 experimental.
+- `ndict-tools>=1.3.0`; the local `ndict_tools` stub is removed, the
+  package ships its own types. (#125, #129)
+- basedpyright 1.40.2 is a blocking gate in tox and CI (warnings do not
+  fail yet, #130). Typing work: parameters and attributes annotated,
+  `@override` through a private `_compat.py` shim (`typing_extensions`
+  as a quality dependency only), argument guards through a private
+  `_checks.py`. (#129, #131, #132)
+- `loaders/` layering (DD-44): `_utils.py`, `_settings.py` and
+  `_handler.py` are internal, `loader.py` is the only module imported
+  from outside `loaders/`, and a test checks the import rules. (#132,
+  #159)
+- `models/corpus.py` split into `message.py`, `book.py` (`Book`,
+  `FallbackBook`), `corpus.py` and `encyclopaedia.py`; public imports
+  unchanged. (#157)
+- Codecov components aligned with the source tree, with a `cli`
+  component.
+
+### 🧪 Tests
+- An unexpected `I18nToolsWarning` fails the test suite (filter in a
+  `conftest.py` `pytest_configure` hook).
+- `Message` tests rewritten by contract, every argument guard tested per
+  entry point; status, lock, divergence, save refusal and the
+  cross-language check tested from both sides. (#157, #161)
+- `tests/helpers.py::as_plain()` compares content rather than class
+  under ndict-tools 1.3.0. (#125)
 
 ---
 
