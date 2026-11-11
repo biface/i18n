@@ -62,6 +62,7 @@ component_management:
     - component_id: translation
       name: translation
       paths:
+        - src/i18n_tools/_cells.py
         - src/i18n_tools/fallback.py
         - src/i18n_tools/formatter/**
         - src/i18n_tools/locale.py

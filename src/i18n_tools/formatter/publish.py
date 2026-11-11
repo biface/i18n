@@ -24,6 +24,7 @@ Key Responsibilities:
 
 from __future__ import annotations
 
+from .._cells import resolve_cell
 from .._checks import ensure_type, is_type
 from ..exceptions import FormatterError, PluralIndexError, VariantIndexError
 from ..models import Message
@@ -36,22 +37,6 @@ def _ensure_int(value: object, name: str, optional: bool = False) -> None:
     if is_type(value, bool) or not is_type(value, int):
         expected = "an int or None" if optional else "an int"
         raise TypeError(f"publish() {name} must be {expected}, got {type(value)}")
-
-
-def _resolve_cell(matrix: list[list[str]], segment: int, variant: int) -> str:
-    """
-    Apply the DD-27 four-step column fallback on a valid address:
-
-        1. ``(segment, variant)``
-        2. -> ``(segment, 0)``
-        3. -> ``(0, variant)``
-        4. -> ``(0, 0)`` (guaranteed non-empty by convention)
-    """
-    for row, column in ((segment, variant), (segment, 0), (0, variant)):
-        text = matrix[row][column]
-        if text:
-            return text
-    return matrix[0][0]
 
 
 def publish(
@@ -114,7 +99,7 @@ def publish(
     if not 0 <= variant < len(matrix[0]):
         raise VariantIndexError(message.id, variant, len(matrix[0]))
 
-    text = _resolve_cell(matrix, row, variant)
+    text = resolve_cell(matrix, row, variant)
     try:
         return text.format_map(tokens)
     except KeyError as e:
