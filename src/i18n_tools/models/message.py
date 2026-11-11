@@ -206,7 +206,7 @@ def _build_empty_metadata() -> StrictNestedDictionary:
         {
             "version": i18n_tools_version,
             "language": "",
-            "location": [],
+            "locations": [],
             "flags": ["python-format"],
             "user_comments": [],
             "auto_comments": [],
@@ -1106,15 +1106,47 @@ class Message:
 
         raise KeyError(f"Metadata '{key}' is not a key or path")
 
-    def add_location(self, line: int, file: str) -> None:
+    @property
+    def locations(self) -> tuple[Location, ...]:
         """
-        Add a source location where the message is used.
+        The places in source code that use the message, in insertion order.
 
-        Args:
-            line (int): The line number in the file where the translation is used.
-            file (str): The file path where the translation is used.
+        :return: The locations.
+        :rtype: tuple[Location, ...]
         """
-        self.metadata["location"].append((file, line))
+        return tuple(self.metadata["locations"])
+
+    def add_location(
+        self,
+        file: str,
+        line: int,
+        variant: int | None = None,
+        segment: int | None = None,
+    ) -> None:
+        """
+        Add a place in source code that uses the message.
+
+        ``variant`` and ``segment`` locate the text used at that place; None
+        leaves the coordinate open. They are not checked against the
+        content: source code may refer to a text not written yet. A
+        location already present is not added twice. Locations stay
+        editable on a complete message.
+
+        :param file: Path of the source file.
+        :type file: str
+        :param line: Line number in that file, starting at 1.
+        :type line: int
+        :param variant: Declension used there, if fixed.
+        :type variant: int | None
+        :param segment: Segment used there, if fixed.
+        :type segment: int | None
+        :raises TypeError: If an argument has the wrong type.
+        :raises ValueError: If ``file`` is empty, ``line`` is below 1 or a
+            coordinate is negative.
+        """
+        location = Location(file, line, variant, segment)
+        if location not in self.locations:
+            self.metadata["locations"].append(location)
 
     def add_language(self, lang: str) -> None:
         """

@@ -13,7 +13,7 @@ from i18n_tools._finding import Finding
 from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.exceptions import FormatError, I18nToolsWarning, MessageError
 from i18n_tools.models.book import Book
-from i18n_tools.models.message import Declension, Message
+from i18n_tools.models.message import Declension, Location, Message
 
 
 # Using fixtures: fr_fr_book, en_us_book, en_gb_book, it_it_book from local conftest.py
@@ -36,7 +36,7 @@ def _make_simple_message(lang: str) -> Message:
         metadata={
             "version": __version__,
             "language": lang,
-            "location": [],
+            "locations": [],
             "flags": ["python-format"],
             "user_comments": [],
         },
@@ -210,7 +210,7 @@ class TestBookAdd:
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
-                            "location": [],
+                            "locations": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
                         },
@@ -248,7 +248,7 @@ class TestBookAdd:
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
-                            "location": [],
+                            "locations": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chattons"],
                         },
@@ -357,7 +357,7 @@ class TestBookAdd:
                         metadata={
                             "version": __version__,
                             "language": "fr-BE",
-                            "location": [],
+                            "locations": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
                         },
@@ -401,7 +401,7 @@ class TestBookAdd:
                         metadata={
                             "version": __version__,
                             "language": "fr-FR",
-                            "location": [],
+                            "locations": [],
                             "flags": ["python-format"],
                             "user_comments": ["Message sur des chiots"],
                         },
@@ -744,8 +744,8 @@ class TestBookSave:
             variants=[Declension("Une variante")],
             metadata={"language": "fr-FR"},
         )
-        message.add_location(12, "app.py")
-        message.add_location(40, "cli.py")
+        message.add_location("app.py", 12)
+        message.add_location("cli.py", 40, variant=1, segment=0)
         message.add_comment("user", "Shown in the status bar")
         message.add_comment("auto", "Extracted from app.py")
         message.metadata["flags"] = ["fuzzy"]
@@ -757,7 +757,15 @@ class TestBookSave:
         loaded = reloaded.get("10001")
 
         assert loaded is not None
-        assert loaded.metadata["location"] == [("app.py", 12), ("cli.py", 40)]
+        assert loaded.locations == (
+            Location("app.py", 12),
+            Location("cli.py", 40, variant=1, segment=0),
+        )
+        data = json.loads((tmp_path / book.filename).read_text("utf-8"))
+        assert data["10001"]["metadata"]["locations"] == [
+            ["app.py", 12],
+            ["cli.py", 40, 1, 0],
+        ]
         assert loaded.metadata["user_comments"] == ["Shown in the status bar"]
         assert loaded.metadata["auto_comments"] == ["Extracted from app.py"]
         assert loaded.metadata["flags"] == ["fuzzy"]

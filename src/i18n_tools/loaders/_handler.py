@@ -151,22 +151,35 @@ ROOT = "root"
 """``where`` value of a finding about the root of the file."""
 
 
-def _is_int(value: object) -> bool:
-    """Tell whether ``value`` is an int and not a bool."""
-    return isinstance(value, int) and not isinstance(value, bool)
-
-
 def _is_text_list(value: object) -> bool:
     """Tell whether ``value`` is a list of strings."""
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
 
 def _is_location(value: object) -> bool:
-    """Tell whether ``value`` is a ``[file, line]`` pair, line >= 1."""
-    if not isinstance(value, list) or len(value) != 2:
+    """
+    Tell whether ``value`` is a location item: ``[file, line]`` or
+    ``[file, line, variant, segment]``, with a non-empty file, a line
+    of at least 1 and coordinates that are null or ints of at least 0.
+    """
+    if not isinstance(value, list) or len(value) not in (2, 4):
         return False
-    file, line = value
-    return isinstance(file, str) and _is_int(line) and line >= 1
+    items: list[object] = list(value)
+    file, line, *coordinates = items
+    if not isinstance(file, str) or file == "":
+        return False
+    if isinstance(line, bool) or not isinstance(line, int) or line < 1:
+        return False
+    for coordinate in coordinates:
+        if coordinate is None:
+            continue
+        if (
+            isinstance(coordinate, bool)
+            or not isinstance(coordinate, int)
+            or coordinate < 0
+        ):
+            return False
+    return True
 
 
 def _describe_script(tag: str) -> str:
@@ -358,7 +371,8 @@ def _check_entry_metadata(
                     Finding(
                         "error",
                         where,
-                        "locations is not a list of [file, line] pairs",
+                        "locations is not a list of [file, line] or "
+                        + "[file, line, variant, segment] items",
                     )
                 )
         elif key not in _ENTRY_KNOWN_KEYS:

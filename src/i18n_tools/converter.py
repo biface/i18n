@@ -215,6 +215,7 @@ from i18n_tools._counters import (
     counters_to_entry,
 )
 from i18n_tools.loaders.loader import load_json, load_text
+from i18n_tools.models.message import Location
 
 if TYPE_CHECKING:
     from i18n_tools.models.message import Message
@@ -1044,6 +1045,33 @@ class MessageEntry(TypedDict):
     recorded: ContentCounters | None
 
 
+def _location_to_entry(location: Location) -> list[str | int | None]:
+    """
+    A location as written in an entry: ``[file, line]`` when both
+    coordinates are open, ``[file, line, variant, segment]`` otherwise.
+    """
+    if location.variant is None and location.segment is None:
+        return [location.file, location.line]
+    return [location.file, location.line, location.variant, location.segment]
+
+
+def _location_from_entry(item: list[object]) -> Location:
+    """
+    Read a ``[file, line]`` or ``[file, line, variant, segment]`` item.
+
+    The item was checked by the load check; ``Location`` checks the
+    values again.
+    """
+    file, line, *coordinates = item
+    variant, segment = coordinates if coordinates else (None, None)
+    return Location(
+        cast(str, file),
+        cast(int, line),
+        cast(int | None, variant),
+        cast(int | None, segment),
+    )
+
+
 def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
     """
     Convert a Message to a native ``.i18t`` entry.
@@ -1074,7 +1102,7 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
             "language": message.metadata.get("language", ""),
             "context": message.context,
             "locations": [
-                [file, line] for file, line in message.metadata.get("location", [])
+                _location_to_entry(location) for location in message.locations
             ],
             "flags": message.metadata.get("flags", []),
             "user_comments": message.metadata.get("user_comments", []),
@@ -1126,7 +1154,9 @@ def i18n_tools_format_to_message_dict(
         result["status"] = _read_status(metadata.get("status"))
         result["recorded"] = counters_from_entry(metadata)
         result["metadata"] = {
-            "location": [(file, line) for file, line in metadata.get("locations", [])],
+            "locations": [
+                _location_from_entry(item) for item in metadata.get("locations", [])
+            ],
             "flags": metadata.get("flags", []),
             "user_comments": metadata.get("user_comments", []),
             "auto_comments": metadata.get("auto_comments", []),

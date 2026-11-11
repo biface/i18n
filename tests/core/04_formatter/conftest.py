@@ -9,7 +9,7 @@ def _metadata(language: str = "en") -> dict:
     return {
         "version": __version__,
         "language": language,
-        "location": [],
+        "locations": [],
         "flags": ["python-format"],
         "user_comments": [],
         "auto_comments": [],

@@ -419,3 +419,66 @@ class TestLoadBookRecord:
             FormatError, match=re.escape(f"damaged counters: {expected}")
         ):
             load_book(_write_i18t(tmp_path, data))
+
+
+class TestLoadBookLocations:
+    @staticmethod
+    def _data(locations: object) -> dict:
+        return {
+            "10001": {
+                "messages": [["Un fichier"]],
+                "metadata": {"locations": locations},
+            }
+        }
+
+    @pytest.mark.parametrize(
+        "locations",
+        [
+            [],
+            [["app.py", 12]],
+            [["app.py", 12, 1, 0]],
+            [["app.py", 12, None, 1], ["cli.py", 3, 2, None]],
+            [["app.py", 12, None, None]],
+        ],
+        ids=["empty", "pair", "full", "open-coordinates", "both-open"],
+    )
+    def test_accepted_forms(self, tmp_path, locations):
+        content = load_book(_write_i18t(tmp_path, self._data(locations)))
+        assert content["entries"]["10001"]["metadata"]["locations"] == locations
+
+    @pytest.mark.parametrize(
+        "locations",
+        [
+            [["app.py"]],
+            [["app.py", 12, 1]],
+            [["app.py", 12, 1, 0, 0]],
+            [["", 12]],
+            [[12, "app.py"]],
+            [["app.py", 0]],
+            [["app.py", True]],
+            [["app.py", 12, -1, 0]],
+            [["app.py", 12, 1, "0"]],
+            [["app.py", 12, False, 0]],
+            ["app.py:12"],
+            "app.py:12",
+        ],
+        ids=[
+            "one-item",
+            "three-items",
+            "five-items",
+            "empty-file",
+            "swapped",
+            "line-zero",
+            "line-bool",
+            "variant-negative",
+            "segment-str",
+            "variant-bool",
+            "string-item",
+            "not-a-list",
+        ],
+    )
+    def test_rejected_forms(self, tmp_path, locations):
+        with pytest.raises(
+            FormatError, match=re.escape("[file, line, variant, segment] items")
+        ):
+            load_book(_write_i18t(tmp_path, self._data(locations)))

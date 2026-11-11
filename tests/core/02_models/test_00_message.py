@@ -5,8 +5,7 @@ comparisons, completion status, lock, argument guards and metadata.
 
 Fixtures (local conftest.py): ``fr_message`` (3 declensions x 3 segments),
 ``en_message``, ``draft_message`` (declensions of 3, 1 and 4 segments),
-``single_message`` (principal singular only), ``empty_message`` and the
-module-scoped ``empty_module_message``.
+``single_message`` (principal singular only) and ``empty_message``.
 """
 
 import copy
@@ -17,13 +16,13 @@ from ndict_tools import StrictNestedDictionary
 
 from i18n_tools import __version__
 from i18n_tools.exceptions import MessageError
-from i18n_tools.models import ContentCounters, Declension, Message
+from i18n_tools.models import ContentCounters, Declension, Location, Message
 from i18n_tools.models.message import extract_tokens
 
 EMPTY_METADATA = {
     "version": __version__,
     "language": "",
-    "location": [],
+    "locations": [],
     "flags": ["python-format"],
     "user_comments": [],
     "auto_comments": [],
@@ -801,7 +800,7 @@ class TestLock:
     def test_complete_keeps_metadata_editable(self, fr_message):
         fr_message.mark_complete()
         fr_message.context = "toolbar"
-        fr_message.add_location(12, "app.py")
+        fr_message.add_location("app.py", 12, variant=1)
         fr_message.add_comment("user", "checked")
         fr_message.update_metadata(flags=["fuzzy"])
         assert fr_message.metadata["flags"] == ["fuzzy"]
@@ -874,6 +873,78 @@ class TestArgumentGuards:
             fr_message.toggle(1)  # pyright: ignore[reportArgumentType]
 
 
+class TestLocations:
+    def test_none_by_default(self, fr_message):
+        assert fr_message.locations == ()
+
+    def test_add_location(self, fr_message):
+        fr_message.add_location("app.py", 12)
+        fr_message.add_location("cli.py", 40, variant=1, segment=0)
+        fr_message.add_location("cli.py", 41, segment=1)
+        assert fr_message.locations == (
+            Location("app.py", 12),
+            Location("cli.py", 40, 1, 0),
+            Location("cli.py", 41, None, 1),
+        )
+        assert fr_message.metadata["locations"] == list(fr_message.locations)
+
+    def test_duplicate_is_ignored(self, fr_message):
+        fr_message.add_location("app.py", 12, variant=1)
+        fr_message.add_location("app.py", 12, variant=1)
+        fr_message.add_location("app.py", 12)
+        assert fr_message.locations == (
+            Location("app.py", 12, 1),
+            Location("app.py", 12),
+        )
+
+    def test_coordinates_are_not_checked_against_the_content(self, single_message):
+        """Source code may refer to a text not written yet."""
+        single_message.add_location("app.py", 3, variant=4, segment=2)
+        assert single_message.locations == (Location("app.py", 3, 4, 2),)
+
+    def test_locations_are_read_only(self, fr_message):
+        fr_message.add_location("app.py", 12)
+        with pytest.raises(AttributeError):
+            fr_message.locations = ()  # pyright: ignore[reportAttributeAccessIssue]
+        assert isinstance(fr_message.locations, tuple)
+
+    def test_editable_on_a_complete_message(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.add_location("app.py", 12)
+        assert fr_message.locations == (Location("app.py", 12),)
+        assert not fr_message.has_divergence
+
+    @pytest.mark.parametrize(
+        "args, error",
+        [
+            ((12, "app.py"), TypeError),
+            (("app.py", "12"), TypeError),
+            (("app.py", True), TypeError),
+            (("app.py", 12, "1"), TypeError),
+            (("app.py", 12, None, 1.0), TypeError),
+            (("", 12), ValueError),
+            (("app.py", 0), ValueError),
+            (("app.py", 12, -1), ValueError),
+            (("app.py", 12, None, -1), ValueError),
+        ],
+        ids=[
+            "old-argument-order",
+            "line-str",
+            "line-bool",
+            "variant-str",
+            "segment-float",
+            "empty-file",
+            "line-zero",
+            "variant-negative",
+            "segment-negative",
+        ],
+    )
+    def test_wrong_arguments(self, fr_message, args, error):
+        with pytest.raises(error):
+            fr_message.add_location(*args)
+        assert fr_message.locations == ()
+
+
 class TestMetadata:
     @pytest.mark.parametrize(
         "fixture_name, expected",
@@ -883,7 +954,7 @@ class TestMetadata:
                 {
                     "version": __version__,
                     "language": "fr-FR",
-                    "location": [],
+                    "locations": [],
                     "flags": ["python-format"],
                     "user_comments": ["In French, Greeting message to one or more..."],
                     "auto_comments": ["1000_000", "1000_001", "1000_02"],
@@ -911,17 +982,6 @@ class TestMetadata:
     def test_get_metadata_unknown(self, fr_message, path):
         with pytest.raises(KeyError, match="is not a key or path"):
             _ = fr_message.get_metadata(path)
-
-    @pytest.mark.parametrize(
-        "line, file, expected",
-        [
-            (126, "files.text", [("files.text", 126)]),
-            (67, "explain.txt", [("files.text", 126), ("explain.txt", 67)]),
-        ],
-    )
-    def test_add_location(self, empty_module_message, line, file, expected):
-        empty_module_message.add_location(line, file)
-        assert empty_module_message.metadata["location"] == expected
 
     def test_add_language(self, empty_message):
         empty_message.add_language("en-IE")
@@ -980,9 +1040,9 @@ class TestMetadata:
             ),
             (
                 (),
-                {"locations": [("file.py", 132)]},
+                {"location": [("file.py", 132)]},
                 KeyError,
-                "The key 'locations' is not a present key in the metadata dictionary",
+                "The key 'location' is not a present key in the metadata dictionary",
             ),
             (
                 (),

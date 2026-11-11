@@ -46,6 +46,7 @@ Message module
       .. automethod:: isomorph
       .. automethod:: similar
       .. automethod:: get_metadata
+      .. autoproperty:: locations
       .. automethod:: add_location
       .. automethod:: add_language
       .. automethod:: add_comment

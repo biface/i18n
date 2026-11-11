@@ -18,7 +18,7 @@ def fr_message():
         metadata={
             "version": __version__,
             "language": "fr-FR",
-            "location": [],
+            "locations": [],
             "flags": ["python-format"],
             "user_comments": ["In French, Greeting message to one or more..."],
             "auto_comments": ["1000_000", "1000_001", "1000_02"],
@@ -38,7 +38,7 @@ def en_message():
         metadata={
             "version": __version__,
             "language": "en",
-            "location": [],
+            "locations": [],
             "flags": ["python-format"],
             "user_comments": ["Greeting message to one or more..."],
             "auto_comments": ["1000_000", "1000_001", "1000_02"],
@@ -88,11 +88,6 @@ def single_message():
     return Message(id="2001", principal=Declension("Bonjour {name}"))
 
 
-@pytest.fixture(scope="module")
-def empty_module_message():
-    return MessageModel(id="1000")
-
-
 # --- Fixtures originally from test_01_book.py ---
 
 
@@ -128,7 +123,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les fleurs"],
             },
@@ -166,7 +161,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les montagnes"],
             },
@@ -202,7 +197,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les voyages"],
             },
@@ -240,7 +235,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": [
                     "Message sur les automates basés sur les grammaires de Chomsky"
@@ -282,7 +277,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les fleurs"],
             },
@@ -323,7 +318,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les montagnes"],
             },
@@ -360,7 +355,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les voyages"],
             },
@@ -398,7 +393,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": [
                     "Message sur les automates basés sur les grammaires de Chomsky"
@@ -434,7 +429,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les fleurs"],
             },
@@ -472,7 +467,7 @@ def fr_fr_messages():
             metadata={
                 "version": __version__,
                 "language": "fr-FR",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message sur les montagnes"],
             },
@@ -512,7 +507,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -550,7 +545,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -586,7 +581,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about trips"],
             },
@@ -624,7 +619,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about automata based on Chomsky grammars"],
             },
@@ -664,7 +659,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -705,7 +700,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -741,7 +736,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about trips"],
             },
@@ -779,7 +774,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about automata based on Chomsky grammars"],
             },
@@ -813,7 +808,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -851,7 +846,7 @@ def en_us_messages():
             metadata={
                 "version": __version__,
                 "language": "en-US",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -891,7 +886,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -929,7 +924,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -965,7 +960,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about trips"],
             },
@@ -1003,7 +998,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about automata based on Chomsky grammars"],
             },
@@ -1043,7 +1038,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -1084,7 +1079,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -1120,7 +1115,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about trips"],
             },
@@ -1158,7 +1153,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about automata based on Chomsky grammars"],
             },
@@ -1192,7 +1187,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about flowers"],
             },
@@ -1233,7 +1228,7 @@ def en_gb_messages():
             metadata={
                 "version": __version__,
                 "language": "en-GB",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Message about mountains"],
             },
@@ -1271,7 +1266,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sui fiori"],
             },
@@ -1309,7 +1304,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sulle montagne"],
             },
@@ -1345,7 +1340,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sui viaggi"],
             },
@@ -1383,7 +1378,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": [
                     "Messaggio sugli automi basati sulle grammatiche di Chomsky"
@@ -1419,7 +1414,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sui fiori"],
             },
@@ -1460,7 +1455,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sulle montagne"],
             },
@@ -1497,7 +1492,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sui viaggi"],
             },
@@ -1535,7 +1530,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": [
                     "Messaggio sugli automi basati sulle grammatiche di Chomsky"
@@ -1571,7 +1566,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sui fiori"],
             },
@@ -1609,7 +1604,7 @@ def it_it_messages():
             metadata={
                 "version": __version__,
                 "language": "it-IT",
-                "location": [],
+                "locations": [],
                 "flags": ["python-format"],
                 "user_comments": ["Messaggio sulle montagne"],
             },

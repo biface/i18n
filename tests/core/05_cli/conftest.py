@@ -40,7 +40,7 @@ def i18t_file(tmp_path):
         metadata={
             "version": "0.9.0",
             "language": "fr-FR",
-            "location": [],
+            "locations": [],
             "flags": [],
             "user_comments": [],
             "auto_comments": [],
