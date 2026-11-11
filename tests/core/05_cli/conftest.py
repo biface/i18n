@@ -81,3 +81,31 @@ def sync_config_file(tmp_path):
         "    hierarchy: {}\n"
     )
     return str(config_file), str(repository_root)
+
+
+@pytest.fixture
+def corpus_config_file(tmp_path):
+    """
+    An application configuration declaring module "app", domain
+    "messages", source "en" and the hierarchy fr -> fr-FR.
+
+    :return: ``(config_path, repository_root)``.
+    """
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    config_file = tmp_path / "i18n-tools.yaml"
+    config_file.write_text(
+        "configuration: application\n"
+        "application:\n"
+        "  paths:\n"
+        f"    repository: {repository_root}\n"
+        "  domains:\n"
+        "    app:\n"
+        "      - messages\n"
+        "  languages:\n"
+        "    source: en\n"
+        "    hierarchy:\n"
+        "      fr:\n"
+        "        - fr-FR\n"
+    )
+    return str(config_file), str(repository_root)

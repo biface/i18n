@@ -15,6 +15,13 @@ class TestBuildParser:
         assert args.command == "validate"
         assert args.path == "some/path.json.i18t"
 
+    def test_validate_corpus_options(self):
+        args = build_parser().parse_args(
+            ["validate", "--config", "c.yaml", "--module", "app", "--domain", "ui"]
+        )
+        assert args.path is None
+        assert (args.config, args.module, args.domain) == ("c.yaml", "app", "ui")
+
     def test_info_subcommand(self):
         args = build_parser().parse_args(["info", "some/path.json.i18t"])
         assert args.command == "info"
@@ -51,6 +58,24 @@ class TestMainExitCodes:
             main(["validate", bad_path])
         assert exc_info.value.code == 1
         assert "Error:" in capsys.readouterr().err
+
+    def test_validate_mixed_modes_exits_1(self, i18t_file, capsys):
+        with pytest.raises(SystemExit) as exc_info:
+            main(["validate", i18t_file, "--config", "c.yaml"])
+        assert exc_info.value.code == 1
+        assert "not both" in capsys.readouterr().err
+
+    def test_validate_corpus_exits_0(
+        self, corpus_config_file, isolated_config_singleton, capsys
+    ):
+        config_path, _ = corpus_config_file
+        args = ["--config", config_path, "--module", "app", "--domain", "messages"]
+        with pytest.raises(SystemExit):
+            main(["sync", config_path])
+        with pytest.raises(SystemExit) as exc_info:
+            main(["validate", *args])
+        assert exc_info.value.code == 0
+        assert "OK: module 'app'" in capsys.readouterr().out
 
     def test_info_success_exits_0(self, i18t_file, capsys):
         with pytest.raises(SystemExit) as exc_info:

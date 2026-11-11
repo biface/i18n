@@ -14,17 +14,22 @@ Basic command-line interface for i18n-tools (#39): ``validate``, ``info``,
 ``sync``, ``repl``. Built on ``argparse`` (stdlib) — the four flat
 subcommands don't yet justify a third-party CLI framework.
 
-This module does not import ``i18n_tools.loaders`` at all. The
-``validate``/``info`` commands go through the ``Book`` model's own
-public ``load()`` method; ``sync`` goes through
-``core.synchronize()``.
+Outside the models, this module reaches the package through two
+entry points only: ``loaders.loader`` (``inspect_book_file()``, the one
+loaders module allowed outside ``loaders/``, DD-44) and ``core``
+(``inspect_corpus()``, ``synchronize()``). ``info`` and the loading
+part of ``validate`` go through the ``Book`` model's own public
+``load()`` method.
 
 Key Responsibilities:
     - Parse a ``.i18t`` file path into (directory, language, domain,
       format), following the DD-12 repository layout
       (``locales/<lang>/LC_MESSAGES/<domain>.<format>.i18t``).
-    - ``validate``/``info``: load a single Book and report success or
-      a readable error.
+    - ``validate <path>``: list the findings of one ``.i18t`` file.
+    - ``validate --config C --module M --domain D``: list the findings
+      of every configured language of a module/domain, then those of
+      the corpus they form.
+    - ``info``: load a single Book and report its figures.
     - ``sync``: load an application ``Config`` and synchronize its
       repository's on-disk structure.
     - ``repl``: a minimal interactive loop reusing the same command
@@ -37,12 +42,16 @@ import argparse
 import os
 import re
 import sys
+import warnings
 from collections.abc import Callable, Iterable
 from typing import NoReturn, TextIO
 
+from ._finding import Finding
 from .config import Config
-from .core import synchronize
-from .exceptions import FormatError
+from .core import inspect_corpus, synchronize
+from .exceptions import FormatError, I18nToolsWarning
+from .loaders.loader import inspect_book_file
+from .locale import normalize_language_tag
 from .models.book import Book
 
 # Matches "<domain>.<format>.i18t", e.g. "messages.json.i18t" (DD-34).
@@ -112,19 +121,106 @@ def _load_book_from_path(path: str) -> Book:
     return book
 
 
+def _has_error(findings: list[Finding]) -> bool:
+    """Whether a finding of ``findings`` is an error."""
+    return any(finding.severity == "error" for finding in findings)
+
+
+def _report(header: str, findings: list[Finding]) -> str:
+    """
+    Render the findings of a validation under a header line.
+
+    Without findings, the report is the header alone. Otherwise the
+    header is followed by a summary of the counts per severity, then by
+    one line per finding: severity, language (``-`` when the finding
+    has none), where, message.
+
+    :param header: First line of the report.
+    :type header: str
+    :param findings: The findings, in the order to print them.
+    :type findings: list[Finding]
+    :return: The report.
+    :rtype: str
+    """
+    if not findings:
+        return header
+    counts = {
+        severity: sum(1 for finding in findings if finding.severity == severity)
+        for severity in ("error", "warning", "info")
+    }
+    summary = (
+        f"{counts['error']} error(s), {counts['warning']} warning(s), "
+        + f"{counts['info']} info"
+    )
+    lines = [
+        f"  {finding.severity:<7}  {finding.language or '-'}  "
+        + f"{finding.where}: {finding.message}"
+        for finding in findings
+    ]
+    return "\n".join([f"{header} — {summary}", *lines])
+
+
 def cmd_validate(path: str) -> str:
     """
-    Validate a ``.i18t`` file: load it and report success.
+    Validate a ``.i18t`` file: list its findings of every severity.
+
+    The file is checked against the language and domain its path
+    carries. Without error, the Book is loaded to report its figures;
+    the warnings already listed are not issued again.
 
     :param path: Path to a ``.i18t`` file.
     :type path: str
-    :return: A short, human-readable success message.
+    :return: The success line, followed by the warnings and information
+        findings if any.
     :rtype: str
-    :raises CliError: If the file cannot be parsed or loaded.
+    :raises CliError: If the path cannot be parsed, the file does not
+        exist, or a finding is an error (the message is the report).
     """
-    book = _load_book_from_path(path)
+    _, language, domain, _ = _parse_i18t_path(path)
+    try:
+        findings = inspect_book_file(path, normalize_language_tag(language), domain)
+    except FileNotFoundError as e:
+        raise CliError(str(e)) from e
+    if _has_error(findings):
+        raise CliError(_report(f"'{path}'", findings))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", I18nToolsWarning)
+        book = _load_book_from_path(path)
     count = len(book.messages)
-    return f"OK: '{path}' is valid ({count} message(s), domain='{book.domain}', language='{book.language}')"
+    success = (
+        f"OK: '{path}' is valid ({count} message(s), domain='{book.domain}', "
+        + f"language='{book.language}')"
+    )
+    return _report(success, findings)
+
+
+def cmd_validate_corpus(config_path: str, module: str, domain: str) -> str:
+    """
+    Validate every configured language of a module/domain, then the
+    corpus they form (``core.inspect_corpus()``).
+
+    :param config_path: Path to the application's configuration file.
+    :type config_path: str
+    :param module: Module identifier, as declared in the configuration.
+    :type module: str
+    :param domain: Translation domain name.
+    :type domain: str
+    :return: The success line, followed by the warnings and information
+        findings if any.
+    :rtype: str
+    :raises CliError: If the configuration cannot be found or loaded, or
+        a finding is an error (the message is the report).
+    """
+    try:
+        config = Config(config_path)
+        config.load()
+    except (FileNotFoundError, IndexError, AttributeError) as e:
+        raise CliError(str(e)) from e
+    findings = inspect_corpus(config.application, module, domain)
+    subject = f"module '{module}', domain '{domain}'"
+    if _has_error(findings):
+        raise CliError(_report(subject, findings))
+    return _report(f"OK: {subject} is valid", findings)
 
 
 def cmd_info(path: str) -> str:
@@ -223,8 +319,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="i18n-tools")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    validate_parser = subparsers.add_parser("validate", help="Validate a .i18t file")
-    _ = validate_parser.add_argument("path")
+    validate_parser = subparsers.add_parser(
+        "validate",
+        help="Validate a .i18t file, or a module/domain across its languages",
+    )
+    _ = validate_parser.add_argument("path", nargs="?")
+    _ = validate_parser.add_argument("--config", help="application configuration")
+    _ = validate_parser.add_argument("--module", help="module to validate")
+    _ = validate_parser.add_argument("--domain", help="domain to validate")
 
     info_parser = subparsers.add_parser("info", help="Display info about a .i18t file")
     _ = info_parser.add_argument("path")
@@ -235,6 +337,33 @@ def build_parser() -> argparse.ArgumentParser:
     _ = subparsers.add_parser("repl", help="Start an interactive REPL")
 
     return parser
+
+
+def _dispatch_validate(
+    path: str | None, config: str | None, module: str | None, domain: str | None
+) -> str:
+    """
+    Run ``validate`` in the mode its arguments select: a path, or the
+    three options ``--config``, ``--module`` and ``--domain`` together.
+
+    :raises CliError: If both modes or neither are given, or an option of
+        the corpus mode is missing.
+    """
+    options = {"--config": config, "--module": module, "--domain": domain}
+    given = [name for name, value in options.items() if value is not None]
+    if path is not None:
+        if given:
+            raise CliError(
+                "validate takes a path or --config/--module/--domain, not both"
+            )
+        return cmd_validate(path)
+    if config is None or module is None or domain is None:
+        missing = [name for name, value in options.items() if value is None]
+        raise CliError(
+            "validate needs a path, or --config, --module and --domain; missing "
+            + ", ".join(missing)
+        )
+    return cmd_validate_corpus(config, module, domain)
 
 
 def main(argv: list[str] | None = None) -> NoReturn:
@@ -249,7 +378,7 @@ def main(argv: list[str] | None = None) -> NoReturn:
 
     try:
         if args.command == "validate":
-            print(cmd_validate(args.path))
+            print(_dispatch_validate(args.path, args.config, args.module, args.domain))
         elif args.command == "info":
             print(cmd_info(args.path))
         elif args.command == "sync":
