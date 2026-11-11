@@ -20,6 +20,7 @@ from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.loaders import loader as loader_module
 from i18n_tools.loaders.loader import (
     aggregate_locale_json,
+    inspect_book_file,
     load_book,
     load_locale_json,
     save_aggregated_locale_json,
@@ -171,6 +172,95 @@ class TestLoadBook:
         """A malformed native entry fails the integrity check."""
         with pytest.raises(FormatError):
             load_book(_write_i18t(tmp_path, {"10001": entry}))
+
+
+class TestInspectBookFile:
+    """inspect_book_file() — every finding of a file, nothing raised or warned."""
+
+    def test_sound_file(self, tmp_path):
+        assert inspect_book_file(_write_i18t(tmp_path, VALID_DATA)) == []
+
+    def test_sound_yaml_file(self, tmp_path):
+        assert inspect_book_file(_write_yaml_i18t(tmp_path, VALID_DATA)) == []
+
+    def test_every_severity_returned_nothing_warned(self, tmp_path):
+        data = {
+            "10001": "not-a-list",
+            "10002": {"messages": [["Un message"]], "metadata": {"colour": "red"}},
+            "10003": {
+                "messages": [["Un", "Une"], ["Des", ""]],
+                "metadata": {
+                    "status": "draft",
+                    **SOUND_RECORD,
+                    "fill_mask": [[True, True], [True, True]],
+                },
+            },
+        }
+        path = _write_i18t(tmp_path, data)
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always", I18nToolsWarning)
+            findings = inspect_book_file(path)
+        assert [w for w in record if issubclass(w.category, I18nToolsWarning)] == []
+        assert [(f.severity, f.where) for f in findings] == [
+            ("error", "10001"),
+            ("warning", "10002"),
+            ("info", "10003"),
+        ]
+
+    @pytest.mark.parametrize(
+        "language, domain, expected",
+        [
+            ("en-US", None, "language"),
+            (None, "other", "domain 'usage' is not 'other'"),
+        ],
+        ids=["language", "domain"],
+    )
+    def test_language_and_domain_compared(self, tmp_path, language, domain, expected):
+        data = {**VALID_DATA, "metadata": {"language": "fr-FR", "domain": "usage"}}
+        findings = inspect_book_file(_write_i18t(tmp_path, data), language, domain)
+        assert [f.severity for f in findings] == ["error"]
+        assert findings[0].where == "root"
+        assert expected in findings[0].message
+
+    @pytest.mark.parametrize(
+        "name, text",
+        [
+            ("usage.json.i18t", "{not json"),
+            ("usage.yaml.i18t", "key: [unclosed"),
+        ],
+        ids=["json", "yaml"],
+    )
+    def test_unreadable_content(self, tmp_path, name, text):
+        file = tmp_path / name
+        file.write_text(text, encoding="utf-8")
+        [finding] = inspect_book_file(str(file))
+        assert (finding.severity, finding.where) == ("error", "root")
+        assert finding.message.startswith("unreadable content: ")
+
+    @pytest.mark.parametrize(
+        "name, text",
+        [("usage.json.i18t", "[1, 2]"), ("usage.yaml.i18t", "- a\n- b\n")],
+        ids=["json", "yaml"],
+    )
+    def test_content_not_a_mapping(self, tmp_path, name, text):
+        file = tmp_path / name
+        file.write_text(text, encoding="utf-8")
+        assert inspect_book_file(str(file)) == [
+            Finding("error", "root", "content is not a mapping")
+        ]
+
+    def test_file_not_found(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            inspect_book_file(str(tmp_path / "no_such_file.json.i18t"))
+
+    @pytest.mark.parametrize(
+        "args",
+        [(42,), ("usage.json.i18t", 1), ("usage.json.i18t", None, 1)],
+        ids=["file_path", "language", "domain"],
+    )
+    def test_argument_guards(self, args):
+        with pytest.raises(TypeError, match="inspect_book_file"):
+            inspect_book_file(*args)
 
 
 class TestLoadLocaleJson:

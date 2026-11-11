@@ -34,6 +34,7 @@ module: imported by the loader module only.
     .. autofunction:: load_json
     .. autofunction:: save_json
     .. autofunction:: load_by_format
+    .. autofunction:: read_book_data
     .. autofunction:: save_by_format
     .. autofunction:: build_dictionary_path
     .. autofunction:: create_gzip

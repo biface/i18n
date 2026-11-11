@@ -37,7 +37,11 @@ from i18n_tools.__static__ import (
     TranslationFileFormat,
 )
 from i18n_tools._checks import ensure_type
+from i18n_tools._finding import Finding
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
+from i18n_tools.loaders._handler import (
+    ROOT,
+)
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import build_dictionary_path
 from i18n_tools.loaders._handler import build_path as _build_path
@@ -70,7 +74,7 @@ from i18n_tools.loaders._handler import non_traversal_path
 from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
-from i18n_tools.loaders._handler import path_exists, save_by_format
+from i18n_tools.loaders._handler import path_exists, read_book_data, save_by_format
 from i18n_tools.loaders._handler import save_config as _save_config
 from i18n_tools.loaders._handler import (
     save_json,
@@ -198,6 +202,55 @@ def load_book(
         else:
             content["entries"][msgid] = {"messages": entry, "metadata": {}}
     return content
+
+
+def inspect_book_file(
+    file_path: str, language: str | None = None, domain: str | None = None
+) -> list[Finding]:
+    """
+    Check a .i18t file and list what is wrong with it, without loading it.
+
+    The file is read in the format given by its extension (DD-34) and
+    checked by the same rules as :func:`load_book`, against ``language``
+    and ``domain`` when given. Unlike :func:`load_book`, nothing is
+    raised for the content and nothing is warned: every finding, of
+    every severity, is returned. A content that cannot be parsed, or is
+    not a mapping, gives one error finding about the root of the file.
+
+    :param file_path: Path to the .i18t translation file.
+    :type file_path: str
+    :param language: The normalized language the file should hold, or
+        None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain the file should hold, or None to skip the
+        comparison.
+    :type domain: str | None
+    :return: The findings, in file order; empty if nothing is wrong.
+    :rtype: list[Finding]
+    :raises TypeError: If ``file_path`` is not a string, or ``language``
+        or ``domain`` is neither a string nor None.
+    :raises FileNotFoundError: If the file does not exist.
+    """
+    ensure_type(
+        file_path,
+        str,
+        f"inspect_book_file() file_path must be a string, got {type(file_path)}",
+    )
+    ensure_type(
+        language,
+        (str, type(None)),
+        f"inspect_book_file() language must be a string or None, got {type(language)}",
+    )
+    ensure_type(
+        domain,
+        (str, type(None)),
+        f"inspect_book_file() domain must be a string or None, got {type(domain)}",
+    )
+    try:
+        data = read_book_data(file_path)
+    except FormatError as e:
+        return [Finding("error", ROOT, str(e))]
+    return inspect_book_data(data, language, domain)
 
 
 def save_book(book: Any, file_path: str) -> None:

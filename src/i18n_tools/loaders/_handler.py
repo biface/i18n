@@ -11,11 +11,12 @@ Key Responsibilities:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeGuard
+from typing import TYPE_CHECKING, Any, TypeGuard, cast
 
 from babel import __version__ as babel_version
 from babel.core import Locale
 from ndict_tools import StrictNestedDictionary
+from yaml import YAMLError
 
 if TYPE_CHECKING:
     # Only used in fetch_template()/fetch_catalog()'s return-type
@@ -38,6 +39,7 @@ from ..__static__ import (
 from ..__static__ import __version__ as i18n_tools_version
 from .._counters import count_content, counters_from_entry, describe_differences
 from .._finding import Finding
+from ..exceptions import FormatError
 from ..locale import (
     get_all_languages,
     is_valid_language_tag,
@@ -438,6 +440,32 @@ def _check_root(
                 Finding("warning", ROOT, f"unknown metadata key '{key}' kept")
             )
     return findings
+
+
+def read_book_data(file_path: Path | str) -> dict[str, object]:
+    """
+    Read the content of a Book file, in the format given by its extension
+    (DD-34), without checking it.
+
+    :param file_path: Path to the ``.i18t`` file.
+    :type file_path: Path | str
+    :return: The content of the file, keyed by the root keys.
+    :rtype: dict[str, object]
+    :raises FileNotFoundError: If the file does not exist.
+    :raises FormatError: If the content cannot be parsed, or is not a
+        mapping.
+    """
+    try:
+        # The reader is typed as returning a mapping; YAML may give any
+        # value, so the result is checked as an object.
+        data = cast(
+            object, _utils.load_by_format(file_path, _utils.detect_format(file_path))
+        )
+    except (ValueError, YAMLError) as e:
+        raise FormatError(f"unreadable content: {e}") from e
+    if not isinstance(data, dict):
+        raise FormatError("content is not a mapping")
+    return {str(key): value for key, value in data.items()}
 
 
 def inspect_book_data(
