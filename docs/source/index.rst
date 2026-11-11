@@ -35,5 +35,6 @@ After several attempts using the standard i18n approach, I decided to create a t
     introduction
     getting_started
     concept/index
-    api/index
-    indices
+    guides/index
+    reference/index
+    project/index
