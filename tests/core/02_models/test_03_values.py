@@ -1,5 +1,6 @@
 """
-Tests for the Declension and Location value types of models.message.
+Tests for the value types: Declension and Location (models.message),
+ContentCounters (_counters) and Finding (_finding).
 """
 
 import pytest
@@ -13,6 +14,7 @@ from i18n_tools._counters import (
     counters_to_entry,
     describe_differences,
 )
+from i18n_tools._finding import Finding
 from i18n_tools.models import ContentCounters, Declension, Location
 
 
@@ -256,3 +258,14 @@ class TestEntryMapping:
     )
     def test_from_entry_malformed(self, metadata):
         assert counters_from_entry(metadata) is None
+
+
+class TestFinding:
+    def test_language_defaults_to_none(self):
+        assert Finding("error", "10001", "a defect").language is None
+
+    def test_language_takes_part_in_equality(self):
+        finding = Finding("error", "10001", "a defect", language="fr-FR")
+        assert finding.language == "fr-FR"
+        assert finding != Finding("error", "10001", "a defect")
+        assert finding == Finding("error", "10001", "a defect", "fr-FR")

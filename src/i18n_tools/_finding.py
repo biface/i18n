@@ -25,8 +25,13 @@ class Finding:
     :ivar where: Where the anomaly is: the root of a file or the
         identifier of a message.
     :ivar message: What is wrong, in plain words.
+    :ivar language: The language of the file or book the anomaly was
+        found in, when a check spans several languages; ``None`` when the
+        check covers one file or one book, or when the anomaly involves
+        several languages (each named in ``message``).
     """
 
     severity: Literal["error", "warning", "info"]
     where: str
     message: str
+    language: str | None = None
