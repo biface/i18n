@@ -40,7 +40,7 @@ from i18n_tools._checks import ensure_type
 from i18n_tools._finding import Finding
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.loaders._handler import (
-    ROOT,
+    ROOT as ROOT,  # re-exported: ``where`` of a finding about the file root
 )
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import build_dictionary_path

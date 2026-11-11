@@ -32,6 +32,8 @@ Key Responsibilities:
       module/domain), by repeating the Book-level operation across
       ``repository.source`` and every language declared in
       ``repository.hierarchy``.
+    - Check a module/domain across its configured languages
+      (``inspect_corpus()``): each file, then the corpus they form.
     - Translate a ``Repository`` into the raw parameters
       ``sync.check_repository()`` already expects, so callers only ever
       deal with ``Repository`` objects at this layer.
@@ -39,17 +41,18 @@ Key Responsibilities:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
+import warnings
 
-from .exceptions import BookError
-from .loaders.loader import build_path
+from ._checks import ensure_type
+from ._finding import Finding
+from .exceptions import BookError, I18nToolsWarning
+from .loaders.loader import ROOT, build_path, inspect_book_file
 from .locale import get_all_languages, normalize_language_tag
 from .models.book import Book
 from .models.corpus import Corpus
+from .models.repository import Repository
 from .sync import check_repository
-
-if TYPE_CHECKING:
-    from .models.repository import Repository
 
 
 def _book_directory(repository: "Repository", module: str, lang: str) -> str:
@@ -201,6 +204,78 @@ def load_corpus(repository: "Repository", module: str, domain: str) -> Corpus:
         book = load_book(repository, module, domain, lang)
         corpus.add_book(book)
     return corpus
+
+
+def inspect_corpus(repository: "Repository", module: str, domain: str) -> list[Finding]:
+    """
+    Check every configured language of a module/domain, then the corpus
+    they form, and list what is wrong.
+
+    For each language of ``repository.source`` and ``repository.hierarchy``,
+    in alphabetical order, the ``.i18t`` file is checked by
+    ``loader.inspect_book_file()`` against its language and the domain;
+    its findings carry the language. A missing directory or file is an
+    error finding of that language. A file without error is loaded into
+    the corpus, without the warnings the inspection has already listed.
+    The findings of ``Corpus.check()`` on the loaded books follow; they
+    carry no language, since each names the languages it involves.
+
+    Nothing is raised for the content and the files are not modified.
+    Unlike ``load_corpus()``, a defective file does not stop the check:
+    it is only left out of the corpus comparison.
+
+    :param repository: Repository providing paths and declared languages.
+    :type repository: Repository
+    :param module: Module identifier (e.g. ``"src/app"``).
+    :type module: str
+    :param domain: Translation domain name.
+    :type domain: str
+    :return: The findings, by language, then those of the corpus; empty
+        if nothing is wrong.
+    :rtype: list[Finding]
+    :raises TypeError: If ``repository`` is not a Repository, or
+        ``module`` or ``domain`` is not a string.
+    """
+    ensure_type(
+        repository,
+        Repository,
+        f"inspect_corpus() repository must be a Repository, got {type(repository)}",
+    )
+    ensure_type(
+        module, str, f"inspect_corpus() module must be a string, got {type(module)}"
+    )
+    ensure_type(
+        domain, str, f"inspect_corpus() domain must be a string, got {type(domain)}"
+    )
+    findings: list[Finding] = []
+    corpus = Corpus(domain=domain)
+    for lang in sorted(_corpus_languages(repository)):
+        language = normalize_language_tag(lang)
+        try:
+            directory = _book_directory(repository, module, language)
+        except OSError as e:
+            findings.append(Finding("error", ROOT, str(e), language))
+            continue
+        book = Book(language=language, domain=domain)
+        file_path = os.path.join(directory, book.filename)
+        if not os.path.isfile(file_path):
+            findings.append(
+                Finding("error", ROOT, f"file not found: {file_path}", language)
+            )
+            continue
+        file_findings = [
+            Finding(finding.severity, finding.where, finding.message, language)
+            for finding in inspect_book_file(file_path, language, domain)
+        ]
+        findings.extend(file_findings)
+        if any(finding.severity == "error" for finding in file_findings):
+            continue
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", I18nToolsWarning)
+            book.load(directory)
+        corpus.add_book(book)
+    findings.extend(corpus.check())
+    return findings
 
 
 def save_corpus(corpus: Corpus, repository: "Repository", module: str) -> None:

@@ -3,16 +3,22 @@ Test module for core.py — load_book, save_book, load_corpus, save_corpus,
 synchronize (DD-28).
 """
 
+import json
+import warnings
+from pathlib import Path
+
 import pytest
 
+from i18n_tools._finding import Finding
 from i18n_tools.core import (
+    inspect_corpus,
     load_book,
     load_corpus,
     save_book,
     save_corpus,
     synchronize,
 )
-from i18n_tools.exceptions import BookError
+from i18n_tools.exceptions import BookError, I18nToolsWarning
 from i18n_tools.models.message import Declension, Message
 from i18n_tools.models.repository import Repository
 
@@ -143,3 +149,106 @@ class TestLoadCorpusThenGetBookWithRepository:
 
         fallback_book = corpus.get_book("fr-CH", repository=synchronized_repository)
         assert fallback_book.get_message("greeting").principal.singular == "Bonjour"
+
+
+def _book_file(repository, lang):
+    """Path of the ui.json.i18t file of ``lang`` in module app."""
+    root = repository[["paths", "repository"]]
+    return Path(root, "app", "locales", lang, "LC_MESSAGES", "ui.json.i18t")
+
+
+def _save_complete(repository, lang, matrix):
+    """Save one complete message "items" in the Book of ``lang``."""
+    book = load_book(repository, "app", "ui", lang)
+    message = Message.from_matrix("items", matrix, metadata={"language": lang})
+    message.mark_complete()
+    book.messages["items"] = message
+    save_book(book, repository, "app")
+
+
+class TestInspectCorpus:
+    def test_sound_repository(self, synchronized_repository):
+        assert inspect_corpus(synchronized_repository, "app", "ui") == []
+
+    def test_missing_directories(self, repository):
+        findings = inspect_corpus(repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "root", lang) for lang in ("en", "fr", "fr-BE", "fr-FR")
+        ]
+
+    def test_missing_file(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-BE")
+        path.unlink()
+        assert inspect_corpus(synchronized_repository, "app", "ui") == [
+            Finding("error", "root", f"file not found: {path}", "fr-BE")
+        ]
+
+    def test_file_findings_carry_their_language(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["broken"] = "not-a-list"
+        data["odd"] = {"messages": [["Un"]], "metadata": {"colour": "red"}}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "broken", "fr-FR"),
+            ("warning", "odd", "fr-FR"),
+        ]
+
+    def test_file_checked_against_its_language(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["metadata"] = {**data.get("metadata", {}), "language": "en-US"}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "root", "fr-FR")
+        ]
+
+    def test_warnings_listed_not_issued(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["odd"] = {"messages": [["Un"]], "metadata": {"colour": "red"}}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always", I18nToolsWarning)
+            findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [w for w in record if issubclass(w.category, I18nToolsWarning)] == []
+        assert [(f.severity, f.language) for f in findings] == [("warning", "fr-FR")]
+
+    def test_corpus_findings_follow(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        _save_complete(synchronized_repository, "fr-FR", [["{count} article"]])
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.where, f.language) for f in findings] == [("items", None)]
+        assert findings[0].message.startswith("tokens of cell (variant 0, segment 0)")
+
+    def test_defective_file_left_out_of_corpus_check(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        _save_complete(synchronized_repository, "fr-FR", [["{count} article"]])
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["broken"] = "not-a-list"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        # Only the findings of the fr-FR file (the broken entry, and the
+        # root statistics it no longer matches): no corpus finding.
+        assert ("error", "broken") in [(f.severity, f.where) for f in findings]
+        assert {f.language for f in findings} == {"fr-FR"}
+
+    def test_files_left_unchanged(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        path = _book_file(synchronized_repository, "en")
+        before = path.read_bytes()
+        _ = inspect_corpus(synchronized_repository, "app", "ui")
+        assert path.read_bytes() == before
+
+    @pytest.mark.parametrize(
+        "args",
+        [("not a repository", "app", "ui"), (None, 1, "ui"), (None, "app", 1)],
+        ids=["repository", "module", "domain"],
+    )
+    def test_argument_guards(self, synchronized_repository, args):
+        repository = args[0] if args[0] is not None else synchronized_repository
+        with pytest.raises(TypeError, match="inspect_corpus"):
+            inspect_corpus(repository, *args[1:])
