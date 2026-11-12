@@ -68,6 +68,14 @@ API is frozen only at v1.0.0.
   warnings, information) after a summary line, and exits with status 1
   when one of them is an error, the report being the error message.
   (#157)
+- `Repository`, `Author` and `Translator` no longer force
+  `{"indent": 2}`: they and their sections use the default configuration
+  of `StrictNestedDictionary`. Since `==` compares the configuration, a
+  section no longer equals a `StrictNestedDictionary` built with
+  `indent: 2`. The three constructors take a keyword-only `default_setup`
+  and pass it on; `Repository(default_setup=...)` was ignored, it is now
+  applied, and a copy of a `Repository` keeps the configuration of the
+  original. (#128)
 
 ### ✨ New Features
 - `Declension`, `Location` and `ContentCounters`, exported by
@@ -165,6 +173,8 @@ API is frozen only at v1.0.0.
   cross-language check tested from both sides. (#157, #161)
 - `tests/helpers.py::as_plain()` compares content rather than class
   under ndict-tools 1.3.0. (#125)
+- The configuration of `Repository`, `Author`, `Translator` and their
+  sections, and the copies of a `Repository`, are tested. (#128)
 
 ---
 
