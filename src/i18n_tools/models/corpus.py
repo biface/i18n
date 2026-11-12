@@ -2,7 +2,7 @@
 Corpus: the Books of one domain across languages.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from i18n_tools._cells import resolve_cell
 from i18n_tools._checks import ensure_type
@@ -148,7 +148,7 @@ class Corpus:
 
         normalized = normalize_language_tag(lang)
         chain: list["Book"] = []
-        seen: set[Any] = set()
+        seen: set[str] = set()
 
         def _add(language: str) -> None:
             if language not in seen and language in self._books:
@@ -218,7 +218,7 @@ class Corpus:
         """
         if not self._books:
             return {}
-        all_ids: set[Any] = set()
+        all_ids: set[str] = set()
         for book in self._books.values():
             all_ids.update(book.messages.keys())
         total = len(all_ids)
@@ -248,7 +248,7 @@ class Corpus:
             raise ValueError(
                 f"Language '{normalized}' is not loaded in Corpus '{self._domain}'"
             )
-        all_ids: set[Any] = set()
+        all_ids: set[str] = set()
         for book in self._books.values():
             all_ids.update(book.messages.keys())
         present = set(self._books[normalized].messages.keys())
