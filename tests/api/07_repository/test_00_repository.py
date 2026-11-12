@@ -2,12 +2,16 @@
 Test module for Repository class in module i18n-tools/models
 """
 
+import copy
 import re
 
 import pytest
 from ndict_tools import StrictNestedDictionary
+from ndict_tools.exception import StackedAttributeError
 
+from i18n_tools.models.author import Author
 from i18n_tools.models.repository import Repository
+from i18n_tools.models.translator import Translator
 
 
 @pytest.fixture(scope="class")
@@ -22,9 +26,9 @@ class TestRepositoryInit:
     )
     def test_empty_init(self, key: str):
         repository = Repository()
-        assert repository.get(key) is not None
-        assert isinstance(repository.get(key), StrictNestedDictionary)
-        assert ("indent", 2) in repository.get(key).__getattribute__("default_setup")
+        section = repository.get(key)
+        assert type(section) is StrictNestedDictionary
+        assert section.default_setup == StrictNestedDictionary().default_setup
 
     @pytest.mark.parametrize(
         "parameters, dictionary, control",
@@ -147,6 +151,93 @@ class TestRepositoryInit:
         with pytest.raises((TypeError, KeyError), match=re.escape(expected)):
             d = dict([(key, value)])
             Repository(**d)
+
+
+_TRANSLATOR_PAYLOAD = {
+    "details": {
+        "name": "GoogleTranslate",
+        "status": "free",
+        "url": "https://translate.google.com",
+    },
+    "pricing": {"cost_per_translation": None, "payment_plan": None},
+    "technical": {
+        "api": {
+            "key": "your_api_key",
+            "key_expiration": "2025-12-31",
+            "request_limit": 10000,
+        },
+        "performance": {"max_text_size": 5000, "priority": 1, "success_rate": 99.5},
+    },
+}
+
+_BUILDERS = {
+    "repository": Repository,
+    "author": lambda **options: Author(
+        "Ada", "Lovelace", "ada@example.org", "", ["en"], **options
+    ),
+    "translator": lambda **options: Translator(**_TRANSLATOR_PAYLOAD, **options),
+}
+
+
+class TestRepositorySetup:
+    """Repository, Author and Translator hand ``default_setup`` to
+    StrictNestedDictionary; their sections keep its default configuration."""
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_default_setup(self, kind):
+        built = _BUILDERS[kind]()
+        assert built.default_setup == StrictNestedDictionary().default_setup
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_given_setup(self, kind):
+        built = _BUILDERS[kind](default_setup={"indent": 4})
+        assert ("indent", 4) in built.default_setup
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_given_setup_rejected(self, kind):
+        with pytest.raises(StackedAttributeError):
+            _ = _BUILDERS[kind](default_setup={"unknown": 1})
+
+    @pytest.mark.parametrize("key", ["details", "pricing", "technical"])
+    def test_translator_sections(self, key):
+        section = _BUILDERS["translator"](default_setup={"indent": 4})[key]
+        assert type(section) is StrictNestedDictionary
+        assert section.default_setup == StrictNestedDictionary().default_setup
+
+    @pytest.mark.parametrize(
+        "duplicate",
+        [copy.copy, copy.deepcopy, lambda repository: repository.deepcopy()],
+        ids=["copy", "deepcopy", "method"],
+    )
+    def test_repository_copy(self, duplicate):
+        repository = Repository()
+        repository.default_setup = {"indent": 4, "default_factory": None}
+        duplicated = duplicate(repository)
+        assert type(duplicated) is Repository
+        assert duplicated == repository
+        assert duplicated.default_setup == repository.default_setup
+
+    @pytest.mark.parametrize(
+        "reset, key",
+        [
+            (lambda repository: repository.clean_modules(), "domains"),
+            (lambda repository: repository.clean_domains(), "domains"),
+            (lambda repository: repository.clean_authors(), "authors"),
+            (lambda repository: repository.clean_translators(), "translators"),
+            (lambda repository: repository.clean_value(["paths"]), "paths"),
+        ],
+        ids=["modules", "domains", "authors", "translators", "value"],
+    )
+    def test_reset_sections(self, reset, key):
+        repository = Repository(default_setup={"indent": 4})
+        reset(repository)
+        assert type(repository[key]) is StrictNestedDictionary
+        assert len(repository[key]) == 0
+
+    def test_reset_hierarchy(self):
+        repository = Repository()
+        repository.clean_hierarchy()
+        assert type(repository[["languages", "hierarchy"]]) is StrictNestedDictionary
 
 
 class TestRepositoryProperties:
@@ -283,7 +374,7 @@ class TestRepositoryProperties:
 
     def test_set_domains(self, repository_fixture):
         assert len(repository_fixture.domains) == 5
-        repository_fixture["domains"] = repository_fixture._new_section({})
+        repository_fixture["domains"] = StrictNestedDictionary()
         assert len(repository_fixture["domains"]) == 0
         repository_fixture.domains = {
             "fsm_tools": ["usage", "model"],

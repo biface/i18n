@@ -31,6 +31,7 @@ by other components (loaders, handlers, CLI) to manage i18n content.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -41,10 +42,6 @@ from ..loaders.loader import file_exists, is_absolute_path, normalize_module_ide
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
 from .author import Author, Authors  # type: ignore[reportImportCycle]
 from .translator import Translators
-
-# Shared default setup to avoid repetition
-_DEFAULT_SETUP = {"indent": 2}
-
 
 # --- Domains helpers ---
 
@@ -102,20 +99,20 @@ class Repository(StrictNestedDictionary):
 
     Notes
     -----
-    All sections are created with a default ndict_tools setup (indent=2) to
-    keep JSON/YAML rendering consistent across the project.
+    ``default_setup`` goes to ``StrictNestedDictionary`` unchanged; ndict-tools
+    passes it when it copies a repository. The sections are
+    ``StrictNestedDictionary`` instances with the default configuration.
     """
 
     def __init__(
         self,
         *args: tuple[str | list[str], object],
+        default_setup: Mapping[str, object] | None = None,
         **kwargs: dict[str, object],
     ) -> None:
-        _ = kwargs.pop("default_setup", None)
-        super().__init__(default_setup=_DEFAULT_SETUP)
+        super().__init__(default_setup=default_setup)
 
-        # Initialize sections with a helper to factorize StrictNestedDictionary creation
-        self["details"] = self._new_section(
+        self["details"] = StrictNestedDictionary(
             {
                 "name": "",  # Configuration name
                 "summary": "",
@@ -139,7 +136,7 @@ class Repository(StrictNestedDictionary):
         # Ensure a flat alias to the creation date exists for convenience/APIs
         self[["details", "creation_date"]] = self[["details", "date", "created"]]
 
-        self["paths"] = self._new_section(
+        self["paths"] = StrictNestedDictionary(
             {
                 "root": "",
                 "repository": "",
@@ -150,16 +147,16 @@ class Repository(StrictNestedDictionary):
                 "modules": [],
             }
         )
-        self["domains"] = self._new_section({})
-        self["languages"] = self._new_section(
+        self["domains"] = StrictNestedDictionary()
+        self["languages"] = StrictNestedDictionary(
             {
                 "source": "",
                 "hierarchy": {},
                 "fallback": "",
             }
         )
-        self["translators"] = self._new_section({})
-        self["authors"] = self._new_section({})
+        self["translators"] = StrictNestedDictionary()
+        self["authors"] = StrictNestedDictionary()
 
         # args content
         self._apply_args(args)
@@ -168,10 +165,6 @@ class Repository(StrictNestedDictionary):
         self._apply_kwargs(kwargs)
 
     # --- Private helpers ---
-    def _new_section(self, data: dict[str, Any]) -> StrictNestedDictionary:
-        """Create a StrictNestedDictionary section with the shared default setup."""
-        return StrictNestedDictionary(data, default_setup=_DEFAULT_SETUP)
-
     def _apply_args(self, args: tuple[tuple[str | list[str], object], ...]) -> None:
         for path, value in args:
             if not (isinstance(path, list) and path in self.paths()) and not (
@@ -341,7 +334,7 @@ class Repository(StrictNestedDictionary):
         :return:
         """
         self[["paths", "modules"]] = []
-        self["domains"] = self._new_section({})
+        self["domains"] = StrictNestedDictionary()
 
     @property
     def domains(self) -> dict[str, list[str]]:
@@ -401,7 +394,7 @@ class Repository(StrictNestedDictionary):
         Removes all domains from the list of  domains.
         :return:
         """
-        self["domains"] = self._new_section({})
+        self["domains"] = StrictNestedDictionary()
 
     # --- paths.repository helpers ---
     @property
@@ -454,7 +447,7 @@ class Repository(StrictNestedDictionary):
         ensure_type(value, dict, f"hierarchy must be a dictionary, not {type(value)}")
 
         # Rebuild the hierarchy by delegating to add_hierarchy for each fallback
-        self[["languages", "hierarchy"]] = self._new_section({})
+        self[["languages", "hierarchy"]] = StrictNestedDictionary()
         for fallback, variants in value.items():
             self.add_hierarchy(fallback, variants)
 
@@ -510,7 +503,7 @@ class Repository(StrictNestedDictionary):
         self[["languages", "hierarchy", fallback]] = normalized
 
     def clean_hierarchy(self) -> None:
-        self[["languages", "hierarchy"]] = self._new_section({})
+        self[["languages", "hierarchy"]] = StrictNestedDictionary()
 
     # --- languages.source / languages.fallback helpers ---
     # Mirror the hierarchy property above, but for the two singular language
@@ -562,7 +555,7 @@ class Repository(StrictNestedDictionary):
     def authors(self, value: dict[str, Any]) -> None:
         ensure_type(value, dict, f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
-        self["authors"] = self._new_section({})
+        self["authors"] = StrictNestedDictionary()
         for author_id, author in value.items():
             self.add_author(author_id, author)
 
@@ -602,7 +595,7 @@ class Repository(StrictNestedDictionary):
     def translators(self, value: dict[str, Any]) -> None:
         ensure_type(value, dict, f"translators must be a dictionary, not {type(value)}")
         # Replace the whole translators section
-        self["translators"] = self._new_section({})
+        self["translators"] = StrictNestedDictionary()
         for name, translator in value.items():
             self.add_translator(name, translator)
 
@@ -713,7 +706,7 @@ class Repository(StrictNestedDictionary):
         :rtype: Any
         """
         if isinstance(current, StrictNestedDictionary):
-            return self._new_section({})
+            return StrictNestedDictionary()
         elif isinstance(current, dict):
             return {}
         elif isinstance(current, list):

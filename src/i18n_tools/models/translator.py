@@ -12,6 +12,7 @@ StrictNestedDictionary section.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -23,8 +24,6 @@ from ..api import validate_url_format
 
 if TYPE_CHECKING:
     from .repository import Repository
-
-_DEFAULT_SETUP = {"indent": 2}
 
 
 class Translator(StrictNestedDictionary):
@@ -41,15 +40,15 @@ class Translator(StrictNestedDictionary):
         details: dict[str, Any],
         pricing: dict[str, Any],
         technical: dict[str, Any],
+        *,
+        default_setup: Mapping[str, object] | None = None,
     ) -> None:
         payload = {"details": details, "pricing": pricing, "technical": technical}
         self.validate_payload(payload)
-        super().__init__(default_setup=_DEFAULT_SETUP)
-        self["details"] = StrictNestedDictionary(details, default_setup=_DEFAULT_SETUP)
-        self["pricing"] = StrictNestedDictionary(pricing, default_setup=_DEFAULT_SETUP)
-        self["technical"] = StrictNestedDictionary(
-            technical, default_setup=_DEFAULT_SETUP
-        )
+        super().__init__(default_setup=default_setup)
+        self["details"] = StrictNestedDictionary(details)
+        self["pricing"] = StrictNestedDictionary(pricing)
+        self["technical"] = StrictNestedDictionary(technical)
 
     @classmethod
     def from_payload(cls, data: dict[str, Any]) -> "Translator":
@@ -233,11 +232,7 @@ class Translators:
         translator_obj = Translator.from_payload(translator)
 
         if not isinstance(repository["translators"], StrictNestedDictionary):
-            # Authors and Translators manage sections of the Repository they are
-            # given and share its section factory. Whether ndict-tools 1.3.0 makes
-            # the factory unnecessary is reviewed in #128.
-            section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
-            repository["translators"] = section
+            repository["translators"] = StrictNestedDictionary()
 
         if name in repository["translators"].keys():
             raise ValueError(f"Translator '{name}' already exists")
@@ -289,5 +284,4 @@ class Translators:
 
     @staticmethod
     def clean(repository: "Repository") -> None:
-        section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
-        repository["translators"] = section
+        repository["translators"] = StrictNestedDictionary()

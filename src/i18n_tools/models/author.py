@@ -18,6 +18,7 @@ something `Authors` enforces on its own.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -29,8 +30,6 @@ from .._compat import override
 
 if TYPE_CHECKING:
     from .repository import Repository  # type: ignore[reportImportCycle]
-
-_DEFAULT_SETUP = {"indent": 2}
 
 
 class Author(StrictNestedDictionary):
@@ -50,9 +49,11 @@ class Author(StrictNestedDictionary):
         email: str,
         url: str,
         languages: list[str],
+        *,
+        default_setup: Mapping[str, object] | None = None,
     ) -> None:
         ensure_type(languages, list, "author['languages'] must be a list of strings")
-        super().__init__(default_setup=_DEFAULT_SETUP)
+        super().__init__(default_setup=default_setup)
         self["first_name"] = first_name
         self["last_name"] = last_name
         self["email"] = email
@@ -162,8 +163,4 @@ class Authors:
 
     @staticmethod
     def clean(repository: "Repository") -> None:
-        # Authors and Translators manage sections of the Repository they are
-        # given and share its section factory. Whether ndict-tools 1.3.0 makes
-        # the factory unnecessary is reviewed in #128.
-        section = repository._new_section({})  # pyright: ignore[reportPrivateUsage]
-        repository["authors"] = section
+        repository["authors"] = StrictNestedDictionary()
