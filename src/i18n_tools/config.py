@@ -108,6 +108,7 @@ Only one configuration is managed at a given time.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID, uuid4
@@ -122,6 +123,7 @@ from .__static__ import (
 )
 from ._checks import is_type
 from ._compat import override
+from ._json import JSONInput
 from .api import validate_api_url
 from .loaders.loader import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
@@ -549,15 +551,15 @@ class Config(metaclass=Singleton):
 
         current_repository.add_author(author_id, author)
 
-    def get_author(self, index: str) -> dict[str, Any] | None:
+    def get_author(self, index: str) -> StrictNestedDictionary | None:
         """
         Retrieve an author's details by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
             An email address is normalized (lower case) before the lookup.
         :type index: str
-        :return: The author's details as a dictionary, or None if not found.
-        :rtype: dict
+        :return: The author's details, or None if not found.
+        :rtype: StrictNestedDictionary | None
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
@@ -760,7 +762,7 @@ class Config(metaclass=Singleton):
 
         return list(self.__getattribute__(self._current_config)["translators"].keys())
 
-    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
+    def update_translator(self, name: str, updates: dict[str, JSONInput]) -> None:
         """
         Update an existing translator's details while ensuring the structure remains valid.
 
@@ -781,7 +783,9 @@ class Config(metaclass=Singleton):
 
         # Recursive function to validate the updates against the existing structure
         def validate_structure(
-            expected: dict[str, Any], actual: dict[str, Any], path: str = ""
+            expected: Mapping[str, object],
+            actual: Mapping[str, JSONInput],
+            path: str = "",
         ):
             for key, value in actual.items():
                 full_path = f"{path}.{key}" if path else key
@@ -790,19 +794,20 @@ class Config(metaclass=Singleton):
                     raise ValueError(f"Invalid key '{full_path}' in updates.")
 
                 # Check for nested dictionaries
-                if isinstance(expected[key], dict):
+                reference = expected[key]
+                if isinstance(reference, dict):
                     if not isinstance(value, dict):
                         raise ValueError(
                             f"Expected a dictionary for '{full_path}', but got '{type(value).__name__}'."
                         )
                     # Recursive validation
-                    validate_structure(expected[key], value, full_path)
+                    validate_structure(reference, value, full_path)
 
                 # Ensure type matches for non-dict values
-                elif not isinstance(value, type(expected[key])):
+                elif not isinstance(value, type(reference)):
                     raise ValueError(
                         f"Type mismatch for '{full_path}': "
-                        + f"expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
+                        + f"expected '{type(reference).__name__}', got '{type(value).__name__}'."
                     )
 
         # Validate updates against the existing translator structure

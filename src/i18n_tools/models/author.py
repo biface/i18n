@@ -19,7 +19,7 @@ something `Authors` enforces on its own.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict
 from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
@@ -27,9 +27,24 @@ from ndict_tools.exception import StackedValueError
 
 from .._checks import ensure_type
 from .._compat import override
+from .._json import JSONInput
 
 if TYPE_CHECKING:
     from .repository import Repository  # type: ignore[reportImportCycle]
+
+
+class AuthorPayload(TypedDict):
+    """
+    An author as a plain mapping, as read from a settings file.
+
+    :meth:`Author.from_payload` checks a raw payload against this shape.
+    """
+
+    first_name: str
+    last_name: str
+    email: str
+    url: str
+    languages: list[str]
 
 
 class Author(StrictNestedDictionary):
@@ -87,7 +102,9 @@ class Author(StrictNestedDictionary):
 
     @override
     @classmethod
-    def from_dict(cls, dictionary: dict[str, Any], **class_options: object) -> "Author":
+    def from_dict(
+        cls, dictionary: Mapping[str, object], **class_options: object
+    ) -> "Author":
         """
         Override of _StackedDict.from_dict() — the recursive-construction
         hook documented in ndict-tools' Extending guide. Author's __init__
@@ -131,7 +148,7 @@ class Authors:
 
     @staticmethod
     def update(
-        repository: "Repository", author_id: str, updates: dict[str, Any]
+        repository: "Repository", author_id: str, updates: dict[str, JSONInput]
     ) -> None:
         _validate_uuid4_string(author_id)
         ensure_type(updates, dict, "updates must be a dictionary")

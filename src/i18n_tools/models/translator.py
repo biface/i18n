@@ -12,18 +12,70 @@ StrictNestedDictionary section.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, MutableMapping
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from ndict_tools import StrictNestedDictionary
 
 from .._checks import ensure_type
 from .._compat import override
+from .._json import JSONInput
 from ..api import validate_url_format
 
 if TYPE_CHECKING:
     from .repository import Repository
+
+
+class TranslatorDetails(TypedDict):
+    """Identity of a translation service."""
+
+    name: str
+    status: str
+    url: str
+
+
+class TranslatorPricing(TypedDict):
+    """Pricing of a translation service; None when unknown or free."""
+
+    cost_per_translation: float | None
+    payment_plan: str | None
+
+
+class TranslatorAPI(TypedDict):
+    """Access to the service API; ``key_expiration`` is ``YYYY-MM-DD``."""
+
+    key: str
+    key_expiration: str | None
+    request_limit: int
+
+
+class TranslatorPerformance(TypedDict):
+    """Limits and measured quality of the service."""
+
+    max_text_size: int
+    priority: int
+    success_rate: float
+
+
+class TranslatorTechnical(TypedDict):
+    """Technical sections of a translation service."""
+
+    api: TranslatorAPI
+    performance: TranslatorPerformance
+
+
+class TranslatorPayload(TypedDict):
+    """
+    A translator as a plain mapping, as read from a settings file.
+
+    :meth:`Translator.validate_payload` checks a raw payload against this
+    shape.
+    """
+
+    details: TranslatorDetails
+    pricing: TranslatorPricing
+    technical: TranslatorTechnical
 
 
 class Translator(StrictNestedDictionary):
@@ -37,9 +89,9 @@ class Translator(StrictNestedDictionary):
 
     def __init__(
         self,
-        details: dict[str, Any],
-        pricing: dict[str, Any],
-        technical: dict[str, Any],
+        details: TranslatorDetails,
+        pricing: TranslatorPricing,
+        technical: TranslatorTechnical,
         *,
         default_setup: Mapping[str, object] | None = None,
     ) -> None:
@@ -51,19 +103,24 @@ class Translator(StrictNestedDictionary):
         self["technical"] = StrictNestedDictionary(technical)
 
     @classmethod
-    def from_payload(cls, data: dict[str, Any]) -> "Translator":
-        """Validate and build a Translator from a plain mapping."""
+    def from_payload(cls, data: object) -> "Translator":
+        """Validate and build a Translator from a plain mapping.
+
+        ``data`` is a raw payload, typically read from a settings file: any
+        value is accepted and checked by :meth:`validate_payload`.
+        """
         cls.validate_payload(data)
+        payload = cast(TranslatorPayload, data)
         return cls(
-            details=data["details"],
-            pricing=data["pricing"],
-            technical=data["technical"],
+            details=payload["details"],
+            pricing=payload["pricing"],
+            technical=payload["technical"],
         )
 
     @override
     @classmethod
     def from_dict(
-        cls, dictionary: dict[str, Any], **class_options: object
+        cls, dictionary: Mapping[str, object], **class_options: object
     ) -> "Translator":
         """
         Override of _StackedDict.from_dict() — see Author.from_dict() for
@@ -225,7 +282,7 @@ class Translators:
     """Manager for the `translators` section of a single Repository."""
 
     @staticmethod
-    def add(repository: "Repository", name: str, translator: dict[str, Any]) -> None:
+    def add(repository: "Repository", name: str, translator: TranslatorPayload) -> None:
         ensure_type(name, str, "Translator name must be a string")
         ensure_type(translator, dict, "Translator content must be a dictionary")
 
@@ -240,7 +297,9 @@ class Translators:
         repository[["translators", name]] = translator_obj
 
     @staticmethod
-    def update(repository: "Repository", name: str, updates: dict[str, Any]) -> None:
+    def update(
+        repository: "Repository", name: str, updates: dict[str, JSONInput]
+    ) -> None:
         ensure_type(name, str, "name must be a string")
         ensure_type(updates, dict, "updates must be a dictionary")
 
@@ -251,7 +310,9 @@ class Translators:
         existing_translator = translators[name]
 
         def validate_and_apply(
-            target: dict[str, Any], patch: dict[str, Any], path: str = ""
+            target: MutableMapping[str, object],
+            patch: Mapping[str, JSONInput],
+            path: str = "",
         ) -> None:
             for key, value in patch.items():
                 full_path = f"{path}.{key}" if path else key
@@ -259,16 +320,17 @@ class Translators:
                     raise KeyError(
                         f"Key '{full_path}' is not a valid field for translator"
                     )
-                if isinstance(target[key], dict):
+                current = target[key]
+                if isinstance(current, dict):
                     if not isinstance(value, dict):
                         raise TypeError(
                             f"Type mismatch for '{full_path}': expected dict, got {type(value)}"
                         )
-                    validate_and_apply(target[key], value, full_path)
+                    validate_and_apply(current, value, full_path)
                 else:
-                    if type(value) is not type(target[key]):
+                    if type(value) is not type(current):
                         raise TypeError(
-                            f"Type mismatch for '{full_path}': expected {type(target[key])}, got {type(value)}"
+                            f"Type mismatch for '{full_path}': expected {type(current)}, got {type(value)}"
                         )
                     target[key] = value
 

@@ -38,10 +38,11 @@ from typing import Any
 from ndict_tools import StrictNestedDictionary
 
 from .._checks import ensure_type, is_type
+from .._json import JSONInput
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
-from .author import Author, Authors  # type: ignore[reportImportCycle]
-from .translator import Translators
+from .author import Author, AuthorPayload, Authors  # type: ignore[reportImportCycle]
+from .translator import TranslatorPayload, Translators
 
 # --- Domains helpers ---
 
@@ -183,7 +184,7 @@ class Repository(StrictNestedDictionary):
                 else:
                     self[path].update(value)
 
-    def _apply_kwargs(self, kwargs: dict[str, Any]) -> None:
+    def _apply_kwargs(self, kwargs: Mapping[str, object]) -> None:
         for key, value in kwargs.items():
             if key in self.keys():
                 if isinstance(value, dict):
@@ -345,7 +346,7 @@ class Repository(StrictNestedDictionary):
         return self["domains"].to_dict()
 
     @domains.setter
-    def domains(self, value: dict[str, Any]) -> None:
+    def domains(self, value: dict[str, list[str]]) -> None:
         # Accepts an iterable of (module, [domains...]) and merges into self["domains"]
         for module, domains in value.items():
             if module in self[["paths", "modules"]]:
@@ -552,14 +553,14 @@ class Repository(StrictNestedDictionary):
         return self["authors"]
 
     @authors.setter
-    def authors(self, value: dict[str, Any]) -> None:
+    def authors(self, value: dict[str, AuthorPayload]) -> None:
         ensure_type(value, dict, f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
         self["authors"] = StrictNestedDictionary()
         for author_id, author in value.items():
             self.add_author(author_id, author)
 
-    def add_author(self, author_id: str, author: dict[str, Any]) -> None:
+    def add_author(self, author_id: str, author: AuthorPayload) -> None:
         """Add a new author entry.
 
         This method mirrors the structure expected by Config.add_author outputs,
@@ -572,7 +573,7 @@ class Repository(StrictNestedDictionary):
         """Remove an author by its identifier. Delegates to Authors.remove()."""
         Authors.remove(self, author_id)
 
-    def update_author(self, author_id: str, updates: dict[str, Any]) -> None:
+    def update_author(self, author_id: str, updates: dict[str, JSONInput]) -> None:
         """Update fields of an existing author with type checking.
 
         Only existing keys can be updated and their types must match the
@@ -592,14 +593,14 @@ class Repository(StrictNestedDictionary):
         return self["translators"]
 
     @translators.setter
-    def translators(self, value: dict[str, Any]) -> None:
+    def translators(self, value: dict[str, TranslatorPayload]) -> None:
         ensure_type(value, dict, f"translators must be a dictionary, not {type(value)}")
         # Replace the whole translators section
         self["translators"] = StrictNestedDictionary()
         for name, translator in value.items():
             self.add_translator(name, translator)
 
-    def add_translator(self, name: str, translator: dict[str, Any]) -> None:
+    def add_translator(self, name: str, translator: TranslatorPayload) -> None:
         """Add a new translator entry.
 
         Mirrors add_author: caller provides the unique name and a dictionary
@@ -608,7 +609,7 @@ class Repository(StrictNestedDictionary):
         """
         Translators.add(self, name, translator)
 
-    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
+    def update_translator(self, name: str, updates: dict[str, JSONInput]) -> None:
         """
         Update an existing translator's details with structural validation.
 
