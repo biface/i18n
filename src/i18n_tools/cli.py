@@ -44,8 +44,9 @@ import re
 import sys
 import warnings
 from collections.abc import Callable, Iterable
-from typing import NoReturn, TextIO
+from typing import NoReturn, TextIO, cast
 
+from .__static__ import TranslationFileFormat
 from ._finding import Finding
 from .config import Config
 from .core import inspect_corpus, synchronize
@@ -62,7 +63,7 @@ class CliError(Exception):
     """Raised for CLI-level errors (bad path shape, bad arguments)."""
 
 
-def _parse_i18t_path(path: str) -> tuple[str, str, str, str]:
+def _parse_i18t_path(path: str) -> tuple[str, str, str, TranslationFileFormat]:
     """
     Parse a ``.i18t`` file path into its DD-12 layout components.
 
@@ -71,7 +72,7 @@ def _parse_i18t_path(path: str) -> tuple[str, str, str, str]:
     :param path: Path to a ``.i18t`` file.
     :type path: str
     :return: ``(directory, language, domain, fmt)``.
-    :rtype: tuple[str, str, str, str]
+    :rtype: tuple[str, str, str, TranslationFileFormat]
     :raises CliError: If ``path`` does not match the expected filename
         or directory shape (e.g. a ``templates/`` file, which carries
         no language and cannot back a ``Book``).
@@ -98,7 +99,9 @@ def _parse_i18t_path(path: str) -> tuple[str, str, str, str]:
     if not language:
         raise CliError(f"Could not determine the language for '{path}'")
 
-    return directory, language, match.group("domain"), match.group("fmt")
+    # _FILENAME_PATTERN only matches the formats of TranslationFileFormat.
+    fmt = cast(TranslationFileFormat, match.group("fmt"))
+    return directory, language, match.group("domain"), fmt
 
 
 def _load_book_from_path(path: str) -> Book:

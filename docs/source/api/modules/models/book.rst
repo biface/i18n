@@ -3,6 +3,8 @@ Book module
 
 .. automodule:: i18n_tools.models.book
 
+   .. autoclass:: BookOptions
+
    .. autoclass:: Book
 
       .. automethod:: add

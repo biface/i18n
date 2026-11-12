@@ -142,6 +142,48 @@ class TestBook:
             Book(fr_message, domain="test", language="fr")
 
 
+class TestBookOptions:
+    """Keyword options of Book(): the closed BookOptions set."""
+
+    def test_accepts_every_option(self):
+        book = Book(
+            language="fr-FR",
+            domain="test",
+            file_format="yaml",
+            project_id_version="app 2.0",
+            report_msgid_bugs_to="bugs@example.org",
+            pot_creation_date="2026-11-12",
+            language_team="team",
+            header_comment="comment",
+        )
+        assert book.language == "fr-FR"
+        assert book.domain == "test"
+        assert book.file_format == "yaml"
+        assert book.metadata["project_id_version"] == "app 2.0"
+        assert book.metadata["report_msgid_bugs_to"] == "bugs@example.org"
+        assert book.metadata["pot_creation_date"] == "2026-11-12"
+        assert book.metadata["language_team"] == "team"
+        assert book.metadata["header_comment"] == "comment"
+
+    def test_refuses_an_unknown_option(self):
+        with pytest.raises(
+            TypeError, match=re.escape("Unknown Book option(s): format")
+        ):
+            Book(language="fr-FR", domain="test", format="yaml")
+
+    def test_names_every_unknown_option(self):
+        with pytest.raises(
+            TypeError, match=re.escape("Unknown Book option(s): colour, format")
+        ):
+            Book(language="fr-FR", domain="test", format="yaml", colour="blue")
+
+    def test_refuses_a_language_that_is_not_a_string(self):
+        with pytest.raises(
+            TypeError, match=re.escape("Book language must be a string.")
+        ):
+            Book(language=1, domain="test")
+
+
 class TestBookGet:
     @pytest.mark.parametrize(
         "fixture_book, id, expected",

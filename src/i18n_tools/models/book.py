@@ -2,7 +2,7 @@
 Book and FallbackBook: the messages of one domain in one language.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Required, TypedDict, Unpack, cast
 
 from ndict_tools import StrictNestedDictionary
 
@@ -31,6 +31,31 @@ if TYPE_CHECKING:
 _ROOT_ATTRIBUTE_KEYS = frozenset({"language", "domain"})
 # Root metadata keys derived from the messages, recomputed on load.
 _ROOT_DERIVED_KEYS = frozenset({"statistics", "count"})
+
+
+class BookOptions(TypedDict, total=False):
+    """
+    Keyword contract of :class:`Book`.
+
+    ``language`` and ``domain`` are required. The other keys are optional:
+    ``file_format`` defaults to ``"json"``, ``project_id_version`` to
+    ``"i18n-tools 1.0"``, ``report_msgid_bugs_to`` to
+    ``"bugs@example.com"``, and ``pot_creation_date``, ``language_team``
+    and ``header_comment`` to an empty string. Any other key is refused
+    with a ``TypeError``.
+    """
+
+    language: Required[str]
+    domain: Required[str]
+    file_format: TranslationFileFormat | None
+    project_id_version: str
+    report_msgid_bugs_to: str
+    pot_creation_date: str
+    language_team: str
+    header_comment: str
+
+
+_BOOK_OPTIONS = BookOptions.__required_keys__ | BookOptions.__optional_keys__
 
 
 class Book:
@@ -75,7 +100,9 @@ class Book:
     metadata: StrictNestedDictionary
 
     def __init__(
-        self, *args: Message | tuple[Message] | list[Message], **kwargs: Any
+        self,
+        *args: Message | tuple[Message] | list[Message],
+        **kwargs: Unpack[BookOptions],
     ) -> None:
         """
         Initialize a Book.
@@ -114,19 +141,27 @@ class Book:
           contents.
 
         Raises
+        - TypeError: if a keyword is not one of the options above.
         - KeyError: if language or domain keyword is missing.
+        - TypeError: if language or domain is not a string.
         - ValueError: if any provided Message has a language different than the
           book language.
         """
+        unknown = sorted(set(kwargs) - _BOOK_OPTIONS)
+        if unknown:
+            raise TypeError(f"Unknown Book option(s): {', '.join(unknown)}")
+
         # Required metadata -> set instance attributes directly
         self.filename = ""
         self.plural_rule = None
-        language = kwargs.pop("language", None)
+        language = cast(object, kwargs.get("language"))
         if language is None:
             raise KeyError("No language specified")
+        elif not isinstance(language, str):
+            raise TypeError("Book language must be a string.")
         self.language = normalize_language_tag(language)
 
-        domain = kwargs.pop("domain", None)
+        domain = cast(object, kwargs.get("domain"))
         if domain is None:
             raise KeyError("No domain specified")
         elif not isinstance(domain, str):
@@ -138,16 +173,16 @@ class Book:
 
         # Core metadata for naming and storage format
         self.file_format, self.filename = build_book_filename(
-            self.domain, kwargs.pop("file_format", None)
+            self.domain, kwargs.get("file_format")
         )
 
         # Build metadata dictionary (without language, domain, file_format)
         self.metadata = StrictNestedDictionary(
-            project_id_version=kwargs.pop("project_id_version", "i18n-tools 1.0"),
-            report_msgid_bugs_to=kwargs.pop("report_msgid_bugs_to", "bugs@example.com"),
-            pot_creation_date=kwargs.pop("pot_creation_date", ""),
-            language_team=kwargs.pop("language_team", ""),
-            header_comment=kwargs.pop("header_comment", ""),
+            project_id_version=kwargs.get("project_id_version", "i18n-tools 1.0"),
+            report_msgid_bugs_to=kwargs.get("report_msgid_bugs_to", "bugs@example.com"),
+            pot_creation_date=kwargs.get("pot_creation_date", ""),
+            language_team=kwargs.get("language_team", ""),
+            header_comment=kwargs.get("header_comment", ""),
             statistics={"total_words": 0, "total_messages": 0},
         )
 
