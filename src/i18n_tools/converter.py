@@ -1374,7 +1374,8 @@ def seek_translation(
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():
             translation["msg_id"] = message_id
-            messages = translations[message_id]
+            # Legacy flat entry: a matrix of message rows.
+            messages = cast("list[list[str]]", translations[message_id])
 
             # Add the translation string
             if messages and len(messages) > 0 and len(messages[0]) > alternative:

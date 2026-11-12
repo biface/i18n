@@ -13,8 +13,9 @@ import json
 import os
 import shutil
 import tarfile
+from collections.abc import Mapping
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import yaml
 from ndict_tools import StrictNestedDictionary
@@ -35,6 +36,7 @@ from ..__static__ import (
     I18N_TRANSLATION_FORMAT,
     TranslationFileFormat,
 )
+from .._json import JSONInput, JSONValue
 
 # Generic empty files
 
@@ -110,7 +112,7 @@ def create_empty_json(file_path: Path | str) -> None:
         json.dump({}, json_file, ensure_ascii=False, indent=4)
 
 
-def load_json(file_path: Path | str) -> dict[str, Any]:
+def load_json(file_path: Path | str) -> dict[str, JSONValue]:
     """
     Load a JSON file without managing data structure and integrity and returns its content as a dictionary.
 
@@ -127,7 +129,7 @@ def load_json(file_path: Path | str) -> dict[str, Any]:
         return json.load(json_file)
 
 
-def save_json(file_path: Path | str, data: dict[str, Any]) -> None:
+def save_json(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """
     Save a JSON file without managing data structure and integrity and returns its content.
 
@@ -145,7 +147,7 @@ def save_json(file_path: Path | str, data: dict[str, Any]) -> None:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
 
 
-def _load_yaml(file_path: Path | str) -> dict[str, Any]:
+def _load_yaml(file_path: Path | str) -> dict[str, JSONValue]:
     """
     Load a
     :param file_path:
@@ -157,7 +159,7 @@ def _load_yaml(file_path: Path | str) -> dict[str, Any]:
         return yaml.load(yaml_file, Loader=yaml.SafeLoader)
 
 
-def _save_yaml(file_path: Path | str, data: dict[str, Any]) -> None:
+def _save_yaml(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """
     Save a
     :param file_path:
@@ -184,7 +186,9 @@ def validate_translation_format(
     return _fmt
 
 
-def load_by_format(file_path: Path | str, fmt: TranslationFileFormat) -> dict[str, Any]:
+def load_by_format(
+    file_path: Path | str, fmt: TranslationFileFormat
+) -> dict[str, JSONValue]:
     """
     Load a dictionary file according to the given format (json|yaml).
     """
@@ -194,7 +198,7 @@ def load_by_format(file_path: Path | str, fmt: TranslationFileFormat) -> dict[st
 
 
 def save_by_format(
-    file_path: Path | str, data: dict[str, Any], fmt: TranslationFileFormat
+    file_path: Path | str, data: Mapping[str, JSONInput], fmt: TranslationFileFormat
 ) -> None:
     """
     Save a dictionary to a file according to the given format (json|yaml).

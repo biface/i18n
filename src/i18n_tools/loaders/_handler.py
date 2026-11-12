@@ -10,8 +10,9 @@ Key Responsibilities:
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeGuard, cast
+from typing import TYPE_CHECKING, TypeGuard, cast
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -39,6 +40,7 @@ from ..__static__ import (
 from ..__static__ import __version__ as i18n_tools_version
 from .._counters import count_content, counters_from_entry, describe_differences
 from .._finding import Finding
+from .._json import JSONInput, JSONValue
 from ..exceptions import FormatError
 from ..locale import (
     get_all_languages,
@@ -81,7 +83,7 @@ def _check_matrix(matrix: object) -> TypeGuard[list[list[object]]]:
     return len(lengths) == 1 and lengths != {0}
 
 
-def check_json_integrity(data: dict[str, Any]) -> bool:
+def check_json_integrity(data: Mapping[str, JSONInput]) -> bool:
     """
     Check the integrity of translation data.
 
@@ -469,7 +471,7 @@ def read_book_data(file_path: Path | str) -> dict[str, object]:
 
 
 def inspect_book_data(
-    data: dict[str, object], language: str | None = None, domain: str | None = None
+    data: Mapping[str, object], language: str | None = None, domain: str | None = None
 ) -> list[Finding]:
     """
     Check the content of a Book file and list what is wrong with it.
@@ -490,7 +492,7 @@ def inspect_book_data(
     An absent or empty language or domain is accepted.
 
     :param data: The content of the file, as read.
-    :type data: dict[str, object]
+    :type data: Mapping[str, object]
     :param language: The normalized language expected, or None to skip
         the comparison.
     :type language: str | None
@@ -869,7 +871,7 @@ def fetch_dictionary(
     language: str,
     domain: str,
     fmt: TranslationFileFormat | None = None,
-) -> dict[str, Any]:
+) -> dict[str, JSONValue]:
     """
     Fetches the translation dictionary for a given language and domain.
 
@@ -884,7 +886,7 @@ def fetch_dictionary(
     :param domain: The domain name.
     :type domain: str
     :return: The translation dictionary.
-    :rtype: dict[str, Any]
+    :rtype: dict[str, JSONValue]
     """
 
     _utils.check_domains(repository, module, [domain])
@@ -910,7 +912,7 @@ def update_catalog(
     module: str,
     language: str,
     domain: str,
-    data: dict[Any, dict[str, str]],
+    data: Mapping[str | tuple[str, ...], dict[str, str]],
 ) -> None:
     """
     Updates the translation catalog for a given language and domain.
@@ -927,7 +929,7 @@ def update_catalog(
     :param domain: The domain name.
     :type domain: str
     :param data: An adapted translation dictionary.
-    :type data: Dict[str, Dict[str, str]]
+    :type data: Mapping[str | tuple[str, ...], dict[str, str]]
     """
 
     # TODO: Must update template file as well
@@ -987,7 +989,7 @@ def update_dictionary(
     module: str,
     language: str,
     domain: str,
-    data: dict[str, Any],
+    data: Mapping[str, JSONInput],
     fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
@@ -1004,7 +1006,7 @@ def update_dictionary(
     :param domain: The domain name.
     :type domain: str
     :param data: The new translation dictionary.
-    :type data: dict[str, Any]
+    :type data: Mapping[str, JSONInput]
     """
 
     _utils.check_domains(repository, module, [domain])
@@ -1024,10 +1026,9 @@ def update_dictionary(
             f"The dictionary {data} is not compatible with i18n-tools translations"
         )
 
-    for key, item in data.items():
-        dictionary[key] = item
+    merged: dict[str, JSONInput] = {**dictionary, **data}
 
-    _utils.save_by_format(dictionary_path, dictionary, _fmt)
+    _utils.save_by_format(dictionary_path, merged, _fmt)
 
 
 def dump_dictionary(
@@ -1035,7 +1036,7 @@ def dump_dictionary(
     module: str,
     language: str,
     domain: str,
-    data: dict[str, Any],
+    data: Mapping[str, JSONInput],
     fmt: TranslationFileFormat | None = None,
 ) -> None:
     """
@@ -1052,7 +1053,7 @@ def dump_dictionary(
     :param domain: The domain name.
     :type domain: str
     :param data: The new translation dictionary.
-    :type data: dict[str, Any]
+    :type data: Mapping[str, JSONInput]
     """
 
     _utils.check_domains(repository, module, [domain])
@@ -1174,7 +1175,7 @@ def remove_dictionary(
 # Managing configuration files
 
 
-def load_config(config_path: str | None = None) -> dict[str, Any]:
+def load_config(config_path: str | None = None) -> dict[str, JSONValue]:
     """
     Load the configuration file (YAML, TOML, or JSON) from the application directories
     (not from the package i18n-tools) and return its contents as a dictionary.
@@ -1215,7 +1216,7 @@ def load_config(config_path: str | None = None) -> dict[str, Any]:
     )
 
 
-def save_config(file_path: str, data: dict[str, Any]) -> None:
+def save_config(file_path: str, data: Mapping[str, JSONInput]) -> None:
     """
     Save configuration data to a file.
 
@@ -1390,23 +1391,25 @@ def detect_format(path: Path | str) -> TranslationFileFormat:
     return _utils.detect_format(path)
 
 
-def load_json(file_path: Path | str) -> dict[str, Any]:
+def load_json(file_path: Path | str) -> dict[str, JSONValue]:
     """Load a JSON file and return its content."""
     return _utils.load_json(file_path)
 
 
-def save_json(file_path: Path | str, data: dict[str, Any]) -> None:
+def save_json(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """Save a dictionary to a JSON file."""
     _utils.save_json(file_path, data)
 
 
-def load_by_format(file_path: Path | str, fmt: TranslationFileFormat) -> dict[str, Any]:
+def load_by_format(
+    file_path: Path | str, fmt: TranslationFileFormat
+) -> dict[str, JSONValue]:
     """Load a dictionary file in the given format (json|yaml)."""
     return _utils.load_by_format(file_path, fmt)
 
 
 def save_by_format(
-    file_path: Path | str, data: dict[str, Any], fmt: TranslationFileFormat
+    file_path: Path | str, data: Mapping[str, JSONInput], fmt: TranslationFileFormat
 ) -> None:
     """Save a dictionary to a file in the given format (json|yaml)."""
     _utils.save_by_format(file_path, data, fmt)

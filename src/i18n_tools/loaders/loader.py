@@ -23,8 +23,9 @@ objects required) or together with model instances (e.g. ``Book``,
 
 import tarfile
 import warnings
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from ndict_tools import StrictNestedDictionary
 
@@ -38,6 +39,7 @@ from i18n_tools.__static__ import (
 )
 from i18n_tools._checks import ensure_type
 from i18n_tools._finding import Finding
+from i18n_tools._json import JSONInput, JSONValue
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
 from i18n_tools.loaders._handler import (
     ROOT as ROOT,  # re-exported: ``where`` of a finding about the file root
@@ -88,6 +90,8 @@ from i18n_tools.locale import get_all_languages
 if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
 
+    from i18n_tools.models.book import Book
+
 
 class BookFileContent(TypedDict):
     """
@@ -100,10 +104,22 @@ class BookFileContent(TypedDict):
     """
 
     metadata: dict[str, object]
-    entries: dict[str, dict[str, Any]]
+    entries: dict[str, dict[str, JSONValue]]
 
 
-def load_locale_json(file_path: str) -> dict[str, Any]:
+class LocaleStructure(TypedDict):
+    """
+    Where :func:`aggregate_locale_json` looks for locale files.
+
+    ``base`` is the root directory; ``modules`` lists the module paths
+    under it, each holding a ``locales`` directory.
+    """
+
+    base: str
+    modules: list[str]
+
+
+def load_locale_json(file_path: Path | str) -> dict[str, JSONValue]:
     """
     This function load a JSON file in the locales repository and containing i18next data. The structure of this
     dictionary is as follows::
@@ -122,7 +138,7 @@ def load_locale_json(file_path: str) -> dict[str, Any]:
         }
 
     :param file_path: Path to the JSON locale file.
-    :type file_path: str
+    :type file_path: Path | str
     :return: JSON locale data content.
     :rtype: dict
     :raises FileNotFoundError: If the file is not found.
@@ -253,7 +269,7 @@ def inspect_book_file(
     return inspect_book_data(data, language, domain)
 
 
-def save_book(book: Any, file_path: str) -> None:
+def save_book(book: "Book", file_path: str) -> None:
     """
     Serialize a Book to a .i18t file.
 
@@ -286,19 +302,19 @@ def save_book(book: Any, file_path: str) -> None:
     from i18n_tools.converter import message_to_i18n_tools_format
 
     fmt = detect_format(file_path)
-    root: dict[str, object] = {"language": book.language, "domain": book.domain}
+    root: dict[str, JSONInput] = {"language": book.language, "domain": book.domain}
     root.update(book.metadata.to_dict())
-    data: dict[str, Any] = {"metadata": root}
+    data: dict[str, JSONInput] = {"metadata": root}
     for msg in book.messages.values():
         data[msg.id] = message_to_i18n_tools_format(msg)
     save_by_format(file_path, data, fmt)
 
 
 def aggregate_locale_json(
-    structure: dict[str, Any],
+    structure: LocaleStructure,
     domains: dict[str, list[str]],
     languages: dict[str, list[str]],
-) -> dict[str, Any]:
+) -> dict[str, dict[str, dict[str, dict[str, JSONValue]]]]:
     """
     Aggregate JSON locale files based on the given structure, domains, and languages.
 
@@ -309,24 +325,25 @@ def aggregate_locale_json(
     duplicate (DD-NN, #69).
 
     :param structure: Dictionary containing 'base' path and list of 'modules'.
-    :type structure: dict[str, Any]
+    :type structure: LocaleStructure
     :param domains: Dictionary where keys are module names and values are lists of domains.
     :type domains: dict[str, list[str]]
     :param languages: Dictionary where keys are language codes and values are lists of regional variants.
     :type languages: dict[str, list[str]]
-    :return: A consolidated dictionary of locale data.
-    :rtype: dict
+    :return: The locale data of each variant, by module, then domain, then
+        variant.
+    :rtype: dict[str, dict[str, dict[str, dict[str, JSONValue]]]]
     """
-    aggregated_data = {}
+    aggregated_data: dict[str, dict[str, dict[str, dict[str, JSONValue]]]] = {}
     base_path = Path(structure["base"])
     modules = structure["modules"]
 
     for module in modules:
         module_path = base_path / module / "locales"
-        module_data = {}
+        module_data: dict[str, dict[str, dict[str, JSONValue]]] = {}
 
         for domain in domains.get(module, []):
-            domain_data = {}
+            domain_data: dict[str, dict[str, JSONValue]] = {}
 
             for lang, variants in languages.items():
                 # Include the main language in the list of variants
@@ -346,7 +363,7 @@ def aggregate_locale_json(
     return aggregated_data
 
 
-def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
+def save_locale_json(file_path: str, data: Mapping[str, JSONInput]) -> None:
     """
     Save data to a JSON locale file.
 
@@ -360,7 +377,8 @@ def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
 
 
 def save_aggregated_locale_json(
-    aggregated_data: dict[str, Any], base_path: str
+    aggregated_data: Mapping[str, Mapping[str, Mapping[str, JSONInput]]],
+    base_path: str,
 ) -> None:
     """
     Save the aggregated locale JSON data as gzipped files for each domain in the locales directory,
@@ -478,12 +496,12 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     return _build_path(base_path, *sub_dirs)
 
 
-def load_config(config_path: str | None = None) -> dict[str, Any]:
+def load_config(config_path: str | None = None) -> dict[str, JSONValue]:
     """Pass-through to :func:`i18n_tools.loaders._handler.load_config`."""
     return _load_config(config_path)
 
 
-def save_config(file_path: str, data: dict[str, Any]) -> None:
+def save_config(file_path: str, data: Mapping[str, JSONInput]) -> None:
     """Pass-through to :func:`i18n_tools.loaders._handler.save_config`."""
     _save_config(file_path, data)
 
@@ -498,7 +516,7 @@ def create_empty_json(file_path: Path | str) -> None:
     _create_empty_json(file_path)
 
 
-def load_json(file_path: Path | str) -> dict[str, Any]:
+def load_json(file_path: Path | str) -> dict[str, JSONValue]:
     """Pass-through to :func:`i18n_tools.loaders._handler.load_json`.
 
     Loads the file as is, without the integrity check of
@@ -518,14 +536,15 @@ def fetch_dictionary(
     language: str,
     domain: str,
     fmt: TranslationFileFormat | None = None,
-) -> dict[str, Any]:
+) -> dict[str, JSONValue]:
     """Pass-through to :func:`i18n_tools.loaders._handler.fetch_dictionary`."""
     return _fetch_dictionary(repository, module, language, domain, fmt)
 
 
 def _update_json_translations(
-    existing_translations: dict[str, Any], translation_data: dict[str, Any]
-):
+    existing_translations: dict[str, JSONInput],
+    translation_data: Mapping[str, JSONInput],
+) -> dict[str, JSONInput]:
     """
     Update translations in JSON with new data.
 
@@ -819,7 +838,7 @@ def add_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Mapping[str, JSONInput]],
 ):
     """
     Adds a translation set to the translation repository using JSON and PO files.
@@ -850,8 +869,8 @@ def add_translation_set(
         )
 
         # Load existing translations
-        existing_translations = (
-            fetch_dictionary(repository, module, lang, domain)
+        existing_translations: dict[str, JSONInput] = (
+            dict(fetch_dictionary(repository, module, lang, domain))
             if _file_exists(json_file_path)
             else {}
         )
@@ -869,7 +888,7 @@ def update_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Mapping[str, JSONInput]],
 ):
     """
     Updates existing translations in the translation repository using JSON and PO files.
@@ -900,8 +919,8 @@ def update_translation_set(
             repository, module, domain, lang
         )
         # Load existing translations
-        existing_translations = (
-            fetch_dictionary(repository, module, lang, domain)
+        existing_translations: dict[str, JSONInput] = (
+            dict(fetch_dictionary(repository, module, lang, domain))
             if _file_exists(json_file_path)
             else {}
         )
@@ -923,7 +942,7 @@ def remove_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Sequence[str]],
 ):
     """
     Removes specified translations from the translation repository using JSON and PO files.

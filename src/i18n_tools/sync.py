@@ -11,7 +11,7 @@ Key Responsibilities:
 """
 
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
 from .loaders.loader import (
@@ -22,8 +22,20 @@ from .loaders.loader import (
 from .locale import get_all_languages, validate_and_normalize_language_tags
 
 
+class LanguageSettings(TypedDict):
+    """
+    The languages of a repository, as :func:`check_repository` reads them.
+
+    ``source`` is the source language; ``hierarchy`` maps each parent
+    language to its variants.
+    """
+
+    source: str
+    hierarchy: dict[str, list[str]]
+
+
 def check_repository(
-    tld: str, domains: dict[str, list[str]], languages: dict[str, Any]
+    tld: str, domains: dict[str, list[str]], languages: LanguageSettings
 ):
     """
     Checks and creates necessary files in the translation repository.

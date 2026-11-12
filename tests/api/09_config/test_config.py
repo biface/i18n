@@ -967,6 +967,31 @@ class TestConfigEdgeCases:
         with pytest.raises(IndexError):
             tmp_module_repository[4].load()
 
+    def test_config_with_section_not_a_mapping(self, tmp_module_repository):
+        """
+        A configuration section that is not a mapping is refused before any
+        key is loaded: the repository is left as it was.
+        """
+        config = tmp_module_repository[4]
+        config.switch_to_application_config()
+        repository = config.get_repository()
+        settings = repository[["paths", "settings"]]
+        bad_file = "section-not-a-mapping.yaml"
+        with open(
+            os.path.join(repository[["paths", "config"]], bad_file),
+            "w",
+            encoding="utf-8",
+        ) as handle:
+            _ = handle.write("configuration: application\napplication:\n- details\n")
+        repository[["paths", "settings"]] = bad_file
+        before = repository.to_dict()
+        try:
+            with pytest.raises(TypeError, match="must be a mapping"):
+                config.load()
+            assert repository.to_dict() == before
+        finally:
+            repository[["paths", "settings"]] = settings
+
     def test_toggle_repository(self, tmp_module_repository):
         config = tmp_module_repository[4]
         config.switch_to_package_config()

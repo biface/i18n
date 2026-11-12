@@ -23,11 +23,12 @@ Key Responsibilities:
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 import yaml
 
+from .._json import JSONInput, JSONValue
 from ._utils import check_path
 
 
@@ -35,7 +36,7 @@ def _check_config_extension(ext: str) -> bool:
     return ext.lstrip(".").lower() in ["json", "yaml", "yml", "toml"]
 
 
-def _load_toml(file_path: Path | str) -> dict[str, Any]:
+def _load_toml(file_path: Path | str) -> dict[str, JSONValue]:
     """
     Load a TOML file without managing data structure and returns its content.
 
@@ -60,7 +61,7 @@ def _load_toml(file_path: Path | str) -> dict[str, Any]:
         return toml.load(toml_file)
 
 
-def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
+def _save_toml(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """
     Save a TOML file without managing data structure and returns its content.
 
@@ -85,7 +86,7 @@ def _save_toml(file_path: Path | str, data: dict[str, Any]) -> None:
         _ = toml.dump(data, toml_file)
 
 
-def load_config_file(config_path: Path | str) -> dict[str, Any]:
+def load_config_file(config_path: Path | str) -> dict[str, JSONValue]:
     """
     Helper function to load the configuration file based on its extension.
 
@@ -118,7 +119,7 @@ def load_config_file(config_path: Path | str) -> dict[str, Any]:
     )  # unreachable if _check_config_extension passed, but satisfies type checker
 
 
-def save_config_file(config_path: Path | str, data: dict[str, Any]) -> None:
+def save_config_file(config_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """
     Helper function to save the configuration file based on its extension.
 

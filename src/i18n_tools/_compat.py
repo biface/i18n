@@ -11,6 +11,12 @@ feature natively.
     it from ``typing_extensions`` (bundled typeshed stubs); at runtime the
     standard version is used on 3.12+ and ``_override`` on 3.11. To be
     removed when the minimum supported version becomes 3.12.
+
+``TypeAliasType``
+    PEP 695 runtime type alias, in ``typing`` from Python 3.12. Type
+    checkers resolve it from ``typing_extensions``; at runtime the standard
+    class is used on 3.12+ and ``_TypeAliasType`` on 3.11. To be removed
+    when the minimum supported version becomes 3.12.
 """
 
 import sys
@@ -49,4 +55,35 @@ elif sys.version_info >= (3, 12):
 else:
     override = _override  # pyright: ignore[reportUnreachable]
 
-__all__ = ["override"]
+
+class _TypeAliasType:
+    """
+    Named type alias (PEP 695 fallback).
+
+    Keeps the name and the value of the alias, and shows the name, as
+    ``typing.TypeAliasType`` does. Only used in annotations: it supports no
+    type operation (``|``, subscription).
+
+    :param name: The name of the alias.
+    :type name: str
+    :param value: The aliased type.
+    :type value: object
+    """
+
+    def __init__(self, name: str, value: object, /) -> None:
+        self.__name__: str = name
+        self.__value__: object = value
+
+    @override
+    def __repr__(self) -> str:
+        return self.__name__
+
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeAliasType as TypeAliasType
+elif sys.version_info >= (3, 12):
+    from typing import TypeAliasType  # pyright: ignore[reportUnreachable]
+else:
+    TypeAliasType = _TypeAliasType  # pyright: ignore[reportUnreachable]
+
+__all__ = ["TypeAliasType", "override"]

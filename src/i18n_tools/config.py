@@ -220,7 +220,12 @@ class Config(metaclass=Singleton):
             )
 
         # Load general setup
-        for key, value in config.get(self._current_config, {}).items():
+        setup = config.get(self._current_config, {})
+        if not isinstance(setup, dict):
+            raise TypeError(
+                f"Section '{self._current_config}' of {config_file} must be a mapping"
+            )
+        for key, value in setup.items():
             if key in current_config.keys():
                 current_config[key].update(value)
             else:
