@@ -3,8 +3,8 @@ Content counters of a message: number of declensions, number of
 segments and fill mask.
 
 One definition shared by ``Message``, the converter and the loaders. The
-module imports nothing from the package except the runtime guards, so
-that every layer may use it.
+module imports nothing from the package except the runtime guards and the
+JSON value aliases, so that every layer may use it.
 
 Private module: ``ContentCounters`` is exported by ``i18n_tools.models``
 and the package.
@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from i18n_tools._checks import ensure_type, is_type
+from i18n_tools._json import JSONInput
 
 
 def _ensure_count(value: int, name: str) -> None:
@@ -103,7 +104,7 @@ def count_content(matrix: list[list[str]]) -> ContentCounters:
     )
 
 
-def counters_to_entry(counters: ContentCounters) -> dict[str, object]:
+def counters_to_entry(counters: ContentCounters) -> dict[str, JSONInput]:
     """
     The counters as ``.i18t`` entry metadata.
 
@@ -111,7 +112,7 @@ def counters_to_entry(counters: ContentCounters) -> dict[str, object]:
     :type counters: ContentCounters
     :return: ``singular_count``, ``segment_count`` and ``fill_mask`` (a
         list of lists of booleans, matrix orientation).
-    :rtype: dict[str, object]
+    :rtype: dict[str, JSONInput]
     """
     return {
         "singular_count": counters.declensions,

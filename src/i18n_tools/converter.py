@@ -203,7 +203,7 @@ Key Responsibilities:
 import functools
 import re
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypedDict, TypeVar, cast
 
 from babel.messages.catalog import Catalog
@@ -214,6 +214,7 @@ from i18n_tools._counters import (
     counters_from_entry,
     counters_to_entry,
 )
+from i18n_tools._json import JSONInput, JSONValue
 from i18n_tools.loaders.loader import load_json, load_text
 from i18n_tools.models.message import Location
 
@@ -1041,7 +1042,7 @@ class MessageEntry(TypedDict):
 
     matrix: list[list[str]]
     context: str
-    metadata: dict[str, Any]
+    metadata: dict[str, object]
     status: Literal["draft", "complete"]
     recorded: ContentCounters | None
 
@@ -1073,7 +1074,7 @@ def _location_from_entry(item: list[object]) -> Location:
     )
 
 
-def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
+def message_to_i18n_tools_format(message: "Message") -> dict[str, JSONInput]:
     """
     Convert a Message to a native ``.i18t`` entry.
 
@@ -1088,7 +1089,7 @@ def message_to_i18n_tools_format(message: "Message") -> dict[str, Any]:
 
     :param message: A Message object
     :return: Dictionary in i18n_tools format
-    :rtype: dict[str, Any]
+    :rtype: dict[str, JSONInput]
     """
     recorded = message.recorded
     counters = (
@@ -1120,7 +1121,7 @@ def _read_status(value: object) -> Literal["draft", "complete"]:
 
 
 def i18n_tools_format_to_message_dict(
-    i18n_tools_entry: dict[str, Any],
+    i18n_tools_entry: Mapping[str, JSONValue],
 ) -> MessageEntry:
     """
     Read a native ``.i18t`` entry into the parts that build a Message.
@@ -1135,13 +1136,15 @@ def i18n_tools_format_to_message_dict(
     otherwise ``recorded`` is None. ``plural_counts`` is ignored.
 
     :param i18n_tools_entry: Dictionary in i18n_tools format
-    :type i18n_tools_entry: dict[str, Any]
+    :type i18n_tools_entry: Mapping[str, JSONValue]
     :return: Matrix, context, metadata, status and recorded counters for
         ``Message.from_matrix()``.
     :rtype: MessageEntry
     """
-    messages: list[list[str]] = i18n_tools_entry.get("messages", [])
-    metadata: dict[str, Any] = i18n_tools_entry.get("metadata", {})
+    # The load check guarantees the shapes read here (matrix of strings,
+    # metadata mapping, location items, string context).
+    messages = cast("list[list[str]]", i18n_tools_entry.get("messages", []))
+    metadata = cast("dict[str, JSONValue]", i18n_tools_entry.get("metadata", {}))
 
     result: MessageEntry = {
         "matrix": [list(row) for row in messages],
@@ -1151,12 +1154,13 @@ def i18n_tools_format_to_message_dict(
         "recorded": None,
     }
     if metadata:
-        result["context"] = metadata.get("context", "")
+        result["context"] = cast(str, metadata.get("context", ""))
         result["status"] = _read_status(metadata.get("status"))
         result["recorded"] = counters_from_entry(metadata)
         result["metadata"] = {
             "locations": [
-                _location_from_entry(item) for item in metadata.get("locations", [])
+                _location_from_entry(item)
+                for item in cast("list[list[object]]", metadata.get("locations", []))
             ],
             "flags": metadata.get("flags", []),
             "user_comments": metadata.get("user_comments", []),
