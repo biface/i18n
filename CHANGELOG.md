@@ -56,8 +56,7 @@ API is frozen only at v1.0.0.
   replace it. (#161)
 - `Book.format` → `Book.file_format`: attribute, constructor keyword and
   the `*_format()` accessors, now `get_/add_/update_/remove_file_format()`.
-  `Book(format="yaml")` is ignored silently and gives a JSON book
-  (unknown keywords are refused in a later run, #133). (#157)
+  `Book(format="yaml")` raises `TypeError` (see below). (#157)
 - Loading a `.i18t` file with an error in its content raises
   `FormatError` (was `ValueError`). (#157)
 - `.i18t` entry metadata: `plural_counts` is replaced by `status`,
@@ -76,6 +75,12 @@ API is frozen only at v1.0.0.
   and pass it on; `Repository(default_setup=...)` was ignored, it is now
   applied, and a copy of a `Repository` keeps the configuration of the
   original. (#128)
+- `Book()` keywords are the closed set `BookOptions` (`language` and
+  `domain` required; `file_format`, `project_id_version`,
+  `report_msgid_bugs_to`, `pot_creation_date`, `language_team`,
+  `header_comment`). Any other keyword raises `TypeError` naming it,
+  where it was ignored; a language that is not a string raises
+  `TypeError`, as a domain already did. (#133)
 
 ### ✨ New Features
 - `Declension`, `Location` and `ContentCounters`, exported by
@@ -124,6 +129,9 @@ API is frozen only at v1.0.0.
   `[api]` extra. (#158)
 - `core.save_book()` refuses a Book without language with `BookError`.
   (#129)
+- `Config.load()` refuses a configuration section that is not a mapping
+  with `TypeError`, before loading any key (it failed with an
+  `AttributeError`). (#133)
 - Archive extraction uses `filter="data"` whenever `tarfile` provides it
   (detected by feature, PEP 706 backport included). (#140)
 - `.i18t` entries are written and read in the native form
@@ -150,11 +158,21 @@ API is frozen only at v1.0.0.
   3.14, 3.15 experimental.
 - `ndict-tools>=1.3.0`; the local `ndict_tools` stub is removed, the
   package ships its own types. (#125, #129)
-- basedpyright 1.40.2 is a blocking gate in tox and CI (warnings do not
-  fail yet, #130). Typing work: parameters and attributes annotated,
+- basedpyright 1.40.2 is a blocking gate in tox and CI, and a warning
+  fails it like an error (`failOnWarnings`); `src` has no error and no
+  warning. (#129, #130) Typing work: parameters and attributes annotated,
   `@override` through a private `_compat.py` shim (`typing_extensions`
   as a quality dependency only), argument guards through a private
   `_checks.py`. (#129, #131, #132)
+- No explicit `Any` left in signatures (#133): data read from or written
+  to JSON, YAML and TOML files is typed with two recursive aliases,
+  `JSONValue` (read) and `JSONInput` (written), in a private `_json.py`
+  (`TypeAliasType`, backported in `_compat.py` for Python 3.11); fixed
+  shapes are `TypedDict`s next to their owner: `BookOptions`,
+  `AuthorPayload`, `TranslatorPayload` and its sections, `URLCheck`,
+  `URLFormatCheck`, `LocaleStructure`, `LanguageSettings`. The
+  deprecated converter functions keep untyped payloads behind one
+  private alias.
 - `loaders/` layering (DD-44): `_utils.py`, `_settings.py` and
   `_handler.py` are internal, `loader.py` is the only module imported
   from outside `loaders/`, and a test checks the import rules. (#132,
@@ -175,6 +193,8 @@ API is frozen only at v1.0.0.
   under ndict-tools 1.3.0. (#125)
 - The configuration of `Repository`, `Author`, `Translator` and their
   sections, and the copies of a `Repository`, are tested. (#128)
+- `Book` keyword options, the `Config.load()` section guard and the
+  3.11 `TypeAliasType` fallback are tested. (#133)
 
 ---
 
