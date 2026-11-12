@@ -204,7 +204,16 @@ import functools
 import re
 import warnings
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypedDict, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    ParamSpec,
+    TypeAlias,
+    TypedDict,
+    TypeVar,
+    cast,
+)
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
@@ -223,6 +232,12 @@ if TYPE_CHECKING:
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
+
+# Payloads of the deprecated unified-format, Catalog and i18next
+# conversions. These functions are unmaintained and will be rebuilt with
+# the gettext/i18next interoperability: their data stays untyped instead
+# of being narrowed piece by piece.
+_LegacyPayload: TypeAlias = dict[str, Any]  # pyright: ignore[reportExplicitAny]
 
 
 def _deprecated_unmaintained(func: Callable[_P, _R]) -> Callable[_P, _R]:
@@ -263,7 +278,7 @@ def _deprecated_unmaintained(func: Callable[_P, _R]) -> Callable[_P, _R]:
 
 
 @_deprecated_unmaintained
-def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
+def catalog_to_unified_format(catalog: Catalog) -> _LegacyPayload:
     """
     Convert a Babel Catalog to a unified format dictionary.
 
@@ -332,7 +347,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
         if isinstance(message_id, tuple):
             # Handle plural forms
             singular = message_id[0]
-            message_entry: dict[str, Any] = {
+            message_entry: _LegacyPayload = {
                 "translation": (
                     message.string
                     if isinstance(message.string, str)
@@ -424,7 +439,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
 
 @_deprecated_unmaintained
 def unified_format_to_catalog(
-    unified: dict[str, Any], locale: str | None = None, domain: str | None = None
+    unified: _LegacyPayload, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert a unified format dictionary to a Babel Catalog.
@@ -604,7 +619,7 @@ def unified_format_to_catalog(
 
 
 @_deprecated_unmaintained
-def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
+def i18next_to_unified_format(i18next_data: _LegacyPayload) -> _LegacyPayload:
     """
     Convert i18next JSON format to unified format.
 
@@ -744,8 +759,8 @@ def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
 
 @_deprecated_unmaintained
 def unified_format_to_i18next(
-    unified: dict[str, Any], flatten: bool = True
-) -> dict[str, Any]:
+    unified: _LegacyPayload, flatten: bool = True
+) -> _LegacyPayload:
     """
     Convert unified format to i18next JSON format.
 
@@ -834,8 +849,8 @@ def unified_format_to_i18next(
 
 @_deprecated_unmaintained
 def i18n_tools_to_unified_format(
-    i18n_tools_data: dict[str, Any],
-) -> dict[str, Any]:
+    i18n_tools_data: _LegacyPayload,
+) -> _LegacyPayload:
     """
     Convert i18n_tools JSON format to unified format.
 
@@ -850,7 +865,7 @@ def i18n_tools_to_unified_format(
         if key == "metadata" or key == ".i18n_tools":  # Skip metadata at root level
             continue
 
-        entry: dict[str, Any]
+        entry: _LegacyPayload
 
         # Check if the entry has the new structure with messages and metadata
         if isinstance(value, dict) and "messages" in value and "metadata" in value:
@@ -953,7 +968,7 @@ def i18n_tools_to_unified_format(
 
 
 @_deprecated_unmaintained
-def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
+def unified_format_to_i18n_tools(unified: _LegacyPayload) -> _LegacyPayload:
     """
     Convert unified format to i18n_tools JSON format.
 
@@ -1182,7 +1197,7 @@ def i18n_tools_format_to_message_dict(
 @_deprecated_unmaintained
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Convert a Babel Catalog directly to i18next JSON format.
 
@@ -1199,7 +1214,7 @@ def convert_catalog_to_i18next(
 
 @_deprecated_unmaintained
 def convert_i18next_to_catalog(
-    i18next_data: dict[str, Any], locale: str | None = None, domain: str | None = None
+    i18next_data: _LegacyPayload, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert i18next JSON format directly to a Babel Catalog.
@@ -1256,7 +1271,7 @@ def convert_i18n_tools_to_catalog(
 
 @_deprecated_unmaintained
 def convert_i18next_to_i18n_tools(
-    i18next_data: dict[str, Any],
+    i18next_data: _LegacyPayload,
 ) -> dict[str, list[list[str]]]:
     """
     Convert i18next JSON format directly to i18n_tools JSON format.
@@ -1273,7 +1288,7 @@ def convert_i18next_to_i18n_tools(
 @_deprecated_unmaintained
 def convert_i18n_tools_to_i18next(
     i18n_tools_data: dict[str, list[list[str]]], flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Convert i18n_tools JSON format directly to i18next JSON format.
 
@@ -1298,7 +1313,7 @@ def convert_i18n_tools_to_i18next(
 @_deprecated_unmaintained
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Load a PO file and convert it to i18next JSON format.
 
