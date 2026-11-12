@@ -8,10 +8,38 @@ Key Responsibilities:
 
 """
 
-from typing import Any
+from typing import TypedDict
 
 
-def validate_url_format(url: str) -> dict[str, Any]:
+class URLFormatCheck(TypedDict):
+    """
+    Result of :func:`validate_url_format`.
+
+    ``error`` is None when the URL is well formed, otherwise the reason it
+    is not.
+    """
+
+    url: str
+    error: str | None
+
+
+class URLCheck(TypedDict):
+    """
+    Result of :func:`validate_api_url`.
+
+    ``is_alive`` is true when the server answers, including with an access
+    error (401, 403, 405, 429, 500); ``status_code`` is None when no
+    response was received; ``error`` is None when the URL is well formed
+    and the server answers as expected.
+    """
+
+    url: str
+    is_alive: bool
+    status_code: int | None
+    error: str | None
+
+
+def validate_url_format(url: str) -> URLFormatCheck:
     """
     Validates the syntactic format of a URL — no network call.
 
@@ -24,7 +52,8 @@ def validate_url_format(url: str) -> dict[str, Any]:
     core .i18t usage never pulls this dependency in (DD-41).
 
     :param url: The URL to validate.
-    :return: A dictionary with the URL and an error message if the format is invalid.
+    :return: The URL and an error message if the format is invalid.
+    :rtype: URLFormatCheck
     :raises ModuleNotFoundError: if the ``api`` extra is not installed.
     """
     try:
@@ -35,13 +64,13 @@ def validate_url_format(url: str) -> dict[str, Any]:
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
-    result: dict[str, Any] = {"url": url, "error": None}
+    result: URLFormatCheck = {"url": url, "error": None}
     if not validators.url(url):
         result["error"] = f"URL '{url}' is not a valid format."
     return result
 
 
-def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
+def validate_api_url(url: str, timeout: int = 5) -> URLCheck:
     """
     Validates a URL by checking its format and availability.
 
@@ -55,7 +84,8 @@ def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
 
     :param url: The URL to validate.
     :param timeout: Maximum wait time for the server response (in seconds).
-    :return: A dictionary containing the validation status and details about the URL.
+    :return: The validation status and details about the URL.
+    :rtype: URLCheck
     :raises ModuleNotFoundError: if the ``api`` extra is not installed.
     """
     try:
@@ -66,7 +96,7 @@ def validate_api_url(url: str, timeout: int = 5) -> dict[str, Any]:
             + "install with: pip install pyi18t-tools[api]"
         ) from e
 
-    result: dict[str, Any] = {
+    result: URLCheck = {
         "url": url,
         "is_alive": False,
         "status_code": None,
