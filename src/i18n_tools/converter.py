@@ -204,7 +204,7 @@ import functools
 import re
 import warnings
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, ParamSpec, TypedDict, TypeVar, cast
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
@@ -220,10 +220,11 @@ from i18n_tools.models.message import Location
 if TYPE_CHECKING:
     from i18n_tools.models.message import Message
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
 
 
-def _deprecated_unmaintained(func: _F) -> _F:
+def _deprecated_unmaintained(func: Callable[_P, _R]) -> Callable[_P, _R]:
     """
     Mark a function as deprecated and unmaintained.
 
@@ -234,7 +235,7 @@ def _deprecated_unmaintained(func: _F) -> _F:
     """
 
     @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         warnings.warn(
             f"{func.__name__} is deprecated and unmaintained. It predates "
             + "the current hub-and-spoke architecture (Message/Book as the "
@@ -247,7 +248,7 @@ def _deprecated_unmaintained(func: _F) -> _F:
         )
         return func(*args, **kwargs)
 
-    return cast(_F, wrapper)
+    return wrapper
 
 
 # -----------------------------------------------------------------------------
