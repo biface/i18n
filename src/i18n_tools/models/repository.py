@@ -33,12 +33,11 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
 
 from ndict_tools import StrictNestedDictionary
 
 from .._checks import ensure_type, is_type
-from .._json import JSONInput
+from .._json import JSONInput, JSONValue
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
 from .author import Author, AuthorPayload, Authors  # type: ignore[reportImportCycle]
@@ -636,14 +635,14 @@ class Repository(StrictNestedDictionary):
         """
         Translators.clean(self)
 
-    def add_value(self, path: list[str], value: Any) -> None:
+    def add_value(self, path: list[str], value: JSONInput) -> None:
         """
         Add a value in the repository
 
         :param path: path (hierarchical key of nested dictionary) of the value to add.
         :type path: list[str]
         :param value: value to add.
-        :type value: Any
+        :type value: JSONInput
         :return: void function
         :rtype: None
         :raises KeyError: If the value does not exist.
@@ -664,14 +663,14 @@ class Repository(StrictNestedDictionary):
 
         self[path] = value
 
-    def update_value(self, path: list[str], value: Any) -> None:
+    def update_value(self, path: list[str], value: JSONInput) -> None:
         """
         Update an existing value in the repository.
 
         :param path: hierarchical key (list of str) pointing to the value to update.
         :type path: list[str]
         :param value: new value to set.
-        :type value: Any
+        :type value: JSONInput
         :return: None
         :rtype: None
         :raises KeyError: If the path does not exist in the repository.
@@ -692,7 +691,7 @@ class Repository(StrictNestedDictionary):
 
         self[path] = value
 
-    def _empty_value_for(self, current: Any) -> Any:
+    def _empty_value_for(self, current: object) -> StrictNestedDictionary | JSONValue:
         """
         Compute the empty/default placeholder value matching the type of
         ``current``. Shared by :meth:`remove_value` and :meth:`clean_value`
@@ -701,10 +700,10 @@ class Repository(StrictNestedDictionary):
         to be non-empty first.
 
         :param current: The current value whose type determines the default.
-        :type current: Any
+        :type current: object
         :return: An empty placeholder of the same type as ``current``
                  (``None`` for unrecognised types).
-        :rtype: Any
+        :rtype: StrictNestedDictionary | JSONValue
         """
         if isinstance(current, StrictNestedDictionary):
             return StrictNestedDictionary()

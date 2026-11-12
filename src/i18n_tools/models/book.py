@@ -14,6 +14,7 @@ from i18n_tools._checks import is_type
 from i18n_tools._compat import override
 from i18n_tools._counters import describe_differences
 from i18n_tools._finding import Finding
+from i18n_tools._json import JSONInput
 from i18n_tools.converter import (
     i18n_tools_format_to_message_dict,
 )
@@ -273,7 +274,9 @@ class Book:
         self.metadata[["statistics", "total_messages"]] = len(self.messages)
         self.metadata[["statistics", "total_words"]] = total_words
 
-    def set_metadata(self, key: str | list[str] | None, value: Any = None) -> None:
+    def set_metadata(
+        self, key: str | list[str] | None, value: JSONInput = None
+    ) -> None:
         """
         Add, update or delete a metadata entry.
         - If value is None, the metadata is reset/removed to its default for the given key.

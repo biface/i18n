@@ -110,7 +110,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Literal
+from typing import Literal
 from uuid import UUID, uuid4
 
 from ndict_tools import StrictNestedDictionary
@@ -123,7 +123,7 @@ from .__static__ import (
 )
 from ._checks import is_type
 from ._compat import override
-from ._json import JSONInput
+from ._json import JSONInput, JSONValue
 from .api import validate_api_url
 from .loaders.loader import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
@@ -256,7 +256,7 @@ class Config(metaclass=Singleton):
         except Exception as e:
             raise e
 
-    def get(self, key: list[str]) -> Any:
+    def get(self, key: list[str]) -> StrictNestedDictionary | JSONValue:
         """
         Retrieve a configuration value by key.
 
@@ -268,7 +268,7 @@ class Config(metaclass=Singleton):
         else:
             raise KeyError(f"Key '{key[0]}' not found.")
 
-    def set(self, path: list[Any] | str, value: Any, check: bool = True) -> None:
+    def set(self, path: list[str] | str, value: JSONInput, check: bool = True) -> None:
         """
         Set or update a configuration attribute or its nested keys.
 
@@ -469,7 +469,7 @@ class Config(metaclass=Singleton):
         if copyright_holder is not None:
             current_repository[["details", "copyright_holder"]] = copyright_holder
 
-    def update_details(self, d_key: str, d_value: Any) -> None:
+    def update_details(self, d_key: str, d_value: JSONInput) -> None:
         """
         update the details of the repository to the configuration..
         :param d_key:
@@ -751,7 +751,7 @@ class Config(metaclass=Singleton):
         :return: The translator's details as a dictionary, or None if not found.
         """
 
-        return self.get([self._current_config, "translators", name])
+        return self.get_repository()[["translators", name]]
 
     def list_translators(self) -> list[str]:
         """

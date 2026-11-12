@@ -7,7 +7,7 @@ variant declensions (:class:`Declension`).
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypedDict, Unpack
+from typing import TYPE_CHECKING, ClassVar, Literal, TypedDict, Unpack
 
 from ndict_tools import StrictNestedDictionary
 
@@ -1081,7 +1081,7 @@ class Message:
 
     # --- Metadata ------------------------------------------------------------
 
-    def get_metadata(self, key: list[str] | str | None = None) -> dict[str, Any] | Any:
+    def get_metadata(self, key: list[str] | str | None = None) -> object:
         """
         Get metadata from the message.
 
@@ -1090,7 +1090,7 @@ class Message:
                 If None, returns all metadata. Defaults to None.
 
         Returns:
-            dict[str, Any] | Any: The requested metadata. If key is None, returns the entire
+            object: The requested metadata. If key is None, returns the entire
                 metadata dictionary. If key is provided, returns the value for that key.
 
         Raises:
@@ -1170,13 +1170,13 @@ class Message:
         key = mode + "_comments"
         self.metadata[key].append(comment)
 
-    def add_metadata(self, *args: tuple[list[str], Any], **kwargs: object) -> None:
+    def add_metadata(self, *args: tuple[list[str], object], **kwargs: object) -> None:
         """
         Set metadata for the message.
 
         Args:
-            args (tuple[list[str], Any]): The list of keys and value to pass to the metadata.
-            kwargs (dict[str, Any]): The kwargs parameters to pass to the metadata.
+            args (tuple[list[str], object]): The list of keys and value to pass to the metadata.
+            kwargs (dict[str, object]): The kwargs parameters to pass to the metadata.
 
         Raises:
             ValueError: If key_or_dict is malformed and value is None.
@@ -1216,12 +1216,14 @@ class Message:
                         f"The key '{key}' is not a present key in the metadata dictionary"
                     )
 
-    def update_metadata(self, *args: tuple[list[str], Any], **kwargs: object) -> None:
+    def update_metadata(
+        self, *args: tuple[list[str], object], **kwargs: object
+    ) -> None:
         """
         Update the message's metadata with new values.
 
         Args:
-            args (Tuple[list[str], Any): is a list of (paths, value) pairs is a StrictNestedDictionary
+            args (tuple[list[str], object]): is a list of (paths, value) pairs is a StrictNestedDictionary
             kwargs :
         """
 
