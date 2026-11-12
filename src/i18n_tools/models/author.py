@@ -30,7 +30,7 @@ from .._compat import override
 from .._json import JSONInput
 
 if TYPE_CHECKING:
-    from .repository import Repository  # type: ignore[reportImportCycle]
+    from .repository import Repository
 
 
 class AuthorPayload(TypedDict):

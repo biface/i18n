@@ -40,7 +40,7 @@ from .._checks import ensure_type, is_type
 from .._json import JSONInput, JSONValue
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
-from .author import Author, AuthorPayload, Authors  # type: ignore[reportImportCycle]
+from .author import Author, AuthorPayload, Authors
 from .translator import TranslatorPayload, Translators
 
 # --- Domains helpers ---
