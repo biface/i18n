@@ -217,6 +217,9 @@ API is frozen only at v1.0.0.
   files (`pip` ecosystem on `.tox-config/requirements`). (#141)
 - Shared PyCharm run configurations in `.run/` for `local`, `pre-push`
   and `docs`. (#139)
+- Versioned Git hooks in `.githooks/`, installed by `tox -e hooks`:
+  `commit-msg` checks Conventional Commits, `pre-push` runs the pre-push
+  gate before `git push` and refuses a push the gate would not test.
 
 ### 🧪 Tests
 - An unexpected `I18nToolsWarning` fails the test suite (filter in a

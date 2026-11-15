@@ -69,6 +69,23 @@ environnements.
 Chaque outil (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) a son
 propre environnement `tox` si tu veux n'en lancer qu'un seul.
 
+Installe une fois par clone les hooks Git versionnés :
+
+```bash
+uvx --with tox-uv tox -e hooks   # git config core.hooksPath .githooks
+```
+
+- `commit-msg` refuse un message qui ne suit pas Conventional Commits
+  (`type(scope)!: description`, deuxième ligne vide, pied de page
+  `BREAKING CHANGE:` quand le sujet porte `!`, sujet de 100 caractères
+  au plus, 72 recommandés) ;
+- `pre-push` lance `tox -e pre-push` avant `git push` et interrompt
+  l'envoi en cas d'échec ; il refuse un envoi avec des modifications non
+  committées de fichiers suivis, ou d'une autre référence que `HEAD`,
+  puisque la vérification porte sur l'arbre de travail.
+
+`--no-verify` contourne l'un ou l'autre hook pour un commit ou un envoi.
+
 Les versions de Python se règlent dans deux fichiers, et seulement là :
 
 - `.tox-config/versions.txt` : un environnement tox par ligne avec ses

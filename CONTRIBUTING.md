@@ -63,6 +63,23 @@ uvx --with tox-uv tox               # every check environment (env_list)
 Individual tools (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) each
 have their own `tox` environment if you want to run just one.
 
+Install the versioned Git hooks once per clone:
+
+```bash
+uvx --with tox-uv tox -e hooks   # git config core.hooksPath .githooks
+```
+
+- `commit-msg` refuses a message that does not follow Conventional
+  Commits (`type(scope)!: description`, blank second line,
+  `BREAKING CHANGE:` footer when the subject carries `!`, subject of at
+  most 100 characters, 72 recommended);
+- `pre-push` runs `tox -e pre-push` before `git push` and aborts the
+  push when it fails; it refuses a push with uncommitted changes to
+  tracked files or of a ref other than `HEAD`, since the gate tests the
+  working tree.
+
+`--no-verify` bypasses either hook for one commit or push.
+
 Python versions are set in two files, and only there:
 
 - `.tox-config/versions.txt`: one tox environment per line with its
