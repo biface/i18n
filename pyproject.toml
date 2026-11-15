@@ -236,9 +236,9 @@ exclude_also = [
 #     above natively; both ultimately resolved to the same settings via
 #     profile = "black", confirmed via `isort --show-config`.
 #
-# Scripts shared, unmodified: .tox-config/scripts/test.sh (reads
-# versions.txt), .tox-config/scripts/coverage.sh (reads
-# coverage-version.txt) — same convention as django-clade/ndict-tools.
+# Scripts shared with django-clade/ndict-tools: .tox-config/scripts/test.sh
+# (reads versions.txt) and .tox-config/scripts/coverage.sh, both run from
+# pre-push with the tox of that environment (requirements/tox.txt).
 #
 # Refs: DD-36, DD-39 (coverage-gate)
 # -----------------------------------------------------------------------------
@@ -304,6 +304,10 @@ commands = [
     ["pytest", "--import-mode=importlib", "tests/core"],
 ]
 
+# Supported Python versions. The list is written in five places, kept in
+# sync by hand: these py3NN sections, env_list above, .tox-config/versions.txt
+# (local sequential run, stable versions only), the test-unit matrix in
+# .github/workflows/python-ci.yaml, and the classifiers in [project].
 [tool.tox.env.py311]
 base_python = "python3.11"
 
@@ -458,7 +462,11 @@ commands = [
 
 [tool.tox.env."pre-push"]
 description = "Last gate before publishing: checks only, blocks on any finding (fix with local or format)"
-deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
+deps = [
+    "-r {toxinidir}/.tox-config/requirements/full.txt",
+    # the tox test.sh and coverage.sh run nested environments with
+    "-r {toxinidir}/.tox-config/requirements/tox.txt",
+]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [

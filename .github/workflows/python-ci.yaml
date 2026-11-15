@@ -125,6 +125,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Supported versions: kept in sync by hand with the py3NN
+        # environments and env_list in pyproject.toml, .tox-config/versions.txt
+        # and the classifiers in [project].
         python-version: ["3.11", "3.12", "3.13", "3.14"]
         experimental: [false]
         include:

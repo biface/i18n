@@ -5,8 +5,11 @@
 # - One version per line (e.g. py311, py312, py313)
 # - Empty lines and lines starting with # are ignored
 #
-# To add or remove a version, edit this file.
-# No need to modify tox.ini.
+# The local sequential run (test.sh). A version listed here needs its
+# py3NN environment in pyproject.toml. Adding or removing a supported
+# version touches five places, kept in sync by hand: this file, the
+# py3NN sections and env_list in pyproject.toml, the test-unit matrix in
+# .github/workflows/python-ci.yaml, and the classifiers in [project].
 #
 # ==============================================
 
