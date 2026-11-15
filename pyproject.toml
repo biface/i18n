@@ -1,21 +1,17 @@
 # =============================================================================
 # pyproject.toml — i18n-tools
 # =============================================================================
-# Single configuration file for packaging, toolchain, and test orchestration.
-# Build system, project metadata, runtime dependencies, optional extras, and
-# development dependency groups (PEP 735, managed by uv).
+# Single configuration file for packaging, tool configuration and test
+# orchestration: build system, project metadata, runtime dependencies,
+# optional extras, and the configuration of isort, basedpyright, bandit,
+# pytest, coverage and tox (tox.ini removed, 2026-08-25). flake8 does not
+# read pyproject.toml: its flags are passed in [tool.tox.env.flake8].
 #
-# Tool configuration (flake8, isort, basedpyright, bandit, pytest, coverage,
-# tox) is fully consolidated here — tox.ini removed (unification, 2026-08-25).
-# flake8's [tool.flake8] section below is inert without the Flake8-pyproject
-# plugin (not a dependency here, by choice — see the [tool.tox.env.flake8]
-# comment): flake8's real, effective config is passed as explicit CLI flags
-# in that env's `commands`, the same pattern already used for bandit's
-# `-c pyproject.toml` and matching the approach validated on django-clade.
-#
-# Dependency groups:
-#   uv sync --group dev    — full development toolchain (tox, quality, tests)
-#   uv sync --group docs   — Sphinx documentation build only
+# Development tooling is installed by tox, from
+# .tox-config/requirements/*.txt (the only place its versions are pinned).
+# The project environment holds the package and its runtime dependencies:
+#   uv sync --extra api                  — project environment, with [api]
+#   uvx --with tox-uv tox -e pre-push    — checks and tests, through tox
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -123,32 +119,25 @@ test = [
 ]
 
 # -----------------------------------------------------------------------------
-# Development dependency groups (PEP 735) — managed exclusively by uv
-# Not installed when a user does `pip install pyi18t-tools`
+# Development dependency groups (PEP 735) — informational
 #
-# Usage:
-#   uv sync --group dev    → installs tox, quality tools, test runners
-#   uv sync --group docs   → installs Sphinx and theme
-#   uv sync --group dev --group docs  → both at once
+# These lists name the tools the tox environments install, for a reader of
+# this file. They carry no version: the versions are pinned in
+# .tox-config/requirements/*.txt, the only files tox reads. uv installs no
+# group by default ([tool.uv] default-groups below), so `uv sync` keeps the
+# project environment to the package and its runtime dependencies.
 # -----------------------------------------------------------------------------
 [dependency-groups]
 dev = [
-    # tox orchestration — >=4.21 required for native [tool.tox] pyproject.toml support
-    "tox>=4.21",
+    "tox",
     "tox-uv",
-    # test runners
     "pytest",
     "pytest-cov",
-    # quality — static analysis
-    "basedpyright==1.40.2",
-    # resolves i18n_tools._compat's TYPE_CHECKING-only import; never a
-    # runtime dependency
-    "typing_extensions>=4.4",
-    # quality — linting and formatting
+    "basedpyright",
+    "typing_extensions",
     "flake8",
     "black",
     "isort",
-    # quality — security
     "bandit",
 ]
 docs = [
@@ -156,6 +145,9 @@ docs = [
     "furo",
     "sphinxcontrib-mermaid",
 ]
+
+[tool.uv]
+default-groups = []
 
 # -----------------------------------------------------------------------------
 # Tool configuration
