@@ -19,7 +19,7 @@ something `Authors` enforces on its own.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, cast, overload
 from uuid import UUID
 
 from ndict_tools import StrictNestedDictionary
@@ -55,8 +55,13 @@ class Author(StrictNestedDictionary):
     nested-key access, serialization (to_dict, inherited) and storage
     inside a Repository's `authors` section behave consistently with the
     rest of the model layer.
+
+    The five fields are given together, or none of them: ndict-tools copies
+    an author by building an empty one with ``Author(default_setup=...)``
+    and filling its keys. An empty author is meant for that use only.
     """
 
+    @overload
     def __init__(
         self,
         first_name: str,
@@ -66,7 +71,40 @@ class Author(StrictNestedDictionary):
         languages: list[str],
         *,
         default_setup: Mapping[str, object] | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, *, default_setup: Mapping[str, object] | None = None
+    ) -> None: ...
+
+    def __init__(
+        self,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        email: str | None = None,
+        url: str | None = None,
+        languages: list[str] | None = None,
+        *,
+        default_setup: Mapping[str, object] | None = None,
     ) -> None:
+        fields = (first_name, last_name, email, url, languages)
+        if all(field is None for field in fields):
+            super().__init__(default_setup=default_setup)
+            return
+        if (
+            first_name is None
+            or last_name is None
+            or email is None
+            or url is None
+            or languages is None
+        ):
+            names = ("first_name", "last_name", "email", "url", "languages")
+            absent = [name for name, field in zip(names, fields) if field is None]
+            raise TypeError(
+                "Author takes first_name, last_name, email, url and languages "
+                + f"together, or none of them; missing: {', '.join(absent)}"
+            )
         ensure_type(languages, list, "author['languages'] must be a list of strings")
         super().__init__(default_setup=default_setup)
         self["first_name"] = first_name
@@ -76,7 +114,9 @@ class Author(StrictNestedDictionary):
         self["languages"] = languages
 
     @classmethod
-    def from_payload(cls, data: object) -> "Author":
+    def from_payload(
+        cls, data: object, *, default_setup: Mapping[str, object] | None = None
+    ) -> "Author":
         """Validate and build an Author from a plain mapping.
 
         ``data`` is a raw payload, typically read from a settings file: any
@@ -92,12 +132,16 @@ class Author(StrictNestedDictionary):
         missing = required - set(data.keys())
         if missing:
             raise KeyError(f"author is missing required keys: {sorted(missing)}")
+        ensure_type(
+            data["languages"], list, "author['languages'] must be a list of strings"
+        )
         return cls(
             first_name=data["first_name"],
             last_name=data["last_name"],
             email=data["email"],
             url=data["url"],
             languages=data["languages"],
+            default_setup=default_setup,
         )
 
     @override
@@ -106,16 +150,20 @@ class Author(StrictNestedDictionary):
         cls, dictionary: Mapping[str, object], **class_options: object
     ) -> "Author":
         """
-        Override of _StackedDict.from_dict() — the recursive-construction
-        hook documented in ndict-tools' Extending guide. Author's __init__
-        has a domain-specific signature incompatible with the generic
-        cls(**class_options) reconstruction the base implementation
-        performs, so this redirects to from_payload() instead. Closes a
-        latent trap: without this override, Author would crash if ever
-        reconstructed through that generic path (e.g. as a default_factory
-        for a nested structure), exactly as it did before this fix.
+        Build an author from a plain mapping through :meth:`from_payload`.
+
+        Overrides _StackedDict.from_dict(), which would build an empty
+        author and copy the keys without checking them. Pickle goes through
+        this method too, so an unpickled author is checked like a payload.
         """
-        return cls.from_payload(dictionary)
+        setup = class_options.get("default_setup")
+        ensure_type(
+            setup, (Mapping, type(None)), "default_setup must be a mapping or None"
+        )
+        # Checked just above: a mapping of settings, or None.
+        return cls.from_payload(
+            dictionary, default_setup=cast("Mapping[str, object] | None", setup)
+        )
 
 
 def _validate_uuid4_string(value: str, name: str = "author_id") -> None:

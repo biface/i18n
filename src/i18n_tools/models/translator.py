@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime
-from typing import TYPE_CHECKING, TypedDict, cast
+from typing import TYPE_CHECKING, TypedDict, cast, overload
 
 from ndict_tools import StrictNestedDictionary
 
@@ -85,8 +85,14 @@ class Translator(StrictNestedDictionary):
     Subclasses StrictNestedDictionary, exactly like Repository and Author,
     so that nested-key access and serialization behave consistently with
     the rest of the model layer.
+
+    The three sections are given together, or none of them: ndict-tools
+    copies a translator by building an empty one with
+    ``Translator(default_setup=...)`` and filling its keys. An empty
+    translator is meant for that use only.
     """
 
+    @overload
     def __init__(
         self,
         details: TranslatorDetails,
@@ -94,7 +100,32 @@ class Translator(StrictNestedDictionary):
         technical: TranslatorTechnical,
         *,
         default_setup: Mapping[str, object] | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, *, default_setup: Mapping[str, object] | None = None
+    ) -> None: ...
+
+    def __init__(
+        self,
+        details: TranslatorDetails | None = None,
+        pricing: TranslatorPricing | None = None,
+        technical: TranslatorTechnical | None = None,
+        *,
+        default_setup: Mapping[str, object] | None = None,
     ) -> None:
+        if details is None and pricing is None and technical is None:
+            super().__init__(default_setup=default_setup)
+            return
+        if details is None or pricing is None or technical is None:
+            names = ("details", "pricing", "technical")
+            fields = (details, pricing, technical)
+            absent = [name for name, field in zip(names, fields) if field is None]
+            raise TypeError(
+                "Translator takes details, pricing and technical together, "
+                + f"or none of them; missing: {', '.join(absent)}"
+            )
         payload = {"details": details, "pricing": pricing, "technical": technical}
         self.validate_payload(payload)
         super().__init__(default_setup=default_setup)
@@ -103,7 +134,9 @@ class Translator(StrictNestedDictionary):
         self["technical"] = StrictNestedDictionary(technical)
 
     @classmethod
-    def from_payload(cls, data: object) -> "Translator":
+    def from_payload(
+        cls, data: object, *, default_setup: Mapping[str, object] | None = None
+    ) -> "Translator":
         """Validate and build a Translator from a plain mapping.
 
         ``data`` is a raw payload, typically read from a settings file: any
@@ -115,6 +148,7 @@ class Translator(StrictNestedDictionary):
             details=payload["details"],
             pricing=payload["pricing"],
             technical=payload["technical"],
+            default_setup=default_setup,
         )
 
     @override
@@ -123,12 +157,21 @@ class Translator(StrictNestedDictionary):
         cls, dictionary: Mapping[str, object], **class_options: object
     ) -> "Translator":
         """
-        Override of _StackedDict.from_dict() — see Author.from_dict() for
-        the rationale (ndict-tools' Extending guide). Redirects to
-        from_payload() instead of the incompatible generic
-        cls(**class_options) reconstruction.
+        Build a translator from a plain mapping through :meth:`from_payload`.
+
+        Overrides _StackedDict.from_dict(), which would copy the keys
+        without checking them and build every section as a Translator.
+        Pickle goes through this method too, so an unpickled translator is
+        checked like a payload and keeps StrictNestedDictionary sections.
         """
-        return cls.from_payload(dictionary)
+        setup = class_options.get("default_setup")
+        ensure_type(
+            setup, (Mapping, type(None)), "default_setup must be a mapping or None"
+        )
+        # Checked just above: a mapping of settings, or None.
+        return cls.from_payload(
+            dictionary, default_setup=cast("Mapping[str, object] | None", setup)
+        )
 
     @staticmethod
     def validate_payload(translator: object) -> None:
