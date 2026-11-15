@@ -184,7 +184,9 @@ multi_line_output = 3
 include_trailing_comma = true
 
 [tool.bandit]
-# B202: tarfile traversal controlled via _non_traversal_path() in loaders.py
+# B202: loaders/loader.py's restore_module_from_archive() extracts only the
+# members returned by non_traversal_path() (loaders/_utils.py), which bandit
+# cannot trace.
 skips = ["B202"]
 # Only read when invoked with `bandit -c pyproject.toml` (see
 # [tool.tox.env.bandit] below) — bandit does not auto-discover pyproject.toml.
