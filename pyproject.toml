@@ -455,24 +455,30 @@ commands = [
 
 # =============================================================================
 # Local workflows
+#
+# pre-push is the last step before publishing and mirrors CI: it only
+# checks, and stops on the first finding without touching any file.
+# local applies what is fixed systematically (black, isort) and then runs
+# the checks; run it, or format, when pre-push reports a formatting issue.
 # =============================================================================
 
 [tool.tox.env."pre-push"]
-description = "Quality gate + unit tests before pushing"
+description = "Last gate before publishing: checks only, blocks on any finding (fix with local or format)"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    { replace = "ref", env = "format", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
     { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "black-check", key = "commands", extend = true },
+    { replace = "ref", env = "isort-check", key = "commands", extend = true },
     { replace = "ref", env = "bandit", key = "commands", extend = true },
     ["bash", "{toxinidir}/.tox-config/scripts/test.sh"],
     ["bash", "{toxinidir}/.tox-config/scripts/coverage.sh"],
 ]
 
 [tool.tox.env.local]
-description = "Full local workflow: auto-fix, all quality checks, full coverage"
+description = "Apply the systematic fixes (black, isort), then every quality check and full coverage"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
