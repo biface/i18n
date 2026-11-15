@@ -249,7 +249,10 @@ exclude_also = [
 # Refs: DD-36, DD-39 (coverage-gate)
 # -----------------------------------------------------------------------------
 [tool.tox]
-requires = ["tox>=4.21", "tox-uv"]
+# 4.65: first release that splices another environment's commands into a
+# list ({ replace = "ref", ..., extend = true }), used below to declare
+# each quality command once.
+requires = ["tox>=4.65", "tox-uv"]
 # A bare `tox` runs the check environments only. Left out on purpose:
 # environments that rewrite files (black, isort, format), the aggregates
 # that re-run these checks (ci-quality, pre-push, local), and the
@@ -368,6 +371,13 @@ commands = [["coverage", "report", "--fail-under=0"]]
 
 # =============================================================================
 # Individual quality tools
+#
+# Each quality command is declared here only. ci-quality, pre-push and
+# local splice these commands in by reference: change a flag here and every
+# aggregate follows. basedpyright is the exception: a referenced command
+# is resolved in the environment it comes from, so {env_python} would
+# point at .tox/basedpyright instead of the aggregate's own interpreter.
+# Its one-line command is repeated in each aggregate.
 # =============================================================================
 
 [tool.tox.env.basedpyright]
@@ -436,15 +446,10 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["flake8", "black", "isort", "bandit"]
 commands = [
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["black", "--check", "--diff", "src", "tests"],
-    ["isort", "--check-only", "--diff", "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "black-check", key = "commands", extend = true },
+    { replace = "ref", env = "isort-check", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
 ]
 
 # =============================================================================
@@ -457,16 +462,10 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "src", "tests"],
-    ["isort", "src", "tests"],
+    { replace = "ref", env = "format", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
     ["bash", "{toxinidir}/.tox-config/scripts/test.sh"],
     ["bash", "{toxinidir}/.tox-config/scripts/coverage.sh"],
 ]
@@ -477,16 +476,10 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "src", "tests"],
-    ["isort", "src", "tests"],
+    { replace = "ref", env = "format", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
     ["pytest", "--import-mode=importlib", "-m", "not timeout",
      "--cov=i18n_tools", "--cov-report=term-missing",
      "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
