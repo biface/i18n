@@ -268,6 +268,10 @@ env_list = [
 # environments override deps/commands entirely.
 [tool.tox.env_run_base]
 runner = "uv-venv-runner"
+# The one Python every single-version environment runs on (test-core,
+# integration, coverage, quality tools, workflows), as CI's single-version
+# jobs do. The py3NN environments set their own interpreter below.
+base_python = "python3.12"
 set_env = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
 uv_seed = true
 # The test suite exercises Config/Repository author & translator management
@@ -300,7 +304,6 @@ commands = [
 
 [tool.tox.env.test-core]
 description = "Run tests/core with no [api] extra installed at all"
-base_python = "python3.12"
 extras = []
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
@@ -331,7 +334,6 @@ base_python = "python3.15"
 
 [tool.tox.env.integration]
 description = "Integration tests requiring real network access"
-base_python = "python3.12"
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
@@ -346,7 +348,6 @@ commands = [
 
 [tool.tox.env.coverage]
 description = "Generate coverage report (full suite, excludes only timeout)"
-base_python = "python3.12"
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
