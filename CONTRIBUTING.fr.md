@@ -59,6 +59,11 @@ uv run tox -e ci-quality # exactement ce que le job `quality` de la CI exécute
 Chaque outil (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) a son
 propre environnement `tox` si tu veux n'en lancer qu'un seul.
 
+La documentation se construit avec `tox -e docs` (`sphinx-build -E -W`,
+avertissements traités comme des erreurs, sortie dans `docs/build/html`).
+C'est la construction que lance le workflow GitHub Pages, et `pre-push`
+l'exécute aussi.
+
 ## Tests
 
 ### Arborescence

@@ -254,6 +254,7 @@ requires = ["tox>=4.65", "tox-uv"]
 # need the network, coverage-gate reads the data coverage writes).
 env_list = [
     "basedpyright", "flake8", "black-check", "isort-check", "bandit",
+    "docs",
     "test-core",
     "py311", "py312", "py313", "py314", "py315",
 ]
@@ -414,6 +415,22 @@ allowlist_externals = ["bandit"]
 commands = [["bandit", "-c", "pyproject.toml", "-r", "src"]]
 
 # =============================================================================
+# Documentation — the same build as the GitHub Pages workflow
+# (docs-ghpages.yml runs this environment). -W turns warnings into errors;
+# -E rebuilds every page, so a warning in an unchanged page is not hidden
+# by the environment pickle of a previous build. Output in docs/build/
+# (git-ignored).
+# =============================================================================
+
+[tool.tox.env.docs]
+description = "Build the HTML documentation, warnings as errors"
+deps = ["-r {toxinidir}/.tox-config/requirements/docs.txt"]
+commands = [
+    ["sphinx-build", "-b", "html", "-E", "-W",
+     "{toxinidir}/docs/source", "{toxinidir}/docs/build/html"],
+]
+
+# =============================================================================
 # Auto-fix tools
 # =============================================================================
 
@@ -464,6 +481,7 @@ commands = [
 description = "Last gate before publishing: checks only, blocks on any finding (fix with local or format)"
 deps = [
     "-r {toxinidir}/.tox-config/requirements/full.txt",
+    "-r {toxinidir}/.tox-config/requirements/docs.txt",
     # the tox test.sh and coverage.sh run nested environments with
     "-r {toxinidir}/.tox-config/requirements/tox.txt",
 ]
@@ -475,6 +493,7 @@ commands = [
     { replace = "ref", env = "black-check", key = "commands", extend = true },
     { replace = "ref", env = "isort-check", key = "commands", extend = true },
     { replace = "ref", env = "bandit", key = "commands", extend = true },
+    { replace = "ref", env = "docs", key = "commands", extend = true },
     ["bash", "{toxinidir}/.tox-config/scripts/test.sh"],
     ["bash", "{toxinidir}/.tox-config/scripts/coverage.sh"],
 ]

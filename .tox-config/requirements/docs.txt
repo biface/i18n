@@ -1,0 +1,5 @@
+# Documentation build (tox -e docs, also run by pre-push and by the GitHub
+# Pages workflow). Versions resolved on the docs environment's Python (3.12).
+Sphinx==9.1.1
+furo==2025.12.19
+sphinxcontrib-mermaid==2.1.1

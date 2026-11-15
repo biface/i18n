@@ -31,14 +31,14 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install documentation dependencies
-        # --no-dev: keep the project + docs group, skip the (irrelevant here)
-        # default dev group (tox, basedpyright, flake8, black, isort, bandit).
-        run: uv sync --no-dev --group docs
+      - name: Install tox
+        run: uv pip install --system tox tox-uv
 
       - name: Build docs
-        # -W: warnings treated as errors (DD-33: "Built in CI, warnings as errors").
-        run: uv run sphinx-build -b html -W docs/source docs/build/html
+        # The tox docs environment: the same build as `tox -e docs` and the
+        # pre-push gate locally (sphinx-build -E -W, warnings as errors,
+        # DD-33), output in docs/build/html.
+        run: tox -e docs
 
       - name: Deploy to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
