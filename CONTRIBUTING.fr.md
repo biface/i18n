@@ -40,21 +40,31 @@ de l'ajouter.
 
 ## Environnement de développement
 
-Le projet utilise `uv` + `tox-uv` (pas `pip`/`virtualenv` classiques) :
+Le projet utilise `uv` + `tox-uv` (pas `pip`/`virtualenv` classiques).
+L'environnement du projet ne contient que le paquet et ses dépendances
+d'exécution :
 
 ```bash
-uv sync --group dev               # tox, outils qualité, lanceurs de tests
-uv sync --group dev --group docs  # + Sphinx/Furo pour la documentation
+uv sync --extra api      # le paquet, avec l'extra [api]
 ```
 
-Toutes les vérifications passent par `tox` — voir la table `[tool.tox]`
-de `pyproject.toml` pour la liste complète des environnements. En particulier :
+Les outils de développement (tox, outils qualité, lanceurs de tests,
+Sphinx) n'y sont pas installés : tox les installe dans ses propres
+environnements, à partir de `.tox-config/requirements/*.txt`, où leurs
+versions sont épinglées. Les `[dependency-groups]` de `pyproject.toml` ne
+font que les nommer. tox lui-même se lance avec `uvx` :
 
 ```bash
-uv run tox -e pre-push   # gate qualité + tests unitaires — à lancer avant de pousser
-uv run tox -e local      # workflow complet : auto-fix, toutes les vérifications, couverture complète
-uv run tox -e ci-quality # exactement ce que le job `quality` de la CI exécute
+uvx --with tox-uv tox -e local      # applique black et isort, puis toutes les vérifications et la couverture complète
+uvx --with tox-uv tox -e pre-push   # dernière étape avant de pousser : vérifie seulement, s'arrête au premier écart
+uvx --with tox-uv tox -e ci-quality # exactement ce que le job `quality` de la CI exécute
+uvx --with tox-uv tox               # tous les environnements de vérification (env_list)
 ```
+
+`pre-push` ne modifie aucun fichier : s'il signale un problème de
+formatage, lance `local` (ou `format`) puis relance `pre-push`. Voir la
+table `[tool.tox]` de `pyproject.toml` pour la liste complète des
+environnements.
 
 Chaque outil (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) a son
 propre environnement `tox` si tu veux n'en lancer qu'un seul.
@@ -175,7 +185,7 @@ partie du jalon v0.6.x (CI/hygiène du dépôt). En attendant :
   évidente, et applique le label `type:` pertinent.
 - Référence l'issue liée dans la description de ta PR (`Closes #NN` /
   `Fixes #NN`) si elle existe.
-- Vérifie que `uv run tox -e pre-push` passe en local avant d'ouvrir la PR —
+- Vérifie que `uvx --with tox-uv tox -e pre-push` passe en local avant d'ouvrir la PR —
   la CI exécute les mêmes vérifications (`quality` → matrice `test-unit`) et
   ne mergera pas une build rouge.
 - Garde la PR centrée sur une seule préoccupation ; sépare les changements

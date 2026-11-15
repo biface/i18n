@@ -36,21 +36,29 @@ decision step for a non-trivial change will likely be asked to add one.
 
 ## Development environment
 
-The project uses `uv` + `tox-uv` (not plain `pip`/`virtualenv`):
+The project uses `uv` + `tox-uv` (not plain `pip`/`virtualenv`). The
+project environment holds the package and its runtime dependencies only:
 
 ```bash
-uv sync --group dev             # tox, quality tools, test runners
-uv sync --group dev --group docs  # + Sphinx/Furo for documentation work
+uv sync --extra api      # the package, with the [api] extra
 ```
 
-All checks and tests run through `tox` — see `pyproject.toml`'s
-`[tool.tox]` table for the full environment list. In particular:
+Development tools (tox, the quality tools, the test runners, Sphinx) are
+not installed there: tox installs them in its own environments, from
+`.tox-config/requirements/*.txt`, where their versions are pinned. The
+`[dependency-groups]` of `pyproject.toml` only list their names. tox itself
+runs through `uvx`:
 
 ```bash
-uv run tox -e pre-push   # quality gate + unit tests — run this before pushing
-uv run tox -e local      # full workflow: auto-fix, all quality checks, full coverage
-uv run tox -e ci-quality # exactly what CI's `quality` job runs
+uvx --with tox-uv tox -e local      # apply black and isort, then every check and full coverage
+uvx --with tox-uv tox -e pre-push   # last gate before pushing: checks only, stops on any finding
+uvx --with tox-uv tox -e ci-quality # exactly what CI's `quality` job runs
+uvx --with tox-uv tox               # every check environment (env_list)
 ```
+
+`pre-push` does not modify files: when it reports a formatting issue, run
+`local` (or `format`) and run `pre-push` again. See `pyproject.toml`'s
+`[tool.tox]` table for the full environment list.
 
 Individual tools (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) each
 have their own `tox` environment if you want to run just one.
@@ -167,7 +175,7 @@ CI/repository hygiene milestone. In the meantime:
   the relevant `type:` label.
 - Reference the related issue in your PR description (`Closes #NN` /
   `Fixes #NN`) if one exists.
-- Make sure `uv run tox -e pre-push` passes locally before opening the PR —
+- Make sure `uvx --with tox-uv tox -e pre-push` passes locally before opening the PR —
   CI runs the same checks (`quality` → `test-unit` matrix) and will not
   merge a red build.
 - Keep the PR scoped to one concern; split unrelated changes into separate
