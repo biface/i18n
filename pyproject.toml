@@ -352,7 +352,7 @@ pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_T
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
     ["pytest", "--import-mode=importlib", "-m", "not timeout",
-     "--cov=i18n_tools", "--cov-append", "--cov-report=term-missing",
+     "--cov=i18n_tools", "--cov-report=term-missing",
      "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
      "--cov-report=html:{toxinidir}/coverage/coverage_html",
      "tests/core", "tests/api"],
