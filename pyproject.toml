@@ -236,9 +236,15 @@ exclude_also = [
 #     above natively; both ultimately resolved to the same settings via
 #     profile = "black", confirmed via `isort --show-config`.
 #
+# Python versions: .tox-config/versions.txt (versions and their markers) and
+# .tox-config/coverage-version.txt (the version that measures coverage) are
+# the only files to edit when a Python version is added, retired or moved.
+# The py3NN environments are not declared here: tox derives the interpreter
+# from the environment name (see ignore_base_python_conflict below).
+#
 # Scripts shared with django-clade/ndict-tools: .tox-config/scripts/test.sh
-# (reads versions.txt) and .tox-config/scripts/coverage.sh, both run from
-# pre-push with the tox of that environment (requirements/tox.txt).
+# and .tox-config/scripts/coverage.sh, both run from pre-push with the tox
+# of that environment (requirements/tox.txt).
 #
 # Refs: DD-36, DD-39 (coverage-gate)
 # -----------------------------------------------------------------------------
@@ -256,16 +262,20 @@ env_list = [
     "basedpyright", "flake8", "black-check", "isort-check", "bandit",
     "docs",
     "test-core",
-    "py311", "py312", "py313", "py314", "py315",
 ]
+# Any pyNNN environment (py311, py315, ...) takes the interpreter its name
+# gives, instead of the base_python inherited from env_run_base: tox would
+# otherwise refuse py311 on python3.12. This is what lets versions.txt add a
+# version without a section here.
+ignore_base_python_conflict = true
 
 # Base for all py3NN test environments. Quality/coverage/workflow
 # environments override deps/commands entirely.
 [tool.tox.env_run_base]
 runner = "uv-venv-runner"
 # The one Python every single-version environment runs on (test-core,
-# integration, coverage, quality tools, workflows), as CI's single-version
-# jobs do. The py3NN environments set their own interpreter below.
+# integration, quality tools, workflows), as CI's single-version jobs do.
+# A pyNNN environment takes the interpreter of its name instead.
 base_python = "python3.12"
 set_env = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
 uv_seed = true
@@ -282,9 +292,10 @@ deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 # core/api split (DD-41) made "does this need [api]" a directory boundary,
 # and moving 00_api + the translator network tests under
 # tests/api/integration/ made "is this a real network call" one too.
+# No coverage measurement here: the coverage environment measures it, on
+# the version named in .tox-config/coverage-version.txt.
 commands = [
     ["pytest", "--import-mode=importlib",
-     "--cov=i18n_tools", "--cov-report=term-missing",
      "tests/core", "tests/api", "--ignore=tests/api/integration"],
 ]
 
@@ -304,27 +315,6 @@ deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
     ["pytest", "--import-mode=importlib", "tests/core"],
 ]
-
-# Supported Python versions. The list is written in five places, kept in
-# sync by hand: these py3NN sections, env_list above, .tox-config/versions.txt
-# (local sequential run, stable versions only), the test-unit matrix in
-# .github/workflows/python-ci.yaml, and the classifiers in [project].
-[tool.tox.env.py311]
-base_python = "python3.11"
-
-[tool.tox.env.py312]
-base_python = "python3.12"
-
-[tool.tox.env.py313]
-base_python = "python3.13"
-
-[tool.tox.env.py314]
-base_python = "python3.14"
-
-# Experimental: CI only (continue-on-error), excluded from the local
-# sequential run (.tox-config/versions.txt).
-[tool.tox.env.py315]
-base_python = "python3.15"
 
 # =============================================================================
 # Integration tests — real network calls (httpbingo.org)
@@ -347,6 +337,10 @@ commands = [
 
 [tool.tox.env.coverage]
 description = "Generate coverage report (full suite, excludes only timeout)"
+# The interpreter of the coverage run. coverage.sh and the CI coverage job
+# set COVERAGE_PYTHON from .tox-config/coverage-version.txt; without it
+# (a direct `tox -e coverage`), the single-version base Python.
+base_python = [{ replace = "env", name = "COVERAGE_PYTHON", default = "python3.12" }]
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
