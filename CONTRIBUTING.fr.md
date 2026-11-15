@@ -73,8 +73,9 @@ Les versions de Python se règlent dans deux fichiers, et seulement là :
 
 - `.tox-config/versions.txt` : un environnement tox par ligne avec ses
   marqueurs, `local` (lancé par `pre-push`), `ci` (matrice de tests de la
-  CI), `experimental` (CI seulement, échec toléré), par exemple
-  `py315 ci experimental` ;
+  CI), `experimental` (échec toléré, exige `ci` ; avec `local`, `pre-push` la
+  lance et n'avertit qu'en cas d'échec), par exemple
+  `py315 local ci experimental` ;
 - `.tox-config/coverage-version.txt` : la version qui mesure la
   couverture (marquée `local` et `ci`). En local, elle n'est testée
   qu'une fois, par la couverture.

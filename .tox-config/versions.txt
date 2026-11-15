@@ -4,7 +4,8 @@
 # One tox environment per line, followed by its markers:
 #   local         run by .tox-config/scripts/test.sh (pre-push)
 #   ci            run by the CI test-unit matrix
-#   experimental  CI only, allowed to fail (needs ci, excludes local)
+#   experimental  allowed to fail, in CI and locally (needs ci); with
+#                 local, test.sh runs it and reports a failure as a warning
 #
 # The version that measures coverage is set in coverage-version.txt; it
 # must be marked local and ci. Adding, retiring or moving a version means
@@ -17,4 +18,4 @@ py311 local ci
 py312 local ci
 py313 local ci
 py314 local ci
-py315 ci experimental
+py315 local ci experimental

@@ -67,7 +67,8 @@ Python versions are set in two files, and only there:
 
 - `.tox-config/versions.txt`: one tox environment per line with its
   markers, `local` (run by `pre-push`), `ci` (the CI test matrix),
-  `experimental` (CI only, allowed to fail), e.g. `py315 ci experimental`;
+  `experimental` (allowed to fail, needs `ci`; with `local`, `pre-push` runs
+  it and only warns when it fails), e.g. `py315 local ci experimental`;
 - `.tox-config/coverage-version.txt`: the version that measures coverage
   (marked `local` and `ci`). Locally it is tested once, by the coverage
   run.

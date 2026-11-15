@@ -202,7 +202,8 @@ API is frozen only at v1.0.0.
   explicitly. (#136)
 - Python versions are set in two files only, read locally and in CI by
   `.tox-config/scripts/versions.py`: `versions.txt` (one environment per
-  line with `local`, `ci`, `experimental` markers) and
+  line with `local`, `ci`, `experimental` markers; an experimental
+  version may fail without stopping the run, locally or in CI) and
   `coverage-version.txt` (the version that measures coverage). The
   py3NN tox sections are gone (tox derives the interpreter from the
   name); the py3NN runs no longer measure coverage; locally the coverage

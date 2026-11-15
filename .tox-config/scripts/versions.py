@@ -5,7 +5,8 @@ Two files decide everything, locally and in CI:
 
 - ``.tox-config/versions.txt``: one tox environment per line, followed by
   its markers -- ``local`` (test.sh runs it), ``ci`` (the CI test-unit
-  matrix runs it), ``experimental`` (CI only, allowed to fail);
+  matrix runs it), ``experimental`` (allowed to fail, wherever it runs;
+  needs ``ci``);
 - ``.tox-config/coverage-version.txt``: the environment that measures
   coverage.
 
@@ -13,7 +14,8 @@ Commands (every command checks both files first and stops on an error):
 
 - ``check``            report errors and warnings, exit 1 on any error;
 - ``local``            local environments, coverage environment excluded
-                       (coverage.sh tests that one), one per line;
+                       (coverage.sh tests that one), one per line, an
+                       experimental one followed by `` experimental``;
 - ``coverage-python``  interpreter of the coverage run, e.g. ``python3.12``;
 - ``coverage-version`` its version number, e.g. ``3.12``;
 - ``matrix``           the CI test-unit matrix as JSON.
@@ -125,12 +127,6 @@ def read_versions(report: Report) -> list[Version]:
         if version.experimental and not version.ci:
             report.error(f"{where}: experimental applies to ci only; add ci")
             continue
-        if version.experimental and version.local:
-            report.error(
-                f"{where}: {env} is experimental, it cannot be local"
-                " (the local run must pass)"
-            )
-            continue
         versions.append(version)
     return versions
 
@@ -231,7 +227,8 @@ def main(argv: list[str]) -> int:
     elif command == "local":
         for version in versions:
             if version.local and version != coverage:
-                print(version.env)
+                suffix = " experimental" if version.experimental else ""
+                print(f"{version.env}{suffix}")
     elif command == "coverage-python":
         print(f"python{coverage.number}")
     elif command == "coverage-version":
