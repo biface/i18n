@@ -149,7 +149,7 @@ API is frozen only at v1.0.0.
   writes, with normative wording and complete JSON/YAML examples. (#147)
 - Concept pages on message integrity and on the language and column
   fallbacks, with Mermaid diagrams (`sphinxcontrib-mermaid` added to the
-  `docs` group). (#157, #161)
+  documentation requirements). (#157, #161)
 - API pages for `core`, findings, exceptions and `CliError`; `Corpus`,
   `FallbackBook` and `ContentCounters` documented. (#146)
 
@@ -182,6 +182,32 @@ API is frozen only at v1.0.0.
   unchanged. (#157)
 - Codecov components aligned with the source tree, with a `cli`
   component.
+- Development tools are installed by tox from
+  `.tox-config/requirements/*.txt`, the only place their versions are
+  pinned (`full.txt` includes the per-tool files; `docs.txt` and
+  `tox.txt` are new). The `dev` and `docs` dependency groups only name
+  the tools, and uv installs no group by default: the project
+  environment is `uv sync --extra api`, tox runs through
+  `uvx --with tox-uv tox`. (#137)
+- tox configuration: a bare `tox` runs the check environments only
+  (with `test-core`); each quality command is declared once and spliced
+  into `ci-quality`, `pre-push` and `local` (tox >= 4.65); the
+  single-version base Python is set once; `coverage` starts from clean
+  data. (#137)
+- `pre-push` only checks (`black --check`, `isort --check-only`, docs
+  build, tests, coverage) and stops on the first finding; `local`
+  applies black and isort before the checks. (#137, #138)
+- `test.sh` and `coverage.sh` run their nested environments with the tox
+  pinned in the pre-push environment, log to stderr and handle errors
+  explicitly; `coverage-version.txt` is removed and a missing
+  `versions.txt` is an error. The supported Python versions are listed
+  in five places, each stating the sync rule. (#136)
+- A `docs` tox environment (`sphinx-build -E -W`) builds the
+  documentation; the GitHub Pages workflow runs it. (#138)
+- Dependabot updates `uv.lock` (`uv` ecosystem) and the tool requirement
+  files (`pip` ecosystem on `.tox-config/requirements`). (#141)
+- Shared PyCharm run configurations in `.run/` for `local`, `pre-push`
+  and `docs`. (#139)
 
 ### 🧪 Tests
 - An unexpected `I18nToolsWarning` fails the test suite (filter in a
