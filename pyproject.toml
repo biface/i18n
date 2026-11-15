@@ -435,6 +435,22 @@ commands = [
 ]
 
 # =============================================================================
+# Git hooks — versioned in .githooks/ (commit-msg: Conventional Commits check;
+# pre-push: runs the pre-push environment before git push). This environment
+# points the clone at them; `git config --unset core.hooksPath` undoes it.
+# =============================================================================
+
+[tool.tox.env.hooks]
+description = "Install the versioned Git hooks of .githooks/ in this clone"
+skip_install = true
+deps = []
+allowlist_externals = ["git"]
+commands = [
+    ["git", "config", "core.hooksPath", ".githooks"],
+    ["git", "config", "--get", "core.hooksPath"],
+]
+
+# =============================================================================
 # Auto-fix tools
 # =============================================================================
 
