@@ -3,15 +3,18 @@
 # test.sh - Sequential multi-environment test execution
 # ==============================================================================
 #
-# Runs test-core, then the unit tests for each Python version listed in
-# .tox-config/versions.txt, one after the other. Stops on the first failure.
+# Runs test-core, then the unit tests of each version marked `local` in
+# .tox-config/versions.txt, one after the other, and stops on the first
+# failure. The coverage version (.tox-config/coverage-version.txt) is
+# skipped: coverage.sh tests it while measuring coverage. versions.py reads
+# and checks both files.
 #
 # Run through tox (`tox -e pre-push`): the nested runs use the tox installed
 # in that environment (.tox-config/requirements/tox.txt), not whichever tox
 # comes first on PATH.
 #
 # Usage:
-#   ./.tox-config/scripts/test.sh [versions_file]
+#   ./.tox-config/scripts/test.sh
 #
 # Exit codes:
 #   0: All tests passed
@@ -32,7 +35,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_DIR
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 readonly PROJECT_ROOT
-readonly VERSIONS_FILE="${1:-${PROJECT_ROOT}/.tox-config/versions.txt}"
+readonly VERSIONS_PY="${SCRIPT_DIR}/versions.py"
 
 # Logging goes to stderr: stdout stays free for values returned by functions.
 log_info()    { echo -e "${BLUE}[INFO]${NC} $*" >&2; }
@@ -48,47 +51,34 @@ log_section() {
     } >&2
 }
 
-# The tox of the environment this script runs in.
-run_tox() {
+# The tox and the Python of the environment this script runs in.
+require_env() {
     if [[ -z "${VIRTUAL_ENV:-}" ]]; then
         log_error "No active environment: run this script through 'tox -e pre-push'"
         return 1
     fi
+}
+
+run_tox() {
     "${VIRTUAL_ENV}/bin/python" -m tox "$@"
 }
 
-# Prints the versions listed in the versions file, one per line.
+# Prints the local versions to test, coverage version excluded.
 read_versions() {
-    if [[ ! -f "${VERSIONS_FILE}" ]]; then
-        log_error "File not found: ${VERSIONS_FILE}"
-        return 1
-    fi
-
-    local line
-    local count=0
-    while IFS= read -r line || [[ -n "${line}" ]]; do
-        line="${line#"${line%%[![:space:]]*}"}"
-        line="${line%"${line##*[![:space:]]}"}"
-        [[ -z "${line}" ]] && continue
-        [[ "${line}" =~ ^# ]] && continue
-        echo "${line}"
-        count=$((count + 1))
-    done < "${VERSIONS_FILE}"
-
-    if [[ ${count} -eq 0 ]]; then
-        log_error "No version listed in ${VERSIONS_FILE}"
-        return 1
-    fi
+    "${VIRTUAL_ENV}/bin/python" "${VERSIONS_PY}" local
 }
 
 run_tests() {
     cd "${PROJECT_ROOT}" || return 1
+    require_env || return 1
 
     local versions=()
     local listing
-    listing="$(read_versions)" || return 1
-    mapfile -t versions <<< "${listing}"
-    log_info "Test versions: ${versions[*]}"
+    listing="$(read_versions)" || { log_error "Invalid version files"; return 1; }
+    if [[ -n "${listing}" ]]; then
+        mapfile -t versions <<< "${listing}"
+    fi
+    log_info "Test versions: ${versions[*]:-none} (coverage version tested by coverage.sh)"
 
     log_section "Running test-core (no [api] extra installed)"
     run_tox -e test-core || { log_error "test-core failed"; return 1; }

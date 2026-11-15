@@ -259,6 +259,7 @@ requires = ["tox>=4.65", "tox-uv"]
 # environments CI runs in their own contexts (integration and coverage
 # need the network, coverage-gate reads the data coverage writes).
 env_list = [
+    "versions",
     "basedpyright", "flake8", "black-check", "isort-check", "bandit",
     "docs",
     "test-core",
@@ -374,6 +375,15 @@ commands = [["coverage", "report", "--fail-under=0"]]
 # Its one-line command is repeated in each aggregate.
 # =============================================================================
 
+# Consistency of .tox-config/versions.txt, .tox-config/coverage-version.txt
+# and the classifiers of [project]: any error stops ci-quality, pre-push and
+# local before the first test; warnings are printed and do not stop them.
+[tool.tox.env.versions]
+description = "Check the Python version files against each other and the classifiers"
+skip_install = true
+deps = []
+commands = [["python", "{toxinidir}/.tox-config/scripts/versions.py", "check"]]
+
 [tool.tox.env.basedpyright]
 description = "Static type checking with basedpyright"
 deps = ["-r {toxinidir}/.tox-config/requirements/type-check.txt"]
@@ -455,6 +465,7 @@ description = "All quality checks chained (used by the CI quality job)"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["flake8", "black", "isort", "bandit"]
 commands = [
+    { replace = "ref", env = "versions", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
     { replace = "ref", env = "flake8", key = "commands", extend = true },
     { replace = "ref", env = "black-check", key = "commands", extend = true },
@@ -482,6 +493,7 @@ deps = [
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
+    { replace = "ref", env = "versions", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
     { replace = "ref", env = "flake8", key = "commands", extend = true },
     { replace = "ref", env = "black-check", key = "commands", extend = true },
@@ -498,6 +510,7 @@ deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
+    { replace = "ref", env = "versions", key = "commands", extend = true },
     { replace = "ref", env = "format", key = "commands", extend = true },
     ["basedpyright", "--pythonpath", "{env_python}", "src"],
     { replace = "ref", env = "flake8", key = "commands", extend = true },

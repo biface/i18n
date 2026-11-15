@@ -1,20 +1,20 @@
-# Python versions for sequential test execution
-# ==============================================
+# Python versions the project is tested on
+# =========================================
 #
-# Format:
-# - One version per line (e.g. py311, py312, py313)
-# - Empty lines and lines starting with # are ignored
+# One tox environment per line, followed by its markers:
+#   local         run by .tox-config/scripts/test.sh (pre-push)
+#   ci            run by the CI test-unit matrix
+#   experimental  CI only, allowed to fail (needs ci, excludes local)
 #
-# The local sequential run (test.sh). A version listed here needs its
-# py3NN environment in pyproject.toml. Adding or removing a supported
-# version touches five places, kept in sync by hand: this file, the
-# py3NN sections and env_list in pyproject.toml, the test-unit matrix in
-# .github/workflows/python-ci.yaml, and the classifiers in [project].
+# The version that measures coverage is set in coverage-version.txt; it
+# must be marked local and ci. Adding, retiring or moving a version means
+# editing this file (and the classifiers of pyproject.toml, which
+# `tox -e versions` checks against the stable ci versions). Nothing else.
 #
-# ==============================================
+# =========================================
 
-py311
-py312
-py313
-py314
-# py315 — experimental, excluded from local sequential run
+py311 local ci
+py312 local ci
+py313 local ci
+py314 local ci
+py315 ci experimental
