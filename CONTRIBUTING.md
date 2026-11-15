@@ -63,6 +63,20 @@ uvx --with tox-uv tox               # every check environment (env_list)
 Individual tools (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) each
 have their own `tox` environment if you want to run just one.
 
+Python versions are set in two files, and only there:
+
+- `.tox-config/versions.txt`: one tox environment per line with its
+  markers, `local` (run by `pre-push`), `ci` (the CI test matrix),
+  `experimental` (CI only, allowed to fail), e.g. `py315 ci experimental`;
+- `.tox-config/coverage-version.txt`: the version that measures coverage
+  (marked `local` and `ci`). Locally it is tested once, by the coverage
+  run.
+
+When a version is added or retired, update the `Programming Language`
+classifiers of `pyproject.toml` too: `tox -e versions` (run first by
+`ci-quality`, `pre-push` and `local`) stops on any inconsistency between
+the two files and the classifiers.
+
 The documentation builds with `tox -e docs` (`sphinx-build -E -W`, warnings
 as errors, output in `docs/build/html`). It is the build the GitHub Pages
 workflow runs, and `pre-push` runs it too.

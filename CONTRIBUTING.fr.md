@@ -69,6 +69,21 @@ environnements.
 Chaque outil (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) a son
 propre environnement `tox` si tu veux n'en lancer qu'un seul.
 
+Les versions de Python se règlent dans deux fichiers, et seulement là :
+
+- `.tox-config/versions.txt` : un environnement tox par ligne avec ses
+  marqueurs, `local` (lancé par `pre-push`), `ci` (matrice de tests de la
+  CI), `experimental` (CI seulement, échec toléré), par exemple
+  `py315 ci experimental` ;
+- `.tox-config/coverage-version.txt` : la version qui mesure la
+  couverture (marquée `local` et `ci`). En local, elle n'est testée
+  qu'une fois, par la couverture.
+
+Quand une version est ajoutée ou retirée, mets aussi à jour les
+classifiers `Programming Language` de `pyproject.toml` : `tox -e versions`
+(lancé en premier par `ci-quality`, `pre-push` et `local`) s'arrête à la
+moindre incohérence entre les deux fichiers et les classifiers.
+
 La documentation se construit avec `tox -e docs` (`sphinx-build -E -W`,
 avertissements traités comme des erreurs, sortie dans `docs/build/html`).
 C'est la construction que lance le workflow GitHub Pages, et `pre-push`

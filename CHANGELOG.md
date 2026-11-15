@@ -199,9 +199,17 @@ API is frozen only at v1.0.0.
   applies black and isort before the checks. (#137, #138)
 - `test.sh` and `coverage.sh` run their nested environments with the tox
   pinned in the pre-push environment, log to stderr and handle errors
-  explicitly; `coverage-version.txt` is removed and a missing
-  `versions.txt` is an error. The supported Python versions are listed
-  in five places, each stating the sync rule. (#136)
+  explicitly. (#136)
+- Python versions are set in two files only, read locally and in CI by
+  `.tox-config/scripts/versions.py`: `versions.txt` (one environment per
+  line with `local`, `ci`, `experimental` markers) and
+  `coverage-version.txt` (the version that measures coverage). The
+  py3NN tox sections are gone (tox derives the interpreter from the
+  name); the py3NN runs no longer measure coverage; locally the coverage
+  version is tested once, by the coverage run; the CI test matrix and
+  the coverage job's Python come from the files. A `versions` tox
+  environment, run first by `ci-quality`, `pre-push` and `local`, stops
+  on any inconsistency, classifiers included. (#136)
 - A `docs` tox environment (`sphinx-build -E -W`) builds the
   documentation; the GitHub Pages workflow runs it. (#138)
 - Dependabot updates `uv.lock` (`uv` ecosystem) and the tool requirement
