@@ -35,15 +35,13 @@ body:
     attributes:
       label: "Observed behaviour"
       placeholder: |
-        ```
         Traceback (most recent call last):
           File "repro.py", line 9, in <module>
             corpus.get_book("fr-CH")
           File "src/i18n_tools/models/corpus.py", line 412, in get_book
             return self._books[lang]
         KeyError: 'fr-CH'
-        ```
-      render: markdown
+      render: text
     validations:
       required: true
 
@@ -65,7 +63,6 @@ body:
             with pytest.raises(MessageNotFoundError):
                 corpus.get_book("fr-CH")  # raises KeyError instead
         ```
-      render: markdown
     validations:
       required: true
 

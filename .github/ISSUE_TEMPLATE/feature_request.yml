@@ -44,7 +44,6 @@ body:
         - [ ] `tox -e ci-quality`: 0 errors
         - [ ] Existing public API unchanged
         - [ ] `CHANGELOG.md` updated
-      render: markdown
     validations:
       required: true
 
@@ -60,7 +59,6 @@ body:
         corpus = Corpus(domain="ui")
         corpus.fully_covered_languages()  # → ["en", "fr", "es"]
         ```
-      render: markdown
     validations:
       required: false
 
