@@ -2,7 +2,8 @@
 
 All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-Sections per [CONVENTIONS.md](CONVENTIONS.md) §7 (Releases).
+Sections group changes by their `type:` label, as the release notes
+draft does (`.github/release-template-semver.yml`).
 
 Issue/PR references use the GitHub issue number from `biface/i18n`.
 

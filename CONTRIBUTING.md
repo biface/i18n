@@ -5,10 +5,7 @@
 ---
 
 Thank you for your interest in i18n-tools. This document describes how the
-project is developed today. It reflects the *current* state of the tooling
-and process — issue/PR templates are part of the v0.6.x CI/repository
-hygiene milestone and are not fully in place yet; this document does not
-pretend otherwise.
+project is developed today.
 
 ## Language policy
 
@@ -33,6 +30,14 @@ if you're proposing a change that touches architecture, public API, or the
 before code is written. The maintainer has final arbitration on design
 decisions; discussion on the issue is welcome, but a PR that skips the
 decision step for a non-trivial change will likely be asked to add one.
+
+Each category of decision has its own issue form: architecture
+(`DA-NNN`), design (`DD-NNN`), technical (`DT-NNN`) and quality
+(`DQ-NNN`). The four prefixes share one three-digit counter: check the
+existing decision issues for the next free number before choosing a
+title such as `[DD-041] Title`. The form applies `type: decision` and
+`status: triage`; add the `scope:`, `priority:`, `effort:` and
+`ecosystem:` labels that match your answers.
 
 ## Development environment
 
@@ -198,13 +203,15 @@ change; don't bundle unrelated concerns together.
 
 ## Pull requests
 
-Labels are applied to this repository (8 categories — `type:`, `status:`,
-`priority:`, `scope:`, `effort:`, `ecosystem:`, `domain:`, `meta:`), but
-formal issue/PR templates are not yet in place — that's part of the v0.6.x
-CI/repository hygiene milestone. In the meantime:
+The repository uses the standard label set, in seven categories:
+`type:`, `status:`, `priority:`, `scope:`, `effort:`, `ecosystem:` and
+`meta:`. Issues are opened from the issue forms (bug, feature,
+documentation, technical task and the four decision forms); blank issues
+are disabled. The pull request template lists what a PR states.
 
-- Open an issue first for anything beyond a small, obvious fix, and apply
-  the relevant `type:` label.
+- Open an issue first for anything beyond a small, obvious fix.
+- Before merge, a PR carries a milestone and at least one `type:` label:
+  Release Drafter builds the release notes from it.
 - Reference the related issue in your PR description (`Closes #NN` /
   `Fixes #NN`) if one exists.
 - Make sure `uvx --with tox-uv tox -e pre-push` passes locally before opening the PR —

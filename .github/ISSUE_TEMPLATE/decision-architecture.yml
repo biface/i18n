@@ -1,22 +1,32 @@
-name: "🧭 Design Decision (DD)"
+name: "🧭 Design Decision — Architecture"
 description: >
-  Propose or document an architecture / design decision.
-title: "[DD-N] "
+  Propose or document an architecture decision. Category is fixed by this
+  template (no dropdown, no additional label) — Module/layer boundaries, public interfaces
+title: "[DA-NNN] "
 labels:
   - "type: decision"
   - "status: triage"
 
 body:
-  - type: input
-    id: dd-id
+  - type: markdown
     attributes:
-      label: "DD Identifier"
+      value: >
+        **Category: Architecture** — fixed by this template. Do not add a
+        `decision:`-prefixed label; `type: decision` is the only label this
+        form applies. Check existing DA/DD/DT/DQ issues together for the
+        next free NNN — the counter is shared across all four prefixes, not
+        reset per category.
+
+  - type: input
+    id: summary
+    attributes:
+      label: "Summary"
       description: >
-        Sequential number, NO leading zeros (e.g. DD-40, not DD-040).
-        Check DESIGN_DECISIONS.md / existing decision issues for the next
-        available number — amendments to an existing decision get their
-        own new number rather than reusing the amended one.
-      placeholder: "DD-40"
+        One-sentence, plain-language summary of the decision — distinct from
+        the (telegraphic) issue title and the (potentially long) Context
+        below. Used to build the DESIGN_DECISIONS.md recap table without
+        reparsing the full body.
+      placeholder: "One sentence describing the decision."
     validations:
       required: true
 
@@ -25,7 +35,7 @@ body:
     attributes:
       label: "Target version"
       description: "Project version where this decision takes effect (= milestone)."
-      placeholder: "0.8.0"
+      placeholder: "0.3.0"
     validations:
       required: true
 
@@ -36,10 +46,6 @@ body:
       description: >
         Why is this decision necessary?
         What constraint, gap, or opportunity motivates it?
-      placeholder: |
-        `Corpus.get_book()` currently resolves the fallback chain inline.
-        The chain-building logic needs to be testable in isolation from
-        `Corpus`/`Book`, and reused consistently across call sites…
     validations:
       required: true
 
@@ -53,8 +59,6 @@ body:
         |--------|-----------|------|
         | **A** — … | … | … |
         | **B** — … | … | … |
-        | **C** — … | … | … |
-      render: markdown
     validations:
       required: true
 
@@ -63,7 +67,6 @@ body:
     attributes:
       label: "Decision"
       description: "The chosen option and a brief justification."
-      placeholder: "Option B — because…"
     validations:
       required: false
 
@@ -73,11 +76,36 @@ body:
       label: "Consequences"
       description: >
         Impact on the public API, dependencies, tests,
-        backward compatibility, or future decisions.
+        backward compatibility, or future decisions. Name explicitly each
+        root file this touches (README, CHANGELOG, LICENSE, CONTRIBUTING,
+        CODE_OF_CONDUCT): an issue body cannot be completed afterwards.
+    validations:
+      required: false
+
+  - type: textarea
+    id: to-do
+    attributes:
+      label: "To do"
+      description: >
+        What the code does not follow yet, item by item, each with the
+        milestone planned for it. Leave empty when the code already follows
+        the decision.
       placeholder: |
-        - `fallback.py` gains a `resolve(lang, config) -> list[str]` function
-        - `Corpus.get_book()` is updated to call it instead of resolving inline
-        - Related: #43 (DD-9/DD-9b — FallbackBook proxy)
+        **v0.3.0.** `Module.method()` still … (probe: …).
+        **v0.4.0.** …
+    validations:
+      required: false
+
+  - type: textarea
+    id: open-points
+    attributes:
+      label: "Open points"
+      description: >
+        Questions the decision leaves open. They are settled in the issues
+        that implement the subject, not before; note the milestone when
+        one is known.
+      placeholder: |
+        - (v0.3.0) Is … refused, or accepted when …?
     validations:
       required: false
 
@@ -88,7 +116,7 @@ body:
       description: "Apply the matching `scope:` labels manually after creation."
       options:
         - label: "`api` — public interface"
-        - label: "`ui` — error messages, output formatting"
+        - label: "`ui` — CLI, output formatting, error messages"
         - label: "`docs` — docstrings, Sphinx, guides"
         - label: "`tests` — pytest, coverage"
         - label: "`ci` — tox, GitHub Actions, pipeline"
@@ -130,7 +158,7 @@ body:
       options:
         - "language — Python idioms, typing, protocols"
         - "framework — library or framework architecture"
-        - "ops — PyPI publishing, packaging"
+        - "ops — PyPI publishing, packaging, Docker"
         - "pipeline — tox, GitHub Actions, CI tooling"
     validations:
       required: false
@@ -139,11 +167,10 @@ body:
     id: references
     attributes:
       label: "Related issues & references"
-      description: "Previous DD issues, GitHub issues, PRs, relevant PEPs."
+      description: "Previous DA/DD/DT/DQ issues, GitHub issues, PRs, relevant PEPs."
       placeholder: |
-        - Follows from: #43 (DD-9/DD-9b — FallbackBook proxy)
-        - Blocks: #36 (core.py orchestrator)
-        - PEP: https://peps.python.org/pep-xxxx/
+        - Follows from: #4 (DA-002 — ...)
+        - Blocks: #26 (FEAT: ...)
     validations:
       required: false
 
@@ -151,11 +178,9 @@ body:
     id: done-checklist
     attributes:
       label: "Closing checklist"
-      description: >
-        Check all boxes before closing the issue. Per CONVENTIONS.md §2,
-        this issue closes on the decision being recorded in
-        DESIGN_DECISIONS.md — not on implementation being complete.
+      description: "Check all boxes before closing the issue."
       options:
-        - label: "Decision text is recorded in DESIGN_DECISIONS.md"
         - label: "Affected modules are identified"
-        - label: "Implementation issue(s) are linked (if any)"
+        - label: "Implementation issues / PRs are linked"
+        - label: "The `status: closed` label has been applied"
+        - label: "DESIGN_DECISIONS.md recap table row added/updated (Ouverture/Clôture/Jalon)"

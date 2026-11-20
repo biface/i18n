@@ -5,10 +5,7 @@
 ---
 
 Merci de l'intérêt porté à i18n-tools. Ce document décrit la façon dont le
-projet est développé aujourd'hui. Il reflète l'état *actuel* de l'outillage
-et du processus — les templates d'issues/PR font partie du jalon v0.6.x (CI/
-hygiène du dépôt) et ne sont pas encore totalement en place ; ce document
-ne prétend pas le contraire.
+projet est développé aujourd'hui.
 
 ## Politique linguistique
 
@@ -37,6 +34,15 @@ l'écriture du code. Le mainteneur a l'arbitrage final sur les décisions de
 conception ; la discussion sur l'issue est bienvenue, mais une PR qui saute
 cette étape pour un changement non trivial se verra probablement demander
 de l'ajouter.
+
+Chaque catégorie de décision a son propre formulaire d'issue :
+architecture (`DA-NNN`), conception (`DD-NNN`), technique (`DT-NNN`) et
+qualité (`DQ-NNN`). Les quatre préfixes partagent un seul compteur à
+trois chiffres : vérifie dans les issues de décision existantes le
+prochain numéro libre avant de choisir un titre comme
+`[DD-041] Titre`. Le formulaire applique `type: decision` et
+`status: triage` ; ajoute les labels `scope:`, `priority:`, `effort:` et
+`ecosystem:` qui correspondent à tes réponses.
 
 ## Environnement de développement
 
@@ -209,13 +215,17 @@ mélanger des préoccupations distinctes dans un même commit.
 
 ## Pull requests
 
-Les labels sont appliqués sur ce dépôt (8 catégories — `type:`, `status:`,
-`priority:`, `scope:`, `effort:`, `ecosystem:`, `domain:`, `meta:`), mais
-les templates d'issue/PR formels ne sont pas encore en place — ça fait
-partie du jalon v0.6.x (CI/hygiène du dépôt). En attendant :
+Le dépôt utilise le jeu de labels standard, en sept catégories :
+`type:`, `status:`, `priority:`, `scope:`, `effort:`, `ecosystem:` et
+`meta:`. Les issues s'ouvrent depuis les formulaires d'issue (bug,
+feature, documentation, tâche technique et les quatre formulaires de
+décision) ; les issues vierges sont désactivées. Le template de pull
+request liste ce qu'une PR indique.
 
 - Ouvre une issue d'abord pour tout ce qui dépasse une petite correction
-  évidente, et applique le label `type:` pertinent.
+  évidente.
+- Avant le merge, une PR porte un jalon et au moins un label `type:` :
+  Release Drafter construit les notes de version à partir de celui-ci.
 - Référence l'issue liée dans la description de ta PR (`Closes #NN` /
   `Fixes #NN`) si elle existe.
 - Vérifie que `uvx --with tox-uv tox -e pre-push` passe en local avant d'ouvrir la PR —

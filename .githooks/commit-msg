@@ -5,7 +5,7 @@
 #
 # Installed by `tox -e hooks` (git config core.hooksPath .githooks).
 #
-# Rules (CONVENTIONS.md, Conventional Commits):
+# Rules (Conventional Commits, see CONTRIBUTING.md):
 #   - subject: type(scope)!: description
 #       type        build chore ci docs feat fix perf refactor revert style test
 #       (scope)     optional, lower case: letters, digits, . _ / -

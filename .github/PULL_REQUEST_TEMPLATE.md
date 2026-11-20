@@ -1,7 +1,7 @@
 <!--
 Before submitting: a milestone must be assigned to this PR, and at least
 one `type:` label must be set (Release Drafter uses it to build the
-changelog) — CONVENTIONS.md §3. Neither can be enforced by this template;
+changelog). Neither can be enforced by this template;
 both are on you or the reviewer to set before merge.
 -->
 
