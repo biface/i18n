@@ -139,7 +139,9 @@ neither pre-release nor build part (``1.0.0``, ``0.0.1``; not ``1.0``,
 
 ``version``
     The version of the translation, carried by the Book only: a message
-    entry has no version. A new Book starts at ``"0.0.1"``.
+    entry has no version. A new Book starts at ``"0.0.1"``. A reader
+    reads an absent ``version`` as ``"0.0.1"``; a value that is not a
+    strict semantic version is an error.
 
 
 Language and domain
@@ -185,9 +187,11 @@ value is not known. No placeholder value is written.
    * - ``header_comment``
      - Comment about the whole file.
 
-``pot_creation_date`` and ``po_revision_date`` are ``""`` or a date in the
-form of a PO header, ``YYYY-MM-DD HH:MM+ZZZZ`` (``2026-11-20 20:22+0100``).
-A writer updates ``po_revision_date`` at each write of the file.
+A writer writes the seven keys, and updates ``po_revision_date`` at each
+write of the file. The form of the values, the dates included, is not
+specified by format 1.0.0: it is set with the conversion to gettext. Until
+then, a reader does not check the ``gettext`` mapping: it keeps its values
+unchanged, and reads an absent mapping or an absent key as ``""``.
 
 ``Plural-Forms`` and ``Content-Type`` are not stored: they follow from the
 language and from the UTF-8 encoding.
@@ -650,10 +654,12 @@ information
    * - ``format_version`` absent, not a strict semantic version, or of an
        unknown ``MAJOR``
      - error
-   * - ``version``, ``language`` or ``domain`` absent
+   * - ``language`` or ``domain`` absent
      - error
    * - ``version`` not a strict semantic version
      - error
+   * - ``version`` absent
+     - read as ``"0.0.1"``
    * - ``language`` or ``domain`` other than the place of the file
      - error
    * - Entry that is not a mapping, without ``messages`` or without
@@ -663,14 +669,15 @@ information
      - error
    * - Alternative whose number of segments differs from the principal's
      - error
-   * - Known key whose value does not have its type
+   * - Known key whose value does not have its type, ``gettext`` excepted
      - error
-   * - ``gettext``, ``count`` or ``statistics`` absent at the root
-     - warning; the value is recomputed or read as empty strings
-   * - Date of ``gettext`` not in the PO header form
-     - warning; the value is kept
-   * - Book counters that differ from the entries
-     - warning
+   * - ``count`` absent at the root, or Book counters that differ from
+       the entries
+     - warning; recomputed at the next write
+   * - ``statistics`` absent at the root
+     - none; recomputed at the next write
+   * - ``gettext`` absent, a key of it absent, or any value of it
+     - none; an absent value is read as ``""``, the others are kept
    * - Unknown key at the root or in the root metadata
      - warning; the key is kept and written back
    * - Unknown key in an entry or in its metadata

@@ -27,7 +27,6 @@ INVALID: dict[str, list[str | int]] = {
     "version-prerelease": ["metadata", "version"],
     "reserved-key": [],
     "unknown-root-key": ["metadata"],
-    "date-without-offset": ["metadata", "gettext", "po_revision_date"],
     "matrix-entry": ["files.missing", "messages"],
     "no-entry-metadata": ["files.missing"],
     "entry-version": ["files.missing", "metadata"],
