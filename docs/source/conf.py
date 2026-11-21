@@ -4,7 +4,9 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
+import shutil
 import sys
+from pathlib import Path
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -47,3 +49,18 @@ html_search_language = 'en'
 html_static_path = ['_static']
 html_logo = "_static/images/logo.svg"
 html_favicon = "_static/images/logo.svg"
+
+# -- JSON Schemas ------------------------------------------------------------
+# The schemas shipped in the package are published under <html>/schemas/, the
+# address their "$id" gives. html_extra_path would copy them to the root.
+
+SCHEMAS = Path(__file__).resolve().parents[2] / 'src' / 'i18n_tools' / 'schemas'
+
+
+def _publish_schemas(app, exception):
+    if exception is None and app.builder.format == 'html':
+        shutil.copytree(SCHEMAS, Path(app.outdir) / 'schemas', dirs_exist_ok=True)
+
+
+def setup(app):
+    app.connect('build-finished', _publish_schemas)
