@@ -208,7 +208,8 @@ Format [Conventional Commits](https://www.conventionalcommits.org/) :
 ```
 
 Types utilisés dans ce dépôt : `feat`, `fix`, `chore`, `ci`, `docs`,
-`refactor`, `test`, `perf`, `security`. Breaking changes : `!` après le type
+`refactor`, `test`, `perf`, `security`, `build`, `revert`, `style`.
+Breaking changes : `!` après le type
 ou footer `BREAKING CHANGE:`. Une unité logique par commit — ne grouper
 plusieurs fichiers que s'ils forment un changement indivisible ; ne pas
 mélanger des préoccupations distinctes dans un même commit.

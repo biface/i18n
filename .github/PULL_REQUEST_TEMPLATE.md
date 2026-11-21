@@ -17,9 +17,12 @@ both are on you or the reviewer to set before merge.
 - [ ] `security` — security fix or hardening
 - [ ] `docs` — documentation only
 - [ ] `refactor` — restructuring, no behaviour change
-- [ ] `chore` — build, deps, config
+- [ ] `chore` — deps, config
 - [ ] `ci` — CI/CD pipelines, workflows
 - [ ] `test` — adding or fixing tests
+- [ ] `build` — build system, packaging
+- [ ] `revert` — reverts a previous commit
+- [ ] `style` — formatting only, no behaviour change
 - [ ] `breaking` — introduces a breaking API change (also add the `type: breaking` label)
 
 ## Related issues

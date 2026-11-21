@@ -196,7 +196,8 @@ Codecov components (`models`, `loaders`, `exceptions`, `converter`,
 ```
 
 Types in active use in this repository: `feat`, `fix`, `chore`, `ci`,
-`docs`, `refactor`, `test`, `perf`, `security`. Breaking changes: append `!`
+`docs`, `refactor`, `test`, `perf`, `security`, `build`, `revert`, `style`.
+Breaking changes: append `!`
 after the type or add a `BREAKING CHANGE:` footer. One logical unit per
 commit — group multiple files only when they form a single indivisible
 change; don't bundle unrelated concerns together.
