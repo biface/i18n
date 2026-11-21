@@ -1,5 +1,6 @@
 import gzip
 import json
+import re
 import tarfile
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from babel.messages.catalog import Catalog
 from babel.messages.mofile import write_mo
 from babel.messages.pofile import write_po
 
+from i18n_tools.exceptions import FormatError
 from i18n_tools.loaders._utils import (
     _load_yaml,
     _save_yaml,
@@ -186,6 +188,17 @@ class TestYamlOperations:
     def test_save_yaml_raises_exception(self):
         with pytest.raises(FileNotFoundError):
             _save_yaml("/nonexistent/path", {})
+
+    def test_save_yaml_keeps_key_order_and_characters(self, yaml_test_file):
+        data = {"metadata": {"language": "fr-FR"}, "Q1": {"principal": ["Déjà là."]}}
+        _save_yaml(yaml_test_file, data)
+        assert Path(yaml_test_file).read_text(encoding="utf-8") == (
+            "metadata:\n"
+            "  language: fr-FR\n"
+            "Q1:\n"
+            "  principal:\n"
+            "  - Déjà là.\n"
+        )
 
 
 class TestTextOperations:
@@ -458,3 +471,27 @@ class TestDetectFormat:
     )
     def test_detect_format(self, path, expected):
         assert detect_format(path) == expected
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "domain.yml.i18t",
+            "domain.YAML.i18t",
+            "domain.JSON.i18t",
+            "domain.i18t",
+            "domain.xml.i18t",
+            "domain.json",
+            "domain.itl",
+            ".json.i18t",
+            "/abs/path.yaml.i18t/domain.i18t",
+            Path("domain.yml.i18t"),
+        ],
+    )
+    def test_detect_format_refuses_other_names(self, path):
+        name = Path(path).name
+        with pytest.raises(
+            FormatError,
+            match=rf"^'{re.escape(name)}' is not a Book name: expected "
+            + r"<domain>\.json\.i18t or <domain>\.yaml\.i18t$",
+        ):
+            detect_format(path)

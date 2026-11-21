@@ -37,6 +37,7 @@ from ..__static__ import (
     TranslationFileFormat,
 )
 from .._json import JSONInput, JSONValue
+from ..exceptions import FormatError
 
 # Generic empty files
 
@@ -161,15 +162,26 @@ def _load_yaml(file_path: Path | str) -> dict[str, JSONValue]:
 
 def _save_yaml(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     """
-    Save a
-    :param file_path:
-    :param data:
-    :return:
+    Save a mapping as YAML, in UTF-8.
+
+    The keys are written in the order of the mapping, not sorted, and
+    non-ASCII characters as they are, like the JSON writer.
+
+    :param file_path: Path of the file to write.
+    :type file_path: Path | str
+    :param data: The mapping to write.
+    :type data: Mapping[str, JSONInput]
     """
     file_path = check_path(file_path)
 
     with open(file_path, "w", encoding="utf-8") as yaml_file:
-        yaml.dump(data, yaml_file, Dumper=yaml.SafeDumper)
+        yaml.dump(
+            data,
+            yaml_file,
+            Dumper=yaml.SafeDumper,
+            sort_keys=False,
+            allow_unicode=True,
+        )
 
 
 def validate_translation_format(
@@ -444,17 +456,29 @@ def remove_file(file_path: Path | str) -> None:
 
 
 def detect_format(path: Path | str) -> TranslationFileFormat:
-    """Detect serialisation format from file path extension (DD-34).
-
-    Returns ``'yaml'`` if *path* ends with ``.yaml.i18t``,
-    ``'json'`` otherwise.
-
-    :param path: Path to a translation file.
-    :type path: Path | str
-    :return: Serialisation format identifier.
-    :rtype: TranslationFileFormat
     """
-    return "yaml" if str(path).endswith(".yaml.i18t") else "json"
+    Detect the encoding of a Book file from its name.
+
+    A Book is named ``<domain>.json.i18t`` or ``<domain>.yaml.i18t``,
+    with a non-empty domain; every other name is refused, ``.yml.i18t``,
+    ``.i18t`` alone and other cases of the suffixes included.
+
+    :param path: Path to a Book file.
+    :type path: Path | str
+    :return: ``"json"`` or ``"yaml"``.
+    :rtype: TranslationFileFormat
+    :raises FormatError: If the name is not a Book name.
+    """
+    name = PurePath(path).name
+    for fmt in ("json", "yaml"):
+        suffix = f".{fmt}.{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+        if name.endswith(suffix) and len(name) > len(suffix):
+            return fmt
+    raise FormatError(
+        f"'{name}' is not a Book name: expected <domain>.json."
+        + f"{I18N_TOOLS_TRANSLATION_FILE_EXT} or <domain>.yaml."
+        + f"{I18N_TOOLS_TRANSLATION_FILE_EXT}"
+    )
 
 
 def normalize_module_identifier(path: str) -> str:
