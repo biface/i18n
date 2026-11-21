@@ -116,6 +116,7 @@ api = [
 test = [
     "pytest",
     "pytest-cov",
+    "jsonschema>=4.18",  # JSON Schema of the .i18t format, checked on the fixtures
 ]
 
 # -----------------------------------------------------------------------------
@@ -133,6 +134,7 @@ dev = [
     "tox-uv",
     "pytest",
     "pytest-cov",
+    "jsonschema",
     "basedpyright",
     "typing_extensions",
     "flake8",
