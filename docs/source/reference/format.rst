@@ -36,7 +36,6 @@ A writer writes the keys in the order of this page: ``metadata`` first,
 then the message entries in the order the Book holds them, and the keys
 of each mapping in the order of its table. A YAML writer keeps this order
 (it does not sort the keys) and writes non-ASCII characters as they are.
-The indentation is not part of the format.
 
 All the content is described on the JSON data model (mappings with string
 keys, lists, strings, integers, booleans, ``null``); a YAML file uses
@@ -72,19 +71,26 @@ The top-level mapping holds three kinds of keys:
 ``metadata``
     The metadata of the Book (see `Root metadata`_). Required.
 
+``.pyi18t_tools``
+    Reserved. A reader ignores it; a writer MUST NOT write it.
+
 ``.i18n_tools``
-    Reserved for later use. A reader ignores it; a writer MUST NOT write
-    it.
+    The former reserved key, reserved in the same way during the move of
+    the package to the name ``pyi18t_tools``.
 
 any other key
     A message entry (see `Message entries`_). The key is the identifier
     of the message.
 
-An identifier is a string chosen by the developer, readable
+An identifier is a non-empty string chosen by the developer, readable
 (``error.network.timeout``) or opaque (``Q100200020``), and independent of
 the language: the same identifier designates the same message in every
-language of the domain. ``metadata`` and ``.i18n_tools`` therefore cannot
-be identifiers.
+language of the domain. ``metadata``, ``.pyi18t_tools`` and
+``.i18n_tools`` therefore cannot be identifiers.
+
+The keys a file may hold are those of the schema of the version given by
+``format_version`` (see `JSON Schema`_); any other key is an error. The
+content of ``rules`` and the ``gettext`` mapping are not checked.
 
 
 Root metadata
@@ -389,7 +395,8 @@ Entry metadata
    * - ``flags``
      - list of strings
      - ``[]``
-     - Flags such as ``python-format``.
+     - Flags such as ``python-format``: non-empty strings, each at most
+       once. A reader removes a repeated flag, with a warning.
    * - ``user_comments``
      - list of strings
      - ``[]``
@@ -421,7 +428,10 @@ Entry metadata
        `Entry statistics`_.
 
 A writer writes every key of the table. A reader reads an absent key as
-the value of the third column.
+the value of the third column. For ``status``, ``rules``, ``count`` and
+``fill_mask`` the sections below say what an absence means; for the other
+keys, an absent key is a warning in a ``draft`` message and an error in a
+``complete`` message.
 
 
 Locations
@@ -463,6 +473,12 @@ Status
 A reader reads a value other than ``"draft"`` or ``"complete"`` as
 ``draft``, with a warning. An entry without ``status`` is read as
 ``draft``, without a warning; this tolerance is deprecated.
+
+A Book is ``complete`` when all its messages are ``complete``; otherwise
+it is ``draft``. The status of a Book is not stored: it follows from the
+messages, and ``count.draft`` and ``count.complete`` show it.
+
+A ``complete`` message MUST be healthy (see `Recorded counters`_).
 
 
 Recorded counters
@@ -537,7 +553,9 @@ A record is **well formed** when:
    alternatives``;
 5. ``tokens`` and ``fill_mask`` have the shape given by ``segments``.
 
-What a reader reports depends on the status:
+A ``complete`` message is **healthy** when its record is present, well
+formed and without divergence, and its principal singular is filled.
+What a reader reports depends on the status of the message:
 
 .. list-table::
    :header-rows: 1
@@ -550,18 +568,25 @@ What a reader reports depends on the status:
      - error
      - warning; the record is ignored
    * - Record absent (``count`` or ``fill_mask`` missing)
-     - warning
+     - broken
      - accepted
    * - Record that differs from the content (divergence)
-     - warning, naming the texts lost or added
-     - information
+     - broken
+     - information: the completeness is not validated
    * - Principal singular not filled
-     - warning
-     - information
+     - broken
+     - none
 
-A ``complete`` message that gives one of these warnings has lost its
-guarantee: a reader loads it, and it SHOULD NOT be written back as
-``complete``.
+A **broken** message is a ``complete`` message that is not healthy: its
+file was changed outside the package, or data were lost. A reader loads
+the file, and then:
+
+- in a ``complete`` Book, it tries to restore the message from a protected
+  version kept in the backups of its Corpus or Encyclopaedia; if none can
+  restore it, the message, and therefore its Book, are read as ``draft``,
+  with a warning that names the message and its defects;
+- in a ``draft`` Book, the translation is in progress: the message is read
+  as ``draft``, with an information that names it.
 
 
 Entry statistics
@@ -678,19 +703,25 @@ information
      - none; recomputed at the next write
    * - ``gettext`` absent, a key of it absent, or any value of it
      - none; an absent value is read as ``""``, the others are kept
-   * - Unknown key at the root or in the root metadata
-     - warning; the key is kept and written back
-   * - Unknown key in an entry or in its metadata
-     - warning; the key is ignored
+   * - Key that the schema of the file's ``format_version`` does not
+       define, outside ``rules``, ``gettext`` and the reserved keys
+     - error
+   * - Empty identifier, empty flag
+     - error
+   * - Absent key of the entry metadata, other than ``status``,
+       ``rules``, ``count`` and ``fill_mask``
+     - warning in a ``draft`` message; error in a ``complete`` message
+   * - Repeated flag in an entry
+     - warning; the repetition is removed
    * - Location beyond the content
      - warning
    * - Positional token
      - warning
    * - Invalid ``status``
      - warning; read as ``draft``
-   * - Recorded counters of an entry
+   * - Recorded counters of an entry, broken message
      - see `Recorded counters`_
-   * - ``.i18n_tools``
+   * - ``.pyi18t_tools``, ``.i18n_tools``
      - ignored
 
 These checks concern one file. Checks that compare the same message

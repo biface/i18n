@@ -9,7 +9,8 @@
         "metadata": {"$ref": "#/$defs/bookMetadata"}
     },
     "propertyNames": {
-        "not": {"const": ".i18n_tools"}
+        "minLength": 1,
+        "not": {"enum": [".pyi18t_tools", ".i18n_tools"]}
     },
     "additionalProperties": {"$ref": "#/$defs/entry"},
     "$defs": {
@@ -133,6 +134,7 @@
                 "locations": {"$ref": "#/$defs/tally"},
                 "flags": {
                     "type": "object",
+                    "propertyNames": {"minLength": 1},
                     "additionalProperties": {"type": "integer", "minimum": 1}
                 },
                 "tokens": {"$ref": "#/$defs/tokenNames"}
@@ -188,7 +190,11 @@
                     "type": "array",
                     "items": {"$ref": "#/$defs/location"}
                 },
-                "flags": {"$ref": "#/$defs/strings"},
+                "flags": {
+                    "type": "array",
+                    "items": {"type": "string", "minLength": 1},
+                    "uniqueItems": true
+                },
                 "user_comments": {"$ref": "#/$defs/strings"},
                 "auto_comments": {"$ref": "#/$defs/strings"},
                 "status": {"enum": ["draft", "complete"]},

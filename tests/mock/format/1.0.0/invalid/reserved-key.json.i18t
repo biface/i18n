@@ -191,7 +191,7 @@
             }
         }
     },
-    ".i18n_tools": {
+    ".pyi18t_tools": {
         "messages": {
             "principal": [
                 "File {name} is missing.",
