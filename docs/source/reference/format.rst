@@ -76,7 +76,7 @@ The top-level mapping holds three kinds of keys:
 
 ``.i18n_tools``
     The former reserved key, reserved in the same way during the move of
-    the package to the name ``pyi18t_tools``.
+    the package to the name ``pyi18t_tools``, until release 0.20.0.
 
 any other key
     A message entry (see `Message entries`_). The key is the identifier
@@ -474,8 +474,9 @@ A reader reads a value other than ``"draft"`` or ``"complete"`` as
 ``draft``, with a warning. An entry without ``status`` is read as
 ``draft``, without a warning; this tolerance is deprecated.
 
-A Book is ``complete`` when all its messages are ``complete``; otherwise
-it is ``draft``. The status of a Book is not stored: it follows from the
+A Book is ``complete`` when it holds at least one message and all its
+messages are ``complete``; otherwise it is ``draft``, and an empty Book is
+``draft``. The status of a Book is not stored: it follows from the
 messages, and ``count.draft`` and ``count.complete`` show it.
 
 A ``complete`` message MUST be healthy (see `Recorded counters`_).
