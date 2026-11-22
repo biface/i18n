@@ -2,8 +2,8 @@ Fallback
 ========
 
 A requested text may be missing in two ways: the language has no
-message under the identifier, or the message has no text in the
-requested cell. Two independent fallbacks answer these cases. The
+message under the identifier, or the message has no text at the
+requested address. Two independent fallbacks answer these cases. The
 language fallback chooses a whole message; the column fallback then
 chooses a text inside that message.
 
@@ -66,36 +66,38 @@ holds the identifier, so its message answers and ``en`` is not consulted.
 Column fallback
 ---------------
 
-Inside the message chosen by the language fallback, a cell
-``(variant, segment)`` may be empty. Its text is found in four steps:
+Inside the message chosen by the language fallback, the text at an
+address ``(declension, segment)`` may be absent: empty, or made only of
+whitespace. The text is then found in four steps:
 
-1. the cell itself, ``(variant, segment)``;
+1. the text itself, ``(declension, segment)``;
 2. the principal in the same segment, ``(0, segment)``;
-3. the same variant in the singular, ``(variant, 0)``;
+3. the same declension in the singular, ``(declension, 0)``;
 4. the principal singular, ``(0, 0)``.
 
-The first non-empty text is used. The principal singular is the last
+The first filled text is used. The principal singular is the last
 resort: ``mark_complete()`` refuses a message whose principal singular is
-empty.
+empty. In a draft where none of the four texts is filled, the principal
+singular is used as it is stored.
 
 .. mermaid::
 
     flowchart TD
-        cell["(variant, segment)"]
+        requested["(declension, segment)"]
         same_segment["(0, segment)<br/>principal, same segment"]
-        singular["(variant, 0)<br/>same variant, singular"]
+        singular["(declension, 0)<br/>same declension, singular"]
         principal["(0, 0)<br/>principal singular"]
         text(["text used"])
-        cell -- empty --> same_segment
-        same_segment -- empty --> singular
-        singular -- empty --> principal
-        cell -- text --> text
+        requested -- absent --> same_segment
+        same_segment -- absent --> singular
+        singular -- absent --> principal
+        requested -- text --> text
         same_segment -- text --> text
         singular -- text --> text
         principal --> text
 
-With the message below, the cell ``(1, 1)`` is empty: its text comes
-from step 2, ``(0, 1)``, and reads "{n} files are missing.".
+With the message below, the text ``(1, 1)`` is empty: the text used
+comes from step 2, ``(0, 1)``, and reads "{n} files are missing.".
 
 .. list-table::
    :header-rows: 1
@@ -103,8 +105,8 @@ from step 2, ``(0, 1)``, and reads "{n} files are missing.".
    :widths: 20 40 40
 
    * -
-     - variant 0 (principal)
-     - variant 1
+     - declension 0 (principal)
+     - declension 1 (alternative 1)
    * - segment 0
      - ``File {name} is missing.``
      - ``File {name} is missing from {repository}.``
@@ -113,7 +115,7 @@ from step 2, ``(0, 1)``, and reads "{n} files are missing.".
      - *(empty)*
 
 ``formatter.publish()`` applies the column fallback before it substitutes
-the placeholders. The cross-language check of rule 2 reads cells the
+the placeholders. The cross-language check of rule 2 reads the texts the
 same way (see :doc:`integrity`).
 
 
@@ -127,7 +129,7 @@ the text inside it.
 .. mermaid::
 
     flowchart LR
-        request(["identifier<br/>language<br/>(variant, segment)"])
+        request(["identifier<br/>language<br/>(declension, segment)"])
         language["language fallback<br/>FallbackBook.get_message()"]
         message[["message"]]
         column["column fallback"]
@@ -135,5 +137,5 @@ the text inside it.
         publish["placeholders substituted<br/>publish()"]
         request --> language --> message --> column --> text --> publish
 
-A cell left empty in the ``fr-CH`` message is therefore filled from
-another cell of that message, never from ``fr-FR``.
+A text left empty in the ``fr-CH`` message is therefore replaced by
+another text of that message, never by a text of ``fr-FR``.

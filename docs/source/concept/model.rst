@@ -2,12 +2,13 @@ Data Model
 ==========
 
 The four levels of the model (message, book, corpus, encyclopaedia), the
-message matrix and language-neutral identifiers.
+content of a message and language-neutral identifiers.
 
 .. todo::
 
    - Message, Book, Corpus, Encyclopaedia: what each level holds and knows.
-   - The message matrix: segments as rows, declensions as columns, empty cells.
+   - The content of a message: the principal and its alternatives
+     (declensions), their segments, absent texts.
    - Language-neutral identifiers and naming conventions.
    - "No source language": where the notion of a source remains.
-   - Worked examples (business thresholds, context-specific variants).
+   - Worked examples (business thresholds, context-specific alternatives).

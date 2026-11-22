@@ -1,11 +1,11 @@
 Formatting and Plural Rules
 ===========================
 
-How a cell is selected and turned into text at runtime.
+How a text is selected and filled in at runtime.
 
 .. todo::
 
-   - publish(): cell selection, column fallback, placeholder substitution.
+   - publish(): text selection, column fallback, placeholder substitution.
    - PluralRule: CLDR categories as baseline, business thresholds first.
    - PluralIndexError and VariantIndexError.
    - Core install and the [api] extra: what needs what.

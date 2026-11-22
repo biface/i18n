@@ -35,7 +35,8 @@ message is marked **complete**.
      - None. The recorded counters are kept.
 
 A complete message is **locked**: every change to its texts or its
-structure (principal, variants, segments, ``switch()``, ``toggle()``)
+structure (principal, alternatives, segments, ``switch()``,
+``toggle()``)
 raises ``MessageError``. Its context, locations, flags, comments and
 other metadata stay editable, since they take no part in the integrity
 checks. To change a text, reopen the message, edit it, then mark it
@@ -45,12 +46,11 @@ complete again.
 
     from i18n_tools.models import Message
 
-    message = Message.from_matrix(
+    message = Message(
         "files.missing",
-        [
-            ["File {name} is missing.", "File {name} is missing from {repository}."],
-            ["{n} files are missing.", ""],
-        ],
+        "File {name} is missing.",
+        plurals=["{n} files are missing."],
+        alternatives=[["File {name} is missing from {repository}.", ""]],
     )
     message.status            # "draft"
     message.mark_complete()
@@ -62,10 +62,12 @@ complete again.
 Content counters
 ----------------
 
-The content counters of a message describe its matrix: the number of
-declensions (columns), the number of segments (rows), and a fill mask
-telling which texts are not empty. They are a
-``ContentCounters`` value.
+The content counters of a message describe the shape of its content:
+the number of declensions (the principal and its alternatives), the
+number of segments of each, the placeholder names of each text, and a
+fill mask telling which texts are filled. They are a ``ContentCounters``
+value, stored in the entry of the message as ``count`` and ``fill_mask``
+(see :doc:`/reference/format`).
 
 A message holds two sets of counters:
 
@@ -96,7 +98,8 @@ Divergence
 A message **diverges** when its recorded counters differ from its
 observed ones (``Message.has_divergence``). A complete message without
 recorded counters cannot be verified and is treated as diverging. The
-difference names the texts lost or added, by ``(variant, segment)``.
+difference names the texts lost or added, by ``(declension, segment)``:
+``text (1, 0) lost``.
 
 What a divergence means depends on the status:
 
@@ -112,7 +115,10 @@ What a divergence means depends on the status:
      - An integrity defect: a finished text changed.
    * - Loading the file
      - Accepted silently.
-     - Accepted, with a warning naming the texts.
+     - The message is **broken**: its file was changed outside the
+       package, or data were lost. It is read as a draft, with a warning
+       when its book is complete and an information when its book is a
+       draft.
    * - ``Book.check()``
      - Information.
      - Error.
@@ -120,6 +126,15 @@ What a divergence means depends on the status:
      - Accepted; the draft's counters are recorded again.
      - Refused with ``MessageError`` before anything is written, so that
        a loss never replaces the last sound state.
+
+For instance, a complete message whose alternative singular was emptied
+by hand, in a book where every message is complete, gives on inspection:
+
+.. code-block:: text
+
+    warning  -  files.missing: complete message broken (the content differs
+    from the record: text (1, 0) lost; tokens of text (1, 0): recorded
+    [name, repository], observed []): read as draft, and its Book with it
 
 A divergence on a complete message is resolved by accepting the current
 content explicitly: ``reopen()``, then ``mark_complete()``, which records
@@ -133,10 +148,10 @@ Rule 1: within a message
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 Every declension of a message has as many segments as the principal.
-An absent text is the empty string, resolved at formatting time by the
-column fallback (see :doc:`fallback`). Within one message, two cells may
-use different placeholders: a variant may name what the principal does
-not.
+An absent text is the empty string, or a text made only of whitespace; it
+is resolved at formatting time by the column fallback (see
+:doc:`fallback`). Within one message, two texts may use different
+placeholders: an alternative may name what the principal does not.
 
 A draft may break rule 1 while it is edited; the file then holds empty
 strings where a declension is shorter. ``mark_complete()`` refuses a
@@ -152,17 +167,19 @@ not the grammar of each language. So the same identifier must have the
 same shape in every language of a domain:
 
 - the same number of declensions and of segments;
-- in each cell ``(variant, segment)``, the same set of placeholder names.
-  The order of the placeholders and their repetitions do not matter.
+- at each address ``(declension, segment)``, the same set of placeholder
+  names. The order of the placeholders, their repetitions and their
+  format specifications do not matter: ``{n:d}`` and ``{n}`` are the same
+  placeholder.
 
-The text of a cell is read after the column fallback, as it would be
-published. In the example below, the French variant 1 is empty and
+The text at an address is read after the column fallback, as it would be
+published. In the example below, the French alternative 1 is empty and
 falls back to the principal, which does not name ``{repository}``:
 
 .. code-block:: text
 
-    en-US  (variant 1, segment 0)  "File {name} is missing from {repository}."
-    fr-FR  (variant 1, segment 0)  ""  ->  "Le fichier {name} est absent."
+    en-US  (1, 0)  "File {name} is missing from {repository}."
+    fr-FR  (1, 0)  ""  ->  "Le fichier {name} est absent."
 
     error  -  files.missing: tokens of cell (variant 1, segment 0) differ
     across languages: en-US ['name', 'repository'], fr-FR ['name']
@@ -189,8 +206,8 @@ applies, the language.
    * - Level
      - What is checked
    * - File inspection
-     - One ``.i18t`` file against the format: matrix, metadata types,
-       language and domain, status and counters (see
+     - One ``.i18t`` file against the format: entries, metadata types,
+       language and domain, texts, status and counters (see
        :doc:`/reference/format`). ``loader.inspect_book_file()`` lists
        the findings without loading. Loading a book stops on an error
        and issues each warning as an ``I18nToolsWarning``.
@@ -215,5 +232,5 @@ See :doc:`/reference/cli` and :doc:`/guides/cli`.
 
    - Decide which level checks what (subsidiarity), and the severity of
      a complete message that diverges at each level.
-   - Audit before ``mark_complete()``: locations outside the matrix,
+   - Audit before ``mark_complete()``: locations outside the content,
      rule 1 on hand-built complete messages.
