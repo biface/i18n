@@ -473,7 +473,7 @@ def _read_content(
     for declension, segments in enumerate([texts, *others]):
         for segment, text in enumerate(segments):
             try:
-                _, positional = read_fields(text)
+                fields = read_fields(text)
             except ValueError as e:
                 found.add(
                     "error",
@@ -482,12 +482,27 @@ def _read_content(
                     + str(e),
                 )
                 continue
-            for field in positional:
+            at = f"text ({declension}, {segment})"
+            for field in fields.positional:
                 found.add(
                     "warning",
                     where,
-                    f"text ({declension}, {segment}) has a positional token "
-                    + f"'{{{field}}}': tokens are passed by name",
+                    f"{at} has a positional token '{{{field}}}': tokens are passed "
+                    + "by name",
+                )
+            for field in fields.accessed:
+                found.add(
+                    "warning",
+                    where,
+                    f"{at} has a token with attribute or index access "
+                    + f"'{{{field}}}': a token is a plain name",
+                )
+            for field in fields.nested:
+                found.add(
+                    "warning",
+                    where,
+                    f"{at} has a field nested in a format specification "
+                    + f"'{{{field}}}': a token is not nested",
                 )
     if any(finding.severity == "error" for finding in found.items[errors:]):
         return None

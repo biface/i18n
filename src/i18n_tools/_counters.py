@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 import string
 from collections.abc import Iterator, Mapping, Sequence
-from typing import cast
+from typing import NamedTuple, cast
 
 from ndict_tools import StrictNestedDictionary
 
@@ -60,7 +60,24 @@ def is_filled(text: str) -> bool:
     return text.strip() != ""
 
 
-def _parse_fields(text: str, nested: bool = False) -> Iterator[str]:
+class Fields(NamedTuple):
+    """
+    The replacement fields of a text, as :func:`read_fields` reads them.
+
+    ``names`` are the token names, distinct and sorted; the three other
+    lists hold fields as written, in order of appearance: the positional
+    fields (``""`` for ``{}``), the tokens with attribute or index access
+    (``user.name``, ``items[0]``), and the fields nested in a format
+    specification (``w`` in ``{n:{w}}``).
+    """
+
+    names: list[str]
+    positional: list[str]
+    accessed: list[str]
+    nested: list[str]
+
+
+def _parse_fields(text: str, nested: bool = False) -> Iterator[tuple[str, bool]]:
     """
     Yield the replacement fields of a text, in order of appearance.
 
@@ -74,8 +91,9 @@ def _parse_fields(text: str, nested: bool = False) -> Iterator[str]:
     :type text: str
     :param nested: True when ``text`` is a format specification.
     :type nested: bool
-    :return: The field names as written.
-    :rtype: Iterator[str]
+    :return: Each field name as written, with True when the field is
+        nested in a format specification.
+    :rtype: Iterator[tuple[str, bool]]
     :raises ValueError: If the text is not a valid format string.
     """
     for _, field, specification, conversion in _FORMATTER.parse(text):
@@ -85,45 +103,50 @@ def _parse_fields(text: str, nested: bool = False) -> Iterator[str]:
             raise ValueError(
                 f"unknown conversion '!{conversion}' in the field '{field}'"
             )
-        yield field
+        yield field, nested
         if not specification:
             continue
         inner = _parse_fields(specification, nested=True)
         if not nested:
             yield from inner
             continue
-        name = next(inner, None)
-        if name is not None:
+        found = next(inner, None)
+        if found is not None:
             raise ValueError(
-                f"the field '{name}' is nested in a field that is itself nested"
+                f"the field '{found[0]}' is nested in a field that is itself nested"
             )
 
 
-def read_fields(text: str) -> tuple[list[str], list[str]]:
+def read_fields(text: str) -> Fields:
     """
     Read the replacement fields of a text, as ``str.format`` reads them.
 
-    A token is a field with a name; its name is the field name, without
-    conversion or format specification. A positional field (``{}``,
-    ``{0}``) is not a token. The fields of a format specification
+    A token is a field with a name; its name is the field name as written,
+    without conversion or format specification. A positional field
+    (``{}``, ``{0}``) is not a token. The fields of a format specification
     (``{n:{w}}``) are read as well.
 
     :param text: The text.
     :type text: str
-    :return: The token names, distinct and sorted, then the positional
-        fields as written (``""`` for ``{}``), in order of appearance.
-    :rtype: tuple[list[str], list[str]]
+    :return: The token names, then the positional, accessed and nested
+        fields (see :class:`Fields`).
+    :rtype: Fields
     :raises ValueError: If the text is not a valid format string.
     """
     names: set[str] = set()
-    positional: list[str] = []
-    for field in _parse_fields(text):
+    fields = Fields([], [], [], [])
+    for field, nested in _parse_fields(text):
         head = field.split(".", 1)[0].split("[", 1)[0]
         if head == "" or head.isdigit():
-            positional.append(field)
+            fields.positional.append(field)
         else:
             names.add(field)
-    return sorted(names), positional
+            if head != field:
+                fields.accessed.append(field)
+        if nested:
+            fields.nested.append(field)
+    fields.names.extend(sorted(names))
+    return fields
 
 
 def check_format_string(text: str) -> str | None:
@@ -146,7 +169,7 @@ def check_format_string(text: str) -> str | None:
 def _tokens(text: str) -> list[str]:
     """Token names of a text; none for a text that does not parse."""
     try:
-        return read_fields(text)[0]
+        return read_fields(text).names
     except ValueError:
         return []
 

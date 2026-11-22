@@ -794,6 +794,40 @@ class TestReadEntry:
             )
         ]
 
+    @pytest.mark.parametrize(
+        "text, tokens, message",
+        [
+            (
+                "{user.name} files",
+                ["user.name"],
+                "has a token with attribute or index access '{user.name}': a token "
+                + "is a plain name",
+            ),
+            (
+                "{items[0]} files",
+                ["items[0]"],
+                "has a token with attribute or index access '{items[0]}': a token "
+                + "is a plain name",
+            ),
+            (
+                "{n:{w}} files",
+                ["n", "w"],
+                "has a field nested in a format specification '{w}': a token is "
+                + "not nested",
+            ),
+        ],
+        ids=["attribute", "index", "nested"],
+    )
+    def test_token_form_warning(self, tmp_path, text, tokens, message):
+        data = _changed(_set([DA, "messages", "principal", 0], text))
+        data[DA]["metadata"]["count"]["tokens"]["principal"][0] = tokens
+        assert _findings(tmp_path, data) == [("warning", DA, f"text (0, 0) {message}")]
+
+    def test_plain_tokens_give_no_warning(self, tmp_path):
+        data = _changed(_set([DA, "messages", "principal", 0], "{n:d} {n!r:>4}"))
+        data[DA]["metadata"]["count"]["tokens"]["principal"][0] = ["n"]
+        assert _findings(tmp_path, data) == []
+
     def test_invalid_status_read_as_draft(self, tmp_path):
         data = _changed(_set([FM, "metadata", "status"], "final"))
         assert _findings(tmp_path, data)[0] == (

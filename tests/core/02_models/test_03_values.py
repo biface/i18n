@@ -191,7 +191,26 @@ class TestObserve:
         ],
     )
     def test_read_fields(self, text, names, positional):
-        assert read_fields(text) == (names, positional)
+        fields = read_fields(text)
+        assert (fields.names, fields.positional) == (names, positional)
+
+    @pytest.mark.parametrize(
+        "text, accessed, nested",
+        [
+            ("{n} {m:>3} {0.x}", [], []),
+            (
+                "{user.name} {items[0]} {user.name}",
+                ["user.name", "items[0]", "user.name"],
+                [],
+            ),
+            ("{n:{w}} {n:{u.v}}", ["u.v"], ["w", "u.v"]),
+            ("{n:{}}", [], [""]),
+        ],
+        ids=["plain", "accessed", "nested", "nested-positional"],
+    )
+    def test_accessed_and_nested_fields(self, text, accessed, nested):
+        fields = read_fields(text)
+        assert (fields.accessed, fields.nested) == (accessed, nested)
 
     def test_check_format_string(self):
         assert check_format_string("Disk {percent} %") is None
