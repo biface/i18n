@@ -181,7 +181,8 @@ Declared in `pyproject.toml` (`[tool.pytest.ini_options]`):
 
 Target: **80%** project-wide (v0.7.x milestone), tracked per-module via
 Codecov components (`models`, `loaders`, `exceptions`, `converter`,
-`config`, `api` — see `.codecov.yml`).
+`config`, `api`, `orchestrator`, `translation`, `package`, `cli` — see
+`.codecov.yml`).
 
 ## Commits
 

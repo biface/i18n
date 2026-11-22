@@ -193,7 +193,8 @@ Déclarés dans `pyproject.toml` (`[tool.pytest.ini_options]`) :
 
 Objectif : **80 %** sur tout le projet (jalon v0.7.x), suivi par module via
 les composants Codecov (`models`, `loaders`, `exceptions`, `converter`,
-`config`, `api` — voir `.codecov.yml`).
+`config`, `api`, `orchestrator`, `translation`, `package`, `cli` — voir
+`.codecov.yml`).
 
 ## Commits
 
