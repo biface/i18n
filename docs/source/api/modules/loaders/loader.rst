@@ -1,16 +1,16 @@
 Loader module
 =============
 
-.. automodule:: i18n_tools.loaders.loader
+.. py:module:: i18n_tools.loaders.loader
 
-    .. autoclass:: LocaleStructure
+.. autoclass:: LocaleStructure
 
-    .. autofunction:: load_locale_json
-    .. autofunction:: load_book
-    .. autofunction:: inspect_book_file
-    .. autofunction:: save_book
-    .. autofunction:: aggregate_dictionaries
-    .. autofunction:: aggregate_locale_json
-    .. autofunction:: save_locale_json
-    .. autofunction:: save_aggregated_locale_json
-    .. autofunction:: build_book_filename
+.. autofunction:: load_locale_json
+.. autofunction:: load_book
+.. autofunction:: inspect_book_file
+.. autofunction:: save_book
+.. autofunction:: aggregate_dictionaries
+.. autofunction:: aggregate_locale_json
+.. autofunction:: save_locale_json
+.. autofunction:: save_aggregated_locale_json
+.. autofunction:: build_book_filename

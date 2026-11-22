@@ -1,8 +1,8 @@
 API Module
 ==========
 
-.. automodule:: i18n_tools.api
+.. py:module:: i18n_tools.api
 
-   .. autofunction:: validate_api_url
+.. autofunction:: validate_api_url
 
-   .. autoclass:: URLCheck
+.. autoclass:: URLCheck

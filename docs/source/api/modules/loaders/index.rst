@@ -6,7 +6,7 @@ The **Loaders** module is responsible for loading and managing translation files
 - **Utils**: Low-level file operations.
 - **Settings**: Low-level settings-file I/O, at the same level as Utils.
 - **Handler**: Intermediate layer for path and file type management.
-- **Loader**: High-level mapping between objects and procedures; sole bridge to /models/ (DD-37);
+- **Loader**: High-level mapping between objects and procedures; sole bridge to /models/;
   also handles filesystem archive and aggregation operations (backups, multi-module/domain aggregation).
 
 Utils, Settings and Handler are internal modules: ``loaders._utils``,

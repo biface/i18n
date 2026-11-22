@@ -1,7 +1,7 @@
 Configuration Module
 =====================
 
-.. automodule:: i18n_tools.config
+.. py:module:: i18n_tools.config
 
 Configuartion class
 -------------------
