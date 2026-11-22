@@ -177,8 +177,18 @@ class TestObserve:
             ("{} and {0}", [], ["", "0"]),
             ("{b} {a} {b}", ["a", "b"], []),
             ("{0.attr} {items[0]}", ["items[0]"], ["0.attr"]),
+            ("{n:{w}} {m:{w}{p}}", ["m", "n", "p", "w"], []),
+            ("{n:{}} {n:{w:>3}}", ["n", "w"], [""]),
+            ("{a!r} {b!s} {c!a}", ["a", "b", "c"], []),
         ],
-        ids=["positional", "distinct-sorted", "attribute-index"],
+        ids=[
+            "positional",
+            "distinct-sorted",
+            "attribute-index",
+            "nested",
+            "nested-positional-and-literal-specification",
+            "conversions",
+        ],
     )
     def test_read_fields(self, text, names, positional):
         assert read_fields(text) == (names, positional)
@@ -188,6 +198,28 @@ class TestObserve:
         assert (
             check_format_string("Disk {") == "Single '{' encountered in format string"
         )
+
+    @pytest.mark.parametrize(
+        "text, error",
+        [
+            ("{n!x}", "unknown conversion '!x' in the field 'n'"),
+            ("{n:{w!x}}", "unknown conversion '!x' in the field 'w'"),
+            (
+                "{n:{w:{x}}}",
+                "the field 'x' is nested in a field that is itself nested",
+            ),
+            ("{n:{w}", "unmatched '{' in format spec"),
+        ],
+        ids=["conversion", "nested-conversion", "double-nesting", "nested-brace"],
+    )
+    def test_refused_as_str_format_refuses(self, text, error):
+        assert check_format_string(text) == error
+        with pytest.raises(ValueError):
+            _ = text.format(n=1, w=2, x=3)
+
+    def test_nested_tokens_recorded(self):
+        record = observe(["{n:{w}d}"], [])
+        assert record["count"]["tokens"]["principal"] == [["n", "w"]]
 
 
 class TestRecordDefects:

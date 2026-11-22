@@ -616,6 +616,11 @@ class TestReadEntry:
                 "text (0, 0) is not a valid format string: expected '}' before end "
                 + "of string",
             ),
+            (
+                _set([FM, "messages", "alternatives", 0, 0], "File {name!x}."),
+                "text (1, 0) is not a valid format string: unknown conversion '!x' "
+                + "in the field 'name'",
+            ),
             (_drop([FM, "metadata", "id"]), '["metadata", "id"] is missing'),
             (
                 _set([FM, "metadata", "id"], "file.missing"),
@@ -672,6 +677,7 @@ class TestReadEntry:
             "text-not-str",
             "rule-1",
             "malformed-braces",
+            "unknown-conversion",
             "no-id",
             "id-not-key",
             "id-empty",

@@ -173,6 +173,14 @@ class TestConstruction:
                 {"alternatives": [["a", "{n"]]},
                 re.escape("text (1, 1) is not a valid format string"),
             ),
+            (
+                ("3000", "Disk {percent!d}"),
+                {},
+                re.escape(
+                    "text (0, 0) is not a valid format string: unknown conversion "
+                    + "'!d' in the field 'percent'"
+                ),
+            ),
         ],
     )
     def test_refused_values(self, args, kwargs, expected):

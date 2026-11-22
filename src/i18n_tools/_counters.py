@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import json
 import string
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import cast
 
 from ndict_tools import StrictNestedDictionary
@@ -28,6 +28,7 @@ from i18n_tools._checks import is_type
 from i18n_tools._json import JSONValue
 
 _FORMATTER = string.Formatter()
+_CONVERSIONS = frozenset({"r", "s", "a"})
 
 _COUNT_KEYS = ("declensions", "alternatives", "singulars", "plurals")
 _RECORD_KEYS = frozenset({"count", "fill_mask"})
@@ -59,13 +60,53 @@ def is_filled(text: str) -> bool:
     return text.strip() != ""
 
 
+def _parse_fields(text: str, nested: bool = False) -> Iterator[str]:
+    """
+    Yield the replacement fields of a text, in order of appearance.
+
+    The fields of a format specification are yielded after the field
+    that holds them (``{n:{w}}`` gives ``n``, then ``w``), as
+    ``str.format`` replaces them. A conversion other than ``!r``, ``!s``
+    or ``!a``, and a field nested in a nested field, are refused as
+    ``str.format`` refuses them.
+
+    :param text: The text, or the format specification of a field.
+    :type text: str
+    :param nested: True when ``text`` is a format specification.
+    :type nested: bool
+    :return: The field names as written.
+    :rtype: Iterator[str]
+    :raises ValueError: If the text is not a valid format string.
+    """
+    for _, field, specification, conversion in _FORMATTER.parse(text):
+        if field is None:
+            continue
+        if conversion is not None and conversion not in _CONVERSIONS:
+            raise ValueError(
+                f"unknown conversion '!{conversion}' in the field '{field}'"
+            )
+        yield field
+        if not specification:
+            continue
+        inner = _parse_fields(specification, nested=True)
+        if not nested:
+            yield from inner
+            continue
+        name = next(inner, None)
+        if name is not None:
+            raise ValueError(
+                f"the field '{name}' is nested in a field that is itself nested"
+            )
+
+
 def read_fields(text: str) -> tuple[list[str], list[str]]:
     """
     Read the replacement fields of a text, as ``str.format`` reads them.
 
     A token is a field with a name; its name is the field name, without
     conversion or format specification. A positional field (``{}``,
-    ``{0}``) is not a token.
+    ``{0}``) is not a token. The fields of a format specification
+    (``{n:{w}}``) are read as well.
 
     :param text: The text.
     :type text: str
@@ -76,9 +117,7 @@ def read_fields(text: str) -> tuple[list[str], list[str]]:
     """
     names: set[str] = set()
     positional: list[str] = []
-    for _, field, _, _ in _FORMATTER.parse(text):
-        if field is None:
-            continue
+    for field in _parse_fields(text):
         head = field.split(".", 1)[0].split("[", 1)[0]
         if head == "" or head.isdigit():
             positional.append(field)
