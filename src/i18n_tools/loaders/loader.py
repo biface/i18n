@@ -44,6 +44,7 @@ from i18n_tools.exceptions import FormatError, I18nToolsWarning
 
 from i18n_tools.loaders._handler import (  # noqa: F401  # isort: skip
     DEFAULT_VERSION as DEFAULT_VERSION,  # re-exported: version of a new Book
+    RESERVED_KEYS as RESERVED_KEYS,  # re-exported: root keys of no message
 )
 from i18n_tools.loaders._handler import (
     FORMAT_VERSION as FORMAT_VERSION,  # re-exported: version written

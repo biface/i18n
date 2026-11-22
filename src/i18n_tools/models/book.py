@@ -13,7 +13,7 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TRANSLATION_FILE_EXT,
     TranslationFileFormat,
 )
-from i18n_tools._checks import is_type
+from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
 from i18n_tools._finding import Finding
 from i18n_tools._json import JSONInput
@@ -23,6 +23,7 @@ from i18n_tools.loaders.loader import (
     DEFAULT_VERSION,
     FORMAT_VERSION,
     GETTEXT_KEYS,
+    RESERVED_KEYS,
     build_book_filename,
 )
 from i18n_tools.loaders.loader import load_book as _load_book
@@ -78,7 +79,9 @@ class Book:
 
     The class is iterable: iterating over a Book yields its Message
     instances in insertion order. :attr:`messages` maps each identifier to
-    its message; the Book is the master of these keys.
+    its message. The Book is the master of these keys: :meth:`add` holds a
+    message under its ``id``, :meth:`rename` changes the key and the
+    ``id`` together, and the file takes the key as the ``id`` of the entry.
 
     :ivar file_format: Storage encoding of the file (``"json"``).
     :ivar filename: Name of the file, ``<domain>.<file_format>.i18t``.
@@ -101,15 +104,17 @@ class Book:
         """
         Create a Book.
 
-        :param args: Messages, or lists or tuples of messages, held under
-            their identifier.
+        :param args: Messages, or lists or tuples of messages, added as
+            :meth:`add` adds them.
         :type args: Message | tuple[Message] | list[Message]
         :param kwargs: ``language`` and ``domain`` (required), and
             ``file_format``.
         :type kwargs: BookOptions
-        :raises TypeError: If a keyword is not one of the options, or
-            ``language`` or ``domain`` is not a string.
+        :raises TypeError: If a keyword is not one of the options,
+            ``language`` or ``domain`` is not a string, or an argument is
+            not a message.
         :raises KeyError: If ``language`` or ``domain`` is missing.
+        :raises ValueError: If an identifier is reserved or given twice.
         """
         unknown = sorted(set(kwargs) - _BOOK_OPTIONS)
         if unknown:
@@ -145,11 +150,11 @@ class Book:
         )
 
         for entity in args:
-            if isinstance(entity, Message):
-                self.messages[entity.id] = entity
-            elif is_type(entity, (tuple, list)):
-                for message in entity:
-                    self.messages[message.id] = message
+            if is_type(entity, (tuple, list)):
+                for message in cast("tuple[Message] | list[Message]", entity):
+                    self.add(message)
+            else:
+                self.add(cast(Message, entity))
 
     # --- Keys of the root metadata -------------------------------------------
 
@@ -403,28 +408,71 @@ class Book:
         """
         return iter(self.messages.values())
 
-    def add(self, domain: str, messages: list[Message]) -> None:
-        """
-        Add messages to the book, each under its identifier.
-
-        :param domain: The domain of the messages; it must be the domain of
-            the Book.
-        :type domain: str
-        :param messages: The messages to add.
-        :type messages: list[Message]
-        :raises ValueError: If ``domain`` is not the domain of the Book, or
-            an identifier is already in the Book.
-        """
-        if self.domain != domain:
+    @staticmethod
+    def _check_key(identifier: str) -> None:
+        """Refuse a root key of a file that cannot be an identifier."""
+        if identifier == "metadata" or identifier in RESERVED_KEYS:
             raise ValueError(
-                f"Domain of message '{domain}' is not compatible with this book domain '{self.domain}'"
+                f"'{identifier}' is reserved and cannot be a message identifier"
             )
-        for message in messages:
-            if message.id in self.messages.keys():
+
+    def add(self, message: Message) -> None:
+        """
+        Hold a message under its identifier, ``message.id``.
+
+        :param message: The message to add.
+        :type message: Message
+        :raises TypeError: If ``message`` is not a Message.
+        :raises ValueError: If the identifier is reserved (``metadata``,
+            ``.pyi18t_tools``, ``.i18n_tools``) or already in the Book.
+        """
+        ensure_type(
+            message, Message, f"Book.add() takes a Message, got {type(message)}"
+        )
+        identifier = message.id
+        self._check_key(identifier)
+        if identifier in self.messages.keys():
+            raise ValueError(
+                f"Message with id ({identifier}) is already present in this book"
+            )
+        self.messages[identifier] = message
+
+    def rename(self, old: str, new: str) -> None:
+        """
+        Change the identifier of a message: its key in the Book and its
+        ``id`` together. The message keeps its place in the Book.
+
+        :param old: The current identifier.
+        :type old: str
+        :param new: The new identifier, as ``Message.id`` accepts it.
+        :type new: str
+        :raises KeyError: If ``old`` is not in the Book.
+        :raises TypeError: If ``new`` is neither a str nor an int.
+        :raises ValueError: If ``new`` is empty, reserved or already in the
+            Book.
+        """
+        if old not in self.messages.keys():
+            raise KeyError(f"Message identifier '{old}' is not in this book")
+        message: Message = self.messages[old]
+        previous = message.id
+        message.id = new
+        identifier = message.id
+        try:
+            self._check_key(identifier)
+            if identifier != old and identifier in self.messages.keys():
                 raise ValueError(
-                    f"Message with id ({message.id}) is already present in this book"
+                    f"Message with id ({identifier}) is already present in this book"
                 )
-            self.messages[message.id] = message
+        except ValueError:
+            message.id = previous
+            raise
+        held: list[tuple[str, Message]] = [
+            (identifier if key == old else str(key), value)
+            for key, value in self.messages.items()
+        ]
+        self.messages.clear()
+        for key, value in held:
+            self.messages[key] = value
 
     def remove(self, index: str) -> None:
         """

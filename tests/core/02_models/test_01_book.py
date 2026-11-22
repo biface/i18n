@@ -328,7 +328,9 @@ class TestBookAdd:
     )
     def test_book_add(self, fixture_book, messages, expected, request):
         book = request.getfixturevalue(fixture_book)
-        book.add("test", messages)
+        for message in messages:
+            book.add(message)
+        assert book.get("1000") is messages[0]
         for msg_id, msg_main, msg_variants in expected:
             assert list(book.get(msg_id).principal.segments) == msg_main
             for index, msg_variant in enumerate(msg_variants):
@@ -336,54 +338,91 @@ class TestBookAdd:
                     msg_variant
                 )
 
+    def test_add_refuses_an_identifier_already_present(self, fr_fr_book):
+        other = Message("1100", "Voici un chiot")
+        before = fr_fr_book.get("1100")
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Message with id (1100) is already present in this book"),
+        ):
+            fr_fr_book.add(other)
+        assert fr_fr_book.get("1100") is before
+
+    @pytest.mark.parametrize("identifier", ["metadata", ".pyi18t_tools", ".i18n_tools"])
+    def test_add_refuses_a_reserved_key(self, fr_fr_book, identifier):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                f"'{identifier}' is reserved and cannot be a message identifier"
+            ),
+        ):
+            fr_fr_book.add(Message(identifier, "Texte"))
+        assert identifier not in fr_fr_book.messages
+        assert len(fr_fr_book.messages) == 10
+
+    def test_add_refuses_what_is_not_a_message(self, fr_fr_book):
+        with pytest.raises(TypeError, match="Book.add\\(\\) takes a Message"):
+            fr_fr_book.add("1000")  # pyright: ignore[reportArgumentType]
+
+    def test_constructor_adds_as_add_does(self):
+        with pytest.raises(ValueError, match="is already present in this book"):
+            Book(Message("1", "a"), [Message("1", "b")], domain="d", language="fr")
+        with pytest.raises(ValueError, match="'metadata' is reserved"):
+            Book(Message("metadata", "a"), domain="d", language="fr")
+
+    def test_int_identifier_held_as_a_string(self, fr_fr_book):
+        fr_fr_book.add(Message(42, "Texte"))
+        assert fr_fr_book.get("42").id == "42"
+
+
+class TestBookRename:
+    def test_rename_changes_the_key_and_the_id(self, fr_fr_book):
+        message = fr_fr_book.get("1101")
+        order = list(fr_fr_book.messages.keys())
+        fr_fr_book.rename("1101", "mountain.like")
+        assert fr_fr_book.get("1101") is None
+        assert fr_fr_book.get("mountain.like") is message
+        assert message.id == "mountain.like"
+        assert list(fr_fr_book.messages.keys()) == [
+            "mountain.like" if key == "1101" else key for key in order
+        ]
+
+    def test_rename_to_an_int(self, fr_fr_book):
+        fr_fr_book.rename("1101", 2101)
+        assert fr_fr_book.get("2101").id == "2101"
+
+    def test_rename_to_itself(self, fr_fr_book):
+        fr_fr_book.rename("1101", "1101")
+        assert fr_fr_book.get("1101").id == "1101"
+
+    def test_renamed_message_saved_under_its_new_key(self, fr_fr_book, tmp_path):
+        fr_fr_book.rename("1101", "mountain.like")
+        fr_fr_book.save(str(tmp_path))
+        data = json.loads((tmp_path / fr_fr_book.filename).read_text("utf-8"))
+        assert data["mountain.like"]["metadata"]["id"] == "mountain.like"
+        assert "1101" not in data
+
     @pytest.mark.parametrize(
-        "fixture_book, domain, messages, expected",
+        "old, new, error, expected",
         [
-            (
-                "fr_fr_book",
-                "animals",
-                [],
-                "Domain of message 'animals' is not compatible with this book domain 'test'",
-            ),
-            (
-                "fr_fr_book",
-                "test",
-                [
-                    Message(
-                        "1100",
-                        "Voici un chiot",
-                        plurals=["Voici des chiots", "Voici deux chiots"],
-                        alternatives=[
-                            [
-                                "Voici un joli {puppy}",
-                                "Voici de jolis chiots {puppy}",
-                                "Voici deux beaux chiots {puppy}",
-                            ],
-                            [
-                                "Voici un chiot {puppy} rare",
-                                "Voici des chiots {puppy} rares",
-                                "Voici deux chiots {puppy} rares",
-                                "Voici plusieurs chiots {puppy} rares",
-                            ],
-                            [
-                                "Voici un chiot {puppy} de la région {region}",
-                                "Voici des chiots {puppy} de la région {region}",
-                                "Voici deux chiots {puppy} de la région {region}",
-                            ],
-                        ],
-                        locations=[],
-                        flags=["python-format"],
-                        user_comments=["Message sur des chiots"],
-                    )
-                ],
-                "Message with id (1100) is already present in this book",
-            ),
+            ("9999", "x", KeyError, "Message identifier '9999' is not in this book"),
+            ("1101", "1102", ValueError, "Message with id (1102) is already present"),
+            ("1101", "metadata", ValueError, "'metadata' is reserved"),
+            ("1101", ".pyi18t_tools", ValueError, "'.pyi18t_tools' is reserved"),
+            ("1101", "", ValueError, "Message identifier must not be empty"),
+            ("1101", True, TypeError, "Message identifier must be a str or an int"),
         ],
+        ids=["absent", "present", "reserved", "reserved-tool", "empty", "bool"],
     )
-    def test_book_add_failed(self, fixture_book, domain, messages, expected, request):
-        book = request.getfixturevalue(fixture_book)
-        with pytest.raises(ValueError, match=re.escape(expected)):
-            book.add(domain, messages)
+    def test_rename_refused_state_unchanged(
+        self, fr_fr_book, old, new, error, expected
+    ):
+        keys = list(fr_fr_book.messages.keys())
+        ids = [message.id for message in fr_fr_book]
+        with pytest.raises(error, match=re.escape(expected)):
+            fr_fr_book.rename(old, new)
+        assert list(fr_fr_book.messages.keys()) == keys
+        assert [message.id for message in fr_fr_book] == ids
 
 
 class TestBookRemove:
@@ -1119,7 +1158,7 @@ class TestBookCounters:
             "complete",
             sound.recorded.to_dict() if recorded else None,
         )
-        book.add("test", [broken])
+        book.add(broken)
         with pytest.raises(MessageError, match="10001 diverge"):
             book.save(str(tmp_path))
         assert (tmp_path / book.filename).read_text("utf-8") == before

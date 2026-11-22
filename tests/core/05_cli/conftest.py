@@ -37,7 +37,7 @@ def i18t_file(tmp_path):
     message = Message(
         "greet", "Bonjour", locations=[], flags=[], user_comments=[], auto_comments=[]
     )
-    book.add("messages", [message])
+    book.add(message)
     book.save(str(directory))
 
     return str(directory / book.filename)

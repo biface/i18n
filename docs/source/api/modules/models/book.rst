@@ -14,6 +14,7 @@ Book module
       .. automethod:: set_version
       .. automethod:: set_gettext
       .. automethod:: add
+      .. automethod:: rename
       .. automethod:: remove
       .. automethod:: load
       .. automethod:: save
