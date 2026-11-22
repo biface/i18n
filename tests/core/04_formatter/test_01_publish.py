@@ -85,6 +85,21 @@ class TestColumnFallback:
     def test_empty_principal_plural_falls_to_the_singular(self, step4_message):
         assert publish(step4_message, segment=1, count=5) == "5 item (singular main)"
 
+    @pytest.mark.parametrize("blank", [" ", "\n", " \t "])
+    def test_whitespace_only_text_falls_back(self, step1_message, blank):
+        """A text of whitespace only is absent, as for its fill mask."""
+        step1_message.update_segment(blank, 1, 1)
+        assert publish(step1_message, 1, 1, count=5) == "5 items"
+
+    def test_text_with_surrounding_whitespace_is_kept(self, step1_message):
+        step1_message.update_segment(" {count} items (formal) ", 1, 1)
+        assert publish(step1_message, 1, 1, count=5) == " 5 items (formal) "
+
+    def test_nothing_filled_gives_the_principal_singular_as_stored(self):
+        """No filled text in the fallback: the text (0, 0), unchanged."""
+        message = Message("cart", " ", plurals=[""], alternatives=[["", "\n"]])
+        assert publish(message, 1, 1) == " "
+
 
 class TestAddressErrors:
     @pytest.mark.parametrize("segment", [2, 9, -1])

@@ -520,6 +520,15 @@ class TestCorpusCheck:
         )
         assert corpus.check() == []
 
+    def test_whitespace_text_compared_through_column_fallback(self):
+        # fr-FR (variant 1, segment 0) is whitespace only, so absent: the
+        # principal "{n} article" is compared, not the blank text.
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article", " "]]),
+            _message("en-US", [["{n} item", "{n} thing"]]),
+        )
+        assert corpus.check() == []
+
     def test_absent_text_mismatch_through_column_fallback(self):
         corpus = _corpus(
             _message("fr-FR", [["{n} article", ""]]),
