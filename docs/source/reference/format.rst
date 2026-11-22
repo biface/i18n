@@ -244,8 +244,8 @@ an integer of at least 0. The counters of an entry are described in
    * - ``plurals``
      - Sum of the ``plurals`` counters of the entries.
    * - ``segments``
-     - Number of texts: sum over the entries of ``segments.principal`` and
-       of every ``segments.alternatives`` value.
+     - Number of texts: sum over the entries of ``["segments", "principal"]``
+       and of every ``["segments", "alternatives"]`` value.
    * - ``filled``
      - Number of ``true`` values in the fill masks of the entries.
    * - ``empty``
@@ -357,16 +357,16 @@ On the entry above:
      - Path
      - Text
    * - ``(0, 0)``
-     - ``principal[0]``
+     - ``["principal", 0]``
      - ``File {name} is missing.``
    * - ``(0, 1)``
-     - ``principal[1]``
+     - ``["principal", 1]``
      - ``{n} files are missing.``
    * - ``(1, 0)``
-     - ``alternatives[0][0]``
+     - ``["alternatives", 0, 0]``
      - ``File {name} is missing from {repository}.``
    * - ``(1, 1)``
-     - ``alternatives[0][1]``
+     - ``["alternatives", 0, 1]``
      - ``""`` (absent)
 
 The meaning of the texts is in `Interpreting the content`_.
@@ -482,7 +482,7 @@ A reader reads a value other than ``"draft"`` or ``"complete"`` as
 A Book is ``complete`` when it holds at least one message and all its
 messages are ``complete``; otherwise it is ``draft``, and an empty Book is
 ``draft``. The status of a Book is not stored: it follows from the
-messages, and ``count.draft`` and ``count.complete`` show it.
+messages, and ``["count", "draft"]`` and ``["count", "complete"]`` show it.
 
 A ``complete`` message MUST be healthy (see `Recorded counters`_).
 
@@ -553,10 +553,11 @@ On the entry of `Message entries`_:
 A record is **well formed** when:
 
 1. ``singulars == declensions == 1 + alternatives``;
-2. ``segments.alternatives`` has ``alternatives`` values;
-3. each ``segments.alternatives[k]`` equals ``segments.principal``;
-4. ``plurals == (segments.principal - 1) + Σ segments.alternatives -
-   alternatives``;
+2. ``["segments", "alternatives"]`` has ``alternatives`` values;
+3. each ``["segments", "alternatives", k]`` equals
+   ``["segments", "principal"]``;
+4. ``plurals`` equals ``["segments", "principal"] - 1`` plus the sum of
+   the ``["segments", "alternatives"]`` values minus ``alternatives``;
 5. ``tokens`` and ``fill_mask`` have the shape given by ``segments``.
 
 A ``complete`` message is **healthy** when its record is present, well
