@@ -162,11 +162,9 @@ pythonPlatform = "Linux"
 # than as a --warnings flag so that every invocation (tox envs, CI,
 # editors) applies the same gate.
 failOnWarnings = true
-reportMissingTypeStubs = false
 reportUnknownVariableType = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
-reportUnknownParameterType = false
 reportAny = false
 reportImportCycles = false
 
