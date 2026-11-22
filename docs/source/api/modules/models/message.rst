@@ -12,6 +12,11 @@ Message module
 
    .. autoclass:: MessageOptions
 
+   .. py:type:: MessageStatus
+      :canonical: Literal['draft', 'complete']
+
+      Completion status of a message: ``"draft"`` or ``"complete"``.
+
    .. autoclass:: Message
 
       .. automethod:: from_matrix

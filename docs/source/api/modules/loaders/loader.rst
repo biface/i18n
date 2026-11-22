@@ -3,6 +3,8 @@ Loader module
 
 .. automodule:: i18n_tools.loaders.loader
 
+    .. autoclass:: LocaleStructure
+
     .. autofunction:: load_locale_json
     .. autofunction:: load_book
     .. autofunction:: inspect_book_file

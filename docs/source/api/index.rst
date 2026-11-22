@@ -20,4 +20,5 @@ This section provides detailed documentation for the **i18n-tools** API, includi
    modules/config
    modules/converter
    modules/formatter
+   modules/json
 

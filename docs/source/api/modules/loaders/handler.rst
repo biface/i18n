@@ -6,6 +6,8 @@ module: imported by the loader module only.
 
 .. automodule:: i18n_tools.loaders._handler
 
+    .. autoclass:: BookData
+
     .. autofunction:: build_path
     .. autofunction:: build_book_filename
     .. autofunction:: build_translation_lang_files

@@ -12,24 +12,27 @@ one per point found. The functions that return findings are:
 - :func:`i18n_tools.core.inspect_corpus`: a module and domain of a
   repository, file by file, then as a corpus.
 
-A finding is an immutable value with four fields:
+.. py:class:: Finding(severity, where, message, language=None)
+   :module: i18n_tools._finding
 
-``severity``
-    ``"error"``, ``"warning"`` or ``"info"``. What each severity means
-    for a file is given in :doc:`/reference/format`; for the model, in
-    :doc:`/concept/integrity`.
+   A finding is an immutable value with four fields:
 
-``where``
-    The identifier of the message concerned, or ``"root"`` when the
-    finding concerns the file itself.
+   ``severity``
+       ``"error"``, ``"warning"`` or ``"info"``. What each severity means
+       for a file is given in :doc:`/reference/format`; for the model, in
+       :doc:`/concept/integrity`.
 
-``message``
-    A description of the point, in English.
+   ``where``
+       The identifier of the message concerned, or ``"root"`` when the
+       finding concerns the file itself.
 
-``language``
-    The language the finding concerns, or ``None``. Findings about one
-    file of a repository carry the language of that file; findings that
-    compare languages carry none.
+   ``message``
+       A description of the point, in English.
+
+   ``language``
+       The language the finding concerns, or ``None``. Findings about one
+       file of a repository carry the language of that file; findings that
+       compare languages carry none.
 
 The class of findings is not exported by the package in this release.
 
