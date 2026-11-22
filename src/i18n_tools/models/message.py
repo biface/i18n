@@ -5,7 +5,6 @@ The content of a message is a principal declension and zero or more
 variant declensions (:class:`Declension`).
 """
 
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, ClassVar, Literal, TypedDict, Unpack, cast
@@ -14,7 +13,12 @@ from ndict_tools import StrictNestedDictionary
 
 from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
-from i18n_tools._counters import ContentCounters, check_format_string, observe
+from i18n_tools._counters import (
+    ContentCounters,
+    check_format_string,
+    observe,
+    read_tokens,
+)
 from i18n_tools._json import JSONInput
 from i18n_tools.exceptions import MessageError
 
@@ -299,14 +303,19 @@ def extract_tokens(text: str) -> list[str]:
     """
     List the tokens of a text, in order of appearance.
 
-    A token is a placeholder variable written ``{name}``.
+    A token is a replacement field of ``str.format`` with a name; its name
+    is the field name, without conversion or format specification
+    (``{n:d}`` and ``{n}`` are the token ``n``). Doubled braces are
+    literal braces, and a positional field (``{}``, ``{0}``) is not a
+    token.
 
     :param text: The text to read.
     :type text: str
     :return: The token names, repeated if a token appears several times.
     :rtype: list[str]
+    :raises ValueError: If the text is not a valid format string.
     """
-    return re.findall(r"\{([^{}]+)\}", text)
+    return read_tokens(text)
 
 
 class Message:

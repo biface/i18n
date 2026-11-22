@@ -504,6 +504,23 @@ class TestCorpusCheck:
             )
         ]
 
+    def test_format_specification_is_not_part_of_the_token(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n:d} article"], ["{n!s} articles"]]),
+            _message("en-US", [["{n} item"], ["{n:>3} items"]]),
+        )
+        assert corpus.check() == []
+
+    def test_doubled_braces_are_not_a_token(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{{n}} article"]]),
+            _message("en-US", [["{n} item"]]),
+        )
+        assert [f.message for f in corpus.check()] == [
+            "tokens of cell (variant 0, segment 0) differ across languages: "
+            "fr-FR [], en-US ['n']"
+        ]
+
     def test_token_order_and_repetition_ignored(self):
         corpus = _corpus(
             _message("fr-FR", [["{a} {b} {a}"]]),

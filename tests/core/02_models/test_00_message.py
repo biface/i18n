@@ -644,10 +644,29 @@ class TestTokens:
             ("Hello", []),
             ("Hello {name}", ["name"]),
             ("{count} files in {folder}, {count}", ["count", "folder", "count"]),
+            ("{n:d} of {n} at {rate!r:>6}", ["n", "n", "rate"]),
+            ("{{literal}} and {name}", ["name"]),
+            ("{} and {0}, {name}", ["name"]),
+            ("{n:{width}}", ["n", "width"]),
+            ("{user.name}", ["user.name"]),
+        ],
+        ids=[
+            "none",
+            "one",
+            "repeated",
+            "specification-and-conversion",
+            "doubled-braces",
+            "positional",
+            "nested",
+            "attribute",
         ],
     )
     def test_extract_tokens(self, text, expected):
         assert extract_tokens(text) == expected
+
+    def test_extract_tokens_invalid_text(self):
+        with pytest.raises(ValueError):
+            _ = extract_tokens("Disk {")
 
 
 class TestComparisons:

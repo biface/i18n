@@ -117,6 +117,34 @@ def _parse_fields(text: str, nested: bool = False) -> Iterator[tuple[str, bool]]
             )
 
 
+def _head(field: str) -> str:
+    """The first name of a field, before any attribute or index access."""
+    return field.split(".", 1)[0].split("[", 1)[0]
+
+
+def _is_positional(head: str) -> bool:
+    """Tell whether a field, given by its first name, is positional."""
+    return head == "" or head.isdigit()
+
+
+def read_tokens(text: str) -> list[str]:
+    """
+    List the token names of a text in order of appearance, repeated.
+
+    The names are those of :func:`read_fields`; positional fields are not
+    tokens.
+
+    :param text: The text.
+    :type text: str
+    :return: The token names, once per field.
+    :rtype: list[str]
+    :raises ValueError: If the text is not a valid format string.
+    """
+    return [
+        field for field, _ in _parse_fields(text) if not _is_positional(_head(field))
+    ]
+
+
 def read_fields(text: str) -> Fields:
     """
     Read the replacement fields of a text, as ``str.format`` reads them.
@@ -136,8 +164,8 @@ def read_fields(text: str) -> Fields:
     names: set[str] = set()
     fields = Fields([], [], [], [])
     for field, nested in _parse_fields(text):
-        head = field.split(".", 1)[0].split("[", 1)[0]
-        if head == "" or head.isdigit():
+        head = _head(field)
+        if _is_positional(head):
             fields.positional.append(field)
         else:
             names.add(field)
