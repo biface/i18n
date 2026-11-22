@@ -56,8 +56,9 @@ autodoc_type_aliases = {
 
 # -- Intersphinx -------------------------------------------------------------
 # Each inventory has a copy in _inventories/, read when the site cannot be
-# reached: a build without network (the pre-push hook) then gives no
-# warning. Refresh a copy from the site with:
+# reached: a site that is down, or sphinx-build run without network in an
+# environment already built, then gives no warning. Refresh a copy from
+# the site with:
 #   curl -sSfL <url>/objects.inv -o docs/source/_inventories/<name>.inv
 
 intersphinx_mapping = {
