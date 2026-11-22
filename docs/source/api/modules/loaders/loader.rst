@@ -7,6 +7,7 @@ Loader module
     .. autofunction:: load_book
     .. autofunction:: inspect_book_file
     .. autofunction:: save_book
+    .. autofunction:: aggregate_dictionaries
     .. autofunction:: aggregate_locale_json
     .. autofunction:: save_locale_json
     .. autofunction:: save_aggregated_locale_json

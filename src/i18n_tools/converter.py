@@ -278,7 +278,7 @@ def catalog_to_unified_format(catalog: Catalog) -> _LegacyPayload:
     Convert a Babel Catalog to a unified format dictionary.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :return: Dictionary in unified format
     :rtype: dict[str, Any]
     """
@@ -446,7 +446,7 @@ def unified_format_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     # Extract metadata from unified format
     metadata = unified.get("metadata", {})
@@ -1168,7 +1168,7 @@ def convert_catalog_to_i18next(
     Convert a Babel Catalog directly to i18next JSON format.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
@@ -1192,7 +1192,7 @@ def convert_i18next_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     unified = i18next_to_unified_format(i18next_data)
     return unified_format_to_catalog(unified, locale, domain)
@@ -1204,7 +1204,7 @@ def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]
     Convert a Babel Catalog directly to i18n_tools JSON format.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :return: Dictionary in i18n_tools format
     :rtype: dict[str, list[list[str]]]
     """
@@ -1228,7 +1228,7 @@ def convert_i18n_tools_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     unified = i18n_tools_to_unified_format(i18n_tools_data)
     catalog = unified_format_to_catalog(unified, locale, domain)
@@ -1308,7 +1308,7 @@ def load_and_convert_json_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     i18next_data = load_json(json_file_path)
     return convert_i18next_to_catalog(i18next_data, locale, domain)
@@ -1334,7 +1334,7 @@ def seek_translation(
     Seek a translation in the repository.
 
     :param repository: Repository containing translations
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module name
     :type module: str
     :param domain: Domain name
@@ -1346,7 +1346,7 @@ def seek_translation(
     :param alternative: Alternative index (for plural forms)
     :type alternative: int
     :return: Translation data
-    :rtype: StrictNestedDictionary
+    :rtype: ~ndict_tools.StrictNestedDictionary
     :raises KeyError: If the message ID is not found
     """
     translation = StrictNestedDictionary(

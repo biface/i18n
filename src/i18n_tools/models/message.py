@@ -334,8 +334,8 @@ class Message:
     Declensions may have different numbers of segments while a message is
     edited. :attr:`matrix` pads the shorter ones with ``""``.
 
-    :attr:`metadata` holds the keys of the entry metadata of a ``.i18t``
-    file: ``id``, ``context``, ``locations``, ``flags``,
+    The ``metadata`` attribute holds the keys of the entry metadata of a
+    ``.i18t`` file: ``id``, ``context``, ``locations``, ``flags``,
     ``user_comments``, ``auto_comments``, ``status``, ``rules``, and
     ``count`` and ``fill_mask`` once a record is taken. The properties of
     the same names read these keys.
@@ -489,7 +489,7 @@ class Message:
     @property
     def id(self) -> str:
         """
-        Identifier of the message: ``metadata["id"]``.
+        The identifier of the message, stored at ``metadata["id"]``.
 
         The Book that holds the message is the master of its key: it writes
         its key here when it renames the message, and writes its key as the
@@ -644,13 +644,14 @@ class Message:
     @property
     def observed(self) -> ContentCounters:
         """
-        The record of the current content: its ``count`` and ``fill_mask``.
+        The record of the current content, with its ``count`` and
+        ``fill_mask``.
 
         Declensions with fewer segments than another are counted padded
         with ``""``, as they are written.
 
         :return: The record, new on each access, with the settings of
-            :attr:`metadata`.
+            ``metadata``.
         :rtype: ContentCounters
         """
         return ContentCounters(

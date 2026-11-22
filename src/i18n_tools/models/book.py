@@ -71,15 +71,15 @@ class Book:
     The messages of one domain in one language: the content of one
     ``.i18t`` file.
 
-    :attr:`metadata` holds the keys of the root metadata of the file:
-    ``format_version`` (the version of the format read, ``"1.0.0"`` for a
-    new Book), ``version``, ``language``, ``domain``, ``gettext`` and
+    The ``metadata`` attribute holds the keys of the root metadata of the
+    file: ``format_version`` (the version of the format read, ``"1.0.0"``
+    for a new Book), ``version``, ``language``, ``domain``, ``gettext`` and
     ``rules``. The properties of the same names read these keys. ``count``
     and ``statistics`` are computed when the file is written.
 
     The class is iterable: iterating over a Book yields its Message
-    instances in insertion order. :attr:`messages` maps each identifier to
-    its message. The Book is the master of these keys: :meth:`add` holds a
+    instances in insertion order. The ``messages`` attribute maps each
+    identifier to its message. The Book is the master of these keys: :meth:`add` holds a
     message under its ``id``, :meth:`rename` changes the key and the
     ``id`` together, and the file takes the key as the ``id`` of the entry.
 

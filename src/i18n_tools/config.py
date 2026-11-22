@@ -504,7 +504,7 @@ class Config(metaclass=Singleton):
             form: domain and local part in lower case.
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
-        :raises EmailNotValidError: if email is malformed
+        :raises email_validator.EmailNotValidError: if email is malformed
         :raises ValueError: If at least one of the languages is not an IETF tag
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
@@ -559,7 +559,7 @@ class Config(metaclass=Singleton):
             An email address is normalized (lower case) before the lookup.
         :type index: str
         :return: The author's details, or None if not found.
-        :rtype: StrictNestedDictionary | None
+        :rtype: ~ndict_tools.StrictNestedDictionary | None
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """

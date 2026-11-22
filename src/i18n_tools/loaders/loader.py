@@ -141,7 +141,7 @@ def load_locale_json(file_path: Path | str) -> dict[str, JSONValue]:
         }
 
     :param file_path: Path to the JSON locale file.
-    :type file_path: Path | str
+    :type file_path: ~pathlib.Path | str
     :return: JSON locale data content.
     :rtype: dict
     :raises FileNotFoundError: If the file is not found.
@@ -552,7 +552,7 @@ def create_module_archive(
     by identifying the top-level module from the given module/package path.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module or module/package path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -598,7 +598,7 @@ def restore_module_from_archive(
     Restore a module's contents from a tar.gz archive.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module or submodule path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -648,7 +648,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
     the necessary files and directories.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :return: Nothing
     :type: None
     """
@@ -711,7 +711,7 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
     Checks the existence of required directories and files for each module, domain, and language.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :return: True if the repository is properly constructed, False otherwise.
     :rtype: bool
     """
@@ -790,7 +790,7 @@ def aggregate_dictionaries(
     This function aggregates all dictionaries for a given module and domain into a single JSON file.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: module where translation should be located.
     :type module: str
     :param domain: domain of translation.
@@ -832,7 +832,7 @@ def add_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where should be located domain of translations.
     :type module: str
     :param domain: The domain of the translation set.
@@ -882,7 +882,7 @@ def update_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.
@@ -936,7 +936,7 @@ def remove_translation_set(
     the translations conform to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.

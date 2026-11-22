@@ -703,7 +703,7 @@ class Repository(StrictNestedDictionary):
         :type current: object
         :return: An empty placeholder of the same type as ``current``
                  (``None`` for unrecognised types).
-        :rtype: StrictNestedDictionary | JSONValue
+        :rtype: ~ndict_tools.StrictNestedDictionary | JSONValue
         """
         if isinstance(current, StrictNestedDictionary):
             return StrictNestedDictionary()

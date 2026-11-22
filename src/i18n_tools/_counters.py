@@ -650,7 +650,7 @@ class ContentCounters(StrictNestedDictionary):
         Number of segments of the principal and of each alternative.
 
         :return: ``self[["count", "segments"]]``.
-        :rtype: StrictNestedDictionary
+        :rtype: ~ndict_tools.StrictNestedDictionary
         """
         return cast(StrictNestedDictionary, self[["count", "segments"]])
 
@@ -660,7 +660,7 @@ class ContentCounters(StrictNestedDictionary):
         Token names of each text, in the shape of the content.
 
         :return: ``self[["count", "tokens"]]``.
-        :rtype: StrictNestedDictionary
+        :rtype: ~ndict_tools.StrictNestedDictionary
         """
         return cast(StrictNestedDictionary, self[["count", "tokens"]])
 
@@ -670,7 +670,7 @@ class ContentCounters(StrictNestedDictionary):
         Fill state of each text, in the shape of the content.
 
         :return: ``self["fill_mask"]``.
-        :rtype: StrictNestedDictionary
+        :rtype: ~ndict_tools.StrictNestedDictionary
         """
         return cast(StrictNestedDictionary, self["fill_mask"])
 

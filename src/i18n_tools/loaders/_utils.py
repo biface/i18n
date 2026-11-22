@@ -172,7 +172,7 @@ def _save_yaml(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
     non-ASCII characters as they are, like the JSON writer.
 
     :param file_path: Path of the file to write.
-    :type file_path: Path | str
+    :type file_path: ~pathlib.Path | str
     :param data: The mapping to write.
     :type data: Mapping[str, JSONInput]
     """
@@ -250,7 +250,7 @@ def load_text(file_path: Path | str) -> Catalog:
     :param file_path: Path to the PO file.
     :type file_path: str
     :return: Catalog object containing the PO file data.
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     :raises FileNotFoundError: If the file is not found.
     """
     from babel.messages.pofile import read_po
@@ -268,7 +268,7 @@ def save_text(file_path: Path | str, catalog: Catalog) -> None:
     :param file_path: Path to the PO file.
     :type file_path: str
     :param catalog: Catalog object to be saved.
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :raises IOError: If there is an error writing the file.
     """
     from babel.messages.pofile import write_po
@@ -289,7 +289,7 @@ def load_machine(file_path: Path | str) -> Catalog:
     :param file_path: Path to the MO file.
     :type file_path: str
     :return: Catalog object containing the MO file data.
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     :raises FileNotFoundError: If the file is not found.
     """
     from babel.messages.mofile import read_mo
@@ -302,12 +302,12 @@ def load_machine(file_path: Path | str) -> Catalog:
 
 def save_machine(file_path: Path | str, catalog: Catalog) -> None:
     """
-    Save a POFile object to a MO file.
+    Save a Catalog to a MO file.
 
     :param file_path: Path to the MO file.
     :type file_path: str
-    :param catalog: POFile object to be saved.
-    :type catalog: POFile
+    :param catalog: Catalog to be saved.
+    :type catalog: ~babel.messages.catalog.Catalog
     :raises FileNotFoundError: If the file path is invalid.
     """
     from babel.messages.mofile import write_mo
@@ -346,11 +346,11 @@ def build_path(base_path: Path | str, *sub_dirs: str) -> Path:
     resolving the final path as an absolute path.
 
     :param base_path: The starting path.
-    :type base_path: Path | str
+    :type base_path: ~pathlib.Path | str
     :param sub_dirs: One or more subdirectory names to append to the base path.
     :type sub_dirs: str
     :return: The combined path as a Path object.
-    :rtype: Path
+    :rtype: ~pathlib.Path
     """
     if isinstance(base_path, str):
         base_path = Path(base_path)
@@ -468,7 +468,7 @@ def detect_format(path: Path | str) -> TranslationFileFormat:
     ``.i18t`` alone and other cases of the suffixes included.
 
     :param path: Path to a Book file.
-    :type path: Path | str
+    :type path: ~pathlib.Path | str
     :return: ``"json"`` or ``"yaml"``.
     :rtype: TranslationFileFormat
     :raises FormatError: If the name is not a Book name.
@@ -530,7 +530,7 @@ def check_module(repository: StrictNestedDictionary, module_list: list[str]) -> 
     This function verifies that a module or a list of modules are defined in the repository.
 
     :param repository: data representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module_list: The list of modules to verify.
     :type module_list: list[str]
     :raises: ValueError
@@ -549,7 +549,7 @@ def check_domains(
     This function verifies that a domain or a list of domains are defined in the repository.
 
     :param repository: data representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module containing domains.
     :type module: str
     :param domain_list: The list of domains to verify.

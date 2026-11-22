@@ -995,7 +995,7 @@ def read_book_data(file_path: Path | str) -> dict[str, object]:
     (DD-34), without checking it.
 
     :param file_path: Path to the ``.i18t`` file.
-    :type file_path: Path | str
+    :type file_path: ~pathlib.Path | str
     :return: The content of the file, keyed by the root keys.
     :rtype: dict[str, object]
     :raises FileNotFoundError: If the file does not exist.
@@ -1023,7 +1023,7 @@ def build_path(base_path: str, *sub_dirs: str) -> str:
     that could corrupt the path, such as '..'. It also verifies that the path exists.
 
     :param base_path: The starting path.
-    :type base_path: Union[Path, str]
+    :type base_path: Union[~pathlib.Path, str]
     :param sub_dirs: One or more subdirectory names to append to the base path.
     :type sub_dirs: str
     :return: The combined, cleaned, and validated path as a string.
@@ -1116,7 +1116,7 @@ def create_template(
     directory structure for the specified module and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -1199,7 +1199,7 @@ def create_catalog(
     directory structure for the specified module, language, and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1243,7 +1243,7 @@ def create_dictionary(
     directory structure for the specified module, language, and domain.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1282,7 +1282,7 @@ def fetch_template(
     This function reads and returns the content of the specified template file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -1315,7 +1315,7 @@ def fetch_catalog(
     This function reads and returns the translation catalog from the specified .po file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1323,7 +1323,7 @@ def fetch_catalog(
     :param domain: The domain name.
     :type domain: str
     :return: The translation catalog.
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     _utils.check_domains(repository, module, [domain])
     path = build_path(
@@ -1354,7 +1354,7 @@ def fetch_dictionary(
     This function reads and returns the translation dictionary from the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1397,7 +1397,7 @@ def update_catalog(
     and updates the corresponding .mo file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1474,7 +1474,7 @@ def update_dictionary(
     This function saves the provided translation dictionary to the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1521,7 +1521,7 @@ def dump_dictionary(
     This function saves the provided translation dictionary to the specified .json file.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1563,7 +1563,7 @@ def remove_template(
     This function deletes the specified template file if it exists.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param domain: The domain name.
@@ -1591,7 +1591,7 @@ def remove_catalog(
     This function deletes the specified .po and .mo files if they exist.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionaryNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1627,7 +1627,7 @@ def remove_dictionary(
     This function deletes the specified .json file if it exists.
 
     :param repository: The data structure representing the translation repository.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module path.
     :type module: str
     :param language: The language code.
@@ -1716,7 +1716,7 @@ def build_translation_lang_files(
     Build from repository TLD, path for translation files
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module name
     :type module: str
     :param domain: Domain name
@@ -1775,9 +1775,9 @@ def verify_available_languages(
     Verify that languages in translation sets are registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: dict[str, Any].
+    :type repository: dict[str, Any]
     :param languages: languages in translation set.
-    :type languages: list[str].
+    :type languages: list[str]
     :return: Nothing
     :rtype: None
     :raises ValueError: If any language does not exist in allowed languages.
@@ -1796,9 +1796,9 @@ def _verify_target_module(
     Verify that a target module is registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: dict[str, Any].
+    :type repository: dict[str, Any]
     :param target_module: module where translation should be located.
-    :type target_module: str.
+    :type target_module: str
     :return: Nothing
     :rtype: None
     :raises ValueError: If any module is not registered in the repository.
@@ -1816,11 +1816,11 @@ def verify_target_domain(
     Verify that a target domain is registered in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: dict[str, Any].
+    :type repository: dict[str, Any]
     :param target_module: module where translation should be located.
-    :type target_module: str.
+    :type target_module: str
     :param target_domain: domain of translation.
-    :type target_domain: str.
+    :type target_domain: str
     :return: Nothing
     :rtype: None
     :raises ValueError: If the target module or the target domain is not
