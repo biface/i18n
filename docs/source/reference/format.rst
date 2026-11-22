@@ -57,8 +57,8 @@ key is allowed. It describes what a writer produces, not everything a
 reader accepts: the tolerances of `Reading a file`_ are not in it. It
 does not express the rules that relate several values: the equal number of
 segments in every declension, the counters against the content, the
-language and the domain against the place of the file. These rules are
-given in the sections below.
+language and the domain against the place of the file, the identifier
+of an entry against its key. These rules are given in the sections below.
 
 The complete schema is at the end of this page (`The schema`_).
 
@@ -80,7 +80,7 @@ The top-level mapping holds three kinds of keys:
 
 any other key
     A message entry (see `Message entries`_). The key is the identifier
-    of the message.
+    of the message; the entry repeats it in ``["metadata", "id"]``.
 
 An identifier is a non-empty string chosen by the developer, readable
 (``error.network.timeout``) or opaque (``Q100200020``), and independent of
@@ -383,6 +383,10 @@ Entry metadata
      - Type
      - Absent on read
      - Meaning
+   * - ``id``
+     - string
+     - error
+     - Identifier of the message: the key of the entry, repeated.
    * - ``context``
      - string
      - ``""``
@@ -428,10 +432,11 @@ Entry metadata
        `Entry statistics`_.
 
 A writer writes every key of the table. A reader reads an absent key as
-the value of the third column. For ``status``, ``rules``, ``count`` and
-``fill_mask`` the sections below say what an absence means; for the other
-keys, an absent key is a warning in a ``draft`` message and an error in a
-``complete`` message.
+the value of the third column. ``id`` MUST be present and equal the key
+of the entry. For ``status``, ``rules``, ``count`` and ``fill_mask`` the
+sections below say what an absence means; for the other keys, an absent
+key is a warning in a ``draft`` message and an error in a ``complete``
+message.
 
 
 Locations
@@ -709,7 +714,9 @@ information
      - error
    * - Empty identifier, empty flag
      - error
-   * - Absent key of the entry metadata, other than ``status``,
+   * - ``id`` of an entry absent, or other than the key of the entry
+     - error
+   * - Absent key of the entry metadata, other than ``id``, ``status``,
        ``rules``, ``count`` and ``fill_mask``
      - warning in a ``draft`` message; error in a ``complete`` message
    * - Repeated flag in an entry

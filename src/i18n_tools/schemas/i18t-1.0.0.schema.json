@@ -2,7 +2,7 @@
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://pyi18t-tools.readthedocs.io/en/stable/schemas/i18t-1.0.0.schema.json",
     "title": "pyi18t .i18t file, format 1.0.0",
-    "description": "Structure of a Book file as a conforming writer produces it. The same data model applies to the JSON and YAML encodings. The coherence rules that a schema cannot express (equal segment counts, counters against content, language and domain against the path) are specified in the format reference.",
+    "description": "Structure of a Book file as a conforming writer produces it. The same data model applies to the JSON and YAML encodings. The coherence rules that a schema cannot express (equal segment counts, counters against content, language and domain against the path, identifier of an entry against its key) are specified in the format reference.",
     "type": "object",
     "required": ["metadata"],
     "properties": {
@@ -173,6 +173,7 @@
         "entryMetadata": {
             "type": "object",
             "required": [
+                "id",
                 "context",
                 "locations",
                 "flags",
@@ -185,6 +186,7 @@
                 "statistics"
             ],
             "properties": {
+                "id": {"type": "string", "minLength": 1},
                 "context": {"type": "string"},
                 "locations": {
                     "type": "array",

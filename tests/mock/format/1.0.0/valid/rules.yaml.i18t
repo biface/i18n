@@ -47,6 +47,7 @@ quota.used:
       - ' '
       - Quota du dépôt dépassé de {excess}.
   metadata:
+    id: quota.used
     context: ''
     locations: []
     flags: []

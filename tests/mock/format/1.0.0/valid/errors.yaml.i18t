@@ -46,6 +46,7 @@ files.missing:
     - - File {name} is missing from {repository}.
       - ''
   metadata:
+    id: files.missing
     context: sync report
     locations:
     - file: src/app/sync.py
@@ -97,6 +98,7 @@ disk.alert:
     - Disk is almost full ({percent} %).
     alternatives: []
   metadata:
+    id: disk.alert
     context: ''
     locations:
     - file: src/app/monitor.py

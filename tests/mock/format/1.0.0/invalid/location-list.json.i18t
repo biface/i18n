@@ -58,6 +58,7 @@
             ]
         },
         "metadata": {
+            "id": "files.missing",
             "context": "sync report",
             "locations": [
                 [
@@ -131,6 +132,7 @@
             "alternatives": []
         },
         "metadata": {
+            "id": "disk.alert",
             "context": "",
             "locations": [
                 {

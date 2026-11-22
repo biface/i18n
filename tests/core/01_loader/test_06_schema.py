@@ -3,7 +3,8 @@
 The schema is read from the installed package. The fixtures of
 ``tests/mock/format/1.0.0/`` are Book files: those of ``valid/`` are what a
 conforming writer produces, each file of ``invalid/`` breaks one rule of the
-schema, at the path given by ``INVALID``.
+schema, at the path given by ``INVALID``, or at the paths given by
+``INVALID_AT_SEVERAL_PATHS`` when the schema sees that one defect twice.
 """
 
 import json
@@ -27,13 +28,13 @@ INVALID: dict[str, list[str | int]] = {
     "version-prerelease": ["metadata", "version"],
     "reserved-key": [],
     "former-reserved-key": [],
-    "empty-identifier": [],
     "empty-flag": ["files.missing", "metadata", "flags", 0],
     "duplicate-flag": ["files.missing", "metadata", "flags"],
     "empty-flag-name": ["metadata", "statistics", "flags"],
     "unknown-root-key": ["metadata"],
     "matrix-entry": ["files.missing", "messages"],
     "no-entry-metadata": ["files.missing"],
+    "no-entry-id": ["files.missing", "metadata"],
     "entry-version": ["files.missing", "metadata"],
     "empty-principal": ["files.missing", "messages", "principal"],
     "location-list": ["files.missing", "metadata", "locations", 0],
@@ -47,6 +48,13 @@ INVALID: dict[str, list[str | int]] = {
         "principal",
         0,
     ],
+}
+
+
+# fixture name -> paths of the errors the schema reports for its one defect:
+# the empty identifier is the key of the entry and its ``["metadata", "id"]``
+INVALID_AT_SEVERAL_PATHS: dict[str, list[list[str | int]]] = {
+    "empty-identifier": [[], ["", "metadata", "id"]],
 }
 
 
@@ -96,7 +104,7 @@ class TestValidFixtures:
 class TestInvalidFixtures:
     def test_every_file_has_its_expected_error(self):
         assert sorted(p.name.split(".")[0] for p in _files("invalid")) == sorted(
-            INVALID
+            [*INVALID, *INVALID_AT_SEVERAL_PATHS]
         )
 
     @pytest.mark.parametrize("name", sorted(INVALID))
@@ -105,3 +113,12 @@ class TestInvalidFixtures:
             validator.iter_errors(_read(FIXTURES / "invalid" / f"{name}.json.i18t"))
         )
         assert [list(error.absolute_path) for error in errors] == [INVALID[name]]
+
+    @pytest.mark.parametrize("name", sorted(INVALID_AT_SEVERAL_PATHS))
+    def test_is_refused_at_each_expected_path(self, validator, name):
+        errors = list(
+            validator.iter_errors(_read(FIXTURES / "invalid" / f"{name}.json.i18t"))
+        )
+        assert sorted(list(error.absolute_path) for error in errors) == sorted(
+            INVALID_AT_SEVERAL_PATHS[name]
+        )
