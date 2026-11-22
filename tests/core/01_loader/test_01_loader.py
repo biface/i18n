@@ -135,6 +135,7 @@ class TestCreateEmptyFile:
         with open(temp_file, "r", encoding="utf-8") as f:
             data = json.load(f)
         assert data == {}
+        assert Path(temp_file).read_text(encoding="utf-8") == "{}\n"
 
     def test_create_empty_json_raises_exception(self):
         with pytest.raises(FileNotFoundError):
@@ -164,6 +165,12 @@ class TestJsonOperations:
         with open(json_test_file, "r", encoding="utf-8") as f:
             loaded_data = json.load(f)
         assert loaded_data == data
+
+    def test_save_json_ends_with_a_newline(self, tmp_path):
+        """A text file in the POSIX sense: the last line ends with a newline."""
+        file = tmp_path / "data.json"
+        save_json(str(file), {"key": "é"})
+        assert file.read_text(encoding="utf-8") == '{\n    "key": "é"\n}\n'
 
     def test_save_json_raises_exception(self):
         with pytest.raises(FileNotFoundError):

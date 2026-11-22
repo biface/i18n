@@ -111,6 +111,7 @@ def create_empty_json(file_path: Path | str) -> None:
 
     with open(file_path, "w", encoding="utf-8") as json_file:
         json.dump({}, json_file, ensure_ascii=False, indent=4)
+        _ = json_file.write("\n")
 
 
 def load_json(file_path: Path | str) -> dict[str, JSONValue]:
@@ -146,6 +147,9 @@ def save_json(file_path: Path | str, data: Mapping[str, JSONInput]) -> None:
 
     with open(file_path, "w", encoding="utf-8") as json_file:
         json.dump(data, json_file, ensure_ascii=False, indent=4)
+        # A text file in the POSIX sense: its last line ends with a newline,
+        # as the YAML that yaml.dump() writes.
+        _ = json_file.write("\n")
 
 
 def _load_yaml(file_path: Path | str) -> dict[str, JSONValue]:

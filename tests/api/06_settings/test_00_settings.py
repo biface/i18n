@@ -88,6 +88,11 @@ class TestConfigFileOperations:
             with pytest.raises(Exception):
                 load_config_file(source_file)
 
+    def test_saved_json_ends_with_a_newline(self, tmp_path):
+        file = tmp_path / "i18n-tools.json"
+        save_config_file(str(file), {"key": "value"})
+        assert file.read_text(encoding="utf-8") == '{\n    "key": "value"\n}\n'
+
     def test_load_and_save_config_failed_path(self):
         with pytest.raises(Exception):
             load_config_file("non-existent-path/i18n-tools.json")

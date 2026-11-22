@@ -145,5 +145,6 @@ def save_config_file(config_path: Path | str, data: Mapping[str, JSONInput]) -> 
     with open(config_path, "w", encoding="utf-8") as cf:
         if file_extension == ".json":
             json.dump(data, cf, indent=4)
+            _ = cf.write("\n")
         elif file_extension in {".yaml", ".yml"}:
             yaml.safe_dump(data, cf, default_flow_style=False)
