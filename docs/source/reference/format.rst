@@ -298,7 +298,8 @@ reader does not compare it with the content.
      - Number of locations over every entry.
    * - ``flags``
      - mapping of string to integer
-     - For each flag, the number of entries that carry it.
+     - For each flag, the number of entries that carry it, the flags in
+       the order in which they first appear in the entries.
    * - ``tokens``
      - list of strings
      - The distinct token names of the Book, sorted.
@@ -630,19 +631,37 @@ Absent text
     (``" "``, ``"\n"``); otherwise it is **filled**. An absent text is not
     a translation: its ``fill_mask`` value is ``false``.
 
+Format string
+    A text MUST be a valid format string of Python's ``str.format``: a
+    literal brace is doubled (``{{``, ``}}``), every other brace opens or
+    closes a replacement field, and a conversion is ``!r``, ``!s`` or
+    ``!a``. ``"Use { to open"``, ``"a } b"``, ``"{name"`` and ``"{n!x}"``
+    are errors.
+
 Tokens
-    A text uses the replacement fields of Python's ``str.format``. A
-    token is a field with a name (``{name}``, ``{n:d}``); its name is the
-    field name, without conversion or format specification: ``{n:d}``
-    and ``{n}`` are the same token ``n``. Doubled braces (``{{``, ``}}``)
-    are literal braces, not tokens. Values are passed by name: a
-    positional field (``{}``, ``{0}``) SHOULD NOT be used, and is a
-    warning.
+    A token is a field with a name (``{name}``, ``{n:d}``); its name is
+    the field name as written, without conversion or format
+    specification: ``{n:d}``, ``{n!r}`` and ``{n}`` are the same token
+    ``n``. Doubled braces are literal braces, not tokens. A field nested
+    in a format specification is read as well: ``{n:{w}}`` has the tokens
+    ``n`` and ``w``. A field nested in a nested field
+    (``{n:{w:{x}}}``) is an error, as for ``str.format``.
+
+    Values are passed by name. A text SHOULD NOT use:
+
+    - a positional field (``{}``, ``{0}``), which is not a token;
+    - a token with attribute or index access (``{user.name}``,
+      ``{items[0]}``), whose name is the field name as written,
+      ``user.name``;
+    - a field nested in a format specification (``{n:{w}}``).
+
+    Each such field is a warning.
 
 Column fallback
     When the text requested at ``(d, s)`` is absent, a program takes the
-    first filled text of ``(d, s)``, ``(0, s)``, ``(d, 0)``, ``(0, 0)``.
-    An address outside the message is an error, not a fallback.
+    first filled text of ``(d, s)``, ``(0, s)``, ``(d, 0)``, ``(0, 0)``;
+    when none of them is filled, it takes the text ``(0, 0)`` as it is
+    stored. An address outside the message is an error, not a fallback.
 
 Segment of a number
     A program chooses the segment of a number through the plural rules of
@@ -701,6 +720,8 @@ information
      - error
    * - Alternative whose number of segments differs from the principal's
      - error
+   * - Text that is not a valid format string
+     - error
    * - Known key whose value does not have its type, ``gettext`` excepted
      - error
    * - ``count`` absent at the root, or Book counters that differ from
@@ -724,7 +745,8 @@ information
      - warning; the repetition is removed
    * - Location beyond the content
      - warning
-   * - Positional token
+   * - Positional field, token with attribute or index access, field
+       nested in a format specification
      - warning
    * - Invalid ``status``
      - warning; read as ``draft``
