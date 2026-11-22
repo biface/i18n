@@ -6,13 +6,16 @@ Message module
    .. autoclass:: Declension
       :members: segments, from_segments
 
-   .. autoclass:: Location
+   .. autoclass:: LocationEntry
 
    .. autoclass:: DeclensionFields
+
+   .. autoclass:: MessageOptions
 
    .. autoclass:: Message
 
       .. automethod:: from_matrix
+      .. autoproperty:: id
       .. automethod:: get_id
       .. autoproperty:: principal
       .. autoproperty:: variants
@@ -45,11 +48,19 @@ Message module
       .. automethod:: equal
       .. automethod:: isomorph
       .. automethod:: similar
-      .. automethod:: get_metadata
+      .. autoproperty:: context
+      .. autoproperty:: rules
       .. autoproperty:: locations
+      .. autoproperty:: flags
+      .. autoproperty:: user_comments
+      .. autoproperty:: auto_comments
+      .. automethod:: get_metadata
       .. automethod:: add_location
-      .. automethod:: add_language
+      .. automethod:: remove_location
+      .. automethod:: add_flag
+      .. automethod:: remove_flag
       .. automethod:: add_comment
+      .. automethod:: remove_comment
       .. automethod:: add_metadata
       .. automethod:: update_metadata
       .. automethod:: remove_metadata
@@ -57,3 +68,13 @@ Message module
    .. autofunction:: extract_tokens
 
 .. autoclass:: i18n_tools.models.ContentCounters
+
+   .. autoproperty:: declensions
+   .. autoproperty:: alternatives
+   .. autoproperty:: singulars
+   .. autoproperty:: plurals
+   .. autoproperty:: segments
+   .. autoproperty:: tokens
+   .. autoproperty:: fill_mask
+   .. automethod:: defects
+   .. automethod:: differences

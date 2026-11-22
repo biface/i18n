@@ -28,7 +28,6 @@ __all__ = [
     # Models
     "Message",
     "Declension",
-    "Location",
     "ContentCounters",
     "Book",
     "Corpus",
@@ -55,7 +54,6 @@ from i18n_tools.models import (  # noqa: E402
     Declension,
     Encyclopaedia,
     FallbackBook,
-    Location,
     Message,
 )
 from i18n_tools.models.repository import Repository  # noqa: E402

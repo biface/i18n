@@ -54,11 +54,7 @@ class TestSegmentSelection:
 
     def test_segment_used_only_by_a_variant(self):
         """A plural row filled only in a variant is a row of the message."""
-        message = Message(
-            id="files",
-            principal=Declension("one file"),
-            variants=[Declension("one doc", ("two docs",))],
-        )
+        message = Message("files", "one file", alternatives=[["one doc", "two docs"]])
         message.plural_rule = PluralRule("en", thresholds={2: 1})
         assert publish(message, variant=1, n=2) == "two docs"
 
@@ -175,7 +171,7 @@ class TestTokens:
         assert publish(simple_message, name="Ana", unused="x") == "Hello Ana"
 
     def test_text_without_tokens(self):
-        message = Message("static", Declension("Static text"))
+        message = Message("static", "Static text")
         assert publish(message) == "Static text"
 
     def test_missing_token(self, simple_message):
@@ -185,6 +181,8 @@ class TestTokens:
             publish(simple_message)
 
     def test_malformed_text(self, simple_message):
-        simple_message.update_principal(singular="Hello {name")
+        # The model and the reader refuse such a text; publish() still
+        # guards against one stored by other means.
+        simple_message._principal = Declension("Hello {name")
         with pytest.raises(FormatterError, match="Error formatting message 'greet'"):
             publish(simple_message, name="Ana")

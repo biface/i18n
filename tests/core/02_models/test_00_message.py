@@ -14,18 +14,19 @@ import re
 import pytest
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools import __version__
 from i18n_tools.exceptions import MessageError
-from i18n_tools.models import ContentCounters, Declension, Location, Message
+from i18n_tools.models import ContentCounters, Declension, Message
 from i18n_tools.models.message import extract_tokens
 
 EMPTY_METADATA = {
-    "version": __version__,
-    "language": "",
+    "id": "3000",
+    "context": "",
     "locations": [],
-    "flags": ["python-format"],
+    "flags": [],
     "user_comments": [],
     "auto_comments": [],
+    "status": "draft",
+    "rules": {},
 }
 
 DRAFT_MATRIX = [
@@ -35,15 +36,22 @@ DRAFT_MATRIX = [
     ["", "", "Plusieurs {flower} rares"],
 ]
 
+LOCATION = {"file": "app.py", "line": 12, "declension": None, "segment": None}
+
 
 def _copy(message: Message) -> Message:
-    """An equal message sharing no mutable metadata value with ``message``."""
+    """An equal draft message sharing no mutable metadata value with ``message``."""
     return Message(
         message.id,
-        message.principal,
-        message.variants,
-        message.context,
-        copy.deepcopy(message.metadata.to_dict()),
+        message.principal.singular,
+        plurals=list(message.principal.plurals),
+        alternatives=[list(variant.segments) for variant in message.variants],
+        context=message.context,
+        locations=copy.deepcopy(message.locations),
+        flags=list(message.flags),
+        user_comments=list(message.user_comments),
+        auto_comments=list(message.auto_comments),
+        rules=message.rules.to_dict(),
     )
 
 
@@ -59,51 +67,117 @@ class TestConstruction:
         assert message.metadata.to_dict() == EMPTY_METADATA
 
     @pytest.mark.parametrize(
-        "variants",
+        "plurals, alternatives",
         [
-            [Declension("a"), Declension("b", ("bs",))],
-            (Declension("a"), Declension("b", ("bs",))),
+            (["ps"], [["a"], ["b", "bs"]]),
+            (("ps",), (("a",), ("b", "bs"))),
         ],
+        ids=["lists", "tuples"],
     )
-    def test_principal_and_variants(self, variants):
-        message = Message("3000", Declension("p", ("ps",)), variants, context="menu")
+    def test_texts(self, plurals, alternatives):
+        message = Message("3000", "p", plurals=plurals, alternatives=alternatives)
         assert message.principal == Declension("p", ("ps",))
         assert message.variants == (Declension("a"), Declension("b", ("bs",)))
-        assert message.context == "menu"
 
-    def test_variants_are_copied(self):
-        variants = [Declension("a")]
-        message = Message("3000", Declension("p"), variants)
-        variants.append(Declension("b"))
+    def test_alternatives_are_copied(self):
+        alternatives = [["a"]]
+        message = Message("3000", "p", alternatives=alternatives)
+        alternatives.append(["b"])
         assert message.variants == (Declension("a"),)
 
-    def test_metadata(self):
-        message = Message("3000", metadata={"language": "fr-FR", "flags": []})
-        assert message.metadata["language"] == "fr-FR"
-        assert message.metadata["flags"] == []
+    def test_metadata_options(self):
+        message = Message(
+            "3000",
+            context="menu",
+            locations=[LOCATION],
+            flags=["python-format"],
+            user_comments=["by hand"],
+            auto_comments=["extracted"],
+            rules={"thresholds": {"2": 1}},
+        )
+        assert message.metadata.to_dict() == {
+            **EMPTY_METADATA,
+            "context": "menu",
+            "locations": [LOCATION],
+            "flags": ["python-format"],
+            "user_comments": ["by hand"],
+            "auto_comments": ["extracted"],
+            "rules": {"thresholds": {"2": 1}},
+        }
+        assert list(message.metadata) == list(EMPTY_METADATA)
 
-    def test_metadata_count_is_unknown(self):
-        """count is no longer a key of Message.metadata."""
-        with pytest.raises(KeyError, match="count"):
-            _ = Message("3000", metadata={"count": {"singular": 1, "plurals": []}})
+    def test_int_identifier_converted(self):
+        assert Message(3000).id == "3000"
+
+    @pytest.mark.parametrize("key", ["status", "count", "fill_mask"])
+    def test_guarded_keys_are_not_options(self, key):
+        with pytest.raises(
+            TypeError, match=f"'{key}' is not a Message option: it is set by"
+        ):
+            _ = Message("3000", **{key: "complete"})
+
+    def test_unknown_options(self):
+        with pytest.raises(
+            TypeError, match="Unknown Message option\\(s\\): language, version"
+        ):
+            _ = Message("3000", version="0.10.0", language="fr")
 
     @pytest.mark.parametrize(
-        "kwargs, expected",
+        "args, kwargs, expected",
         [
-            ({"id": 3000}, "Message id must be a string"),
+            ((True,), {}, "Message identifier must be a str or an int"),
+            ((3.0,), {}, "Message identifier must be a str or an int"),
+            (("3000", 1), {}, "Message singular must be a string"),
+            (("3000",), {"plurals": "ps"}, "Message plurals must be a list or a tuple"),
+            (("3000",), {"alternatives": "a"}, "Message alternatives must be"),
+            (("3000",), {"context": None}, "Message context must be a str"),
+            (("3000",), {"rules": []}, "Message rules must be a mapping"),
             (
-                {"id": "3000", "principal": "p"},
-                "Message principal must be a Declension",
+                ("3000",),
+                {"flags": "python-format"},
+                "Message flags must be a list of str",
             ),
-            ({"id": "3000", "variants": Declension("a")}, "Message variants must be"),
-            ({"id": "3000", "variants": ["a"]}, "Message variant must be a Declension"),
-            ({"id": "3000", "context": None}, "Message context must be a string"),
-            ({"id": "3000", "metadata": []}, "Message metadata must be a dict"),
+            (("3000",), {"user_comments": [1]}, "Message user_comments must be a list"),
+            (("3000",), {"locations": [["a.py", 1]]}, "A location is a mapping"),
         ],
     )
-    def test_wrong_types(self, kwargs, expected):
+    def test_wrong_types(self, args, kwargs, expected):
         with pytest.raises(TypeError, match=expected):
-            _ = Message(**kwargs)
+            _ = Message(*args, **kwargs)
+
+    @pytest.mark.parametrize(
+        "args, kwargs, expected",
+        [
+            (("",), {}, "Message identifier must not be empty"),
+            (("3000",), {"flags": [""]}, "A flag must not be empty"),
+            (("3000",), {"flags": ["a", "a"]}, "Flag\\(s\\) given more than once: a"),
+            (
+                ("3000",),
+                {"locations": [{**LOCATION, "line": 0}]},
+                "Location line must be >= 1",
+            ),
+            (
+                ("3000",),
+                {"alternatives": [[]]},
+                "A declension has at least one segment",
+            ),
+            (
+                ("3000", "Disk {"),
+                {},
+                re.escape(
+                    "text (0, 0) is not a valid format string: Single '{' encountered"
+                ),
+            ),
+            (
+                ("3000", "p"),
+                {"alternatives": [["a", "{n"]]},
+                re.escape("text (1, 1) is not a valid format string"),
+            ),
+        ],
+    )
+    def test_refused_values(self, args, kwargs, expected):
+        with pytest.raises(ValueError, match=expected):
+            _ = Message(*args, **kwargs)
 
 
 class TestFromMatrix:
@@ -128,12 +202,16 @@ class TestFromMatrix:
         matrix = [["", "Doc"], ["Files", ""]]
         assert Message.from_matrix("2000", matrix).matrix == matrix
 
-    def test_context_and_metadata(self):
+    def test_metadata_options(self):
         message = Message.from_matrix(
-            "2000", [["Save"]], context="toolbar", metadata={"language": "en"}
+            "2000", [["Save"]], context="toolbar", flags=["python-format"]
         )
         assert message.context == "toolbar"
-        assert message.metadata["language"] == "en"
+        assert message.flags == ["python-format"]
+
+    def test_texts_come_from_the_matrix(self):
+        with pytest.raises(TypeError, match="Unknown Message option\\(s\\): plurals"):
+            _ = Message.from_matrix("2000", [["Save"]], plurals=["Saves"])
 
     @pytest.mark.parametrize(
         "matrix",
@@ -147,7 +225,7 @@ class TestFromMatrix:
     @pytest.mark.parametrize(
         "identifier, matrix",
         [
-            (2000, [["a"]]),
+            (True, [["a"]]),
             ("2000", "a"),
             ("2000", [("a",)]),
             ("2000", [["a", 1]]),
@@ -236,7 +314,7 @@ class TestReading:
         assert message.has_plurals is has_plurals
 
     def test_structure_counts_even_when_empty(self):
-        message = Message("3000", Declension("", ("",)), [Declension("")])
+        message = Message("3000", "", plurals=[""], alternatives=[[""]])
         assert message.has_variants
         assert message.has_plurals
 
@@ -316,7 +394,7 @@ class TestVariants:
 
     def test_add_variant_never_overwrites(self):
         """Regression: add_variant() replaced variant 1 when the singular was empty."""
-        message = Message("y", variants=[Declension("Doc")])
+        message = Message("y", alternatives=[["Doc"]])
         assert message.add_variant(singular="Pièce") == 2
         assert message.variants == (Declension("Doc"), Declension("Pièce"))
 
@@ -526,7 +604,10 @@ class TestTokens:
             _ = single_message.format()
 
     def test_format_malformed_text(self):
-        message = Message("3000", Declension("Hello {name"))
+        # The model refuses such a text; format() still guards against one
+        # stored by other means.
+        message = Message("3000")
+        message._principal = Declension("Hello {name")
         with pytest.raises(ValueError, match="Error formatting message '3000'"):
             _ = message.format(name="Ana")
 
@@ -586,9 +667,7 @@ class TestComparisons:
 
     def test_padding_is_not_strictly_equal(self, draft_message):
         """A padded cell and a stored empty text give the same matrix only."""
-        reloaded = Message.from_matrix(
-            "2000", draft_message.matrix, "garden", {"language": "fr-FR"}
-        )
+        reloaded = Message.from_matrix("2000", draft_message.matrix, context="garden")
         assert reloaded != draft_message
         assert reloaded.isomorph(draft_message)
 
@@ -630,9 +709,23 @@ class TestComparisons:
         )
 
 
-FR_COUNTERS = ContentCounters(
-    declensions=3, segments=3, filled=((True,) * 3, (True,) * 3, (True,) * 3)
-)
+FR_RECORD = {
+    "count": {
+        "declensions": 3,
+        "alternatives": 2,
+        "singulars": 3,
+        "plurals": 6,
+        "segments": {"principal": 3, "alternatives": [3, 3]},
+        "tokens": {
+            "principal": [[], [], []],
+            "alternatives": [[["name"], [], []], [["name"], [], []]],
+        },
+    },
+    "fill_mask": {
+        "principal": [True, True, True],
+        "alternatives": [[True, True, True], [True, True, True]],
+    },
+}
 
 LOCKED_CALLS = {
     "add_principal": lambda m: m.add_principal(singular="x"),
@@ -652,18 +745,32 @@ LOCKED_CALLS = {
 class TestStatus:
     def test_new_message_is_a_draft(self, fr_message):
         assert fr_message.status == "draft"
+        assert fr_message.metadata["status"] == "draft"
         assert fr_message.recorded is None
         assert not fr_message.has_divergence
 
     def test_observed(self, fr_message, draft_message):
-        assert fr_message.observed == FR_COUNTERS
-        assert draft_message.observed.filled[1] == (True, False, True)
+        assert fr_message.observed.to_dict() == FR_RECORD
+        assert fr_message.observed.default_setup == fr_message.metadata.default_setup
+        assert draft_message.observed.fill_mask.to_dict() == {
+            "principal": [True, True, True, False],
+            "alternatives": [[True, False, False, False], [True, True, True, True]],
+        }
 
-    def test_mark_complete_records_the_counters(self, fr_message):
+    def test_mark_complete_records_the_content(self, fr_message):
         fr_message.mark_complete()
         assert fr_message.status == "complete"
-        assert fr_message.recorded == FR_COUNTERS
+        assert fr_message.metadata["status"] == "complete"
+        assert fr_message.recorded.to_dict() == FR_RECORD
+        assert fr_message.metadata["count"].to_dict() == FR_RECORD["count"]
+        assert fr_message.metadata["fill_mask"].to_dict() == FR_RECORD["fill_mask"]
         assert not fr_message.has_divergence
+
+    def test_recorded_is_a_view_on_the_metadata(self, fr_message):
+        fr_message.mark_complete()
+        recorded = fr_message.recorded
+        assert recorded["count"] is fr_message.metadata["count"]
+        assert recorded["fill_mask"] is fr_message.metadata["fill_mask"]
 
     def test_mark_complete_empty_principal(self, fr_message):
         fr_message.remove_principal()
@@ -689,30 +796,25 @@ class TestStatus:
         assert draft_message.status == "draft"
         draft_message.update_segment("Trois fleurs", 3, 0)
         assert draft_message.has_divergence
+        assert draft_message.recorded.differences(draft_message.observed) == [
+            "text (0, 3) added"
+        ]
 
     def test_record_a_complete_message(self, fr_message):
         fr_message.mark_complete()
         fr_message.reopen()
         fr_message.update_segment("", 2, 1)
         fr_message.mark_complete()
-        recorded = fr_message.recorded
+        recorded = fr_message.recorded.to_dict()
         with pytest.raises(MessageError, match="recorded by mark_complete"):
             fr_message.record()
-        assert fr_message.recorded == recorded
-
-    def test_from_matrix_restores_status_and_record(self, fr_message):
-        message = Message.from_matrix(
-            "1000", fr_message.matrix, status="complete", recorded=FR_COUNTERS
-        )
-        assert message.status == "complete"
-        assert message.recorded == FR_COUNTERS
-        assert not message.has_divergence
+        assert fr_message.recorded.to_dict() == recorded
 
     def test_reopen_keeps_the_record(self, fr_message):
         fr_message.mark_complete()
         fr_message.reopen()
         assert fr_message.status == "draft"
-        assert fr_message.recorded == FR_COUNTERS
+        assert fr_message.recorded.to_dict() == FR_RECORD
 
     def test_reopen_a_draft(self, fr_message):
         with pytest.raises(MessageError, match="already a draft"):
@@ -724,6 +826,14 @@ class TestStatus:
         fr_message.update_segment("", 2, 1)
         assert fr_message.has_divergence
 
+    def test_token_change_diverges(self, fr_message):
+        fr_message.mark_complete()
+        fr_message.reopen()
+        fr_message.update_segment("Bonjour Mme {title}", 0, 1)
+        assert fr_message.recorded.differences(fr_message.observed) == [
+            "tokens of text (1, 0): recorded [name], observed [title]"
+        ]
+
     def test_accepting_a_change(self, fr_message):
         """reopen() then mark_complete() records the current content."""
         fr_message.mark_complete()
@@ -731,32 +841,19 @@ class TestStatus:
         fr_message.update_segment("", 2, 1)
         fr_message.mark_complete()
         assert not fr_message.has_divergence
-        assert fr_message.recorded is not None
-        assert fr_message.recorded.filled[2] == (True, False, True)
+        assert fr_message.recorded[["fill_mask", "alternatives"]] == [
+            [True, True, False],
+            [True, True, True],
+        ]
 
-    def test_restored_complete_message(self, fr_message):
-        """A message read from a file is restored without mark_complete() checks."""
-        message = Message(
-            "3000", Declension(""), status="complete", recorded=FR_COUNTERS
-        )
-        assert message.status == "complete"
-        assert message.has_divergence
-
-    def test_complete_without_record_diverges(self):
-        message = Message("3000", Declension("a"), status="complete")
-        assert message.has_divergence
+    def test_complete_without_record_diverges(self, fr_message):
+        """A message read from a file as complete, without its record."""
+        fr_message.metadata["status"] = "complete"
+        assert fr_message.recorded is None
+        assert fr_message.has_divergence
 
     def test_draft_without_record_does_not_diverge(self):
-        assert not Message("3000", Declension("a")).has_divergence
-
-    @pytest.mark.parametrize("status", ["final", "", None])
-    def test_unknown_status(self, status):
-        with pytest.raises(ValueError, match="status must be"):
-            _ = Message("3000", status=status)
-
-    def test_recorded_wrong_type(self):
-        with pytest.raises(TypeError, match="recorded must be ContentCounters"):
-            _ = Message("3000", recorded=(3, 3))  # pyright: ignore[reportArgumentType]
+        assert not Message("3000", "a").has_divergence
 
     def test_status_and_recorded_are_read_only(self, fr_message):
         with pytest.raises(AttributeError):
@@ -764,9 +861,7 @@ class TestStatus:
                 "complete"  # pyright: ignore[reportAttributeAccessIssue]
             )
         with pytest.raises(AttributeError):
-            fr_message.recorded = (
-                FR_COUNTERS  # pyright: ignore[reportAttributeAccessIssue]
-            )
+            fr_message.recorded = None  # pyright: ignore[reportAttributeAccessIssue]
 
     def test_strict_equality_includes_status_and_record(self, fr_message):
         other = _copy(fr_message)
@@ -803,7 +898,9 @@ class TestLock:
         fr_message.add_location("app.py", 12, variant=1)
         fr_message.add_comment("user", "checked")
         fr_message.update_metadata(flags=["fuzzy"])
-        assert fr_message.metadata["flags"] == ["fuzzy"]
+        fr_message.add_flag("python-format")
+        fr_message.rules = {"thresholds": {}}
+        assert fr_message.metadata["flags"] == ["fuzzy", "python-format"]
         assert not fr_message.has_divergence
 
 
@@ -873,45 +970,87 @@ class TestArgumentGuards:
             fr_message.toggle(1)  # pyright: ignore[reportArgumentType]
 
 
+class TestFormatStrings:
+    """A text that str.format cannot read is refused by every text mutator."""
+
+    CALLS = {
+        "add_principal": lambda m: (
+            m.remove_principal(),
+            m.add_principal(singular="{"),
+        ),
+        "update_principal": lambda m: m.update_principal(plurals=["a", "{n"]),
+        "add_variant": lambda m: m.add_variant(singular="x {"),
+        "update_variant": lambda m: m.update_variant(1, singular="}"),
+        "add_segment": lambda m: m.add_segment("{0", 1, 2),
+        "update_segment": lambda m: m.update_segment("{", 2, 1),
+    }
+
+    @pytest.mark.parametrize("call", CALLS.values(), ids=CALLS.keys())
+    def test_refused(self, fr_message, call):
+        before = fr_message.matrix
+        with pytest.raises(
+            ValueError, match=r"text \(\d, \d\) is not a valid format string"
+        ):
+            call(fr_message)
+        if call is not self.CALLS["add_principal"]:
+            assert fr_message.matrix == before
+
+    def test_doubled_braces_and_positional_fields_accepted(self, fr_message):
+        fr_message.update_segment("{{literal}} {} {0}", 2, 1)
+        assert fr_message.get_segment(2, 1) == "{{literal}} {} {0}"
+
+
 class TestLocations:
     def test_none_by_default(self, fr_message):
-        assert fr_message.locations == ()
+        assert fr_message.locations == []
 
     def test_add_location(self, fr_message):
         fr_message.add_location("app.py", 12)
         fr_message.add_location("cli.py", 40, variant=1, segment=0)
         fr_message.add_location("cli.py", 41, segment=1)
-        assert fr_message.locations == (
-            Location("app.py", 12),
-            Location("cli.py", 40, 1, 0),
-            Location("cli.py", 41, None, 1),
-        )
-        assert fr_message.metadata["locations"] == list(fr_message.locations)
+        assert fr_message.locations == [
+            {"file": "app.py", "line": 12, "declension": None, "segment": None},
+            {"file": "cli.py", "line": 40, "declension": 1, "segment": 0},
+            {"file": "cli.py", "line": 41, "declension": None, "segment": 1},
+        ]
+        assert fr_message.locations is fr_message.metadata["locations"]
 
     def test_duplicate_is_ignored(self, fr_message):
         fr_message.add_location("app.py", 12, variant=1)
         fr_message.add_location("app.py", 12, variant=1)
         fr_message.add_location("app.py", 12)
-        assert fr_message.locations == (
-            Location("app.py", 12, 1),
-            Location("app.py", 12),
-        )
+        assert [item["declension"] for item in fr_message.locations] == [1, None]
 
     def test_coordinates_are_not_checked_against_the_content(self, single_message):
         """Source code may refer to a text not written yet."""
         single_message.add_location("app.py", 3, variant=4, segment=2)
-        assert single_message.locations == (Location("app.py", 3, 4, 2),)
+        assert single_message.locations == [
+            {"file": "app.py", "line": 3, "declension": 4, "segment": 2}
+        ]
 
-    def test_locations_are_read_only(self, fr_message):
+    def test_setter_checks_every_location(self, fr_message):
+        fr_message.locations = [LOCATION]
+        assert fr_message.locations == [LOCATION]
+        with pytest.raises(ValueError, match="Location file must not be empty"):
+            fr_message.locations = [LOCATION, {**LOCATION, "file": ""}]
+        assert fr_message.locations == [LOCATION]
+
+    def test_remove_location(self, fr_message):
         fr_message.add_location("app.py", 12)
-        with pytest.raises(AttributeError):
-            fr_message.locations = ()  # pyright: ignore[reportAttributeAccessIssue]
-        assert isinstance(fr_message.locations, tuple)
+        fr_message.add_location("cli.py", 40)
+        fr_message.remove_location(0)
+        assert [item["file"] for item in fr_message.locations] == ["cli.py"]
+        with pytest.raises(
+            IndexError, match=re.escape("Location 1 is out of range 0..0")
+        ):
+            fr_message.remove_location(1)
+        with pytest.raises(TypeError, match="index must be an int"):
+            fr_message.remove_location("0")  # pyright: ignore[reportArgumentType]
 
     def test_editable_on_a_complete_message(self, fr_message):
         fr_message.mark_complete()
         fr_message.add_location("app.py", 12)
-        assert fr_message.locations == (Location("app.py", 12),)
+        assert len(fr_message.locations) == 1
         assert not fr_message.has_divergence
 
     @pytest.mark.parametrize(
@@ -942,62 +1081,106 @@ class TestLocations:
     def test_wrong_arguments(self, fr_message, args, error):
         with pytest.raises(error):
             fr_message.add_location(*args)
-        assert fr_message.locations == ()
+        assert fr_message.locations == []
 
 
 class TestMetadata:
-    @pytest.mark.parametrize(
-        "fixture_name, expected",
-        [
-            (
-                "fr_message",
-                {
-                    "version": __version__,
-                    "language": "fr-FR",
-                    "locations": [],
-                    "flags": ["python-format"],
-                    "user_comments": ["In French, Greeting message to one or more..."],
-                    "auto_comments": ["1000_000", "1000_001", "1000_02"],
-                },
-            ),
-            ("empty_message", EMPTY_METADATA),
-        ],
-    )
-    def test_get_metadata(self, fixture_name, expected, request):
-        message = request.getfixturevalue(fixture_name)
-        assert message.get_metadata().to_dict() == expected
+    def test_keys_of_the_entry(self, fr_message):
+        assert fr_message.get_metadata().to_dict() == {
+            **EMPTY_METADATA,
+            "id": "1000",
+            "flags": ["python-format"],
+            "user_comments": ["In French, Greeting message to one or more..."],
+            "auto_comments": ["1000_000", "1000_001", "1000_02"],
+        }
 
     @pytest.mark.parametrize(
         "path, expected",
-        [
-            ("version", __version__),
-            ("language", "fr-FR"),
-            (["flags"], ["python-format"]),
-        ],
+        [("id", "1000"), ("status", "draft"), (["flags"], ["python-format"])],
     )
     def test_get_metadata_key(self, fr_message, path, expected):
         assert fr_message.get_metadata(path) == expected
 
-    @pytest.mark.parametrize("path", ["count", ["count", "singular"], "languages"])
+    @pytest.mark.parametrize("path", ["count", ["count", "singulars"], "language"])
     def test_get_metadata_unknown(self, fr_message, path):
         with pytest.raises(KeyError, match="is not a key or path"):
             _ = fr_message.get_metadata(path)
 
-    def test_add_language(self, empty_message):
-        empty_message.add_language("en-IE")
-        assert empty_message.metadata["language"] == "en-IE"
+    def test_language_and_version_are_not_message_keys(self, fr_message):
+        assert "language" not in fr_message.metadata
+        assert "version" not in fr_message.metadata
+        assert not hasattr(fr_message, "add_language")
 
-    def test_add_language_invalid(self, empty_message):
+    def test_properties_read_the_keys(self, fr_message):
+        fr_message.context = "toolbar"
+        fr_message.rules = {"thresholds": {"2": 1}}
+        assert fr_message.metadata["context"] == "toolbar"
+        assert fr_message.metadata[["rules", "thresholds", "2"]] == 1
+        assert fr_message.rules is fr_message.metadata["rules"]
+        assert fr_message.flags is fr_message.metadata["flags"]
+        assert fr_message.user_comments is fr_message.metadata["user_comments"]
+        assert fr_message.auto_comments is fr_message.metadata["auto_comments"]
+
+    def test_id_setter(self, fr_message):
+        fr_message.id = 42
+        assert fr_message.metadata["id"] == "42"
         with pytest.raises(
-            ValueError, match="Invalid language tag: ja.Latn/hepburn@heploc"
+            TypeError, match="Message identifier must be a str or an int"
         ):
-            empty_message.add_language("ja.Latn/hepburn@heploc")
+            fr_message.id = False
+        with pytest.raises(ValueError, match="Message identifier must not be empty"):
+            fr_message.id = ""
+        assert fr_message.id == "42"
+
+    @pytest.mark.parametrize(
+        "name, value, error, expected",
+        [
+            ("context", 1, TypeError, "Message context must be a str"),
+            ("rules", [], TypeError, "Message rules must be a mapping"),
+            ("flags", ["a", "a"], ValueError, "given more than once: a"),
+            (
+                "user_comments",
+                "text",
+                TypeError,
+                "Message user_comments must be a list",
+            ),
+            (
+                "auto_comments",
+                [None],
+                TypeError,
+                "Message auto_comments must be a list",
+            ),
+        ],
+    )
+    def test_setters_refuse(self, fr_message, name, value, error, expected):
+        before = fr_message.metadata.to_dict()
+        with pytest.raises(error, match=expected):
+            setattr(fr_message, name, value)
+        assert fr_message.metadata.to_dict() == before
+
+    def test_flags(self, fr_message):
+        fr_message.add_flag("fuzzy")
+        fr_message.add_flag("fuzzy")
+        assert fr_message.flags == ["python-format", "fuzzy"]
+        fr_message.remove_flag("python-format")
+        assert fr_message.flags == ["fuzzy"]
+        with pytest.raises(ValueError, match="Message '1000' has no flag 'c-format'"):
+            fr_message.remove_flag("c-format")
+        with pytest.raises(ValueError, match="A flag must not be empty"):
+            fr_message.add_flag("")
+        assert fr_message.flags == ["fuzzy"]
 
     @pytest.mark.parametrize("mode", ["user", "auto"])
-    def test_add_comment(self, empty_message, mode):
+    def test_comments(self, empty_message, mode):
         empty_message.add_comment(mode, "first")
         empty_message.add_comment(mode, "second")
         assert empty_message.metadata[mode + "_comments"] == ["first", "second"]
+        empty_message.remove_comment(mode, "first")
+        assert empty_message.metadata[mode + "_comments"] == ["second"]
+        with pytest.raises(
+            ValueError, match=f"Message '1000' has no {mode} comment 'x'"
+        ):
+            empty_message.remove_comment(mode, "x")
 
     def test_add_comment_empty(self, fr_message):
         with pytest.raises(ValueError, match="Unable to add empty comment"):
@@ -1006,146 +1189,121 @@ class TestMetadata:
     @pytest.mark.parametrize(
         "pairs, keywords",
         [
-            (
-                [["version", "0.2.0"], ["language", "fr-FR"], [["flags"], []]],
-                {},
-            ),
-            ([["version", "0.2.0"]], {"language": "fr-FR", "flags": []}),
-            ((), {"version": "0.2.0", "language": "fr-FR", "flags": []}),
-            (
-                (),
-                StrictNestedDictionary(
-                    {"version": "0.2.0", "language": "fr-FR", "flags": []}
-                ),
-            ),
+            ([["context", "menu"], [["flags"], []]], {}),
+            ([["context", "menu"]], {"flags": []}),
+            ((), {"context": "menu", "flags": []}),
         ],
     )
-    def test_add_metadata(self, single_message, pairs, keywords):
-        single_message.add_metadata(*pairs, **keywords)
-        assert single_message.metadata.to_dict() == {
+    def test_add_metadata(self, fr_message, pairs, keywords):
+        fr_message.add_metadata(*pairs, **keywords)
+        assert (fr_message.context, fr_message.flags) == ("menu", [])
+
+    def test_add_metadata_inside_rules(self, fr_message):
+        fr_message.add_metadata((["rules", "opaque"], True))
+        assert fr_message.rules.to_dict() == {"opaque": True}
+
+    @pytest.mark.parametrize(
+        "key, methods",
+        [
+            ("status", "mark_complete(), reopen()"),
+            ("count", "mark_complete(), record()"),
+            ("fill_mask", "mark_complete(), record()"),
+        ],
+    )
+    @pytest.mark.parametrize("method", ["add_metadata", "update_metadata"])
+    def test_guarded_keys_refused(self, fr_message, method, key, methods):
+        before = fr_message.metadata.to_dict()
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                f"metadata key '{key}' is not changed by {method}(): use {methods}"
+            ),
+        ):
+            getattr(fr_message, method)(**{key: "complete"})
+        assert fr_message.metadata.to_dict() == before
+
+    @pytest.mark.parametrize(
+        "pairs, keywords, error, expected",
+        [
+            (
+                [["context:", "x"]],
+                {},
+                KeyError,
+                "The key 'context:' is not a present key in the metadata dictionary",
+            ),
+            (
+                (),
+                {"language": "fr"},
+                KeyError,
+                "The key 'language' is not a present key in the metadata dictionary",
+            ),
+            (
+                [[["flags", 0], "x"]],
+                {},
+                KeyError,
+                "The path '['flags', 0]' is not a present key in the metadata",
+            ),
+            ((), {"flags": [""]}, ValueError, "A flag must not be empty"),
+            ((), {"context": 1}, TypeError, "Message context must be a str"),
+        ],
+    )
+    def test_add_metadata_rejected(self, fr_message, pairs, keywords, error, expected):
+        before = fr_message.metadata.to_dict()
+        with pytest.raises(error, match=re.escape(expected)):
+            fr_message.add_metadata(*pairs, **keywords)
+        assert fr_message.metadata.to_dict() == before
+
+    def test_update_metadata(self, fr_message):
+        fr_message.update_metadata((["context"], "menu"), flags=[])
+        assert (fr_message.context, fr_message.flags) == ("menu", [])
+
+    def test_update_metadata_same_value(self, fr_message):
+        with pytest.raises(
+            ValueError,
+            match=re.escape("The value () is already stored in the path 'context'"),
+        ):
+            fr_message.update_metadata(context="")
+
+    @pytest.mark.parametrize("key", ["context", "flags", "user_comments", "rules"])
+    def test_remove_metadata(self, fr_message, key):
+        fr_message.rules = {"opaque": True}
+        fr_message.context = "menu"
+        fr_message.remove_metadata(key)
+        assert fr_message.metadata.to_dict()[key] == EMPTY_METADATA[key]
+
+    def test_remove_all_keeps_identifier_status_and_record(self, fr_message):
+        fr_message.context = "menu"
+        fr_message.mark_complete()
+        fr_message.remove_metadata()
+        assert fr_message.metadata.to_dict() == {
             **EMPTY_METADATA,
-            "version": "0.2.0",
-            "language": "fr-FR",
-            "flags": [],
+            "id": "1000",
+            "status": "complete",
+            **FR_RECORD,
         }
 
-    @pytest.mark.parametrize(
-        "pairs, keywords, error, expected",
-        [
-            (
-                [["language:", "fr-FR"]],
-                {},
-                KeyError,
-                "The path 'language:' is not a present key in the metadata dictionary",
-            ),
-            (
-                (),
-                {"location": [("file.py", 132)]},
-                KeyError,
-                "The key 'location' is not a present key in the metadata dictionary",
-            ),
-            (
-                (),
-                {"count": {"singular": 0, "plurals": [0]}},
-                KeyError,
-                "The path '['count', 'singular']' is not a present key in the "
-                + "metadata dictionary",
-            ),
-            (
-                (),
-                {"flags": {"python-format"}},
-                TypeError,
-                "<class 'set'> type of {'python-format'} is not compatible metadata",
-            ),
-        ],
-    )
-    def test_add_metadata_rejected(
-        self, single_message, pairs, keywords, error, expected
-    ):
-        with pytest.raises(error, match=re.escape(expected)):
-            single_message.add_metadata(*pairs, **keywords)
+    def test_remove_metadata_inside_rules(self, fr_message):
+        fr_message.rules = {"opaque": True, "kept": 1}
+        fr_message.remove_metadata(["rules", "opaque"])
+        assert fr_message.rules.to_dict() == {"kept": 1}
 
     @pytest.mark.parametrize(
-        "pairs, keywords",
+        "key, error, expected",
         [
-            ([[["version"], "0.2.0"], [["language"], "fr"]], {}),
-            ([[["language"], "fr"]], {"version": "0.2.0"}),
-            ((), {"version": "0.2.0", "language": "fr"}),
-        ],
-    )
-    def test_update_metadata(self, fr_message, pairs, keywords):
-        fr_message.update_metadata(*pairs, **keywords)
-        assert fr_message.metadata["version"] == "0.2.0"
-        assert fr_message.metadata["language"] == "fr"
-
-    @pytest.mark.parametrize(
-        "pairs, keywords, error, expected",
-        [
+            ("language", KeyError, "path 'language' is not a present key"),
             (
-                [["language:", "fr-FR"]],
-                {},
+                ["rules", "absent"],
                 KeyError,
-                "The path 'language:' is not a present key in the metadata dictionary",
+                "path '['rules', 'absent']' is not a present key",
             ),
             (
-                (),
-                {"count": {"singular": 1}},
-                KeyError,
-                "The path '['count', 'singular']' is not a present key in the "
-                + "metadata dictionary",
-            ),
-            (
-                (),
-                {"version": __version__},
+                "status",
                 ValueError,
-                f"The value ({__version__}) is already stored in the path '[version]'",
+                "metadata key 'status' is not changed by remove_metadata()",
             ),
-            (
-                [[["language"], ""]],
-                {},
-                ValueError,
-                "The value () is already stored in the path '['language']'",
-            ),
-            (
-                (),
-                {"flags": {"fuzzy"}},
-                TypeError,
-                "<class 'set'> of {'fuzzy'} is not compatible metadata",
-            ),
+            ("id", ValueError, "metadata key 'id' is not changed by remove_metadata()"),
         ],
     )
-    def test_update_metadata_rejected(
-        self, single_message, pairs, keywords, error, expected
-    ):
+    def test_remove_metadata_refused(self, fr_message, key, error, expected):
         with pytest.raises(error, match=re.escape(expected)):
-            single_message.update_metadata(*pairs, **keywords)
-
-    @pytest.mark.parametrize(
-        "key, expected",
-        [
-            ("language", {**EMPTY_METADATA, "language": ""}),
-            (None, EMPTY_METADATA),
-        ],
-    )
-    def test_remove_metadata(self, fr_message, key, expected):
-        fr_message.remove_metadata(key)
-        if key is None:
-            assert fr_message.metadata.to_dict() == expected
-        else:
-            assert fr_message.metadata[key] == expected[key]
-            assert fr_message.metadata["flags"] == ["python-format"]
-
-    @pytest.mark.parametrize(
-        "key, expected",
-        [
-            ("languages", "Metadata key 'languages' not found"),
-            (
-                ["count", "plurals"],
-                "path '['count', 'plurals']' is not a present key in the metadata "
-                + "dictionary",
-            ),
-        ],
-    )
-    def test_remove_metadata_unknown(self, fr_message, key, expected):
-        with pytest.raises(KeyError, match=re.escape(expected)):
             fr_message.remove_metadata(key)

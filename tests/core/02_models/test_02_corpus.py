@@ -340,7 +340,7 @@ class TestFallbackBookGetMessage:
         msg = fb.get_message("1109")
         # Must come from en_us_book since partial_fr doesn't have it
         assert msg.id == "1109"
-        assert msg.metadata["language"] == "en-US"
+        assert msg is en_us_book.get("1109")
 
     def test_get_message_not_found_raises(self, fr_fr_book):
         fb = FallbackBook([fr_fr_book], "fr-FR")
@@ -351,7 +351,7 @@ class TestFallbackBookGetMessage:
         """id present in both books → first book wins."""
         fb = FallbackBook([fr_fr_book, en_us_book], "fr-FR")
         msg = fb.get_message("1100")
-        assert msg.metadata["language"] == "fr-FR"
+        assert msg is fr_fr_book.get("1100")
 
 
 # ---------------------------------------------------------------------------
@@ -436,18 +436,20 @@ class TestEncyclopaediaAddGet:
 
 
 def _message(language, matrix, complete=True):
-    """Build the message "items" in ``language``, complete by default."""
-    message = Message.from_matrix("items", matrix, metadata={"language": language})
+    """
+    Build the message "items" for ``language``, complete by default; the
+    language is that of the Book it goes in.
+    """
+    message = Message.from_matrix("items", matrix)
     if complete:
         message.mark_complete()
-    return message
+    return language, message
 
 
 def _corpus(*messages):
-    """Build a Corpus with one Book per message, keyed by its language."""
+    """Build a Corpus with one Book per ``(language, message)`` pair."""
     corpus = Corpus(domain="test")
-    for message in messages:
-        language = message.metadata["language"]
+    for language, message in messages:
         corpus.add_book(Book([message], domain="test", language=language))
     return corpus
 
@@ -551,10 +553,11 @@ class TestCorpusCheck:
         assert finding.message.endswith("fr-FR 1x1, en-US 1x1, it-IT 1x2")
 
     def test_books_left_unchanged(self):
-        fr = _message("fr-FR", [["{n} article"], ["{count} articles"]])
-        en = _message("en-US", [["{n} item"], ["{n} items"]])
-        before = [(m.matrix, m.status, m.recorded) for m in (fr, en)]
-        corpus = _corpus(fr, en)
+        fr_pair = _message("fr-FR", [["{n} article"], ["{count} articles"]])
+        en_pair = _message("en-US", [["{n} item"], ["{n} items"]])
+        fr, en = fr_pair[1], en_pair[1]
+        before = [(m.matrix, m.metadata.to_dict()) for m in (fr, en)]
+        corpus = _corpus(fr_pair, en_pair)
         assert corpus.check() != []
-        assert [(m.matrix, m.status, m.recorded) for m in (fr, en)] == before
+        assert [(m.matrix, m.metadata.to_dict()) for m in (fr, en)] == before
         assert corpus.get_real_book("fr-FR").get("items") is fr

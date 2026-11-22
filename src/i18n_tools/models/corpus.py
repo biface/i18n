@@ -317,7 +317,7 @@ def _compare_messages(
     :rtype: list[Finding]
     """
     shapes = {
-        language: (message.observed.declensions, message.observed.segments)
+        language: (message.observed.declensions, len(message.matrix))
         for language, message in messages
     }
     if len(set(shapes.values())) > 1:

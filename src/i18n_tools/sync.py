@@ -14,12 +14,9 @@ from pathlib import Path
 from typing import TypedDict
 
 from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
-from .loaders.loader import (
-    build_book_filename,
-    create_empty_file,
-    create_empty_json,
-)
+from .loaders.loader import build_book_filename, create_empty_file, save_book
 from .locale import get_all_languages, validate_and_normalize_language_tags
+from .models.book import Book
 
 
 class LanguageSettings(TypedDict):
@@ -90,8 +87,11 @@ def check_repository(
                 json_file = lang_path / json_filename
                 po_file = lang_path / f"{domain}.po"
 
+                # An empty Book is a root with its complete metadata, the
+                # gettext values "" (no write date: nothing was written to
+                # the Book yet).
                 if not json_file.exists():
-                    create_empty_json(str(json_file))
+                    save_book(Book(language=lang, domain=domain), str(json_file))
 
                 if not po_file.exists():
                     create_empty_file(str(po_file))

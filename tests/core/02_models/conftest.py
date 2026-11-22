@@ -1,54 +1,47 @@
 import pytest
 
-from i18n_tools import __version__
 from i18n_tools.models import Message as MessageModel
 from i18n_tools.models.book import Book
-from i18n_tools.models.message import Declension, Message
+from i18n_tools.models.message import Message
 
 
 @pytest.fixture
 def fr_message():
     return MessageModel(
-        id="1000",
-        principal=Declension("Bonjour", ("Bonjour à tous", "Bonjour tout le monde")),
-        variants=[
-            Declension("Bonjour Mme {name}", ("Bonjour Mesdames", "Mesdames")),
-            Declension("Bonjour M. {name}", ("Bonjour Messieurs", "Messieurs")),
+        "1000",
+        "Bonjour",
+        plurals=["Bonjour à tous", "Bonjour tout le monde"],
+        alternatives=[
+            ["Bonjour Mme {name}", "Bonjour Mesdames", "Mesdames"],
+            ["Bonjour M. {name}", "Bonjour Messieurs", "Messieurs"],
         ],
-        metadata={
-            "version": __version__,
-            "language": "fr-FR",
-            "locations": [],
-            "flags": ["python-format"],
-            "user_comments": ["In French, Greeting message to one or more..."],
-            "auto_comments": ["1000_000", "1000_001", "1000_02"],
-        },
+        locations=[],
+        flags=["python-format"],
+        user_comments=["In French, Greeting message to one or more..."],
+        auto_comments=["1000_000", "1000_001", "1000_02"],
     )
 
 
 @pytest.fixture
 def en_message():
     return MessageModel(
-        id="1000",
-        principal=Declension("Hello", ("Hi everybody", "Hi everyone")),
-        variants=[
-            Declension("Hello {name}", ("Hi everybody", "Ladies")),
-            Declension("Hello {name}", ("Hi everyone", "Gentlemen")),
+        "1000",
+        "Hello",
+        plurals=["Hi everybody", "Hi everyone"],
+        alternatives=[
+            ["Hello {name}", "Hi everybody", "Ladies"],
+            ["Hello {name}", "Hi everyone", "Gentlemen"],
         ],
-        metadata={
-            "version": __version__,
-            "language": "en",
-            "locations": [],
-            "flags": ["python-format"],
-            "user_comments": ["Greeting message to one or more..."],
-            "auto_comments": ["1000_000", "1000_001", "1000_02"],
-        },
+        locations=[],
+        flags=["python-format"],
+        user_comments=["Greeting message to one or more..."],
+        auto_comments=["1000_000", "1000_001", "1000_02"],
     )
 
 
 @pytest.fixture
 def empty_message():
-    return MessageModel(id="1000")
+    return MessageModel("1000")
 
 
 @pytest.fixture
@@ -64,28 +57,26 @@ def draft_message():
         ""           | ""           | Plusieurs {flower} rares
     """
     return Message(
-        id="2000",
-        principal=Declension("Une fleur", ("Des fleurs", "Deux fleurs")),
-        variants=[
-            Declension("Une {flower}"),
-            Declension(
+        "2000",
+        "Une fleur",
+        plurals=["Des fleurs", "Deux fleurs"],
+        alternatives=[
+            ["Une {flower}"],
+            [
                 "Une {flower} rare",
-                (
-                    "Des {flower} rares",
-                    "Deux {flower} rares",
-                    "Plusieurs {flower} rares",
-                ),
-            ),
+                "Des {flower} rares",
+                "Deux {flower} rares",
+                "Plusieurs {flower} rares",
+            ],
         ],
         context="garden",
-        metadata={"language": "fr-FR"},
     )
 
 
 @pytest.fixture
 def single_message():
     """A principal singular only."""
-    return Message(id="2001", principal=Declension("Bonjour {name}"))
+    return Message("2001", "Bonjour {name}")
 
 
 # --- Fixtures originally from test_01_book.py ---
@@ -95,382 +86,273 @@ def single_message():
 def fr_fr_messages():
     return {
         "1100": Message(
-            id="1100",
-            principal=Declension(
-                "Voici une fleur", ("Voici des fleurs", "Voici deux fleurs")
-            ),
-            variants=[
-                Declension(
+            "1100",
+            "Voici une fleur",
+            plurals=["Voici des fleurs", "Voici deux fleurs"],
+            alternatives=[
+                [
                     "Voici une belle {flower}",
-                    ("Voici de belles {flower}", "Voici deux belles {flower}"),
-                ),
-                Declension(
+                    "Voici de belles {flower}",
+                    "Voici deux belles {flower}",
+                ],
+                [
                     "Voici une {flower} rare",
-                    (
-                        "Voici des {flower} rares",
-                        "Voici deux {flower} rares",
-                        "Voici plusieurs {flower} rares",
-                    ),
-                ),
-                Declension(
+                    "Voici des {flower} rares",
+                    "Voici deux {flower} rares",
+                    "Voici plusieurs {flower} rares",
+                ],
+                [
                     "Voici une {flower} de la région {region}",
-                    (
-                        "Voici des {flower} de la région {region}",
-                        "Voici deux {flower} de la région {region}",
-                    ),
-                ),
+                    "Voici des {flower} de la région {region}",
+                    "Voici deux {flower} de la région {region}",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les fleurs"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les fleurs"],
         ),
         "1101": Message(
-            id="1101",
-            principal=Declension(
-                "J'aime cette montagne",
-                ("J'aime ces montagnes", "J'aime ces deux montagnes"),
-            ),
-            variants=[
-                Declension(
+            "1101",
+            "J'aime cette montagne",
+            plurals=["J'aime ces montagnes", "J'aime ces deux montagnes"],
+            alternatives=[
+                [
                     "J'aime cette montagne {mountain}",
-                    (
-                        "J'aime ces montagnes {mountain}",
-                        "J'aime ces deux montagnes {mountain}",
-                    ),
-                ),
-                Declension(
+                    "J'aime ces montagnes {mountain}",
+                    "J'aime ces deux montagnes {mountain}",
+                ],
+                [
                     "J'aime cette montagne située à {location}",
-                    (
-                        "J'aime ces montagnes situées à {location}",
-                        "J'aime ces deux montagnes situées à {location}",
-                    ),
-                ),
-                Declension(
+                    "J'aime ces montagnes situées à {location}",
+                    "J'aime ces deux montagnes situées à {location}",
+                ],
+                [
                     "J'aime cette montagne appelée {name}",
-                    (
-                        "J'aime ces montagnes appelées {name}",
-                        "J'aime ces deux montagnes appelées {name}",
-                        "J'aime ces nombreuses montagnes appelées {name}",
-                    ),
-                ),
+                    "J'aime ces montagnes appelées {name}",
+                    "J'aime ces deux montagnes appelées {name}",
+                    "J'aime ces nombreuses montagnes appelées {name}",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les montagnes"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les montagnes"],
         ),
         "1102": Message(
-            id="1102",
-            principal=Declension(
-                "Je pars en voyage", ("Je pars en voyages", "Je pars en deux voyages")
-            ),
-            variants=[
-                Declension(
+            "1102",
+            "Je pars en voyage",
+            plurals=["Je pars en voyages", "Je pars en deux voyages"],
+            alternatives=[
+                [
                     "Je pars en voyage à {destination}",
-                    (
-                        "Je pars en voyages à {destination}",
-                        "Je pars en deux voyages à {destination}",
-                    ),
-                ),
-                Declension(
+                    "Je pars en voyages à {destination}",
+                    "Je pars en deux voyages à {destination}",
+                ],
+                [
                     "Je pars en voyage avec {companion}",
-                    (
-                        "Je pars en voyages avec {companion}",
-                        "Je pars en deux voyages avec {companion}",
-                    ),
-                ),
-                Declension(
+                    "Je pars en voyages avec {companion}",
+                    "Je pars en deux voyages avec {companion}",
+                ],
+                [
                     "Je pars en voyage pour {duration} jours",
-                    (
-                        "Je pars en voyages pour {duration} jours",
-                        "Je pars en deux voyages pour {duration} jours",
-                    ),
-                ),
+                    "Je pars en voyages pour {duration} jours",
+                    "Je pars en deux voyages pour {duration} jours",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les voyages"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les voyages"],
         ),
         "1103": Message(
-            id="1103",
-            principal=Declension(
-                "L'automate est prêt",
-                ("Les automates sont prêts", "Les deux automates sont prêts"),
-            ),
-            variants=[
-                Declension(
+            "1103",
+            "L'automate est prêt",
+            plurals=["Les automates sont prêts", "Les deux automates sont prêts"],
+            alternatives=[
+                [
                     "L'automate {automaton} est prêt",
-                    (
-                        "Les automates {automaton} sont prêts",
-                        "Les deux automates {automaton} sont prêts",
-                    ),
-                ),
-                Declension(
-                    "L'automate conçu pour {purpose} est prêt",
-                    (
-                        "Les automates conçus pour {purpose} sont prêts",
-                        "Les deux automates conçus pour {purpose} sont prêts",
-                    ),
-                ),
-                Declension(
-                    "L'automate de type {type} est prêt",
-                    (
-                        "Les automates de type {type} sont prêts",
-                        "Les deux automates de type {type} sont prêts",
-                        "Les nombreux automates de type {type} sont prêts",
-                    ),
-                ),
-            ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": [
-                    "Message sur les automates basés sur les grammaires de Chomsky"
+                    "Les automates {automaton} sont prêts",
+                    "Les deux automates {automaton} sont prêts",
                 ],
-            },
+                [
+                    "L'automate conçu pour {purpose} est prêt",
+                    "Les automates conçus pour {purpose} sont prêts",
+                    "Les deux automates conçus pour {purpose} sont prêts",
+                ],
+                [
+                    "L'automate de type {type} est prêt",
+                    "Les automates de type {type} sont prêts",
+                    "Les deux automates de type {type} sont prêts",
+                    "Les nombreux automates de type {type} sont prêts",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=[
+                "Message sur les automates basés sur les grammaires de Chomsky"
+            ],
         ),
         "1104": Message(
-            id="1104",
-            principal=Declension(
-                "Le fleur a une belle couleur",
-                (
-                    "Les fleurs ont de belles couleurs",
-                    "Les deux fleurs ont de belles couleurs",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "La {flower} a une belle couleur",
-                    (
-                        "Les {flower} ont de belles couleurs",
-                        "Les deux {flower} ont de belles couleurs",
-                    ),
-                ),
-                Declension(
-                    "La {flower} de couleur {color} est magnifique",
-                    (
-                        "Les {flower} de couleur {color} sont magnifiques",
-                        "Les deux {flower} de couleur {color} sont magnifiques",
-                    ),
-                ),
-                Declension(
-                    "La {flower} de l'année {year} est splendide",
-                    (
-                        "Les {flower} de l'année {year} sont splendides",
-                        "Les deux {flower} de l'année {year} sont splendides",
-                    ),
-                ),
+            "1104",
+            "Le fleur a une belle couleur",
+            plurals=[
+                "Les fleurs ont de belles couleurs",
+                "Les deux fleurs ont de belles couleurs",
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les fleurs"],
-            },
+            alternatives=[
+                [
+                    "La {flower} a une belle couleur",
+                    "Les {flower} ont de belles couleurs",
+                    "Les deux {flower} ont de belles couleurs",
+                ],
+                [
+                    "La {flower} de couleur {color} est magnifique",
+                    "Les {flower} de couleur {color} sont magnifiques",
+                    "Les deux {flower} de couleur {color} sont magnifiques",
+                ],
+                [
+                    "La {flower} de l'année {year} est splendide",
+                    "Les {flower} de l'année {year} sont splendides",
+                    "Les deux {flower} de l'année {year} sont splendides",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les fleurs"],
         ),
         "1105": Message(
-            id="1105",
-            principal=Declension(
-                "La montagne est couverte de neige",
-                (
-                    "Les montagnes sont couvertes de neige",
-                    "Les deux montagnes sont couvertes de neige",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "La montagne {mountain} est couverte de neige",
-                    (
-                        "Les montagnes {mountain} sont couvertes de neige",
-                        "Les deux montagnes {mountain} sont couvertes de neige",
-                    ),
-                ),
-                Declension(
-                    "La montagne située à {location} est couverte de neige",
-                    (
-                        "Les montagnes situées à {location} sont couvertes de neige",
-                        "Les deux montagnes situées à {location} sont couvertes de neige",
-                    ),
-                ),
-                Declension(
-                    "La montagne en {season} est couverte de neige",
-                    (
-                        "Les montagnes en {season} sont couvertes de neige",
-                        "Les deux montagnes en {season} sont couvertes de neige",
-                        "Les nombreuses montagnes en {season} sont couvertes de neige",
-                    ),
-                ),
+            "1105",
+            "La montagne est couverte de neige",
+            plurals=[
+                "Les montagnes sont couvertes de neige",
+                "Les deux montagnes sont couvertes de neige",
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les montagnes"],
-            },
+            alternatives=[
+                [
+                    "La montagne {mountain} est couverte de neige",
+                    "Les montagnes {mountain} sont couvertes de neige",
+                    "Les deux montagnes {mountain} sont couvertes de neige",
+                ],
+                [
+                    "La montagne située à {location} est couverte de neige",
+                    "Les montagnes situées à {location} sont couvertes de neige",
+                    "Les deux montagnes situées à {location} sont couvertes de neige",
+                ],
+                [
+                    "La montagne en {season} est couverte de neige",
+                    "Les montagnes en {season} sont couvertes de neige",
+                    "Les deux montagnes en {season} sont couvertes de neige",
+                    "Les nombreuses montagnes en {season} sont couvertes de neige",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les montagnes"],
         ),
         "1106": Message(
-            id="1106",
-            principal=Declension(
-                "Le voyage est long",
-                ("Les voyages sont longs", "Ces deux voyages sont longs"),
-            ),
-            variants=[
-                Declension(
+            "1106",
+            "Le voyage est long",
+            plurals=["Les voyages sont longs", "Ces deux voyages sont longs"],
+            alternatives=[
+                [
                     "Le voyage vers {destination} est long",
-                    (
-                        "Les voyages vers {destination} sont longs",
-                        "Ces deux voyages vers {destination} sont longs",
-                    ),
-                ),
-                Declension(
+                    "Les voyages vers {destination} sont longs",
+                    "Ces deux voyages vers {destination} sont longs",
+                ],
+                [
                     "Le voyage avec {companion} est long",
-                    (
-                        "Les voyages avec {companion} sont longs",
-                        "Ces deux voyages avec {companion} sont longs",
-                    ),
-                ),
-                Declension(
+                    "Les voyages avec {companion} sont longs",
+                    "Ces deux voyages avec {companion} sont longs",
+                ],
+                [
                     "Le voyage de {duration} jours est long",
-                    (
-                        "Les voyages de {duration} jours sont longs",
-                        "Ces deux voyages de {duration} jours sont longs",
-                    ),
-                ),
+                    "Les voyages de {duration} jours sont longs",
+                    "Ces deux voyages de {duration} jours sont longs",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les voyages"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les voyages"],
         ),
         "1107": Message(
-            id="1107",
-            principal=Declension(
-                "L'automate fonctionne",
-                ("Les automates fonctionnent", "Les deux automates fonctionnent"),
-            ),
-            variants=[
-                Declension(
+            "1107",
+            "L'automate fonctionne",
+            plurals=["Les automates fonctionnent", "Les deux automates fonctionnent"],
+            alternatives=[
+                [
                     "L'automate {automaton} fonctionne",
-                    (
-                        "Les automates {automaton} fonctionnent",
-                        "Les deux automates {automaton} fonctionnent",
-                    ),
-                ),
-                Declension(
-                    "L'automate pour {purpose} fonctionne",
-                    (
-                        "Les automates pour {purpose} fonctionnent",
-                        "Les deux automates pour {purpose} fonctionnent",
-                    ),
-                ),
-                Declension(
-                    "L'automate de type {type} fonctionne",
-                    (
-                        "Les automates de type {type} fonctionnent",
-                        "Les deux automates de type {type} fonctionnent",
-                        "Les nombreux automates de type {type} fonctionnent",
-                    ),
-                ),
-            ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": [
-                    "Message sur les automates basés sur les grammaires de Chomsky"
+                    "Les automates {automaton} fonctionnent",
+                    "Les deux automates {automaton} fonctionnent",
                 ],
-            },
+                [
+                    "L'automate pour {purpose} fonctionne",
+                    "Les automates pour {purpose} fonctionnent",
+                    "Les deux automates pour {purpose} fonctionnent",
+                ],
+                [
+                    "L'automate de type {type} fonctionne",
+                    "Les automates de type {type} fonctionnent",
+                    "Les deux automates de type {type} fonctionnent",
+                    "Les nombreux automates de type {type} fonctionnent",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=[
+                "Message sur les automates basés sur les grammaires de Chomsky"
+            ],
         ),
         "1108": Message(
-            id="1108",
-            principal=Declension(
-                "Le fleur sent bon",
-                ("Les fleurs sentent bon", "Ces deux fleurs sentent bon"),
-            ),
-            variants=[
-                Declension(
+            "1108",
+            "Le fleur sent bon",
+            plurals=["Les fleurs sentent bon", "Ces deux fleurs sentent bon"],
+            alternatives=[
+                [
                     "La {flower} sent bon",
-                    ("Les {flower} sentent bon", "Ces deux {flower} sentent bon"),
-                ),
-                Declension(
+                    "Les {flower} sentent bon",
+                    "Ces deux {flower} sentent bon",
+                ],
+                [
                     "La {flower} de couleur {color} sent bon",
-                    (
-                        "Les {flower} de couleur {color} sentent bon",
-                        "Ces deux {flower} de couleur {color} sentent bon",
-                    ),
-                ),
-                Declension(
+                    "Les {flower} de couleur {color} sentent bon",
+                    "Ces deux {flower} de couleur {color} sentent bon",
+                ],
+                [
                     "La {flower} cultivée en {year} sent bon",
-                    (
-                        "Les {flower} cultivées en {year} sentent bon",
-                        "Ces deux {flower} cultivées en {year} sentent bon",
-                    ),
-                ),
+                    "Les {flower} cultivées en {year} sentent bon",
+                    "Ces deux {flower} cultivées en {year} sentent bon",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les fleurs"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les fleurs"],
         ),
         "1109": Message(
-            id="1109",
-            principal=Declension(
-                "La montagne est enneigée",
-                ("Les montagnes sont enneigées", "Ces deux montagnes sont enneigées"),
-            ),
-            variants=[
-                Declension(
-                    "La montagne {mountain} est enneigée",
-                    (
-                        "Les montagnes {mountain} sont enneigées",
-                        "Ces deux montagnes {mountain} sont enneigées",
-                    ),
-                ),
-                Declension(
-                    "La montagne située à {location} est enneigée",
-                    (
-                        "Les montagnes situées à {location} sont enneigées",
-                        "Ces deux montagnes situées à {location} sont enneigées",
-                    ),
-                ),
-                Declension(
-                    "La montagne en {season} est enneigée",
-                    (
-                        "Les montagnes en {season} sont enneigées",
-                        "Ces deux montagnes en {season} sont enneigées",
-                        "Les nombreuses montagnes en {season} sont enneigées",
-                    ),
-                ),
+            "1109",
+            "La montagne est enneigée",
+            plurals=[
+                "Les montagnes sont enneigées",
+                "Ces deux montagnes sont enneigées",
             ],
-            metadata={
-                "version": __version__,
-                "language": "fr-FR",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message sur les montagnes"],
-            },
+            alternatives=[
+                [
+                    "La montagne {mountain} est enneigée",
+                    "Les montagnes {mountain} sont enneigées",
+                    "Ces deux montagnes {mountain} sont enneigées",
+                ],
+                [
+                    "La montagne située à {location} est enneigée",
+                    "Les montagnes situées à {location} sont enneigées",
+                    "Ces deux montagnes situées à {location} sont enneigées",
+                ],
+                [
+                    "La montagne en {season} est enneigée",
+                    "Les montagnes en {season} sont enneigées",
+                    "Ces deux montagnes en {season} sont enneigées",
+                    "Les nombreuses montagnes en {season} sont enneigées",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message sur les montagnes"],
         ),
     }
 
@@ -479,377 +361,266 @@ def fr_fr_messages():
 def en_us_messages():
     return {
         "1100": Message(
-            id="1100",
-            principal=Declension(
-                "Here is a flower", ("Here are flowers", "Here are two flowers")
-            ),
-            variants=[
-                Declension(
+            "1100",
+            "Here is a flower",
+            plurals=["Here are flowers", "Here are two flowers"],
+            alternatives=[
+                [
                     "Here is a beautiful {flower}",
-                    ("Here are beautiful {flower}", "Here are two beautiful {flower}"),
-                ),
-                Declension(
+                    "Here are beautiful {flower}",
+                    "Here are two beautiful {flower}",
+                ],
+                [
                     "Here is a rare {flower}",
-                    (
-                        "Here are rare {flower}",
-                        "Here are two rare {flower}",
-                        "Here are several rare {flower}",
-                    ),
-                ),
-                Declension(
+                    "Here are rare {flower}",
+                    "Here are two rare {flower}",
+                    "Here are several rare {flower}",
+                ],
+                [
                     "Here is a {flower} from the {region} region",
-                    (
-                        "Here are {flower} from the {region} region",
-                        "Here are two {flower} from the {region} region",
-                    ),
-                ),
+                    "Here are {flower} from the {region} region",
+                    "Here are two {flower} from the {region} region",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1101": Message(
-            id="1101",
-            principal=Declension(
-                "I like this mountain",
-                ("I like these mountains", "I like these two mountains"),
-            ),
-            variants=[
-                Declension(
+            "1101",
+            "I like this mountain",
+            plurals=["I like these mountains", "I like these two mountains"],
+            alternatives=[
+                [
                     "I like this mountain {mountain}",
-                    (
-                        "I like these mountains {mountain}",
-                        "I like these two mountains {mountain}",
-                    ),
-                ),
-                Declension(
+                    "I like these mountains {mountain}",
+                    "I like these two mountains {mountain}",
+                ],
+                [
                     "I like this mountain located at {location}",
-                    (
-                        "I like these mountains located at {location}",
-                        "I like these two mountains located at {location}",
-                    ),
-                ),
-                Declension(
+                    "I like these mountains located at {location}",
+                    "I like these two mountains located at {location}",
+                ],
+                [
                     "I like this mountain called {name}",
-                    (
-                        "I like these mountains called {name}",
-                        "I like these two mountains called {name}",
-                        "I like these numerous mountains called {name}",
-                    ),
-                ),
+                    "I like these mountains called {name}",
+                    "I like these two mountains called {name}",
+                    "I like these numerous mountains called {name}",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
         "1102": Message(
-            id="1102",
-            principal=Declension(
-                "I'm going on a trip", ("I'm going on trips", "I'm going on two trips")
-            ),
-            variants=[
-                Declension(
+            "1102",
+            "I'm going on a trip",
+            plurals=["I'm going on trips", "I'm going on two trips"],
+            alternatives=[
+                [
                     "I'm going on a trip to {destination}",
-                    (
-                        "I'm going on trips to {destination}",
-                        "I'm going on two trips to {destination}",
-                    ),
-                ),
-                Declension(
+                    "I'm going on trips to {destination}",
+                    "I'm going on two trips to {destination}",
+                ],
+                [
                     "I'm going on a trip with {companion}",
-                    (
-                        "I'm going on trips with {companion}",
-                        "I'm going on two trips with {companion}",
-                    ),
-                ),
-                Declension(
+                    "I'm going on trips with {companion}",
+                    "I'm going on two trips with {companion}",
+                ],
+                [
                     "I'm going on a trip for {duration} days",
-                    (
-                        "I'm going on trips for {duration} days",
-                        "I'm going on two trips for {duration} days",
-                    ),
-                ),
+                    "I'm going on trips for {duration} days",
+                    "I'm going on two trips for {duration} days",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about trips"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about trips"],
         ),
         "1103": Message(
-            id="1103",
-            principal=Declension(
-                "The automaton is ready",
-                ("The automatons are ready", "The two automatons are ready"),
-            ),
-            variants=[
-                Declension(
+            "1103",
+            "The automaton is ready",
+            plurals=["The automatons are ready", "The two automatons are ready"],
+            alternatives=[
+                [
                     "The automaton {automaton} is ready",
-                    (
-                        "The automatons {automaton} are ready",
-                        "The two automatons {automaton} are ready",
-                    ),
-                ),
-                Declension(
+                    "The automatons {automaton} are ready",
+                    "The two automatons {automaton} are ready",
+                ],
+                [
                     "The automaton designed for {purpose} is ready",
-                    (
-                        "The automatons designed for {purpose} are ready",
-                        "The two automatons designed for {purpose} are ready",
-                    ),
-                ),
-                Declension(
+                    "The automatons designed for {purpose} are ready",
+                    "The two automatons designed for {purpose} are ready",
+                ],
+                [
                     "The automaton of type {type} is ready",
-                    (
-                        "The automatons of type {type} are ready",
-                        "The two automatons of type {type} are ready",
-                        "The numerous automatons of type {type} are ready",
-                    ),
-                ),
+                    "The automatons of type {type} are ready",
+                    "The two automatons of type {type} are ready",
+                    "The numerous automatons of type {type} are ready",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about automata based on Chomsky grammars"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about automata based on Chomsky grammars"],
         ),
         "1104": Message(
-            id="1104",
-            principal=Declension(
-                "The flower has a beautiful color",
-                (
-                    "Flowers have beautiful colors",
-                    "The two flowers have beautiful colors",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "The {flower} has a beautiful color",
-                    (
-                        "The {flower} have beautiful colors",
-                        "The two {flower} have beautiful colors",
-                    ),
-                ),
-                Declension(
-                    "The {flower} of color {color} is magnificent",
-                    (
-                        "The {flower} of color {color} are magnificent",
-                        "The two {flower} of color {color} are magnificent",
-                    ),
-                ),
-                Declension(
-                    "The {flower} of the year {year} is splendid",
-                    (
-                        "The {flower} of the year {year} are splendid",
-                        "The two {flower} of the year {year} are splendid",
-                    ),
-                ),
+            "1104",
+            "The flower has a beautiful color",
+            plurals=[
+                "Flowers have beautiful colors",
+                "The two flowers have beautiful colors",
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            alternatives=[
+                [
+                    "The {flower} has a beautiful color",
+                    "The {flower} have beautiful colors",
+                    "The two {flower} have beautiful colors",
+                ],
+                [
+                    "The {flower} of color {color} is magnificent",
+                    "The {flower} of color {color} are magnificent",
+                    "The two {flower} of color {color} are magnificent",
+                ],
+                [
+                    "The {flower} of the year {year} is splendid",
+                    "The {flower} of the year {year} are splendid",
+                    "The two {flower} of the year {year} are splendid",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1105": Message(
-            id="1105",
-            principal=Declension(
-                "The mountain is snow-covered",
-                (
-                    "The mountains are snow-covered",
-                    "These two mountains are snow-covered",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "The mountain {mountain} is snow-covered",
-                    (
-                        "The mountains {mountain} are snow-covered",
-                        "These two mountains {mountain} are snow-covered",
-                    ),
-                ),
-                Declension(
-                    "The mountain located at {location} is snow-covered",
-                    (
-                        "The mountains located at {location} are snow-covered",
-                        "These two mountains located at {location} are snow-covered",
-                    ),
-                ),
-                Declension(
-                    "The mountain in {season} is snow-covered",
-                    (
-                        "The mountains in {season} are snow-covered",
-                        "These two mountains in {season} are snow-covered",
-                        "The numerous mountains in {season} are snow-covered",
-                    ),
-                ),
+            "1105",
+            "The mountain is snow-covered",
+            plurals=[
+                "The mountains are snow-covered",
+                "These two mountains are snow-covered",
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            alternatives=[
+                [
+                    "The mountain {mountain} is snow-covered",
+                    "The mountains {mountain} are snow-covered",
+                    "These two mountains {mountain} are snow-covered",
+                ],
+                [
+                    "The mountain located at {location} is snow-covered",
+                    "The mountains located at {location} are snow-covered",
+                    "These two mountains located at {location} are snow-covered",
+                ],
+                [
+                    "The mountain in {season} is snow-covered",
+                    "The mountains in {season} are snow-covered",
+                    "These two mountains in {season} are snow-covered",
+                    "The numerous mountains in {season} are snow-covered",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
         "1106": Message(
-            id="1106",
-            principal=Declension(
-                "The trip is long", ("Trips are long", "These two trips are long")
-            ),
-            variants=[
-                Declension(
+            "1106",
+            "The trip is long",
+            plurals=["Trips are long", "These two trips are long"],
+            alternatives=[
+                [
                     "The trip to {destination} is long",
-                    (
-                        "Trips to {destination} are long",
-                        "These two trips to {destination} are long",
-                    ),
-                ),
-                Declension(
+                    "Trips to {destination} are long",
+                    "These two trips to {destination} are long",
+                ],
+                [
                     "The trip with {companion} is long",
-                    (
-                        "Trips with {companion} are long",
-                        "These two trips with {companion} are long",
-                    ),
-                ),
-                Declension(
+                    "Trips with {companion} are long",
+                    "These two trips with {companion} are long",
+                ],
+                [
                     "The trip of {duration} days is long",
-                    (
-                        "Trips of {duration} days are long",
-                        "These two trips of {duration} days are long",
-                    ),
-                ),
+                    "Trips of {duration} days are long",
+                    "These two trips of {duration} days are long",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about trips"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about trips"],
         ),
         "1107": Message(
-            id="1107",
-            principal=Declension(
-                "The automaton works",
-                ("The automatons work", "The two automatons work"),
-            ),
-            variants=[
-                Declension(
+            "1107",
+            "The automaton works",
+            plurals=["The automatons work", "The two automatons work"],
+            alternatives=[
+                [
                     "The automaton {automaton} works",
-                    (
-                        "The automatons {automaton} work",
-                        "The two automatons {automaton} work",
-                    ),
-                ),
-                Declension(
+                    "The automatons {automaton} work",
+                    "The two automatons {automaton} work",
+                ],
+                [
                     "The automaton for {purpose} works",
-                    (
-                        "The automatons for {purpose} work",
-                        "The two automatons for {purpose} work",
-                    ),
-                ),
-                Declension(
+                    "The automatons for {purpose} work",
+                    "The two automatons for {purpose} work",
+                ],
+                [
                     "The automaton of type {type} works",
-                    (
-                        "The automatons of type {type} work",
-                        "The two automatons of type {type} work",
-                        "The numerous automatons of type {type} work",
-                    ),
-                ),
+                    "The automatons of type {type} work",
+                    "The two automatons of type {type} work",
+                    "The numerous automatons of type {type} work",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about automata based on Chomsky grammars"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about automata based on Chomsky grammars"],
         ),
         "1108": Message(
-            id="1108",
-            principal=Declension(
-                "The flower smells good",
-                ("Flowers smell good", "These two flowers smell good"),
-            ),
-            variants=[
-                Declension(
+            "1108",
+            "The flower smells good",
+            plurals=["Flowers smell good", "These two flowers smell good"],
+            alternatives=[
+                [
                     "The {flower} smells good",
-                    ("The {flower} smell good", "These two {flower} smell good"),
-                ),
-                Declension(
+                    "The {flower} smell good",
+                    "These two {flower} smell good",
+                ],
+                [
                     "The {flower} of color {color} smells good",
-                    (
-                        "The {flower} of color {color} smell good",
-                        "These two {flower} of color {color} smell good",
-                    ),
-                ),
-                Declension(
+                    "The {flower} of color {color} smell good",
+                    "These two {flower} of color {color} smell good",
+                ],
+                [
                     "The {flower} cultivated in {year} smells good",
-                    (
-                        "The {flower} cultivated in {year} smell good",
-                        "These two {flower} cultivated in {year} smell good",
-                    ),
-                ),
+                    "The {flower} cultivated in {year} smell good",
+                    "These two {flower} cultivated in {year} smell good",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1109": Message(
-            id="1109",
-            principal=Declension(
-                "The mountain is snowy",
-                ("The mountains are snowy", "These two mountains are snowy"),
-            ),
-            variants=[
-                Declension(
+            "1109",
+            "The mountain is snowy",
+            plurals=["The mountains are snowy", "These two mountains are snowy"],
+            alternatives=[
+                [
                     "The mountain {mountain} is snowy",
-                    (
-                        "The mountains {mountain} are snowy",
-                        "These two mountains {mountain} are snowy",
-                    ),
-                ),
-                Declension(
+                    "The mountains {mountain} are snowy",
+                    "These two mountains {mountain} are snowy",
+                ],
+                [
                     "The mountain located at {location} is snowy",
-                    (
-                        "The mountains located at {location} are snowy",
-                        "These two mountains located at {location} are snowy",
-                    ),
-                ),
-                Declension(
+                    "The mountains located at {location} are snowy",
+                    "These two mountains located at {location} are snowy",
+                ],
+                [
                     "The mountain in {season} is snowy",
-                    (
-                        "The mountains in {season} are snowy",
-                        "These two mountains in {season} are snowy",
-                        "The numerous mountains in {season} are snowy",
-                    ),
-                ),
+                    "The mountains in {season} are snowy",
+                    "These two mountains in {season} are snowy",
+                    "The numerous mountains in {season} are snowy",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-US",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
     }
 
@@ -858,380 +629,269 @@ def en_us_messages():
 def en_gb_messages():
     return {
         "1100": Message(
-            id="1100",
-            principal=Declension(
-                "Here is a flower", ("Here are flowers", "Here are two flowers")
-            ),
-            variants=[
-                Declension(
+            "1100",
+            "Here is a flower",
+            plurals=["Here are flowers", "Here are two flowers"],
+            alternatives=[
+                [
                     "Here is a beautiful {flower}",
-                    ("Here are beautiful {flower}", "Here are two beautiful {flower}"),
-                ),
-                Declension(
+                    "Here are beautiful {flower}",
+                    "Here are two beautiful {flower}",
+                ],
+                [
                     "Here is a rare {flower}",
-                    (
-                        "Here are rare {flower}",
-                        "Here are two rare {flower}",
-                        "Here are several rare {flower}",
-                    ),
-                ),
-                Declension(
+                    "Here are rare {flower}",
+                    "Here are two rare {flower}",
+                    "Here are several rare {flower}",
+                ],
+                [
                     "Here is a {flower} from the {region} region",
-                    (
-                        "Here are {flower} from the {region} region",
-                        "Here are two {flower} from the {region} region",
-                    ),
-                ),
+                    "Here are {flower} from the {region} region",
+                    "Here are two {flower} from the {region} region",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1101": Message(
-            id="1101",
-            principal=Declension(
-                "I like this mountain",
-                ("I like these mountains", "I like these two mountains"),
-            ),
-            variants=[
-                Declension(
+            "1101",
+            "I like this mountain",
+            plurals=["I like these mountains", "I like these two mountains"],
+            alternatives=[
+                [
                     "I like this mountain {mountain}",
-                    (
-                        "I like these mountains {mountain}",
-                        "I like these two mountains {mountain}",
-                    ),
-                ),
-                Declension(
+                    "I like these mountains {mountain}",
+                    "I like these two mountains {mountain}",
+                ],
+                [
                     "I like this mountain located at {location}",
-                    (
-                        "I like these mountains located at {location}",
-                        "I like these two mountains located at {location}",
-                    ),
-                ),
-                Declension(
+                    "I like these mountains located at {location}",
+                    "I like these two mountains located at {location}",
+                ],
+                [
                     "I like this mountain called {name}",
-                    (
-                        "I like these mountains called {name}",
-                        "I like these two mountains called {name}",
-                        "I like these numerous mountains called {name}",
-                    ),
-                ),
+                    "I like these mountains called {name}",
+                    "I like these two mountains called {name}",
+                    "I like these numerous mountains called {name}",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
         "1102": Message(
-            id="1102",
-            principal=Declension(
-                "I'm going on a trip", ("I'm going on trips", "I'm going on two trips")
-            ),
-            variants=[
-                Declension(
+            "1102",
+            "I'm going on a trip",
+            plurals=["I'm going on trips", "I'm going on two trips"],
+            alternatives=[
+                [
                     "I'm going on a trip to {destination}",
-                    (
-                        "I'm going on trips to {destination}",
-                        "I'm going on two trips to {destination}",
-                    ),
-                ),
-                Declension(
+                    "I'm going on trips to {destination}",
+                    "I'm going on two trips to {destination}",
+                ],
+                [
                     "I'm going on a trip with {companion}",
-                    (
-                        "I'm going on trips with {companion}",
-                        "I'm going on two trips with {companion}",
-                    ),
-                ),
-                Declension(
+                    "I'm going on trips with {companion}",
+                    "I'm going on two trips with {companion}",
+                ],
+                [
                     "I'm going on a trip for {duration} days",
-                    (
-                        "I'm going on trips for {duration} days",
-                        "I'm going on two trips for {duration} days",
-                    ),
-                ),
+                    "I'm going on trips for {duration} days",
+                    "I'm going on two trips for {duration} days",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about trips"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about trips"],
         ),
         "1103": Message(
-            id="1103",
-            principal=Declension(
-                "The automaton is ready",
-                ("The automatons are ready", "The two automatons are ready"),
-            ),
-            variants=[
-                Declension(
+            "1103",
+            "The automaton is ready",
+            plurals=["The automatons are ready", "The two automatons are ready"],
+            alternatives=[
+                [
                     "The automaton {automaton} is ready",
-                    (
-                        "The automatons {automaton} are ready",
-                        "The two automatons {automaton} are ready",
-                    ),
-                ),
-                Declension(
+                    "The automatons {automaton} are ready",
+                    "The two automatons {automaton} are ready",
+                ],
+                [
                     "The automaton designed for {purpose} is ready",
-                    (
-                        "The automatons designed for {purpose} are ready",
-                        "The two automatons designed for {purpose} are ready",
-                    ),
-                ),
-                Declension(
+                    "The automatons designed for {purpose} are ready",
+                    "The two automatons designed for {purpose} are ready",
+                ],
+                [
                     "The automaton of type {type} is ready",
-                    (
-                        "The automatons of type {type} are ready",
-                        "The two automatons of type {type} are ready",
-                        "The numerous automatons of type {type} are ready",
-                    ),
-                ),
+                    "The automatons of type {type} are ready",
+                    "The two automatons of type {type} are ready",
+                    "The numerous automatons of type {type} are ready",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about automata based on Chomsky grammars"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about automata based on Chomsky grammars"],
         ),
         "1104": Message(
-            id="1104",
-            principal=Declension(
-                "The flower has a beautiful colour",
-                (
-                    "Flowers have beautiful colours",
-                    "The two flowers have beautiful colours",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "The {flower} has a beautiful colour",
-                    (
-                        "The {flower} have beautiful colours",
-                        "The two {flower} have beautiful colours",
-                    ),
-                ),
-                Declension(
-                    "The {flower} of colour {color} is magnificent",
-                    (
-                        "The {flower} of colour {color} are magnificent",
-                        "The two {flower} of colour {color} are magnificent",
-                    ),
-                ),
-                Declension(
-                    "The {flower} of the year {year} is splendid",
-                    (
-                        "The {flower} of the year {year} are splendid",
-                        "The two {flower} of the year {year} are splendid",
-                    ),
-                ),
+            "1104",
+            "The flower has a beautiful colour",
+            plurals=[
+                "Flowers have beautiful colours",
+                "The two flowers have beautiful colours",
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            alternatives=[
+                [
+                    "The {flower} has a beautiful colour",
+                    "The {flower} have beautiful colours",
+                    "The two {flower} have beautiful colours",
+                ],
+                [
+                    "The {flower} of colour {color} is magnificent",
+                    "The {flower} of colour {color} are magnificent",
+                    "The two {flower} of colour {color} are magnificent",
+                ],
+                [
+                    "The {flower} of the year {year} is splendid",
+                    "The {flower} of the year {year} are splendid",
+                    "The two {flower} of the year {year} are splendid",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1105": Message(
-            id="1105",
-            principal=Declension(
-                "The mountain is snow-covered",
-                (
-                    "The mountains are snow-covered",
-                    "These two mountains are snow-covered",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "The mountain {mountain} is snow-covered",
-                    (
-                        "The mountains {mountain} are snow-covered",
-                        "These two mountains {mountain} are snow-covered",
-                    ),
-                ),
-                Declension(
-                    "The mountain located at {location} is snow-covered",
-                    (
-                        "The mountains located at {location} are snow-covered",
-                        "These two mountains located at {location} are snow-covered",
-                    ),
-                ),
-                Declension(
-                    "The mountain in {season} is snow-covered",
-                    (
-                        "The mountains in {season} are snow-covered",
-                        "These two mountains in {season} are snow-covered",
-                        "The numerous mountains in {season} are snow-covered",
-                    ),
-                ),
+            "1105",
+            "The mountain is snow-covered",
+            plurals=[
+                "The mountains are snow-covered",
+                "These two mountains are snow-covered",
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            alternatives=[
+                [
+                    "The mountain {mountain} is snow-covered",
+                    "The mountains {mountain} are snow-covered",
+                    "These two mountains {mountain} are snow-covered",
+                ],
+                [
+                    "The mountain located at {location} is snow-covered",
+                    "The mountains located at {location} are snow-covered",
+                    "These two mountains located at {location} are snow-covered",
+                ],
+                [
+                    "The mountain in {season} is snow-covered",
+                    "The mountains in {season} are snow-covered",
+                    "These two mountains in {season} are snow-covered",
+                    "The numerous mountains in {season} are snow-covered",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
         "1106": Message(
-            id="1106",
-            principal=Declension(
-                "The trip is long", ("Trips are long", "These two trips are long")
-            ),
-            variants=[
-                Declension(
+            "1106",
+            "The trip is long",
+            plurals=["Trips are long", "These two trips are long"],
+            alternatives=[
+                [
                     "The trip to {destination} is long",
-                    (
-                        "Trips to {destination} are long",
-                        "These two trips to {destination} are long",
-                    ),
-                ),
-                Declension(
+                    "Trips to {destination} are long",
+                    "These two trips to {destination} are long",
+                ],
+                [
                     "The trip with {companion} is long",
-                    (
-                        "Trips with {companion} are long",
-                        "These two trips with {companion} are long",
-                    ),
-                ),
-                Declension(
+                    "Trips with {companion} are long",
+                    "These two trips with {companion} are long",
+                ],
+                [
                     "The trip of {duration} days is long",
-                    (
-                        "Trips of {duration} days are long",
-                        "These two trips of {duration} days are long",
-                    ),
-                ),
+                    "Trips of {duration} days are long",
+                    "These two trips of {duration} days are long",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about trips"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about trips"],
         ),
         "1107": Message(
-            id="1107",
-            principal=Declension(
-                "The automaton works",
-                ("The automatons work", "The two automatons work"),
-            ),
-            variants=[
-                Declension(
+            "1107",
+            "The automaton works",
+            plurals=["The automatons work", "The two automatons work"],
+            alternatives=[
+                [
                     "The automaton {automaton} works",
-                    (
-                        "The automatons {automaton} work",
-                        "The two automatons {automaton} work",
-                    ),
-                ),
-                Declension(
+                    "The automatons {automaton} work",
+                    "The two automatons {automaton} work",
+                ],
+                [
                     "The automaton for {purpose} works",
-                    (
-                        "The automatons for {purpose} work",
-                        "The two automatons for {purpose} work",
-                    ),
-                ),
-                Declension(
+                    "The automatons for {purpose} work",
+                    "The two automatons for {purpose} work",
+                ],
+                [
                     "The automaton of type {type} works",
-                    (
-                        "The automatons of type {type} work",
-                        "The two automatons of type {type} work",
-                        "The numerous automatons of type {type} work",
-                    ),
-                ),
+                    "The automatons of type {type} work",
+                    "The two automatons of type {type} work",
+                    "The numerous automatons of type {type} work",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about automata based on Chomsky grammars"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about automata based on Chomsky grammars"],
         ),
         "1108": Message(
-            id="1108",
-            principal=Declension(
-                "The flower smells nice",
-                ("The flowers smell nice", "These two flowers smell nice"),
-            ),
-            variants=[
-                Declension(
+            "1108",
+            "The flower smells nice",
+            plurals=["The flowers smell nice", "These two flowers smell nice"],
+            alternatives=[
+                [
                     "The {flower} smells nice",
-                    ("The {flower} smell nice", "These two {flower} smell nice"),
-                ),
-                Declension(
+                    "The {flower} smell nice",
+                    "These two {flower} smell nice",
+                ],
+                [
                     "The {flower} of colour {color} smells nice",
-                    (
-                        "The {flower} of colour {color} smell nice",
-                        "These two {flower} of colour {color} smell nice",
-                    ),
-                ),
-                Declension(
+                    "The {flower} of colour {color} smell nice",
+                    "These two {flower} of colour {color} smell nice",
+                ],
+                [
                     "The {flower} cultivated in {year} smells nice",
-                    (
-                        "The {flower} cultivated in {year} smell nice",
-                        "These two {flower} cultivated in {year} smell nice",
-                    ),
-                ),
+                    "The {flower} cultivated in {year} smell nice",
+                    "These two {flower} cultivated in {year} smell nice",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about flowers"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about flowers"],
         ),
         "1109": Message(
-            id="1109",
-            principal=Declension(
-                "The mountain is covered with snow",
-                (
-                    "The mountains are covered with snow",
-                    "These two mountains are covered with snow",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "The mountain {mountain} is covered with snow",
-                    (
-                        "The mountains {mountain} are covered with snow",
-                        "These two mountains {mountain} are covered with snow",
-                    ),
-                ),
-                Declension(
-                    "The mountain located at {location} is covered with snow",
-                    (
-                        "The mountains located at {location} are covered with snow",
-                        "These two mountains located at {location} are covered with snow",
-                    ),
-                ),
-                Declension(
-                    "The mountain in {season} is covered with snow",
-                    (
-                        "The mountains in {season} are covered with snow",
-                        "These two mountains in {season} are covered with snow",
-                        "The numerous mountains in {season} are covered with snow",
-                    ),
-                ),
+            "1109",
+            "The mountain is covered with snow",
+            plurals=[
+                "The mountains are covered with snow",
+                "These two mountains are covered with snow",
             ],
-            metadata={
-                "version": __version__,
-                "language": "en-GB",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Message about mountains"],
-            },
+            alternatives=[
+                [
+                    "The mountain {mountain} is covered with snow",
+                    "The mountains {mountain} are covered with snow",
+                    "These two mountains {mountain} are covered with snow",
+                ],
+                [
+                    "The mountain located at {location} is covered with snow",
+                    "The mountains located at {location} are covered with snow",
+                    "These two mountains located at {location} are covered with snow",
+                ],
+                [
+                    "The mountain in {season} is covered with snow",
+                    "The mountains in {season} are covered with snow",
+                    "These two mountains in {season} are covered with snow",
+                    "The numerous mountains in {season} are covered with snow",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Message about mountains"],
         ),
     }
 
@@ -1240,374 +900,270 @@ def en_gb_messages():
 def it_it_messages():
     return {
         "1100": Message(
-            id="1100",
-            principal=Declension("Ecco un fiore", ("Ecco dei fiori", "Ecco due fiori")),
-            variants=[
-                Declension(
+            "1100",
+            "Ecco un fiore",
+            plurals=["Ecco dei fiori", "Ecco due fiori"],
+            alternatives=[
+                [
                     "Ecco un bellissimo {flower}",
-                    ("Ecco dei bellissimi {flower}", "Ecco due bellissimi {flower}"),
-                ),
-                Declension(
+                    "Ecco dei bellissimi {flower}",
+                    "Ecco due bellissimi {flower}",
+                ],
+                [
                     "Ecco un raro {flower}",
-                    (
-                        "Ecco dei {flower} rari",
-                        "Ecco due {flower} rari",
-                        "Ecco diversi {flower} rari",
-                    ),
-                ),
-                Declension(
+                    "Ecco dei {flower} rari",
+                    "Ecco due {flower} rari",
+                    "Ecco diversi {flower} rari",
+                ],
+                [
                     "Ecco un {flower} della regione {region}",
-                    (
-                        "Ecco dei {flower} della regione {region}",
-                        "Ecco due {flower} della regione {region}",
-                    ),
-                ),
+                    "Ecco dei {flower} della regione {region}",
+                    "Ecco due {flower} della regione {region}",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sui fiori"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sui fiori"],
         ),
         "1101": Message(
-            id="1101",
-            principal=Declension(
-                "Mi piace questa montagna",
-                ("Mi piacciono queste montagne", "Mi piacciono queste due montagne"),
-            ),
-            variants=[
-                Declension(
-                    "Mi piace questa montagna {mountain}",
-                    (
-                        "Mi piacciono queste montagne {mountain}",
-                        "Mi piacciono queste due montagne {mountain}",
-                    ),
-                ),
-                Declension(
-                    "Mi piace questa montagna situata a {location}",
-                    (
-                        "Mi piacciono queste montagne situate a {location}",
-                        "Mi piacciono queste due montagne situate a {location}",
-                    ),
-                ),
-                Declension(
-                    "Mi piace questa montagna chiamata {name}",
-                    (
-                        "Mi piacciono queste montagne chiamate {name}",
-                        "Mi piacciono queste due montagne chiamate {name}",
-                        "Mi piacciono queste numerose montagne chiamate {name}",
-                    ),
-                ),
+            "1101",
+            "Mi piace questa montagna",
+            plurals=[
+                "Mi piacciono queste montagne",
+                "Mi piacciono queste due montagne",
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sulle montagne"],
-            },
+            alternatives=[
+                [
+                    "Mi piace questa montagna {mountain}",
+                    "Mi piacciono queste montagne {mountain}",
+                    "Mi piacciono queste due montagne {mountain}",
+                ],
+                [
+                    "Mi piace questa montagna situata a {location}",
+                    "Mi piacciono queste montagne situate a {location}",
+                    "Mi piacciono queste due montagne situate a {location}",
+                ],
+                [
+                    "Mi piace questa montagna chiamata {name}",
+                    "Mi piacciono queste montagne chiamate {name}",
+                    "Mi piacciono queste due montagne chiamate {name}",
+                    "Mi piacciono queste numerose montagne chiamate {name}",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sulle montagne"],
         ),
         "1102": Message(
-            id="1102",
-            principal=Declension(
-                "Parto per un viaggio", ("Parto per dei viaggi", "Parto per due viaggi")
-            ),
-            variants=[
-                Declension(
+            "1102",
+            "Parto per un viaggio",
+            plurals=["Parto per dei viaggi", "Parto per due viaggi"],
+            alternatives=[
+                [
                     "Parto per un viaggio verso {destination}",
-                    (
-                        "Parto per dei viaggi verso {destination}",
-                        "Parto per due viaggi verso {destination}",
-                    ),
-                ),
-                Declension(
+                    "Parto per dei viaggi verso {destination}",
+                    "Parto per due viaggi verso {destination}",
+                ],
+                [
                     "Parto per un viaggio con {companion}",
-                    (
-                        "Parto per dei viaggi con {companion}",
-                        "Parto per due viaggi con {companion}",
-                    ),
-                ),
-                Declension(
+                    "Parto per dei viaggi con {companion}",
+                    "Parto per due viaggi con {companion}",
+                ],
+                [
                     "Parto per un viaggio di {duration} giorni",
-                    (
-                        "Parto per dei viaggi di {duration} giorni",
-                        "Parto per due viaggi di {duration} giorni",
-                    ),
-                ),
+                    "Parto per dei viaggi di {duration} giorni",
+                    "Parto per due viaggi di {duration} giorni",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sui viaggi"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sui viaggi"],
         ),
         "1103": Message(
-            id="1103",
-            principal=Declension(
-                "L'automata è pronto",
-                ("Gli automi sono pronti", "I due automi sono pronti"),
-            ),
-            variants=[
-                Declension(
+            "1103",
+            "L'automata è pronto",
+            plurals=["Gli automi sono pronti", "I due automi sono pronti"],
+            alternatives=[
+                [
                     "L'automata {automaton} è pronto",
-                    (
-                        "Gli automi {automaton} sono pronti",
-                        "I due automi {automaton} sono pronti",
-                    ),
-                ),
-                Declension(
-                    "L'automata progettato per {purpose} è pronto",
-                    (
-                        "Gli automi progettati per {purpose} sono pronti",
-                        "I due automi progettati per {purpose} sono pronti",
-                    ),
-                ),
-                Declension(
-                    "L'automata di tipo {type} è pronto",
-                    (
-                        "Gli automi di tipo {type} sono pronti",
-                        "I due automi di tipo {type} sono pronti",
-                        "I numerosi automi di tipo {type} sono pronti",
-                    ),
-                ),
-            ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": [
-                    "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+                    "Gli automi {automaton} sono pronti",
+                    "I due automi {automaton} sono pronti",
                 ],
-            },
+                [
+                    "L'automata progettato per {purpose} è pronto",
+                    "Gli automi progettati per {purpose} sono pronti",
+                    "I due automi progettati per {purpose} sono pronti",
+                ],
+                [
+                    "L'automata di tipo {type} è pronto",
+                    "Gli automi di tipo {type} sono pronti",
+                    "I due automi di tipo {type} sono pronti",
+                    "I numerosi automi di tipo {type} sono pronti",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=[
+                "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+            ],
         ),
         "1104": Message(
-            id="1104",
-            principal=Declension(
-                "Il fiore ha un bel colore",
-                ("I fiori hanno bei colori", "I due fiori hanno bei colori"),
-            ),
-            variants=[
-                Declension(
+            "1104",
+            "Il fiore ha un bel colore",
+            plurals=["I fiori hanno bei colori", "I due fiori hanno bei colori"],
+            alternatives=[
+                [
                     "Il {flower} ha un bel colore",
-                    ("I {flower} hanno bei colori", "I due {flower} hanno bei colori"),
-                ),
-                Declension(
+                    "I {flower} hanno bei colori",
+                    "I due {flower} hanno bei colori",
+                ],
+                [
                     "Il {flower} di colore {color} è magnifico",
-                    (
-                        "I {flower} di colore {color} sono magnifici",
-                        "I due {flower} di colore {color} sono magnifici",
-                    ),
-                ),
-                Declension(
+                    "I {flower} di colore {color} sono magnifici",
+                    "I due {flower} di colore {color} sono magnifici",
+                ],
+                [
                     "Il {flower} dell'anno {year} è splendido",
-                    (
-                        "I {flower} dell'anno {year} sono splendidi",
-                        "I due {flower} dell'anno {year} sono splendidi",
-                    ),
-                ),
+                    "I {flower} dell'anno {year} sono splendidi",
+                    "I due {flower} dell'anno {year} sono splendidi",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sui fiori"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sui fiori"],
         ),
         "1105": Message(
-            id="1105",
-            principal=Declension(
-                "La montagna è ricoperta di neve",
-                (
-                    "Le montagne sono ricoperte di neve",
-                    "Queste due montagne sono ricoperte di neve",
-                ),
-            ),
-            variants=[
-                Declension(
-                    "La montagna {mountain} è ricoperta di neve",
-                    (
-                        "Le montagne {mountain} sono ricoperte di neve",
-                        "Queste due montagne {mountain} sono ricoperte di neve",
-                    ),
-                ),
-                Declension(
-                    "La montagna situata a {location} è ricoperta di neve",
-                    (
-                        "Le montagne situate a {location} sono ricoperte di neve",
-                        "Queste due montagne situate a {location} sono ricoperte di neve",
-                    ),
-                ),
-                Declension(
-                    "La montagna in {season} è ricoperta di neve",
-                    (
-                        "Le montagne in {season} sono ricoperte di neve",
-                        "Queste due montagne in {season} sono ricoperte di neve",
-                        "Le numerose montagne in {season} sono ricoperte di neve",
-                    ),
-                ),
+            "1105",
+            "La montagna è ricoperta di neve",
+            plurals=[
+                "Le montagne sono ricoperte di neve",
+                "Queste due montagne sono ricoperte di neve",
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sulle montagne"],
-            },
+            alternatives=[
+                [
+                    "La montagna {mountain} è ricoperta di neve",
+                    "Le montagne {mountain} sono ricoperte di neve",
+                    "Queste due montagne {mountain} sono ricoperte di neve",
+                ],
+                [
+                    "La montagna situata a {location} è ricoperta di neve",
+                    "Le montagne situate a {location} sono ricoperte di neve",
+                    "Queste due montagne situate a {location} sono ricoperte di neve",
+                ],
+                [
+                    "La montagna in {season} è ricoperta di neve",
+                    "Le montagne in {season} sono ricoperte di neve",
+                    "Queste due montagne in {season} sono ricoperte di neve",
+                    "Le numerose montagne in {season} sono ricoperte di neve",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sulle montagne"],
         ),
         "1106": Message(
-            id="1106",
-            principal=Declension(
-                "Il viaggio è lungo",
-                ("I viaggi sono lunghi", "Questi due viaggi sono lunghi"),
-            ),
-            variants=[
-                Declension(
+            "1106",
+            "Il viaggio è lungo",
+            plurals=["I viaggi sono lunghi", "Questi due viaggi sono lunghi"],
+            alternatives=[
+                [
                     "Il viaggio verso {destination} è lungo",
-                    (
-                        "I viaggi verso {destination} sono lunghi",
-                        "Questi due viaggi verso {destination} sono lunghi",
-                    ),
-                ),
-                Declension(
+                    "I viaggi verso {destination} sono lunghi",
+                    "Questi due viaggi verso {destination} sono lunghi",
+                ],
+                [
                     "Il viaggio con {companion} è lungo",
-                    (
-                        "I viaggi con {companion} sono lunghi",
-                        "Questi due viaggi con {companion} sono lunghi",
-                    ),
-                ),
-                Declension(
+                    "I viaggi con {companion} sono lunghi",
+                    "Questi due viaggi con {companion} sono lunghi",
+                ],
+                [
                     "Il viaggio di {duration} giorni è lungo",
-                    (
-                        "I viaggi di {duration} giorni sono lunghi",
-                        "Questi due viaggi di {duration} giorni sono lunghi",
-                    ),
-                ),
+                    "I viaggi di {duration} giorni sono lunghi",
+                    "Questi due viaggi di {duration} giorni sono lunghi",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sui viaggi"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sui viaggi"],
         ),
         "1107": Message(
-            id="1107",
-            principal=Declension(
-                "L'automata funziona",
-                ("Gli automi funzionano", "I due automi funzionano"),
-            ),
-            variants=[
-                Declension(
+            "1107",
+            "L'automata funziona",
+            plurals=["Gli automi funzionano", "I due automi funzionano"],
+            alternatives=[
+                [
                     "L'automata {automaton} funziona",
-                    (
-                        "Gli automi {automaton} funzionano",
-                        "I due automi {automaton} funzionano",
-                    ),
-                ),
-                Declension(
-                    "L'automata per {purpose} funziona",
-                    (
-                        "Gli automi per {purpose} funzionano",
-                        "I due automi per {purpose} funzionano",
-                    ),
-                ),
-                Declension(
-                    "L'automata di tipo {type} funziona",
-                    (
-                        "Gli automi di tipo {type} funzionano",
-                        "I due automi di tipo {type} funzionano",
-                        "I numerosi automi di tipo {type} funzionano",
-                    ),
-                ),
-            ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": [
-                    "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+                    "Gli automi {automaton} funzionano",
+                    "I due automi {automaton} funzionano",
                 ],
-            },
+                [
+                    "L'automata per {purpose} funziona",
+                    "Gli automi per {purpose} funzionano",
+                    "I due automi per {purpose} funzionano",
+                ],
+                [
+                    "L'automata di tipo {type} funziona",
+                    "Gli automi di tipo {type} funzionano",
+                    "I due automi di tipo {type} funzionano",
+                    "I numerosi automi di tipo {type} funzionano",
+                ],
+            ],
+            locations=[],
+            flags=["python-format"],
+            user_comments=[
+                "Messaggio sugli automi basati sulle grammatiche di Chomsky"
+            ],
         ),
         "1108": Message(
-            id="1108",
-            principal=Declension(
-                "Il fiore profuma bene",
-                ("I fiori profumano bene", "Questi due fiori profumano bene"),
-            ),
-            variants=[
-                Declension(
+            "1108",
+            "Il fiore profuma bene",
+            plurals=["I fiori profumano bene", "Questi due fiori profumano bene"],
+            alternatives=[
+                [
                     "Il {flower} profuma bene",
-                    ("I {flower} profumano bene", "Questi due {flower} profumano bene"),
-                ),
-                Declension(
+                    "I {flower} profumano bene",
+                    "Questi due {flower} profumano bene",
+                ],
+                [
                     "Il {flower} di colore {color} profuma bene",
-                    (
-                        "I {flower} di colore {color} profumano bene",
-                        "Questi due {flower} di colore {color} profumano bene",
-                    ),
-                ),
-                Declension(
+                    "I {flower} di colore {color} profumano bene",
+                    "Questi due {flower} di colore {color} profumano bene",
+                ],
+                [
                     "Il {flower} coltivato nel {year} profuma bene",
-                    (
-                        "I {flower} coltivati nel {year} profumano bene",
-                        "Questi due {flower} coltivati nel {year} profumano bene",
-                    ),
-                ),
+                    "I {flower} coltivati nel {year} profumano bene",
+                    "Questi due {flower} coltivati nel {year} profumano bene",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sui fiori"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sui fiori"],
         ),
         "1109": Message(
-            id="1109",
-            principal=Declension(
-                "La montagna è innevata",
-                ("Le montagne sono innevate", "Queste due montagne sono innevate"),
-            ),
-            variants=[
-                Declension(
+            "1109",
+            "La montagna è innevata",
+            plurals=["Le montagne sono innevate", "Queste due montagne sono innevate"],
+            alternatives=[
+                [
                     "La montagna {mountain} è innevata",
-                    (
-                        "Le montagne {mountain} sono innevate",
-                        "Queste due montagne {mountain} sono innevate",
-                    ),
-                ),
-                Declension(
+                    "Le montagne {mountain} sono innevate",
+                    "Queste due montagne {mountain} sono innevate",
+                ],
+                [
                     "La montagna situata a {location} è innevata",
-                    (
-                        "Le montagne situate a {location} sono innevate",
-                        "Queste due montagne situate a {location} sono innevate",
-                    ),
-                ),
-                Declension(
+                    "Le montagne situate a {location} sono innevate",
+                    "Queste due montagne situate a {location} sono innevate",
+                ],
+                [
                     "La montagna in {season} è innevata",
-                    (
-                        "Le montagne in {season} sono innevate",
-                        "Queste due montagne in {season} sono innevate",
-                        "Le numerose montagne in {season} sono innevate",
-                    ),
-                ),
+                    "Le montagne in {season} sono innevate",
+                    "Queste due montagne in {season} sono innevate",
+                    "Le numerose montagne in {season} sono innevate",
+                ],
             ],
-            metadata={
-                "version": __version__,
-                "language": "it-IT",
-                "locations": [],
-                "flags": ["python-format"],
-                "user_comments": ["Messaggio sulle montagne"],
-            },
+            locations=[],
+            flags=["python-format"],
+            user_comments=["Messaggio sulle montagne"],
         ),
     }
 

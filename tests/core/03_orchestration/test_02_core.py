@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from i18n_tools._finding import Finding
+from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.core import (
     inspect_corpus,
     load_book,
@@ -73,8 +74,7 @@ class TestLoadBook:
 class TestSaveBook:
     def test_round_trip_a_message(self, synchronized_repository):
         book = load_book(synchronized_repository, "app", "ui", "fr-FR")
-        msg = Message(id="greeting", principal=Declension("Bonjour"))
-        msg.add_language("fr-FR")
+        msg = Message("greeting", "Bonjour")
         book.messages["greeting"] = msg
 
         save_book(book, synchronized_repository, "app")
@@ -120,8 +120,7 @@ class TestSaveCorpus:
 
         for lang in ("fr-FR", "en"):
             book = corpus.get_real_book(lang)
-            msg = Message(id="greeting", principal=Declension(f"hi-{lang}"))
-            msg.add_language(lang)
+            msg = Message("greeting", f"hi-{lang}")
             book.messages["greeting"] = msg
 
         save_corpus(corpus, synchronized_repository, "app")
@@ -143,8 +142,7 @@ class TestLoadCorpusThenGetBookWithRepository:
     ):
         corpus = load_corpus(synchronized_repository, "app", "ui")
         book = corpus.get_real_book("fr-FR")
-        msg = Message(id="greeting", principal=Declension("Bonjour"))
-        msg.add_language("fr-FR")
+        msg = Message("greeting", "Bonjour")
         book.messages["greeting"] = msg
 
         fallback_book = corpus.get_book("fr-CH", repository=synchronized_repository)
@@ -157,10 +155,22 @@ def _book_file(repository, lang):
     return Path(root, "app", "locales", lang, "LC_MESSAGES", "ui.json.i18t")
 
 
+def _entry_with_repeated_flag(identifier):
+    """
+    A draft entry as the writer writes it, with its flag repeated: a file
+    that loads with a warning.
+    """
+    entry = message_to_i18n_tools_format(
+        Message(identifier, "Un", flags=["python-format"]), identifier
+    )
+    entry["metadata"]["flags"] = ["python-format", "python-format"]
+    return entry
+
+
 def _save_complete(repository, lang, matrix):
     """Save one complete message "items" in the Book of ``lang``."""
     book = load_book(repository, "app", "ui", lang)
-    message = Message.from_matrix("items", matrix, metadata={"language": lang})
+    message = Message.from_matrix("items", matrix)
     message.mark_complete()
     book.messages["items"] = message
     save_book(book, repository, "app")
@@ -187,7 +197,7 @@ class TestInspectCorpus:
         path = _book_file(synchronized_repository, "fr-FR")
         data = json.loads(path.read_text(encoding="utf-8"))
         data["broken"] = "not-a-list"
-        data["odd"] = {"messages": [["Un"]], "metadata": {"colour": "red"}}
+        data["odd"] = _entry_with_repeated_flag("odd")
         path.write_text(json.dumps(data), encoding="utf-8")
         findings = inspect_corpus(synchronized_repository, "app", "ui")
         assert [(f.severity, f.where, f.language) for f in findings] == [
@@ -208,13 +218,18 @@ class TestInspectCorpus:
     def test_warnings_listed_not_issued(self, synchronized_repository):
         path = _book_file(synchronized_repository, "fr-FR")
         data = json.loads(path.read_text(encoding="utf-8"))
-        data["odd"] = {"messages": [["Un"]], "metadata": {"colour": "red"}}
+        data["odd"] = _entry_with_repeated_flag("odd")
         path.write_text(json.dumps(data), encoding="utf-8")
         with warnings.catch_warnings(record=True) as record:
             warnings.simplefilter("always", I18nToolsWarning)
             findings = inspect_corpus(synchronized_repository, "app", "ui")
         assert [w for w in record if issubclass(w.category, I18nToolsWarning)] == []
-        assert [(f.severity, f.language) for f in findings] == [("warning", "fr-FR")]
+        # The repeated flag, then the Book counters the new entry no longer
+        # matches: warnings only.
+        assert ("warning", "odd", "fr-FR") in [
+            (f.severity, f.where, f.language) for f in findings
+        ]
+        assert {(f.severity, f.language) for f in findings} == {("warning", "fr-FR")}
 
     def test_corpus_findings_follow(self, synchronized_repository):
         _save_complete(synchronized_repository, "en", [["{n} item"]])

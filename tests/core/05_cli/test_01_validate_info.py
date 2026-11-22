@@ -64,13 +64,16 @@ class TestCmdValidateFindings:
     def test_warnings_listed_after_success(self, i18t_file):
         _rewrite(
             i18t_file,
-            lambda data: data["greet"]["metadata"].update(colour="red"),
+            lambda data: data["greet"]["metadata"].update(flags=["fuzzy", "fuzzy"]),
         )
         result = cmd_validate(i18t_file)
         first, *lines = result.splitlines()
         assert first.startswith("OK: ")
         assert first.endswith(" — 0 error(s), 1 warning(s), 0 info")
-        assert lines == ["  warning  -  greet: unknown metadata key 'colour' ignored"]
+        assert lines == [
+            '  warning  -  greet: ["metadata", "flags"]: \'fuzzy\' is repeated: '
+            + "the repetition is removed"
+        ]
 
     def test_errors_raise_the_report(self, i18t_file):
         _rewrite(i18t_file, lambda data: data.update(broken="not-a-list"))
@@ -78,7 +81,7 @@ class TestCmdValidateFindings:
             cmd_validate(i18t_file)
         first, *lines = str(exc_info.value).splitlines()
         assert first.startswith(f"'{i18t_file}' — 1 error(s)")
-        assert "  error    -  broken: malformed messages matrix" in lines
+        assert "  error    -  broken: entry is not a mapping" in lines
 
     def test_checked_against_the_path_language(self, i18t_file):
         _rewrite(i18t_file, lambda data: data["metadata"].update(language="en-US"))
@@ -108,7 +111,7 @@ def _save_complete(repository_root, lang, matrix):
     directory = Path(repository_root, "app", "locales", lang, "LC_MESSAGES")
     book = Book(language=lang, domain="messages")
     book.load(str(directory))
-    message = Message.from_matrix("items", matrix, metadata={"language": lang})
+    message = Message.from_matrix("items", matrix)
     message.mark_complete()
     book.messages["items"] = message
     book.save(str(directory))

@@ -35,16 +35,7 @@ def i18t_file(tmp_path):
 
     book = Book(language="fr-FR", domain="messages")
     message = Message(
-        id="greet",
-        principal=Declension("Bonjour"),
-        metadata={
-            "version": "0.9.0",
-            "language": "fr-FR",
-            "locations": [],
-            "flags": [],
-            "user_comments": [],
-            "auto_comments": [],
-        },
+        "greet", "Bonjour", locations=[], flags=[], user_comments=[], auto_comments=[]
     )
     book.add("messages", [message])
     book.save(str(directory))

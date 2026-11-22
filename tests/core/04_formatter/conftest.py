@@ -1,37 +1,23 @@
 import pytest
 
-from i18n_tools import __version__
-from i18n_tools.models import Declension
 from i18n_tools.models import Message as MessageModel
-
-
-def _metadata(language: str = "en") -> dict:
-    return {
-        "version": __version__,
-        "language": language,
-        "locations": [],
-        "flags": ["python-format"],
-        "user_comments": [],
-        "auto_comments": [],
-    }
 
 
 @pytest.fixture
 def simple_message() -> MessageModel:
     """No variant, no plural: exercises the plain path (row 0, column 0)."""
-    return MessageModel(
-        id="greet", principal=Declension("Hello {name}"), metadata=_metadata()
-    )
+    return MessageModel("greet", "Hello {name}", flags=["python-format"])
 
 
 @pytest.fixture
 def step1_message() -> MessageModel:
     """Every cell requested is directly present — no fallback needed."""
     return MessageModel(
-        id="cart",
-        principal=Declension("{count} item", ("{count} items",)),
-        variants=[Declension("{count} item (formal)", ("{count} items (formal)",))],
-        metadata=_metadata(),
+        "cart",
+        "{count} item",
+        plurals=["{count} items"],
+        alternatives=[["{count} item (formal)", "{count} items (formal)"]],
+        flags=["python-format"],
     )
 
 
@@ -42,10 +28,11 @@ def step2_message() -> MessageModel:
     messages[1][0] (the principal plural).
     """
     return MessageModel(
-        id="cart",
-        principal=Declension("{count} item", ("{count} items",)),
-        variants=[Declension("{count} item (formal)")],
-        metadata=_metadata(),
+        "cart",
+        "{count} item",
+        plurals=["{count} items"],
+        alternatives=[["{count} item (formal)"]],
+        flags=["python-format"],
     )
 
 
@@ -56,10 +43,11 @@ def step3_message() -> MessageModel:
     the singular of the variant, messages[0][variant].
     """
     return MessageModel(
-        id="cart",
-        principal=Declension("{count} item", ("",)),
-        variants=[Declension("{count} item (formal)")],
-        metadata=_metadata(),
+        "cart",
+        "{count} item",
+        plurals=[""],
+        alternatives=[["{count} item (formal)"]],
+        flags=["python-format"],
     )
 
 
@@ -70,8 +58,9 @@ def step4_message() -> MessageModel:
     marker: falls all the way through to the singular main text.
     """
     return MessageModel(
-        id="cart",
-        principal=Declension("{count} item (singular main)", ("",)),
-        variants=[Declension("")],
-        metadata=_metadata(),
+        "cart",
+        "{count} item (singular main)",
+        plurals=[""],
+        alternatives=[[""]],
+        flags=["python-format"],
     )

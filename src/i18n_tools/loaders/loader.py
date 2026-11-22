@@ -25,7 +25,7 @@ import tarfile
 import warnings
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from ndict_tools import StrictNestedDictionary
 
@@ -41,9 +41,21 @@ from i18n_tools._checks import ensure_type
 from i18n_tools._finding import Finding
 from i18n_tools._json import JSONInput, JSONValue
 from i18n_tools.exceptions import FormatError, I18nToolsWarning
+
+from i18n_tools.loaders._handler import (  # noqa: F401  # isort: skip
+    DEFAULT_VERSION as DEFAULT_VERSION,  # re-exported: version of a new Book
+)
+from i18n_tools.loaders._handler import (
+    FORMAT_VERSION as FORMAT_VERSION,  # re-exported: version written
+)
+from i18n_tools.loaders._handler import (
+    GETTEXT_KEYS as GETTEXT_KEYS,  # re-exported: keys of the gettext mapping
+)
 from i18n_tools.loaders._handler import (
     ROOT as ROOT,  # re-exported: ``where`` of a finding about the file root
 )
+from i18n_tools.loaders._handler import BookData as BookData  # re-exported
+from i18n_tools.loaders._handler import book_count, book_statistics
 from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
 from i18n_tools.loaders._handler import build_dictionary_path
 from i18n_tools.loaders._handler import build_path as _build_path
@@ -68,7 +80,6 @@ from i18n_tools.loaders._handler import fetch_dictionary as _fetch_dictionary
 from i18n_tools.loaders._handler import file_exists as _file_exists
 from i18n_tools.loaders._handler import inspect_book_data
 from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
-from i18n_tools.loaders._handler import load_by_format
 from i18n_tools.loaders._handler import load_config as _load_config
 from i18n_tools.loaders._handler import load_json as _load_json
 from i18n_tools.loaders._handler import load_text as _load_text
@@ -76,7 +87,12 @@ from i18n_tools.loaders._handler import non_traversal_path
 from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
-from i18n_tools.loaders._handler import path_exists, read_book_data, save_by_format
+from i18n_tools.loaders._handler import (
+    path_exists,
+    read_book,
+    read_book_data,
+    save_by_format,
+)
 from i18n_tools.loaders._handler import save_config as _save_config
 from i18n_tools.loaders._handler import (
     save_json,
@@ -91,20 +107,6 @@ if TYPE_CHECKING:
     from babel.messages.catalog import Catalog
 
     from i18n_tools.models.book import Book
-
-
-class BookFileContent(TypedDict):
-    """
-    Content of a ``.i18t`` file as returned by :func:`load_book`.
-
-    ``metadata`` is the root metadata of the file, as read: it may hold
-    ``language`` and ``domain`` alongside the book's own metadata.
-    ``entries`` maps each message identifier to its native entry
-    ``{"messages": matrix, "metadata": {...}}``.
-    """
-
-    metadata: dict[str, object]
-    entries: dict[str, dict[str, JSONValue]]
 
 
 class LocaleStructure(TypedDict):
@@ -152,22 +154,15 @@ def load_locale_json(file_path: Path | str) -> dict[str, JSONValue]:
 
 def load_book(
     file_path: str, language: str | None = None, domain: str | None = None
-) -> BookFileContent:
+) -> BookData:
     """
-    Load a .i18t dictionary file and return its root metadata and entries (DD-15, DD-16, DD-34).
+    Read a Book file and return its content as format 1.0.0 reads it.
 
-    The serialisation format is detected from the file extension (DD-34),
-    symmetrically to :func:`save_book`. The reserved key ``.i18n_tools``
-    is ignored; the root ``metadata`` key is returned separately from the
-    message entries (an absent value yields an empty mapping).
-
-    Entries are read in the native form ``{"messages": ..., "metadata":
-    ...}`` or in the legacy flat form (the matrix alone), which yields an
-    empty ``metadata``.
-
-    The content is checked before it is returned, against ``language``
-    and ``domain`` when given. Errors stop the load; warnings are issued
-    as :class:`~i18n_tools.exceptions.I18nToolsWarning` and the content is
+    The encoding is detected from the name of the file, symmetrically to
+    :func:`save_book`. The content is checked against ``language`` and
+    ``domain`` when given, by the rules of the format reference. Errors
+    stop the load; warnings are issued as
+    :class:`~i18n_tools.exceptions.I18nToolsWarning` and the content is
     returned; information findings are neither raised nor issued.
 
     :param file_path: Path to the .i18t translation file.
@@ -178,18 +173,16 @@ def load_book(
     :param domain: The domain the file should hold, or None to skip the
         comparison.
     :type domain: str | None
-    :return: The root metadata and the mapping of msgid to i18n_tools
-             entry dict ``{"messages": matrix, "metadata": {...}}``.
-    :rtype: BookFileContent
+    :return: The root metadata and the entries, as read.
+    :rtype: BookData
     :raises FileNotFoundError: If the file does not exist.
-    :raises FormatError: If the content has errors; the message lists
-        every finding.
+    :raises FormatError: If the name is not a Book name, the content does
+        not parse, or it has errors; the message lists every error.
     """
-    fmt = detect_format(file_path)
-    data = load_by_format(file_path, fmt)
-    findings = inspect_book_data(data, language, domain)
+    data = read_book_data(file_path)
+    content, findings = read_book(data, language, domain)
     errors = [finding for finding in findings if finding.severity == "error"]
-    if errors:
+    if errors or content is None:
         details = "\n".join(f"  - {e.where}: {e.message}" for e in errors)
         raise FormatError(f"Integrity check failed for file: {file_path}\n{details}")
     for finding in findings:
@@ -200,23 +193,6 @@ def load_book(
             I18nToolsWarning,
             stacklevel=2,
         )
-    root: object = data.get("metadata", {})
-    metadata: dict[str, object] = (
-        {str(key): value for key, value in root.items()}
-        if isinstance(root, dict)
-        else {}
-    )
-    content: BookFileContent = {"metadata": metadata, "entries": {}}
-    for msgid, entry in data.items():
-        if msgid in (".i18n_tools", "metadata"):
-            continue
-        if isinstance(entry, dict):
-            content["entries"][msgid] = {
-                "messages": entry["messages"],
-                "metadata": entry.get("metadata", {}),
-            }
-        else:
-            content["entries"][msgid] = {"messages": entry, "metadata": {}}
     return content
 
 
@@ -271,42 +247,49 @@ def inspect_book_file(
 
 def save_book(book: "Book", file_path: str) -> None:
     """
-    Serialize a Book to a .i18t file.
+    Write a Book to a .i18t file in format 1.0.0.
 
-    The serialisation format (JSON or YAML) is detected from the file
-    extension. The structure written to disk follows the native .i18t format::
-
-        {
-            "metadata": { "language": ..., "domain": ..., ... },
-            "<msgid>": { "messages": [...], "metadata": { ... } },
-            ...
-        }
-
-    The root metadata holds the book's ``language`` and ``domain``, which
-    are attributes of the ``Book`` and not part of ``Book.metadata``, so
-    that a file can be checked against the place it is loaded from.
+    The encoding (JSON or YAML) is detected from the name of the file. The
+    root metadata is that of the Book, with ``format_version`` ``"1.0.0"``
+    and the ``count`` and ``statistics`` computed from the entries; each
+    entry is written under the key the Book holds the message by, which is
+    also its ``id``. Keys are written in the order of the format
+    reference, ``metadata`` first.
 
     :param book: The Book instance to persist.
     :type book: Book
     :param file_path: Full path (directory + filename) of the target .i18t file.
     :type file_path: str
     :raises FileNotFoundError: If the parent directory does not exist.
-
-    References
-    ----------
-    - biface/i18n#42 : strict separation models / loaders (DD-06)
-    - biface/i18n#46 : loader ↔ models bridge and native serialisation (DD-15, DD-16)
-    - biface/i18n#56 : .i18t naming convention and format detection (DD-34)
-    - biface/i18n#57 : Book.save() persistence
     """
     from i18n_tools.converter import message_to_i18n_tools_format
 
     fmt = detect_format(file_path)
-    root: dict[str, JSONInput] = {"language": book.language, "domain": book.domain}
-    root.update(book.metadata.to_dict())
-    data: dict[str, JSONInput] = {"metadata": root}
-    for msg in book.messages.values():
-        data[msg.id] = message_to_i18n_tools_format(msg)
+    entries: dict[str, dict[str, JSONInput]] = {
+        str(key): message_to_i18n_tools_format(message, str(key))
+        for key, message in book.messages.items()
+    }
+    meta = book.metadata
+    root: dict[str, JSONInput] = {
+        "format_version": FORMAT_VERSION,
+        "version": meta["version"],
+        "language": meta["language"],
+        "domain": meta["domain"],
+        "gettext": {key: meta[["gettext", key]] for key in GETTEXT_KEYS},
+        "rules": cast(StrictNestedDictionary, meta["rules"]).to_dict(),
+        "count": book_count(
+            {
+                "status": entry["metadata"]["status"],
+                "count": entry["metadata"]["count"],
+                "fill_mask": entry["metadata"]["fill_mask"],
+            }
+            for entry in (
+                cast("dict[str, dict[str, object]]", item) for item in entries.values()
+            )
+        ),
+        "statistics": book_statistics(entries.values()),
+    }
+    data: dict[str, JSONInput] = {"metadata": root, **entries}
     save_by_format(file_path, data, fmt)
 
 

@@ -7,6 +7,12 @@ Book module
 
    .. autoclass:: Book
 
+      .. autoproperty:: language
+      .. autoproperty:: domain
+      .. autoproperty:: format_version
+      .. autoproperty:: version
+      .. automethod:: set_version
+      .. automethod:: set_gettext
       .. automethod:: add
       .. automethod:: remove
       .. automethod:: load
@@ -26,8 +32,6 @@ Book module
       .. automethod:: remove_file_format
       .. automethod:: set_metadata
       .. automethod:: __set_filename
-         :no-index:
-      .. automethod:: _compute_statistics
          :no-index:
       .. automethod:: __iter__
          :no-index:

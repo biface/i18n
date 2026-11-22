@@ -237,13 +237,17 @@ def cmd_info(path: str) -> str:
     :raises CliError: If the file cannot be parsed or loaded.
     """
     book = _load_book_from_path(path)
-    stats = book.metadata.get("statistics", {})
+    # The statistics are computed when the file is written, not kept in
+    # memory: the words are counted here, as the writer counts them.
+    words = sum(
+        len(text.split()) for message in book for row in message.matrix for text in row
+    )
     lines = [
         f"Domain:       {book.domain}",
         f"Language:     {book.language}",
         f"Format:       {book.file_format}",
         f"Messages:     {len(book.messages)}",
-        f"Total words:  {stats.get('total_words', 0)}",
+        f"Total words:  {words}",
     ]
     return "\n".join(lines)
 

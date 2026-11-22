@@ -2,6 +2,9 @@
 Book and FallbackBook: the messages of one domain in one language.
 """
 
+import re
+from collections.abc import Mapping
+from datetime import datetime
 from typing import TYPE_CHECKING, Required, TypedDict, Unpack, cast
 
 from ndict_tools import StrictNestedDictionary
@@ -12,14 +15,16 @@ from i18n_tools.__static__ import (
 )
 from i18n_tools._checks import is_type
 from i18n_tools._compat import override
-from i18n_tools._counters import describe_differences
 from i18n_tools._finding import Finding
 from i18n_tools._json import JSONInput
-from i18n_tools.converter import (
-    i18n_tools_format_to_message_dict,
-)
+from i18n_tools.converter import i18n_tools_format_to_message_dict
 from i18n_tools.exceptions import MessageError
-from i18n_tools.loaders.loader import build_book_filename
+from i18n_tools.loaders.loader import (
+    DEFAULT_VERSION,
+    FORMAT_VERSION,
+    GETTEXT_KEYS,
+    build_book_filename,
+)
 from i18n_tools.loaders.loader import load_book as _load_book
 from i18n_tools.locale import normalize_language_tag
 from i18n_tools.models.message import Message
@@ -27,74 +32,63 @@ from i18n_tools.models.message import Message
 if TYPE_CHECKING:
     from i18n_tools.formatter.plurals import PluralRule
 
-# Root metadata keys of a .i18t file that are Book attributes, not metadata.
-_ROOT_ATTRIBUTE_KEYS = frozenset({"language", "domain"})
-# Root metadata keys derived from the messages, recomputed on load.
-_ROOT_DERIVED_KEYS = frozenset({"statistics", "count"})
+_SEMVER = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
+# Root metadata keys that are computed, never set.
+_COMPUTED_KEYS = frozenset({"format_version", "count", "statistics"})
 
 
 class BookOptions(TypedDict, total=False):
     """
     Keyword contract of :class:`Book`.
 
-    ``language`` and ``domain`` are required. The other keys are optional:
-    ``file_format`` defaults to ``"json"``, ``project_id_version`` to
-    ``"i18n-tools 1.0"``, ``report_msgid_bugs_to`` to
-    ``"bugs@example.com"``, and ``pot_creation_date``, ``language_team``
-    and ``header_comment`` to an empty string. Any other key is refused
-    with a ``TypeError``.
+    ``language`` and ``domain`` are required; ``file_format`` defaults to
+    ``"json"``. Any other key is refused with a ``TypeError``. The gettext
+    fields are set by :meth:`Book.set_gettext` and the version by
+    :attr:`Book.version`.
     """
 
     language: Required[str]
     domain: Required[str]
     file_format: TranslationFileFormat | None
-    project_id_version: str
-    report_msgid_bugs_to: str
-    pot_creation_date: str
-    language_team: str
-    header_comment: str
 
 
 _BOOK_OPTIONS = BookOptions.__required_keys__ | BookOptions.__optional_keys__
 
 
+def _revision_date() -> str:
+    """The local date and time of now, as gettext writes it: ``2026-11-21 17:30+0100``."""
+    return datetime.now().astimezone().strftime("%Y-%m-%d %H:%M%z")
+
+
+def _path_text(keys: list[str]) -> str:
+    """A path of the root metadata, written from the root."""
+    return "[" + ", ".join(f'"{key}"' for key in ["metadata", *keys]) + "]"
+
+
 class Book:
     """
-    Manage a book (collection) of internationalization Message objects for a single
-    domain and a single language, using the i18n_tools format.
+    The messages of one domain in one language: the content of one
+    ``.i18t`` file.
 
-    Iteration
+    :attr:`metadata` holds the keys of the root metadata of the file:
+    ``format_version`` (the version of the format read, ``"1.0.0"`` for a
+    new Book), ``version``, ``language``, ``domain``, ``gettext`` and
+    ``rules``. The properties of the same names read these keys. ``count``
+    and ``statistics`` are computed when the file is written.
 
-    - The class is iterable: iterating over a Book yields its Message instances
-      in the natural dictionary order of self.messages (insertion order).
+    The class is iterable: iterating over a Book yields its Message
+    instances in insertion order. :attr:`messages` maps each identifier to
+    its message; the Book is the master of these keys.
 
-    Invariants
-
-    - All messages in a Book share the same normalized language (BCP 47-like tag)
-      and the same domain.
-
-    Core attributes (moved out of metadata)
-
-    - language (str): Normalized language tag of this book (e.g. "fr-FR").
-    - domain (str): Functional or logical domain grouping the messages.
-    - file_format (TranslationFileFormat): Storage file format (e.g. "json").
-    - messages (StrictNestedDictionary): Mapping of message.id -> Message.
-    - metadata (StrictNestedDictionary): Additional data such as
-      project_id_version, report_msgid_bugs_to, pot_creation_date, language_team,
-      header_comment, statistics, and backward compatible counters.
-
-    Notes
-
-    - The keys "language", "domain" and "file_format" are NOT present in metadata
-      anymore; they are stored as instance attributes.
-    - Statistics are available under metadata["statistics"], with
-      "total_messages" and "total_words".
+    :ivar file_format: Storage encoding of the file (``"json"``).
+    :ivar filename: Name of the file, ``<domain>.<file_format>.i18t``.
+    :ivar messages: Identifier to Message.
+    :ivar metadata: The root metadata.
+    :ivar plural_rule: Rule of the Book, or None.
     """
 
     filename: str
     plural_rule: "PluralRule | None"
-    language: str | None
-    domain: str | None
     messages: StrictNestedDictionary
     file_format: TranslationFileFormat | None
     metadata: StrictNestedDictionary
@@ -105,53 +99,22 @@ class Book:
         **kwargs: Unpack[BookOptions],
     ) -> None:
         """
-        Initialize a Book.
+        Create a Book.
 
-        Positional arguments
-        - args: Zero or more Message instances or iterables of Message.
-          Any provided messages must have a metadata["language"] matching the
-          book language; otherwise a ValueError is raised.
-
-        Keyword arguments
-        - language (str, required): Language for the book. The value is normalized
-          using normalize_language_tag (e.g., "fr" -> "fr-FR"). If not provided,
-          KeyError("No language specified") is raised.
-        - domain (str, required): Domain for the book. If not provided,
-          KeyError("No domain specified") is raised.
-        - file_format (TranslationFileFormat, optional): Storage file format.
-          Default: "json".
-        - project_id_version (str, optional): Default "i18n-tools 1.0".
-        - report_msgid_bugs_to (str, optional): Default "bugs@example.com".
-        - pot_creation_date (str, optional): Default empty string.
-        - language_team (str, optional): Default empty string.
-        - header_comment (str, optional): Default empty string.
-
-        Behavior
-        - Stores language, domain, and file_format as instance attributes (not in
-          metadata).
-        - Builds metadata as a StrictNestedDictionary with the keys above (except
-          language/domain/file_format) and an initial statistics section:
-          metadata["statistics"] = {"total_words": 0, "total_messages": 0}.
-        - Loads any provided Message instances into the book if their
-          metadata["language"] equals the normalized book language; otherwise
-          raises ValueError.
-        - Maintains backward compatibility counter metadata[["count", "messages"]]
-          with the number of messages in the book.
-        - Computes initial statistics (total_words, total_messages) from message
-          contents.
-
-        Raises
-        - TypeError: if a keyword is not one of the options above.
-        - KeyError: if language or domain keyword is missing.
-        - TypeError: if language or domain is not a string.
-        - ValueError: if any provided Message has a language different than the
-          book language.
+        :param args: Messages, or lists or tuples of messages, held under
+            their identifier.
+        :type args: Message | tuple[Message] | list[Message]
+        :param kwargs: ``language`` and ``domain`` (required), and
+            ``file_format``.
+        :type kwargs: BookOptions
+        :raises TypeError: If a keyword is not one of the options, or
+            ``language`` or ``domain`` is not a string.
+        :raises KeyError: If ``language`` or ``domain`` is missing.
         """
         unknown = sorted(set(kwargs) - _BOOK_OPTIONS)
         if unknown:
             raise TypeError(f"Unknown Book option(s): {', '.join(unknown)}")
 
-        # Required metadata -> set instance attributes directly
         self.filename = ""
         self.plural_rule = None
         language = cast(object, kwargs.get("language"))
@@ -159,61 +122,197 @@ class Book:
             raise KeyError("No language specified")
         elif not isinstance(language, str):
             raise TypeError("Book language must be a string.")
-        self.language = normalize_language_tag(language)
 
         domain = cast(object, kwargs.get("domain"))
         if domain is None:
             raise KeyError("No domain specified")
         elif not isinstance(domain, str):
             raise TypeError("Book domain must be a string.")
-        self.domain = domain
 
-        # Initialize collections
         self.messages = StrictNestedDictionary()
-
-        # Core metadata for naming and storage format
-        self.file_format, self.filename = build_book_filename(
-            self.domain, kwargs.get("file_format")
-        )
-
-        # Build metadata dictionary (without language, domain, file_format)
         self.metadata = StrictNestedDictionary(
-            project_id_version=kwargs.get("project_id_version", "i18n-tools 1.0"),
-            report_msgid_bugs_to=kwargs.get("report_msgid_bugs_to", "bugs@example.com"),
-            pot_creation_date=kwargs.get("pot_creation_date", ""),
-            language_team=kwargs.get("language_team", ""),
-            header_comment=kwargs.get("header_comment", ""),
-            statistics={"total_words": 0, "total_messages": 0},
+            {
+                "format_version": FORMAT_VERSION,
+                "version": DEFAULT_VERSION,
+                "language": normalize_language_tag(language),
+                "domain": domain,
+                "gettext": dict.fromkeys(GETTEXT_KEYS, ""),
+                "rules": {},
+            }
+        )
+        self.file_format, self.filename = build_book_filename(
+            domain, kwargs.get("file_format")
         )
 
-        # Load initial messages (if any)
-        if len(args) > 0:
-            for entity in args:
-                if isinstance(entity, Message):
-                    if entity.metadata["language"] == self.language:
-                        self.messages[entity.id] = entity
-                    else:
-                        raise ValueError(
-                            f"Language of message {entity.id} is not compatible with this book language"
-                        )
-                elif is_type(entity, (tuple, list)):
-                    for message in entity:
-                        if message.metadata["language"] == self.language:
-                            self.messages[message.id] = message
-                        else:
-                            raise ValueError(
-                                f"Language of message {message.id} is not compatible with this book language"
-                            )
-        # Keep a simple count for backward compatibility
-        self.metadata[["count", "messages"]] = len(self.messages)
-        # Compute statistics based on current messages
-        self._compute_statistics()
+        for entity in args:
+            if isinstance(entity, Message):
+                self.messages[entity.id] = entity
+            elif is_type(entity, (tuple, list)):
+                for message in entity:
+                    self.messages[message.id] = message
+
+    # --- Keys of the root metadata -------------------------------------------
+
+    @property
+    def language(self) -> str | None:
+        """
+        Normalized language tag of the Book, ``metadata["language"]``.
+
+        :return: The language, or None once removed.
+        :rtype: str | None
+        """
+        return cast("str | None", self.metadata["language"])
+
+    @language.setter
+    def language(self, value: str | None) -> None:
+        self.metadata["language"] = (
+            None if value is None else normalize_language_tag(value)
+        )
+
+    @property
+    def domain(self) -> str | None:
+        """
+        Domain of the Book, ``metadata["domain"]``.
+
+        :return: The domain, or None once removed.
+        :rtype: str | None
+        """
+        return cast("str | None", self.metadata["domain"])
+
+    @domain.setter
+    def domain(self, value: str | None) -> None:
+        self.metadata["domain"] = value
+
+    @property
+    def format_version(self) -> str:
+        """
+        Version of the format read, ``metadata["format_version"]``;
+        ``"1.0.0"`` for a new Book. A writer always writes ``"1.0.0"``.
+
+        :return: The format version.
+        :rtype: str
+        """
+        return cast(str, self.metadata["format_version"])
+
+    @property
+    def version(self) -> str:
+        """
+        Version of the translation, ``metadata["version"]``: a strict
+        semantic version, ``"0.0.1"`` for a new Book.
+
+        :return: The version.
+        :rtype: str
+        """
+        return cast(str, self.metadata["version"])
+
+    @version.setter
+    def version(self, value: str) -> None:
+        if not is_type(value, str):
+            raise TypeError(f"Book version must be a str, got {type(value)}")
+        if _SEMVER.fullmatch(value) is None:
+            raise ValueError(
+                f"Book version '{value}' is not a strict semantic version "
+                + "(MAJOR.MINOR.PATCH)"
+            )
+        self.metadata["version"] = value
+
+    def set_version(self, version: str) -> None:
+        """
+        Set the version of the translation.
+
+        :param version: A strict semantic version (``"1.2.0"``).
+        :type version: str
+        :raises TypeError: If ``version`` is not a string.
+        :raises ValueError: If ``version`` is not a strict semantic version.
+        """
+        self.version = version
+
+    def set_gettext(self, **fields: str) -> None:
+        """
+        Set fields of the ``gettext`` mapping.
+
+        :param fields: Values of ``project_id_version``,
+            ``report_msgid_bugs_to``, ``pot_creation_date``,
+            ``po_revision_date``, ``last_translator``, ``language_team``
+            or ``header_comment``.
+        :type fields: str
+        :raises TypeError: If a key is not one of the seven, or a value is
+            not a string.
+        """
+        unknown = sorted(set(fields) - set(GETTEXT_KEYS))
+        if unknown:
+            raise TypeError(f"Unknown gettext key(s): {', '.join(unknown)}")
+        for key, value in fields.items():
+            if not is_type(value, str):
+                raise TypeError(f"gettext {key} must be a str, got {type(value)}")
+            self.metadata[["gettext", key]] = value
+
+    def set_metadata(
+        self, key: str | list[str] | None, value: JSONInput = None
+    ) -> None:
+        """
+        Set, or reset to its default with ``value=None``, a key of the root
+        metadata.
+
+        ``version``, ``language`` and ``domain`` go through their property;
+        a path ``["gettext", <field>]`` sets one gettext field; ``rules``
+        and any path inside it are written as given, the content of
+        ``rules`` being open. ``format_version``, ``count`` and
+        ``statistics`` cannot be set.
+
+        :param key: A key, or a path from the root metadata.
+        :type key: str | list[str] | None
+        :param value: The value; None resets the default.
+        :type value: JSONInput
+        :raises KeyError: If the key or the path is not one of the root
+            metadata, or cannot be set.
+        :raises TypeError: If ``key`` is neither a string nor a list of
+            strings, or a value has the wrong type.
+        :raises ValueError: If a value is refused by its property.
+        """
+        if key is None:
+            raise KeyError("A metadata key or path must be provided")
+        if is_type(key, str):
+            keys = [cast(str, key)]
+        elif is_type(key, list) and all(is_type(item, str) for item in key):
+            keys = list(cast("list[str]", key))
+        else:
+            raise TypeError("key must be a str or a list of str")
+        if len(keys) == 0:
+            raise KeyError("A metadata key or path must be provided")
+        head = keys[0]
+        if head in _COMPUTED_KEYS:
+            raise KeyError(f"{_path_text(keys)} cannot be set")
+        if head == "gettext" and len(keys) == 2 and keys[1] in GETTEXT_KEYS:
+            self.set_gettext(**{keys[1]: "" if value is None else cast(str, value)})
+        elif head == "rules":
+            if len(keys) == 1:
+                rules = {} if value is None else value
+                if not is_type(rules, Mapping):
+                    raise TypeError(f"Book rules must be a mapping, got {type(rules)}")
+                self.metadata["rules"] = StrictNestedDictionary(
+                    dict(cast("Mapping[str, JSONInput]", rules)),
+                    default_setup=dict(self.metadata.default_setup),
+                )
+            elif value is None:
+                if keys not in self.metadata.paths():
+                    raise KeyError(
+                        f"{_path_text(keys)} is not a key of the Book metadata"
+                    )
+                del self.metadata[keys]
+            else:
+                self.metadata[keys] = value
+        elif len(keys) == 1 and head == "version":
+            self.version = DEFAULT_VERSION if value is None else cast(str, value)
+        elif len(keys) == 1 and head in ("language", "domain"):
+            setattr(self, head, value)
+        else:
+            raise KeyError(f"{_path_text(keys)} is not a key of the Book metadata")
 
     # --- Attribute management for language, domain, and file format ---
     def __set_filename(self) -> None:
         """
-        This private function is used to set or update filename, if one of these component changes.
-        :return: nothing
+        Set or update the file name when the domain or the format changes.
         """
         if self.domain is not None and self.file_format is not None:
             self.filename = (
@@ -230,20 +329,13 @@ class Book:
 
     def add_language(self, lang: str) -> None:
         """Set the language if not already set; value is normalized."""
-        if getattr(self, "language", None) is not None:
+        if self.language is not None:
             raise ValueError("Language is already set for this book")
-        self.language = normalize_language_tag(lang)
+        self.language = lang
 
     def update_language(self, lang: str) -> None:
-        """Update the book language after verifying every Message matches it."""
-        # Ensure all messages in the book match the new language
-        new_lang = normalize_language_tag(lang)
-        for mid, msg in self.messages.items():
-            if msg.metadata.get("language") != new_lang:
-                raise ValueError(
-                    f"Language of message ({mid} : '{msg.metadata.get('language')}') is not compatible with updated book language ('{new_lang}')"
-                )
-        self.language = new_lang
+        """Update the book language; the value is normalized."""
+        self.language = lang
 
     def remove_language(self) -> None:
         """Unset the book language (may leave the book in an inconsistent state)."""
@@ -255,7 +347,7 @@ class Book:
 
     def add_domain(self, domain: str) -> None:
         """Set the domain if not already set."""
-        if getattr(self, "domain", None) is not None:
+        if self.domain is not None:
             raise ValueError("Domain is already set for this book")
         self.domain = domain
         self.__set_filename()
@@ -292,88 +384,7 @@ class Book:
         self.file_format = None
         self.filename = ""
 
-    def _compute_statistics(self) -> None:
-        """
-        Compute statistics from the messages contained in the book and store them in metadata.statistics.
-        - total_messages: number of messages in the book
-        - total_words: whitespace-separated words over every cell of every message matrix
-        """
-
-        total_words = sum(
-            len(cell.split())
-            for message in self.messages.values()
-            for row in message.matrix
-            for cell in row
-        )
-
-        self.metadata[["statistics", "total_messages"]] = len(self.messages)
-        self.metadata[["statistics", "total_words"]] = total_words
-
-    def set_metadata(
-        self, key: str | list[str] | None, value: JSONInput = None
-    ) -> None:
-        """
-        Add, update or delete a metadata entry.
-        - If value is None, the metadata is reset/removed to its default for the given key.
-        - If key is a string, it refers to a top-level key in self.metadata.
-        - If key is a list, it refers to a nested path.
-        """
-        if key is None:
-            raise KeyError("A metadata key or path must be provided")
-
-        # Define defaults for keys we manage so we can restore them on delete
-        default_meta = StrictNestedDictionary(
-            project_id_version="i18n-tools 1.0",
-            report_msgid_bugs_to="bugs@example.com",
-            pot_creation_date="",
-            language_team="",
-            header_comment="",
-            statistics={"total_words": 0, "total_messages": 0},
-        )
-
-        # Validate deletion or update
-        if value is None:
-            # delete/reset
-            if isinstance(key, list):
-                if key not in self.metadata.paths():
-                    raise KeyError(
-                        f"The path '{key}' is not a present key in the metadata dictionary"
-                    )
-                # If we know a default for that path, use it, otherwise remove by setting empty value
-                self.metadata[key] = (
-                    default_meta[key] if key in default_meta.paths() else None
-                )
-            elif is_type(key, str):
-                if not self.metadata.is_key(key):
-                    raise KeyError(
-                        f"The key '{key}' is not a present key in the metadata dictionary"
-                    )
-                self.metadata[key] = (
-                    default_meta[key] if key in default_meta.keys() else None
-                )
-            else:
-                raise TypeError("key must be a str or a list of str")
-        else:
-            # add/update
-            if isinstance(key, list):
-                if key not in self.metadata.paths():
-                    # allow creating nested metadata path only for 'statistics'
-                    # otherwise require existing path
-                    raise KeyError(
-                        f"The path '{key}' is not a present key in the metadata dictionary"
-                    )
-                self.metadata[key] = value
-            elif is_type(key, str):
-                if not self.metadata.is_key(key):
-                    # For top-level additions, we allow adding a new simple key
-                    self.metadata.update({key: value})
-                else:
-                    self.metadata[key] = value
-            else:
-                raise TypeError("key must be a str or a list of str")
-
-        # Keep backward compatibility counter and recompute statistics if messages count involved
-        self.metadata[["count", "messages"]] = len(self.messages)
+    # --- Messages ------------------------------------------------------------
 
     def get(self, index: str) -> Message | None:
         """
@@ -394,88 +405,73 @@ class Book:
 
     def add(self, domain: str, messages: list[Message]) -> None:
         """
-        Add messages to the book if language and domain are identical.
-        :param messages: list of messages to add to the book
-        :type messages: list[Message]
-        :param domain: the domain of the messages
+        Add messages to the book, each under its identifier.
+
+        :param domain: The domain of the messages; it must be the domain of
+            the Book.
         :type domain: str
-        :return: nothing
-        :rtype: None
-        :raises ValueError: If a message is not compatible with this book language and domain or already registered.
+        :param messages: The messages to add.
+        :type messages: list[Message]
+        :raises ValueError: If ``domain`` is not the domain of the Book, or
+            an identifier is already in the Book.
         """
         if self.domain != domain:
             raise ValueError(
                 f"Domain of message '{domain}' is not compatible with this book domain '{self.domain}'"
             )
-
         for message in messages:
-            if message.metadata["language"] != self.language:
-                raise ValueError(
-                    f"Language of message ({message.id} : '{message.metadata['language']}') is not compatible with this book language ('{self.language}')"
-                )
-
             if message.id in self.messages.keys():
                 raise ValueError(
                     f"Message with id ({message.id}) is already present in this book"
                 )
-
             self.messages[message.id] = message
-            self.metadata[["count", "messages"]] = len(self.messages)
-        # refresh statistics after adding all messages
-        self._compute_statistics()
 
     def remove(self, index: str) -> None:
         """
-        Remove a message from the book if language and domain are identical.
+        Remove a message from the book.
         :param index: key index of message to remove
         :type index: str
-        :return: nothing
-        :rtype: None
-        :raises KeyError: If key message is not in this book.
+        :raises ValueError: If key message is not in this book.
         """
-
         if index not in self.messages.keys():
             raise ValueError(f"Message identifier {index} is not in this book")
-        else:
-            del self.messages[index]
-            self.metadata[["count", "messages"]] = len(self.messages)
-            self._compute_statistics()
+        del self.messages[index]
 
     def check(self) -> list[Finding]:
         """
         Check the integrity of the messages of this book.
 
         A ``"draft"`` message is reported with severity ``"info"``: an
-        empty principal singular or content that differs from its recorded
-        counters is expected while a translation is in progress. The same
-        points on a ``"complete"`` message are integrity defects, reported
-        with severity ``"error"``, as is a complete message without
-        recorded counters. Nothing is raised.
+        empty principal singular or content that differs from its record
+        is expected while a translation is in progress. The same points on
+        a ``"complete"`` message are integrity defects, reported with
+        severity ``"error"``, as is a complete message without a record.
+        Nothing is raised.
 
         :return: The findings, in message order; empty if nothing is wrong.
         :rtype: list[Finding]
         """
         findings: list[Finding] = []
-        messages: list[Message] = list(self.messages.values())
-        for message in messages:
+        for key, message in self.messages.items():
+            identifier = str(key)
             severity = "error" if message.status == "complete" else "info"
             if message.principal.singular == "":
                 findings.append(
-                    Finding(severity, message.id, "the principal singular is empty")
+                    Finding(severity, identifier, "the principal singular is empty")
                 )
             if not message.has_divergence:
                 continue
             recorded = message.recorded
             if recorded is None:
                 findings.append(
-                    Finding(severity, message.id, "complete without recorded counters")
+                    Finding(severity, identifier, "complete without recorded counters")
                 )
                 continue
-            differences = describe_differences(recorded, message.observed)
+            differences = recorded.differences(message.observed)
             findings.append(
                 Finding(
                     severity,
-                    message.id,
+                    identifier,
                     "content differs from the recorded counters: "
                     + "; ".join(differences),
                 )
@@ -484,20 +480,13 @@ class Book:
 
     def load(self, path_directory: str) -> None:
         """
-        Load messages and root metadata from a .i18t file into this Book instance.
+        Load the root metadata and the messages of a .i18t file into this Book.
 
-        The file is located at ``path_directory/self.filename``.
-        Each message is assigned the book language before insertion.
-
-        The root metadata of the file replaces the matching entries of
-        ``self.metadata`` and adds the keys this Book does not know, so
-        that a save after a load writes them back. ``language`` and
-        ``domain`` are attributes of the Book, not metadata: they are not
-        copied. ``statistics`` and ``count`` are derived from the messages
-        and recomputed after loading.
-
-        The file is checked against the language and domain of this Book
-        (see ``loader.load_book()``).
+        The file is ``path_directory/self.filename``. It is checked against
+        the language and the domain of this Book by the rules of the format
+        (``loader.load_book()``). The root metadata of the file replaces
+        that of the Book; each entry becomes a message held under its key,
+        with its status and its record as read.
 
         :param path_directory: Directory containing the .i18t file.
         :type path_directory: str
@@ -507,51 +496,40 @@ class Book:
         file_path = path_directory + "/" + self.filename
         content = _load_book(file_path, self.language, self.domain)
         for key, value in content["metadata"].items():
-            if key in _ROOT_ATTRIBUTE_KEYS or key in _ROOT_DERIVED_KEYS:
-                continue
-            self.metadata[key] = value
-        for msgid, entry in content["entries"].items():
-            parts = i18n_tools_format_to_message_dict(entry)
-            msg = Message.from_matrix(
-                msgid,
-                parts["matrix"],
-                parts["context"],
-                parts["metadata"],
-                parts["status"],
-                parts["recorded"],
+            self.metadata[key] = (
+                StrictNestedDictionary(
+                    value, default_setup=dict(self.metadata.default_setup)
+                )
+                if isinstance(value, dict)
+                else value
             )
-            if self.language is not None:
-                msg.add_language(self.language)
-            self.messages[msgid] = msg
-        self.metadata[["count", "messages"]] = len(self.messages)
-        self._compute_statistics()
+        for identifier, entry in content["entries"].items():
+            parts = i18n_tools_format_to_message_dict(entry)
+            message = Message(identifier, parts["singular"], **parts["options"])
+            message.metadata["status"] = parts["status"]
+            for key, value in parts["record"].items():
+                message.metadata[key] = StrictNestedDictionary(
+                    cast("dict[str, object]", value),
+                    default_setup=dict(message.metadata.default_setup),
+                )
+            self.messages[identifier] = message
 
     def save(self, path_directory: str) -> None:
         """
         Save the content of this Book to a .i18t file.
 
-        The file is written at ``path_directory/self.filename``.
-        Delegates all I/O to ``save_book()`` in ``loader.py``,
-        following the same delegation pattern as ``load()``. The message
-        count and the statistics are recomputed first, so that the file
-        never carries stale derived values.
-
-        A complete message that diverges from its recorded counters, or
-        has none, is never written over the last sound state: the save is
-        refused before anything is written. Drafts carry no such
-        requirement. Once the file is written, each draft records its
-        counters (``Message.record()``): saving a draft is a validation
-        point.
+        The file is ``path_directory/self.filename``, written by
+        ``loader.save_book()`` in format 1.0.0. ``po_revision_date`` takes
+        the date and time of the write. A complete message that diverges
+        from its record, or has none, is never written over the last sound
+        state: the save is refused before anything is written. Once the
+        file is written, each draft records its content
+        (``Message.record()``): saving a draft is a validation point.
 
         :param path_directory: Directory where the .i18t file will be written.
         :type path_directory: str
         :raises MessageError: If a complete message diverges.
         :raises FileNotFoundError: If ``path_directory`` does not exist.
-
-        References
-        ----------
-        - biface/i18n#42 : strict separation models / loaders (DD-06)
-        - biface/i18n#57 : Book.save() persistence (DD-06, DD-15, DD-16)
         """
         from i18n_tools.loaders.loader import save_book as _save_book
 
@@ -566,8 +544,7 @@ class Book:
                 f"Book '{self.domain}' not saved: complete message(s) "
                 + f"{', '.join(diverging)} diverge from their recorded counters"
             )
-        self.metadata[["count", "messages"]] = len(self.messages)
-        self._compute_statistics()
+        self.metadata[["gettext", "po_revision_date"]] = _revision_date()
         file_path = path_directory + "/" + self.filename
         _save_book(self, file_path)
         for message in messages:

@@ -218,17 +218,12 @@ from typing import (
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools._counters import (
-    ContentCounters,
-    counters_from_entry,
-    counters_to_entry,
-)
+from i18n_tools._counters import entry_statistics
 from i18n_tools._json import JSONInput, JSONValue
 from i18n_tools.loaders.loader import load_json, load_text
-from i18n_tools.models.message import Location
 
 if TYPE_CHECKING:
-    from i18n_tools.models.message import Message
+    from i18n_tools.models.message import Message, MessageOptions
 
 _P = ParamSpec("_P")
 _R = TypeVar("_R")
@@ -1049,142 +1044,113 @@ def unified_format_to_i18n_tools(unified: _LegacyPayload) -> _LegacyPayload:
 
 class MessageEntry(TypedDict):
     """
-    The parts of a native ``.i18t`` entry that build a ``Message``.
+    The parts of a ``.i18t`` entry that build a Message.
 
-    Returned by :func:`i18n_tools_format_to_message_dict` and passed to
-    ``Message.from_matrix()``.
+    ``singular`` and ``options`` are the arguments of the ``Message``
+    constructor; ``status`` and ``record`` (``count`` and ``fill_mask``,
+    empty when the entry has no record) are written in the metadata of the
+    message once it is built.
     """
 
-    matrix: list[list[str]]
-    context: str
-    metadata: dict[str, object]
+    singular: str
+    options: "MessageOptions"
     status: Literal["draft", "complete"]
-    recorded: ContentCounters | None
+    record: dict[str, JSONValue]
 
 
-def _location_to_entry(location: Location) -> list[str | int | None]:
+def message_to_i18n_tools_format(
+    message: "Message", identifier: str
+) -> dict[str, JSONInput]:
     """
-    A location as written in an entry: ``[file, line]`` when both
-    coordinates are open, ``[file, line, variant, segment]`` otherwise.
-    """
-    if location.variant is None and location.segment is None:
-        return [location.file, location.line]
-    return [location.file, location.line, location.variant, location.segment]
+    Write a Message as a ``.i18t`` entry of format 1.0.0.
 
+    The declensions are written padded to the same number of segments, as
+    :attr:`Message.matrix` gives them. The metadata starts with
+    ``identifier``, the key under which the Book holds the message. A
+    complete message writes its record, a draft the record of its
+    content, since saving a draft records it. ``statistics`` is computed
+    from the texts.
 
-def _location_from_entry(item: list[object]) -> Location:
-    """
-    Read a ``[file, line]`` or ``[file, line, variant, segment]`` item.
-
-    The item was checked by the load check; ``Location`` checks the
-    values again.
-    """
-    file, line, *coordinates = item
-    variant, segment = coordinates if coordinates else (None, None)
-    return Location(
-        cast(str, file),
-        cast(int, line),
-        cast(int | None, variant),
-        cast(int | None, segment),
-    )
-
-
-def message_to_i18n_tools_format(message: "Message") -> dict[str, JSONInput]:
-    """
-    Convert a Message to a native ``.i18t`` entry.
-
-    The entry's ``messages`` is the message's matrix, one row per segment
-    and one column per declension, padded with empty strings. The entry
-    metadata holds the status and the content counters of the message:
-    ``singular_count`` (declensions), ``segment_count`` (rows) and
-    ``fill_mask`` (``fill_mask[segment][variant]`` is true for a
-    non-empty text). A complete message writes its recorded counters, a
-    draft its observed counters, since saving a draft records them.
-    ``plural_counts`` is no longer written.
-
-    :param message: A Message object
-    :return: Dictionary in i18n_tools format
+    :param message: The message.
+    :type message: Message
+    :param identifier: The key of the message in its Book.
+    :type identifier: str
+    :return: The entry, ``messages`` then ``metadata``.
     :rtype: dict[str, JSONInput]
     """
+    matrix = message.matrix
+    declensions = [[row[column] for row in matrix] for column in range(len(matrix[0]))]
     recorded = message.recorded
-    counters = (
+    record = (
         recorded
         if message.status == "complete" and recorded is not None
         else message.observed
-    )
-    return {
-        "messages": message.matrix,
+    ).to_dict()
+    rules = cast(StrictNestedDictionary, message.rules).to_dict()
+    entry = {
+        "messages": {"principal": declensions[0], "alternatives": declensions[1:]},
         "metadata": {
-            "version": message.metadata.get("version", "0.0.0"),
-            "language": message.metadata.get("language", ""),
+            "id": identifier,
             "context": message.context,
-            "locations": [
-                _location_to_entry(location) for location in message.locations
-            ],
-            "flags": message.metadata.get("flags", []),
-            "user_comments": message.metadata.get("user_comments", []),
-            "auto_comments": message.metadata.get("auto_comments", []),
+            "locations": [dict(location) for location in message.locations],
+            "flags": list(message.flags),
+            "user_comments": list(message.user_comments),
+            "auto_comments": list(message.auto_comments),
             "status": message.status,
-            **counters_to_entry(counters),
+            "rules": rules,
+            "count": record["count"],
+            "fill_mask": record["fill_mask"],
+            "statistics": entry_statistics(declensions[0], declensions[1:]),
         },
     }
-
-
-def _read_status(value: object) -> Literal["draft", "complete"]:
-    """Read an entry status; anything but ``"complete"`` is a draft."""
-    return "complete" if value == "complete" else "draft"
+    return cast("dict[str, JSONInput]", entry)
 
 
 def i18n_tools_format_to_message_dict(
     i18n_tools_entry: Mapping[str, JSONValue],
 ) -> MessageEntry:
     """
-    Read a native ``.i18t`` entry into the parts that build a Message.
+    Read a ``.i18t`` entry, as ``loader.load_book()`` returns it, into the
+    parts that build a Message.
 
-    The matrix is taken as it is, empty cells included; the entry is
-    expected to have passed the load check (well-formed matrix of
-    strings). The context is stored on disk in the entry metadata.
+    The entry was checked and read by the loader: its content is
+    ``principal`` and ``alternatives``, its metadata holds every key of
+    format 1.0.0 but ``statistics``, and ``count`` and ``fill_mask`` only
+    when the entry has a record.
 
-    A ``status`` other than ``"complete"``, missing or not, reads as
-    ``"draft"``. The recorded counters are read when ``singular_count``,
-    ``segment_count`` and ``fill_mask`` are all present and well formed;
-    otherwise ``recorded`` is None. ``plural_counts`` is ignored.
-
-    :param i18n_tools_entry: Dictionary in i18n_tools format
+    :param i18n_tools_entry: The entry.
     :type i18n_tools_entry: Mapping[str, JSONValue]
-    :return: Matrix, context, metadata, status and recorded counters for
-        ``Message.from_matrix()``.
+    :return: The constructor arguments, the status and the record.
     :rtype: MessageEntry
     """
-    # The load check guarantees the shapes read here (matrix of strings,
-    # metadata mapping, location items, string context).
-    messages = cast("list[list[str]]", i18n_tools_entry.get("messages", []))
-    metadata = cast("dict[str, JSONValue]", i18n_tools_entry.get("metadata", {}))
-
-    result: MessageEntry = {
-        "matrix": [list(row) for row in messages],
-        "context": "",
-        "metadata": {},
-        "status": "draft",
-        "recorded": None,
+    content = cast("Mapping[str, JSONValue]", i18n_tools_entry["messages"])
+    metadata = cast("Mapping[str, JSONValue]", i18n_tools_entry["metadata"])
+    principal = cast("list[str]", content["principal"])
+    alternatives = cast("list[list[str]]", content["alternatives"])
+    options = cast(
+        "MessageOptions",
+        cast(
+            object,
+            {
+                "plurals": list(principal[1:]),
+                "alternatives": [list(alternative) for alternative in alternatives],
+                "context": metadata["context"],
+                "locations": metadata["locations"],
+                "flags": metadata["flags"],
+                "user_comments": metadata["user_comments"],
+                "auto_comments": metadata["auto_comments"],
+                "rules": metadata["rules"],
+            },
+        ),
+    )
+    return {
+        "singular": principal[0],
+        "options": options,
+        "status": "complete" if metadata["status"] == "complete" else "draft",
+        "record": {
+            key: metadata[key] for key in ("count", "fill_mask") if key in metadata
+        },
     }
-    if metadata:
-        result["context"] = cast(str, metadata.get("context", ""))
-        result["status"] = _read_status(metadata.get("status"))
-        result["recorded"] = counters_from_entry(metadata)
-        result["metadata"] = {
-            "locations": [
-                _location_from_entry(item)
-                for item in cast("list[list[object]]", metadata.get("locations", []))
-            ],
-            "flags": metadata.get("flags", []),
-            "user_comments": metadata.get("user_comments", []),
-            "auto_comments": metadata.get("auto_comments", []),
-            "language": metadata.get("language", ""),
-            "version": metadata.get("version", "0.0.0"),
-        }
-
-    return result
 
 
 # -----------------------------------------------------------------------------

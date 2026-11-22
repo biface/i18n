@@ -10,9 +10,10 @@ Key Responsibilities:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import re
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeGuard, cast
+from typing import TYPE_CHECKING, Literal, TypedDict, TypeGuard, cast
 
 from babel import __version__ as babel_version
 from babel.core import Locale
@@ -38,17 +39,18 @@ from ..__static__ import (
     TranslationFileFormat,
 )
 from ..__static__ import __version__ as i18n_tools_version
-from .._counters import count_content, counters_from_entry, describe_differences
+from .._counters import (
+    is_filled,
+    key_path,
+    observe,
+    read_fields,
+    record_defects,
+    record_differences,
+)
 from .._finding import Finding
 from .._json import JSONInput, JSONValue
 from ..exceptions import FormatError
-from ..locale import (
-    get_all_languages,
-    is_valid_language_tag,
-    language_family,
-    language_script,
-    normalize_language_tag,
-)
+from ..locale import get_all_languages, is_valid_language_tag, normalize_language_tag
 from . import _settings, _utils
 
 
@@ -119,40 +121,122 @@ def check_json_integrity(data: Mapping[str, JSONInput]) -> bool:
 
 
 # -----------------------------------------------------------------------------
-# Integrity of a Book file
+# Reading a Book file, format 1.0.0
 # -----------------------------------------------------------------------------
-
-# Root metadata keys of a Book file whose value is a string, then all known keys.
-_ROOT_TEXT_KEYS = frozenset(
-    {
-        "project_id_version",
-        "report_msgid_bugs_to",
-        "pot_creation_date",
-        "language_team",
-        "header_comment",
-    }
-)
-_ROOT_KNOWN_KEYS = _ROOT_TEXT_KEYS | {"language", "domain", "statistics", "count"}
-
-# Entry metadata keys whose value is a string or a list of strings, then all
-# known keys.
-_ENTRY_TEXT_KEYS = frozenset({"version", "language", "context"})
-_ENTRY_TEXT_LIST_KEYS = frozenset({"flags", "user_comments", "auto_comments"})
-_ENTRY_KNOWN_KEYS = (
-    _ENTRY_TEXT_KEYS
-    | _ENTRY_TEXT_LIST_KEYS
-    | {
-        "locations",
-        "status",
-        "singular_count",
-        "segment_count",
-        "fill_mask",
-        "plural_counts",
-    }
-)
 
 ROOT = "root"
 """``where`` value of a finding about the root of the file."""
+
+RESERVED_KEYS = (".pyi18t_tools", ".i18n_tools")
+"""Root keys that a reader ignores and a writer never writes."""
+
+FORMAT_VERSION = "1.0.0"
+"""Version of the format a writer of this package writes."""
+
+DEFAULT_VERSION = "0.0.1"
+"""Version of a new Book, and of a file without ``version``."""
+
+GETTEXT_KEYS = (
+    "project_id_version",
+    "report_msgid_bugs_to",
+    "pot_creation_date",
+    "po_revision_date",
+    "last_translator",
+    "language_team",
+    "header_comment",
+)
+"""Keys of the ``gettext`` mapping of the root metadata, in written order."""
+
+BOOK_COUNT_KEYS = (
+    "messages",
+    "draft",
+    "complete",
+    "declensions",
+    "alternatives",
+    "singulars",
+    "plurals",
+    "segments",
+    "filled",
+    "empty",
+)
+"""Keys of the root ``count``, in written order."""
+
+_SEMVER = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
+_KNOWN_MAJORS = frozenset({1})
+_ROOT_METADATA_KEYS = frozenset(
+    {
+        "format_version",
+        "version",
+        "language",
+        "domain",
+        "gettext",
+        "rules",
+        "count",
+        "statistics",
+    }
+)
+_BOOK_STATISTICS_INTS = (
+    "words",
+    "characters",
+    "messages_with_alternatives",
+    "messages_with_plurals",
+    "messages_with_rules",
+    "locations",
+)
+_BOOK_STATISTICS_KEYS = frozenset({*_BOOK_STATISTICS_INTS, "flags", "tokens"})
+_ENTRY_KEYS = frozenset({"messages", "metadata"})
+_CONTENT_KEYS = frozenset({"principal", "alternatives"})
+_ENTRY_METADATA_KEYS = frozenset(
+    {
+        "id",
+        "context",
+        "locations",
+        "flags",
+        "user_comments",
+        "auto_comments",
+        "status",
+        "rules",
+        "count",
+        "fill_mask",
+        "statistics",
+    }
+)
+_ENTRY_STATISTICS_KEYS = frozenset({"words", "characters"})
+_LOCATION_KEYS = frozenset({"file", "line", "declension", "segment"})
+_COMMENT_KEYS = ("user_comments", "auto_comments")
+
+
+class BookData(TypedDict):
+    """
+    Content of a Book file as read, in format 1.0.0.
+
+    ``metadata`` holds ``format_version``, ``version``, ``language``,
+    ``domain``, ``gettext`` (its seven keys) and ``rules``, absent values
+    replaced as the format says. ``entries`` maps each identifier to its
+    entry: ``messages`` (``principal``, ``alternatives``) and ``metadata``
+    (``id``, ``context``, ``locations``, ``flags``, ``user_comments``,
+    ``auto_comments``, ``status``, ``rules``, and ``count`` and
+    ``fill_mask`` when the entry has a record). The root ``count`` and
+    ``statistics`` and the entry ``statistics`` are not kept: a writer
+    computes them.
+    """
+
+    metadata: dict[str, JSONValue]
+    entries: dict[str, dict[str, JSONValue]]
+
+
+class _Entry(TypedDict):
+    """An entry read, with what the checks after every entry need."""
+
+    data: dict[str, JSONValue]
+    complete: bool
+    broken: list[str]
+    record: dict[str, JSONValue]
+
+
+def _is_int(value: object, minimum: int) -> bool:
+    """Tell whether ``value`` is an int (not a bool) of at least ``minimum``."""
+    return isinstance(value, int) and not isinstance(value, bool) and value >= minimum
 
 
 def _is_text_list(value: object) -> bool:
@@ -160,288 +244,734 @@ def _is_text_list(value: object) -> bool:
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
 
-def _is_location(value: object) -> bool:
-    """
-    Tell whether ``value`` is a location item: ``[file, line]`` or
-    ``[file, line, variant, segment]``, with a non-empty file, a line
-    of at least 1 and coordinates that are null or ints of at least 0.
-    """
-    if not isinstance(value, list) or len(value) not in (2, 4):
-        return False
-    items: list[object] = list(value)
-    file, line, *coordinates = items
-    if not isinstance(file, str) or file == "":
-        return False
-    if isinstance(line, bool) or not isinstance(line, int) or line < 1:
-        return False
-    for coordinate in coordinates:
-        if coordinate is None:
-            continue
-        if (
-            isinstance(coordinate, bool)
-            or not isinstance(coordinate, int)
-            or coordinate < 0
-        ):
-            return False
-    return True
+Severity = Literal["error", "warning", "info"]
 
 
-def _describe_script(tag: str) -> str:
-    """Describe the script of ``tag``, stating whether it is explicit."""
-    script, explicit = language_script(tag)
-    if script is None:
-        return "unknown script"
-    return f"{script} ({'explicit' if explicit else 'inferred'})"
+class _Findings:
+    """The findings of one read, in the order they are found."""
+
+    def __init__(self) -> None:
+        self.items: list[Finding] = []
+
+    def add(self, severity: Severity, where: str, message: str) -> None:
+        self.items.append(Finding(severity, where, message))
+
+    def unknown(
+        self, node: Mapping[str, object], known: frozenset[str], where: str, *path: str
+    ) -> None:
+        """One error per key of ``node`` that the format does not define."""
+        place = key_path(*path) if path else "the entry"
+        for key in node:
+            if key not in known:
+                self.add("error", where, f"unknown key '{key}' in {place}")
+
+
+def _read_root(
+    root: object, language: str | None, domain: str | None, found: _Findings
+) -> dict[str, JSONValue] | None:
+    """Check the root metadata and return it as read, or None on an error."""
+    if not isinstance(root, dict):
+        found.add("error", ROOT, f"{key_path('metadata')} is not a mapping")
+        return None
+    meta: dict[str, object] = {str(key): value for key, value in root.items()}
+    errors = len(found.items)
+    found.unknown(meta, _ROOT_METADATA_KEYS, ROOT, "metadata")
+    format_version = meta.get("format_version")
+    path = key_path("metadata", "format_version")
+    if "format_version" not in meta:
+        found.add("error", ROOT, f"{path} is missing")
+    elif not isinstance(format_version, str):
+        found.add("error", ROOT, f"{path} is not a string")
+    elif _SEMVER.fullmatch(format_version) is None:
+        found.add(
+            "error",
+            ROOT,
+            f"{path} '{format_version}' is not a strict semantic version "
+            + "(MAJOR.MINOR.PATCH)",
+        )
+    elif int(format_version.split(".", 1)[0]) not in _KNOWN_MAJORS:
+        major = format_version.split(".", 1)[0]
+        found.add(
+            "error",
+            ROOT,
+            f"{path} '{format_version}': major version {major} is not known (known: 1)",
+        )
+    version = meta.get("version", DEFAULT_VERSION)
+    path = key_path("metadata", "version")
+    if not isinstance(version, str):
+        found.add("error", ROOT, f"{path} is not a string")
+    elif _SEMVER.fullmatch(version) is None:
+        found.add(
+            "error",
+            ROOT,
+            f"{path} '{version}' is not a strict semantic version (MAJOR.MINOR.PATCH)",
+        )
+    _check_language(meta, language, found)
+    _check_domain(meta, domain, found)
+    rules = meta.get("rules", {})
+    if not isinstance(rules, dict):
+        found.add("error", ROOT, f"{key_path('metadata', 'rules')} is not a mapping")
+    if "statistics" in meta:
+        _check_book_statistics(meta["statistics"], found)
+    if len(found.items) > errors and any(
+        finding.severity == "error" for finding in found.items[errors:]
+    ):
+        return None
+    gettext = meta.get("gettext", {})
+    fields = gettext if isinstance(gettext, dict) else {}
+    return {
+        "format_version": cast(str, format_version),
+        "version": cast(str, version),
+        "language": normalize_language_tag(cast(str, meta["language"])),
+        "domain": cast(str, meta["domain"]),
+        "gettext": {key: cast(JSONValue, fields.get(key, "")) for key in GETTEXT_KEYS},
+        "rules": cast("dict[str, JSONValue]", rules),
+    }
 
 
 def _check_language(
-    value: object, expected: str | None, where: str, findings: list[Finding]
+    meta: Mapping[str, object], expected: str | None, found: _Findings
 ) -> None:
-    """
-    Compare a language read from the file with the expected one.
-
-    An absent or empty language is accepted. A different language of the
-    same family is a warning, a different family an error.
-    """
-    if value is None or value == "":
+    """Check the root ``language``: present, a valid tag, the expected one."""
+    path = key_path("metadata", "language")
+    if "language" not in meta:
+        found.add("error", ROOT, f"{path} is missing")
         return
+    value = meta["language"]
     if not isinstance(value, str):
-        findings.append(Finding("error", where, "language is not a string"))
+        found.add("error", ROOT, f"{path} is not a string")
         return
     if not is_valid_language_tag(value):
-        findings.append(Finding("error", where, f"invalid language tag '{value}'"))
+        found.add("error", ROOT, f"{path} '{value}' is not a valid language tag")
         return
     if expected is None:
         return
-    found = normalize_language_tag(value)
-    if found == expected:
+    normalized = normalize_language_tag(value)
+    if normalized != normalize_language_tag(expected):
+        found.add("error", ROOT, f"{path} '{normalized}' is not '{expected}'")
+
+
+def _check_domain(
+    meta: Mapping[str, object], expected: str | None, found: _Findings
+) -> None:
+    """Check the root ``domain``: present, a string, the expected one."""
+    path = key_path("metadata", "domain")
+    if "domain" not in meta:
+        found.add("error", ROOT, f"{path} is missing")
         return
-    if language_family(found) != language_family(expected):
-        findings.append(
-            Finding(
-                "error",
-                where,
-                f"language '{found}' is not of the family of '{expected}'",
-            )
-        )
+    value = meta["domain"]
+    if not isinstance(value, str):
+        found.add("error", ROOT, f"{path} is not a string")
+    elif expected is not None and value != expected:
+        found.add("error", ROOT, f"{path} '{value}' is not '{expected}'")
+
+
+def _check_book_statistics(value: object, found: _Findings) -> None:
+    """Check the types of the root ``statistics``; it is not compared."""
+    base = ("metadata", "statistics")
+    if not isinstance(value, dict):
+        found.add("error", ROOT, f"{key_path(*base)} is not a mapping")
         return
-    message = f"language '{found}' differs from '{expected}' (same family)"
-    if language_script(found)[0] != language_script(expected)[0]:
-        message += (
-            f"; scripts differ: {_describe_script(found)}"
-            f" vs {_describe_script(expected)}"
-        )
-    findings.append(Finding("warning", where, message))
-
-
-def _is_text_matrix(matrix: list[list[object]]) -> TypeGuard[list[list[str]]]:
-    """Tell whether every cell of a well-formed matrix is a string."""
-    return all(isinstance(cell, str) for row in matrix for cell in row)
-
-
-def _record_defects(metadata: dict[str, object]) -> list[str]:
-    """
-    List what is malformed in the counter keys present in an entry.
-
-    A counter must be an int of at least 1; the fill mask a rectangle of
-    booleans whose shape matches the counters present. Missing keys are
-    not defects here.
-    """
-    defects: list[str] = []
-    counts: dict[str, int] = {}
-    for key in ("singular_count", "segment_count"):
-        if key not in metadata:
-            continue
-        value = metadata[key]
-        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
-            defects.append(f"{key} is not an int >= 1")
-        else:
-            counts[key] = value
-    if "fill_mask" not in metadata:
-        return defects
-    mask = metadata["fill_mask"]
-    if (
-        not isinstance(mask, list)
-        or len(mask) == 0
-        or not all(isinstance(row, list) for row in mask)
+    statistics: dict[str, object] = {str(key): item for key, item in value.items()}
+    found.unknown(statistics, _BOOK_STATISTICS_KEYS, ROOT, *base)
+    for key in _BOOK_STATISTICS_INTS:
+        if key in statistics and not _is_int(statistics[key], 0):
+            found.add("error", ROOT, f"{key_path(*base, key)} is not an integer >= 0")
+    flags = statistics.get("flags", {})
+    if not isinstance(flags, dict) or not all(
+        isinstance(flag, str) and flag != "" and _is_int(number, 0)
+        for flag, number in flags.items()
     ):
-        defects.append("fill_mask is not a list of lists")
-        return defects
-    rows: list[list[object]] = [list(row) for row in mask]
-    widths = {len(row) for row in rows}
-    if len(widths) != 1 or widths == {0}:
-        defects.append("fill_mask is not a rectangle")
-    elif not all(isinstance(cell, bool) for row in rows for cell in row):
-        defects.append("fill_mask holds a value that is not a boolean")
+        found.add(
+            "error",
+            ROOT,
+            f"{key_path(*base, 'flags')} is not a mapping of flags to integers >= 0",
+        )
+    if not _is_text_list(statistics.get("tokens", [])):
+        found.add(
+            "error", ROOT, f"{key_path(*base, 'tokens')} is not a list of strings"
+        )
+
+
+def _read_content(
+    value: object, where: str, found: _Findings
+) -> tuple[list[str], list[list[str]]] | None:
+    """Check the ``messages`` of an entry; return its declensions, or None."""
+    if isinstance(value, list):
+        found.add(
+            "error",
+            where,
+            f"{key_path('messages')} is a matrix (format 0.10.0): expected "
+            + '{"principal": [...], "alternatives": [...]}',
+        )
+        return None
+    if not isinstance(value, dict):
+        found.add("error", where, f"{key_path('messages')} is not a mapping")
+        return None
+    content: dict[str, object] = {str(key): item for key, item in value.items()}
+    errors = len(found.items)
+    found.unknown(content, _CONTENT_KEYS, where, "messages")
+    principal = content.get("principal")
+    if "principal" not in content:
+        found.add("error", where, f"{key_path('messages', 'principal')} is missing")
+    elif not isinstance(principal, list):
+        found.add("error", where, f"{key_path('messages', 'principal')} is not a list")
+    elif len(principal) == 0:
+        found.add(
+            "error",
+            where,
+            f"{key_path('messages', 'principal')} is empty: it holds at least the "
+            + "singular",
+        )
     else:
-        if counts.get("segment_count", len(rows)) != len(rows):
-            defects.append(
-                f"fill_mask has {len(rows)} rows, segment_count is "
-                + f"{counts['segment_count']}"
-            )
-        width = widths.pop()
-        if counts.get("singular_count", width) != width:
-            defects.append(
-                f"fill_mask has {width} columns, singular_count is "
-                + f"{counts['singular_count']}"
-            )
-    return defects
-
-
-def _check_record(
-    matrix: list[list[str]], metadata: dict[str, object], where: str
-) -> list[Finding]:
-    """
-    Check the status and the recorded counters of an entry (DD-45).
-
-    A ``status`` other than ``"draft"`` or ``"complete"`` is read as a
-    draft, with a warning. An entry without ``status`` is a draft.
-
-    For a complete entry, a malformed record is an error, a missing or
-    incomplete record a warning, and counters that disagree with the
-    matrix a warning naming the lost or added texts. For a draft, a
-    malformed record is a warning (the record is ignored), a missing or
-    incomplete record is accepted, and a disagreement is information.
-    ``plural_counts`` is not checked.
-    """
-    findings: list[Finding] = []
-    status = metadata.get("status", "draft")
-    if status not in ("draft", "complete"):
-        findings.append(
-            Finding(
-                "warning",
-                where,
-                f"status {status!r} is not 'draft' or 'complete': read as draft",
-            )
-        )
-        status = "draft"
-    complete = status == "complete"
-    defects = _record_defects(metadata)
-    if defects:
-        if complete:
-            findings.extend(
-                Finding("error", where, f"damaged counters: {defect}")
-                for defect in defects
-            )
-        else:
-            findings.append(
-                Finding(
-                    "warning",
+        for segment, text in enumerate(principal):
+            if not isinstance(text, str):
+                found.add(
+                    "error",
                     where,
-                    "counters ignored (" + "; ".join(defects) + ")",
+                    f"{key_path('messages', 'principal', segment)} is not a string",
                 )
-            )
-        return findings
-    recorded = counters_from_entry(metadata)
-    if recorded is None:
-        if complete:
-            findings.append(
-                Finding("warning", where, "complete without recorded counters")
-            )
-        return findings
-    differences = describe_differences(recorded, count_content(matrix))
-    if differences:
-        findings.append(
-            Finding(
-                "warning" if complete else "info",
-                where,
-                "content differs from the recorded counters: " + "; ".join(differences),
-            )
+    alternatives = content.get("alternatives")
+    if "alternatives" not in content:
+        found.add("error", where, f"{key_path('messages', 'alternatives')} is missing")
+    elif not isinstance(alternatives, list):
+        found.add(
+            "error", where, f"{key_path('messages', 'alternatives')} is not a list"
         )
-    return findings
-
-
-def _check_entry_metadata(
-    metadata: dict[str, object], expected_language: str | None, where: str
-) -> list[Finding]:
-    """Check the types of the known keys of an entry metadata."""
-    findings: list[Finding] = []
-    for key, value in metadata.items():
-        if key == "language":
-            _check_language(value, expected_language, where, findings)
-        elif key in _ENTRY_TEXT_KEYS:
-            if not isinstance(value, str):
-                findings.append(Finding("error", where, f"{key} is not a string"))
-        elif key in _ENTRY_TEXT_LIST_KEYS:
-            if not _is_text_list(value):
-                findings.append(
-                    Finding("error", where, f"{key} is not a list of strings")
+    else:
+        for index, alternative in enumerate(alternatives):
+            if not isinstance(alternative, list):
+                found.add(
+                    "error",
+                    where,
+                    f"{key_path('messages', 'alternatives', index)} is not a list",
                 )
-        elif key == "locations":
-            if not isinstance(value, list) or not all(
-                _is_location(item) for item in value
-            ):
-                findings.append(
-                    Finding(
+                continue
+            for segment, text in enumerate(alternative):
+                if not isinstance(text, str):
+                    found.add(
                         "error",
                         where,
-                        "locations is not a list of [file, line] or "
-                        + "[file, line, variant, segment] items",
+                        f"{key_path('messages', 'alternatives', index, segment)} "
+                        + "is not a string",
                     )
-                )
-        elif key not in _ENTRY_KNOWN_KEYS:
-            findings.append(
-                Finding("warning", where, f"unknown metadata key '{key}' ignored")
+    if len(found.items) > errors:
+        return None
+    texts = cast("list[str]", principal)
+    others = cast("list[list[str]]", alternatives)
+    for index, alternative in enumerate(others):
+        if len(alternative) != len(texts):
+            found.add(
+                "error",
+                where,
+                f"{key_path('messages', 'alternatives', index)} has "
+                + f"{len(alternative)} segments, {key_path('messages', 'principal')} "
+                + f"has {len(texts)}",
             )
-    return findings
-
-
-def _count_words(matrix: list[list[str]]) -> int:
-    """Count the whitespace-separated words of every cell of a matrix."""
-    return sum(len(cell.split()) for row in matrix for cell in row)
-
-
-def _check_root(
-    root: object,
-    language: str | None,
-    domain: str | None,
-    total_messages: int,
-    total_words: int,
-) -> list[Finding]:
-    """Check the root metadata of a Book file."""
-    if not isinstance(root, dict):
-        return [Finding("error", ROOT, "metadata is not a mapping")]
-    findings: list[Finding] = []
-    for key, value in root.items():
-        if key == "language":
-            _check_language(value, language, ROOT, findings)
-        elif key == "domain":
-            if value is None or value == "":
+    if len(found.items) > errors:
+        return None
+    for declension, segments in enumerate([texts, *others]):
+        for segment, text in enumerate(segments):
+            try:
+                _, positional = read_fields(text)
+            except ValueError as e:
+                found.add(
+                    "error",
+                    where,
+                    f"text ({declension}, {segment}) is not a valid format string: "
+                    + str(e),
+                )
                 continue
-            if not isinstance(value, str):
-                findings.append(Finding("error", ROOT, "domain is not a string"))
-            elif domain is not None and value != domain:
-                findings.append(
-                    Finding("error", ROOT, f"domain '{value}' is not '{domain}'")
+            for field in positional:
+                found.add(
+                    "warning",
+                    where,
+                    f"text ({declension}, {segment}) has a positional token "
+                    + f"'{{{field}}}': tokens are passed by name",
                 )
-        elif key in _ROOT_TEXT_KEYS:
-            if not isinstance(value, str):
-                findings.append(Finding("error", ROOT, f"{key} is not a string"))
-        elif key == "statistics":
-            expected = {"total_messages": total_messages, "total_words": total_words}
-            if value != expected:
-                findings.append(
-                    Finding(
-                        "warning",
-                        ROOT,
-                        f"statistics are {value}, the content gives {expected}",
-                    )
-                )
-        elif key == "count":
-            expected_count = {"messages": total_messages}
-            if value != expected_count:
-                findings.append(
-                    Finding(
-                        "warning",
-                        ROOT,
-                        f"count is {value}, the content gives {expected_count}",
-                    )
-                )
-        elif key not in _ROOT_KNOWN_KEYS:
-            findings.append(
-                Finding("warning", ROOT, f"unknown metadata key '{key}' kept")
+    if any(finding.severity == "error" for finding in found.items[errors:]):
+        return None
+    return list(texts), [list(alternative) for alternative in others]
+
+
+def _read_locations(
+    value: object,
+    content: tuple[list[str], list[list[str]]] | None,
+    where: str,
+    found: _Findings,
+) -> list[JSONValue]:
+    """Check the ``locations`` of an entry; return the valid ones."""
+    path = ("metadata", "locations")
+    if not isinstance(value, list):
+        found.add("error", where, f"{key_path(*path)} is not a list")
+        return []
+    locations: list[JSONValue] = []
+    for index, item in enumerate(value):
+        if not _is_location(item):
+            found.add(
+                "error",
+                where,
+                f"{key_path(*path, index)} is not a location "
+                + '{"file", "line", "declension", "segment"}',
             )
-    return findings
+            continue
+        location = cast("dict[str, JSONValue]", item)
+        locations.append(location)
+        if content is None:
+            continue
+        principal, alternatives = content
+        declension = location["declension"]
+        segment = location["segment"]
+        if isinstance(declension, int) and declension > len(alternatives):
+            found.add(
+                "warning",
+                where,
+                f"{key_path(*path, index)}: declension {declension} is beyond the "
+                + f"content (0..{len(alternatives)}): to be corrected",
+            )
+        if isinstance(segment, int) and segment >= len(principal):
+            found.add(
+                "warning",
+                where,
+                f"{key_path(*path, index)}: segment {segment} is beyond the content "
+                + f"(0..{len(principal) - 1}): to be corrected",
+            )
+    return locations
+
+
+def _is_location(value: object) -> bool:
+    """Tell whether ``value`` is a location object of format 1.0.0."""
+    if not isinstance(value, dict) or frozenset(value) != _LOCATION_KEYS:
+        return False
+    file = value["file"]
+    if not isinstance(file, str) or file == "":
+        return False
+    if not _is_int(value["line"], 1):
+        return False
+    return all(
+        value[key] is None or _is_int(value[key], 0)
+        for key in ("declension", "segment")
+    )
+
+
+def _read_flags(value: object, where: str, found: _Findings) -> list[JSONValue]:
+    """Check the ``flags`` of an entry; return them without repetition."""
+    path = ("metadata", "flags")
+    if not isinstance(value, list):
+        found.add("error", where, f"{key_path(*path)} is not a list")
+        return []
+    flags: list[JSONValue] = []
+    for index, flag in enumerate(value):
+        if not isinstance(flag, str):
+            found.add("error", where, f"{key_path(*path, index)} is not a string")
+        elif flag == "":
+            found.add("error", where, f"{key_path(*path, index)} is empty")
+        elif flag in flags:
+            found.add(
+                "warning",
+                where,
+                f"{key_path(*path)}: '{flag}' is repeated: the repetition is removed",
+            )
+        else:
+            flags.append(flag)
+    return flags
+
+
+def _read_status(meta: Mapping[str, object], where: str, found: _Findings) -> bool:
+    """Read the status of an entry; return True if it is ``complete``."""
+    if "status" not in meta:
+        return False
+    status = meta["status"]
+    if status in ("draft", "complete"):
+        return status == "complete"
+    found.add(
+        "warning",
+        where,
+        f"{key_path('metadata', 'status')} {status!r} is not 'draft' or 'complete': "
+        + "read as draft",
+    )
+    return False
+
+
+def _read_entry(key: str, value: object, found: _Findings) -> _Entry | None:
+    """Check one entry; return it as read, or None on an error."""
+    where = key
+    if not isinstance(value, dict):
+        found.add("error", where, "entry is not a mapping")
+        return None
+    entry: dict[str, object] = {str(name): item for name, item in value.items()}
+    errors = len(found.items)
+    found.unknown(entry, _ENTRY_KEYS, where)
+    content: tuple[list[str], list[list[str]]] | None = None
+    if "messages" not in entry:
+        found.add("error", where, f"{key_path('messages')} is missing")
+    else:
+        content = _read_content(entry["messages"], where, found)
+    if "metadata" not in entry:
+        found.add("error", where, f"{key_path('metadata')} is missing")
+        return None
+    raw = entry["metadata"]
+    if not isinstance(raw, dict):
+        found.add("error", where, f"{key_path('metadata')} is not a mapping")
+        return None
+    meta: dict[str, object] = {str(name): item for name, item in raw.items()}
+    found.unknown(meta, _ENTRY_METADATA_KEYS, where, "metadata")
+    complete = _read_status(meta, where, found)
+    absent: Severity = "error" if complete else "warning"
+    identifier = meta.get("id")
+    path = key_path("metadata", "id")
+    if "id" not in meta:
+        found.add("error", where, f"{path} is missing")
+    elif not isinstance(identifier, str) or identifier == "":
+        found.add("error", where, f"{path} is not a non-empty string")
+    elif identifier != key:
+        found.add("error", where, f"{path} '{identifier}' is not the key of the entry")
+    data_meta: dict[str, JSONValue] = {"id": key}
+    if "context" not in meta:
+        found.add(absent, where, f"{key_path('metadata', 'context')} is missing")
+    elif not isinstance(meta["context"], str):
+        found.add("error", where, f"{key_path('metadata', 'context')} is not a string")
+    data_meta["context"] = cast(JSONValue, meta.get("context", ""))
+    if "locations" not in meta:
+        found.add(absent, where, f"{key_path('metadata', 'locations')} is missing")
+        data_meta["locations"] = []
+    else:
+        data_meta["locations"] = _read_locations(
+            meta["locations"], content, where, found
+        )
+    if "flags" not in meta:
+        found.add(absent, where, f"{key_path('metadata', 'flags')} is missing")
+        data_meta["flags"] = []
+    else:
+        data_meta["flags"] = _read_flags(meta["flags"], where, found)
+    for name in _COMMENT_KEYS:
+        if name not in meta:
+            found.add(absent, where, f"{key_path('metadata', name)} is missing")
+        elif not _is_text_list(meta[name]):
+            found.add(
+                "error", where, f"{key_path('metadata', name)} is not a list of strings"
+            )
+        data_meta[name] = cast(JSONValue, meta.get(name, []))
+    data_meta["status"] = "complete" if complete else "draft"
+    rules = meta.get("rules", {})
+    if not isinstance(rules, dict):
+        found.add("error", where, f"{key_path('metadata', 'rules')} is not a mapping")
+    data_meta["rules"] = cast(JSONValue, rules)
+    if "statistics" not in meta:
+        found.add(absent, where, f"{key_path('metadata', 'statistics')} is missing")
+    else:
+        _check_entry_statistics(meta["statistics"], where, found)
+    observed = None if content is None else observe(*content)
+    broken = _read_record(meta, data_meta, observed, complete, where, found)
+    if content is not None and not is_filled(content[0][0]) and complete:
+        broken.append("principal singular not filled")
+    if any(finding.severity == "error" for finding in found.items[errors:]):
+        return None
+    principal, alternatives = cast("tuple[list[str], list[list[str]]]", content)
+    data: dict[str, JSONValue] = {
+        "messages": {
+            "principal": cast("list[JSONValue]", principal),
+            "alternatives": cast("list[JSONValue]", alternatives),
+        },
+        "metadata": data_meta,
+    }
+    # The Book counters sum the records as written: the record read when it
+    # is kept, otherwise the record of the content.
+    record: dict[str, JSONValue] = (
+        {"count": data_meta["count"], "fill_mask": data_meta["fill_mask"]}
+        if "count" in data_meta
+        else cast("dict[str, JSONValue]", observed)
+    )
+    return {"data": data, "complete": complete, "broken": broken, "record": record}
+
+
+def _check_entry_statistics(value: object, where: str, found: _Findings) -> None:
+    """Check the types of the ``statistics`` of an entry; it is not compared."""
+    path = ("metadata", "statistics")
+    if not isinstance(value, dict):
+        found.add("error", where, f"{key_path(*path)} is not a mapping")
+        return
+    statistics: dict[str, object] = {str(key): item for key, item in value.items()}
+    found.unknown(statistics, _ENTRY_STATISTICS_KEYS, where, *path)
+    for key in ("words", "characters"):
+        if key in statistics and not _is_int(statistics[key], 0):
+            found.add("error", where, f"{key_path(*path, key)} is not an integer >= 0")
+
+
+def _read_record(
+    meta: Mapping[str, object],
+    data_meta: dict[str, JSONValue],
+    observed: dict[str, JSONValue] | None,
+    complete: bool,
+    where: str,
+    found: _Findings,
+) -> list[str]:
+    """
+    Check the record of an entry and keep it in ``data_meta`` when it is
+    used; return the defects that make a ``complete`` message broken.
+    """
+    missing = [name for name in ("count", "fill_mask") if name not in meta]
+    if missing and not complete:
+        return []
+    if missing:
+        names = " and ".join(key_path("metadata", name) for name in missing)
+        return [f"no record ({names} missing)"]
+    record = {"count": meta["count"], "fill_mask": meta["fill_mask"]}
+    defects = record_defects(record)
+    if defects:
+        if complete:
+            for defect in defects:
+                found.add("error", where, f"record not well formed: {defect}")
+        else:
+            found.add(
+                "warning",
+                where,
+                "record ignored, not well formed: " + "; ".join(defects),
+            )
+        return []
+    data_meta["count"] = cast(JSONValue, record["count"])
+    data_meta["fill_mask"] = cast(JSONValue, record["fill_mask"])
+    if observed is None:
+        return []
+    differences = record_differences(record, observed)
+    if not differences:
+        return []
+    if complete:
+        return ["the content differs from the record: " + "; ".join(differences)]
+    found.add(
+        "info",
+        where,
+        "the content differs from the record (completeness not validated): "
+        + "; ".join(differences),
+    )
+    return []
+
+
+def book_count(entries: Iterable[Mapping[str, object]]) -> dict[str, JSONValue]:
+    """
+    Compute the root ``count`` of a Book from its entries.
+
+    Each entry gives its status and the record of its content, as a writer
+    writes them (``{"status": ..., "count": ..., "fill_mask": ...}``).
+
+    :param entries: The status and record of each entry.
+    :type entries: Iterable[Mapping[str, object]]
+    :return: The ``count`` of the Book, keys in written order.
+    :rtype: dict[str, JSONValue]
+    """
+    totals = dict.fromkeys(BOOK_COUNT_KEYS, 0)
+    for entry in entries:
+        count = cast("Mapping[str, object]", entry["count"])
+        mask = cast("Mapping[str, object]", entry["fill_mask"])
+        totals["messages"] += 1
+        totals["complete" if entry["status"] == "complete" else "draft"] += 1
+        for key in ("declensions", "alternatives", "singulars", "plurals"):
+            totals[key] += cast(int, count[key])
+        values = [
+            *cast("list[bool]", mask["principal"]),
+            *(
+                value
+                for alternative in cast("list[list[bool]]", mask["alternatives"])
+                for value in alternative
+            ),
+        ]
+        totals["segments"] += len(values)
+        totals["filled"] += sum(1 for value in values if value)
+        totals["empty"] += sum(1 for value in values if not value)
+    return {key: value for key, value in totals.items()}
+
+
+def book_statistics(
+    entries: Iterable[Mapping[str, JSONInput]],
+) -> dict[str, JSONValue]:
+    """
+    Compute the root ``statistics`` of a Book from its entries as written.
+
+    :param entries: The entries, ``messages`` and ``metadata`` with their
+        ``statistics``, ``locations``, ``flags``, ``rules`` and ``count``.
+    :type entries: Iterable[Mapping[str, JSONInput]]
+    :return: The ``statistics`` of the Book, keys in written order.
+    :rtype: dict[str, JSONValue]
+    """
+    words = characters = with_alternatives = with_plurals = with_rules = 0
+    locations = 0
+    flags: dict[str, JSONValue] = {}
+    tokens: set[str] = set()
+    for entry in entries:
+        content = cast("Mapping[str, Sequence[object]]", entry["messages"])
+        meta = cast("Mapping[str, object]", entry["metadata"])
+        statistics = cast("Mapping[str, int]", meta["statistics"])
+        words += statistics["words"]
+        characters += statistics["characters"]
+        with_alternatives += 1 if len(content["alternatives"]) > 0 else 0
+        with_plurals += 1 if len(content["principal"]) > 1 else 0
+        with_rules += 1 if len(cast("Mapping[str, object]", meta["rules"])) > 0 else 0
+        locations += len(cast("Sequence[object]", meta["locations"]))
+        for flag in cast("Sequence[str]", meta["flags"]):
+            flags[flag] = cast(int, flags.get(flag, 0)) + 1
+        count = cast("Mapping[str, Mapping[str, object]]", meta["count"])
+        names = count["tokens"]
+        for text in cast("Sequence[Sequence[str]]", names["principal"]):
+            tokens.update(text)
+        for alternative in cast(
+            "Sequence[Sequence[Sequence[str]]]", names["alternatives"]
+        ):
+            for text in alternative:
+                tokens.update(text)
+    return {
+        "words": words,
+        "characters": characters,
+        "messages_with_alternatives": with_alternatives,
+        "messages_with_plurals": with_plurals,
+        "messages_with_rules": with_rules,
+        "locations": locations,
+        "flags": flags,
+        "tokens": cast("list[JSONValue]", sorted(tokens)),
+    }
+
+
+def read_book(
+    data: Mapping[str, object], language: str | None = None, domain: str | None = None
+) -> tuple[BookData | None, list[Finding]]:
+    """
+    Read the content of a Book file in format 1.0.0.
+
+    Every rule of the format reference is checked, with its severity,
+    against ``language`` and ``domain`` when given. The content is
+    returned as the format says to read it: absent values replaced,
+    repeated flags removed, a record not well formed ignored in a draft,
+    an invalid status and a broken message read as ``draft``.
+
+    :param data: The content of the file, as parsed.
+    :type data: Mapping[str, object]
+    :param language: The language expected from the place of the file, or
+        None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain expected from the place of the file, or None
+        to skip the comparison.
+    :type domain: str | None
+    :return: The content read, None if there is an error, and every
+        finding, in the order they are found.
+    :rtype: tuple[BookData | None, list[Finding]]
+    """
+    found = _Findings()
+    root: dict[str, JSONValue] | None = None
+    if "metadata" not in data:
+        found.add("error", ROOT, f"{key_path('metadata')} is missing")
+    else:
+        root = _read_root(data["metadata"], language, domain, found)
+    entries: dict[str, _Entry] = {}
+    unread = 0
+    for key, value in data.items():
+        if key == "metadata" or key in RESERVED_KEYS:
+            continue
+        if key == "":
+            found.add("error", ROOT, "an identifier is empty")
+            unread += 1
+            continue
+        entry = _read_entry(key, value, found)
+        if entry is None:
+            unread += 1
+        else:
+            entries[key] = entry
+    book_complete = len(entries) > 0 and all(
+        entry["complete"] for entry in entries.values()
+    )
+    for key, entry in entries.items():
+        if not entry["complete"] or not entry["broken"]:
+            continue
+        defects = "; ".join(entry["broken"])
+        meta = cast("dict[str, JSONValue]", entry["data"]["metadata"])
+        meta["status"] = "draft"
+        if book_complete:
+            found.add(
+                "warning",
+                key,
+                f"complete message broken ({defects}): read as draft, and its Book "
+                + "with it",
+            )
+        else:
+            found.add(
+                "info", key, f"complete message broken ({defects}): read as draft"
+            )
+    # The Book counters are compared only when every entry could be read.
+    if root is not None and unread == 0 and isinstance(data["metadata"], dict):
+        _check_book_count(
+            cast("Mapping[str, object]", data["metadata"]), entries, found
+        )
+    if any(finding.severity == "error" for finding in found.items) or root is None:
+        return None, found.items
+    content: BookData = {
+        "metadata": root,
+        "entries": {key: entry["data"] for key, entry in entries.items()},
+    }
+    return content, found.items
+
+
+def _check_book_count(
+    meta: Mapping[str, object], entries: Mapping[str, _Entry], found: _Findings
+) -> None:
+    """Compare the root ``count`` with the entries read."""
+    path = ("metadata", "count")
+    if "count" not in meta:
+        found.add(
+            "warning",
+            ROOT,
+            f"{key_path(*path)} is missing: recomputed at the next write",
+        )
+        return
+    count = meta["count"]
+    if not isinstance(count, dict):
+        found.add("error", ROOT, f"{key_path(*path)} is not a mapping")
+        return
+    values: dict[str, object] = {str(key): item for key, item in count.items()}
+    found.unknown(values, frozenset(BOOK_COUNT_KEYS), ROOT, *path)
+    typed = True
+    for key in BOOK_COUNT_KEYS:
+        if key in values and not _is_int(values[key], 0):
+            found.add("error", ROOT, f"{key_path(*path, key)} is not an integer >= 0")
+            typed = False
+    if not typed:
+        return
+    expected = book_count(
+        {"status": "complete" if entry["complete"] else "draft", **entry["record"]}
+        for entry in entries.values()
+    )
+    for key in BOOK_COUNT_KEYS:
+        if key not in values:
+            found.add(
+                "warning",
+                ROOT,
+                f"{key_path(*path, key)} is missing: recomputed at the next write",
+            )
+        elif values[key] != expected[key]:
+            found.add(
+                "warning",
+                ROOT,
+                f"{key_path(*path, key)} is {values[key]}, the entries give "
+                + f"{expected[key]}: recomputed at the next write",
+            )
+
+
+def inspect_book_data(
+    data: Mapping[str, object], language: str | None = None, domain: str | None = None
+) -> list[Finding]:
+    """
+    Check the content of a Book file and list what is wrong with it.
+
+    The same checks as :func:`read_book`, which this function calls; only
+    the findings are returned.
+
+    :param data: The content of the file, as parsed.
+    :type data: Mapping[str, object]
+    :param language: The language expected, or None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain expected, or None to skip the comparison.
+    :type domain: str | None
+    :return: The findings, in the order they are found.
+    :rtype: list[Finding]
+    """
+    return read_book(data, language, domain)[1]
 
 
 def read_book_data(file_path: Path | str) -> dict[str, object]:
@@ -468,75 +998,6 @@ def read_book_data(file_path: Path | str) -> dict[str, object]:
     if not isinstance(data, dict):
         raise FormatError("content is not a mapping")
     return {str(key): value for key, value in data.items()}
-
-
-def inspect_book_data(
-    data: Mapping[str, object], language: str | None = None, domain: str | None = None
-) -> list[Finding]:
-    """
-    Check the content of a Book file and list what is wrong with it.
-
-    Every entry other than the reserved ``.i18n_tools`` and ``metadata``
-    keys is a native entry ``{"messages": matrix, "metadata": {...}}`` or
-    a bare matrix (legacy form).
-
-    Errors: malformed matrix or non-string cell, wrong type of a known
-    metadata value, invalid language tag, a language of another family
-    than ``language``, a domain other than ``domain``.
-
-    Warnings: a language of the same family as ``language`` but different
-    (with the scripts when they differ), counters or statistics that do
-    not match the content, unknown metadata keys (kept at the root,
-    ignored in an entry).
-
-    An absent or empty language or domain is accepted.
-
-    :param data: The content of the file, as read.
-    :type data: Mapping[str, object]
-    :param language: The normalized language expected, or None to skip
-        the comparison.
-    :type language: str | None
-    :param domain: The domain expected, or None to skip the comparison.
-    :type domain: str | None
-    :return: The findings, errors and warnings, in file order.
-    :rtype: list[Finding]
-    """
-    findings: list[Finding] = []
-    total_messages = 0
-    total_words = 0
-    for where, value in data.items():
-        if where in (".i18n_tools", "metadata"):
-            continue
-        total_messages += 1
-        metadata: object = {}
-        if isinstance(value, dict):
-            if "messages" not in value:
-                findings.append(Finding("error", where, "no messages matrix"))
-                continue
-            matrix: object = value["messages"]
-            metadata = value.get("metadata", {})
-        else:
-            matrix = value
-        if not _check_matrix(matrix):
-            findings.append(Finding("error", where, "malformed messages matrix"))
-            continue
-        if not _is_text_matrix(matrix):
-            findings.append(Finding("error", where, "a matrix cell is not a string"))
-            continue
-        total_words += _count_words(matrix)
-        if not isinstance(metadata, dict):
-            findings.append(Finding("error", where, "metadata is not a mapping"))
-            continue
-        entry_metadata: dict[str, object] = {
-            str(key): item for key, item in metadata.items()
-        }
-        findings.extend(_check_entry_metadata(entry_metadata, language, where))
-        findings.extend(_check_record(matrix, entry_metadata, where))
-    if "metadata" in data:
-        findings.extend(
-            _check_root(data["metadata"], language, domain, total_messages, total_words)
-        )
-    return findings
 
 
 def build_path(base_path: str, *sub_dirs: str) -> str:

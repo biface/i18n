@@ -6,17 +6,17 @@ variant declensions (:class:`Declension`).
 """
 
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, ClassVar, Literal, TypedDict, Unpack
+from typing import TYPE_CHECKING, ClassVar, Literal, TypedDict, Unpack, cast
 
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.__static__ import __version__ as i18n_tools_version
 from i18n_tools._checks import ensure_type, is_type
 from i18n_tools._compat import override
-from i18n_tools._counters import ContentCounters, count_content
+from i18n_tools._counters import ContentCounters, check_format_string, observe
+from i18n_tools._json import JSONInput
 from i18n_tools.exceptions import MessageError
-from i18n_tools.locale import normalize_language_tag
 
 if TYPE_CHECKING:
     from i18n_tools.formatter.plurals import PluralRule
@@ -108,58 +108,142 @@ class Declension:
         return cls(segments[0], tuple(segments[1:]))
 
 
-def _ensure_coordinate(value: int | None, name: str) -> None:
+class LocationEntry(TypedDict):
+    """
+    A place in source code that uses a message, as the entry stores it.
+
+    ``declension`` and ``segment`` locate the text the source code asks
+    for: ``declension=0`` is the principal, ``segment=0`` the singular. A
+    coordinate left to None is not fixed at that place.
+    """
+
+    file: str
+    line: int
+    declension: int | None
+    segment: int | None
+
+
+_LOCATION_KEYS = frozenset(LocationEntry.__annotations__)
+
+
+def _ensure_coordinate(value: object, name: str) -> None:
     """Check an optional location coordinate: None or an int >= 0."""
     if value is None:
         return
     if is_type(value, bool) or not is_type(value, int):
         raise TypeError(f"Location {name} must be an int or None, got {type(value)}")
-    if value < 0:
+    if cast(int, value) < 0:
         raise ValueError(f"Location {name} must be >= 0, got {value}")
 
 
-@dataclass(frozen=True, slots=True)
-class Location:
+def _checked_location(value: object) -> LocationEntry:
     """
-    A place in source code that uses a message.
+    Check a location and return it as a new mapping.
 
-    ``variant`` and ``segment`` locate the text the source code asks for,
-    with the addressing of the message: ``variant=0`` is the principal,
-    ``segment=0`` is the singular. A coordinate left to None is not fixed
-    at that call site; a location with no coordinate refers to the whole
-    message.
-
-    :param file: Path of the source file.
-    :type file: str
-    :param line: Line number in that file, starting at 1.
-    :type line: int
-    :param variant: Declension used at that call site, if fixed.
-    :type variant: int | None
-    :param segment: Segment used at that call site, if fixed.
-    :type segment: int | None
-    :raises TypeError: If a field has the wrong type.
+    :raises TypeError: If it is not a mapping with the four keys, or a
+        field has the wrong type.
     :raises ValueError: If ``file`` is empty, ``line`` is below 1 or a
         coordinate is negative.
     """
-
-    file: str
-    line: int
-    variant: int | None = None
-    segment: int | None = None
-
-    def __post_init__(self) -> None:
-        ensure_type(
-            self.file, str, f"Location file must be a string, got {type(self.file)}"
+    if not is_type(value, Mapping) or frozenset(
+        cast("Mapping[str, object]", value)
+    ) != (_LOCATION_KEYS):
+        raise TypeError(
+            "A location is a mapping with the keys file, line, declension and "
+            + f"segment, got {value!r}"
         )
-        if self.file == "":
-            raise ValueError("Location file must not be empty")
-        if is_type(self.line, bool) or not is_type(self.line, int):
-            raise TypeError(f"Location line must be an int, got {type(self.line)}")
-        if self.line < 1:
-            raise ValueError(f"Location line must be >= 1, got {self.line}")
-        _ensure_coordinate(self.variant, "variant")
-        _ensure_coordinate(self.segment, "segment")
+    item = cast("Mapping[str, object]", value)
+    file = item["file"]
+    line = item["line"]
+    ensure_type(file, str, f"Location file must be a string, got {type(file)}")
+    if file == "":
+        raise ValueError("Location file must not be empty")
+    if is_type(line, bool) or not is_type(line, int):
+        raise TypeError(f"Location line must be an int, got {type(line)}")
+    if cast(int, line) < 1:
+        raise ValueError(f"Location line must be >= 1, got {line}")
+    _ensure_coordinate(item["declension"], "declension")
+    _ensure_coordinate(item["segment"], "segment")
+    return {
+        "file": cast(str, file),
+        "line": cast(int, line),
+        "declension": cast("int | None", item["declension"]),
+        "segment": cast("int | None", item["segment"]),
+    }
 
+
+def _checked_texts(value: object, name: str) -> list[str]:
+    """Check a list of strings (flags or comments) and return a new list."""
+    if not is_type(value, (list, tuple)) or not all(
+        is_type(item, str) for item in cast("Sequence[object]", value)
+    ):
+        raise TypeError(f"Message {name} must be a list of str, got {value!r}")
+    return list(cast("Sequence[str]", value))
+
+
+def _checked_flags(value: object) -> list[str]:
+    """Check flags: non-empty strings, each at most once."""
+    flags = _checked_texts(value, "flags")
+    for flag in flags:
+        if flag == "":
+            raise ValueError("A flag must not be empty")
+    repeated = sorted({flag for flag in flags if flags.count(flag) > 1})
+    if repeated:
+        raise ValueError(f"Flag(s) given more than once: {', '.join(repeated)}")
+    return flags
+
+
+def _checked_identifier(value: object) -> str:
+    """Check an identifier: a str, or an int converted with str()."""
+    if is_type(value, bool) or not is_type(value, (str, int)):
+        raise TypeError(
+            f"Message identifier must be a str or an int, got {type(value)}"
+        )
+    identifier = str(value)
+    if identifier == "":
+        raise ValueError("Message identifier must not be empty")
+    return identifier
+
+
+class MessageOptions(TypedDict, total=False):
+    """
+    Keyword contract of :class:`Message`: the texts beyond the principal
+    singular and the metadata of the entry, all optional.
+
+    ``alternatives`` holds the texts of each alternative, singular first.
+    ``status``, ``count`` and ``fill_mask`` are not options: they are set
+    by :meth:`Message.mark_complete`, :meth:`Message.reopen` and
+    :meth:`Message.record`.
+    """
+
+    plurals: list[str] | tuple[str, ...]
+    alternatives: list[list[str]] | tuple[tuple[str, ...], ...]
+    context: str
+    locations: list[LocationEntry]
+    flags: list[str]
+    user_comments: list[str]
+    auto_comments: list[str]
+    rules: Mapping[str, JSONInput]
+
+
+_MESSAGE_OPTIONS = MessageOptions.__optional_keys__
+_METADATA_OPTIONS = _MESSAGE_OPTIONS - {"plurals", "alternatives"}
+
+# Keys of the entry metadata changed only by the methods named here.
+_GUARDED_KEYS: dict[str, str] = {
+    "status": "mark_complete(), reopen()",
+    "count": "mark_complete(), record()",
+    "fill_mask": "mark_complete(), record()",
+}
+# Keys of the entry metadata with a property setter, and their default.
+_SETTABLE_DEFAULTS: dict[str, object] = {
+    "context": "",
+    "locations": [],
+    "flags": [],
+    "user_comments": [],
+    "auto_comments": [],
+    "rules": {},
+}
 
 _DECLENSION_FIELDS = frozenset({"singular", "plurals"})
 _DIRECTIONS = frozenset({"natural", "reverse"})
@@ -201,18 +285,14 @@ def _apply_fields(base: Declension, fields: DeclensionFields) -> Declension:
     return Declension(singular, tuple(plurals))
 
 
-def _build_empty_metadata() -> StrictNestedDictionary:
-    return StrictNestedDictionary(
-        {
-            "version": i18n_tools_version,
-            "language": "",
-            "locations": [],
-            "flags": ["python-format"],
-            "user_comments": [],
-            "auto_comments": [],
-        },
-        default_setup={"indent": 2},
-    )
+def _check_format(declension: int, texts: Sequence[str]) -> None:
+    """Refuse a text that is not a valid format string."""
+    for segment, text in enumerate(texts):
+        error = check_format_string(text)
+        if error is not None:
+            raise ValueError(
+                f"text ({declension}, {segment}) is not a valid format string: {error}"
+            )
 
 
 def extract_tokens(text: str) -> list[str]:
@@ -231,7 +311,7 @@ def extract_tokens(text: str) -> list[str]:
 
 class Message:
     """
-    One identifier's texts, context and metadata, in one language.
+    One identifier's texts and metadata, in one language.
 
     The content of a message is a principal declension and zero or more
     variant declensions. A text is addressed by ``(variant, segment)``:
@@ -245,155 +325,133 @@ class Message:
     Declensions may have different numbers of segments while a message is
     edited. :attr:`matrix` pads the shorter ones with ``""``.
 
-    A message is ``"draft"`` or ``"complete"``. :meth:`mark_complete`
-    records the content counters and locks the texts and the structure;
-    :meth:`reopen` makes the message a draft again; :meth:`record` records
-    the counters of a draft (a draft save). Context, locations,
-    flags, comments and other metadata stay editable in both states.
+    :attr:`metadata` holds the keys of the entry metadata of a ``.i18t``
+    file: ``id``, ``context``, ``locations``, ``flags``,
+    ``user_comments``, ``auto_comments``, ``status``, ``rules``, and
+    ``count`` and ``fill_mask`` once a record is taken. The properties of
+    the same names read these keys.
 
-    :ivar id: Language-neutral identifier of the message.
-    :ivar context: Disambiguation context, kept for other formats.
-    :ivar metadata: Version, language, locations, flags and comments.
+    A message is ``"draft"`` or ``"complete"``. :meth:`mark_complete`
+    records the content and locks the texts and the structure;
+    :meth:`reopen` makes the message a draft again; :meth:`record` records
+    the content of a draft (a draft save). Context, locations, flags,
+    comments and rules stay editable in both states.
+
+    :ivar metadata: The entry metadata.
     :ivar plural_rule: Rule resolving a count to a segment, or None.
     """
 
-    id: str
-    context: str
     metadata: StrictNestedDictionary
     plural_rule: "PluralRule | None"
     _principal: Declension
     _variants: list[Declension]
-    _status: MessageStatus
-    _recorded: ContentCounters | None
 
     # A message is mutable and compares by content: it is not hashable.
     __hash__: ClassVar[None] = None  # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __init__(
         self,
-        id: str,
-        principal: Declension | None = None,
-        variants: list[Declension] | tuple[Declension, ...] | None = None,
-        context: str = "",
-        metadata: dict[str, object] | None = None,
-        status: MessageStatus = "draft",
-        recorded: ContentCounters | None = None,
+        id: str | int,
+        singular: str = "",
+        **options: Unpack[MessageOptions],
     ) -> None:
         """
-        Create a message.
+        Create a draft message.
 
-        ``status`` and ``recorded`` restore a message read from a file:
-        a ``"complete"`` message built this way is not checked as
-        :meth:`mark_complete` would check it.
-
-        :param id: Identifier of the message.
-        :type id: str
-        :param principal: The principal declension; None gives an absent
-            principal, ``Declension()``.
-        :type principal: Declension | None
-        :param variants: The variant declensions, in order.
-        :type variants: list[Declension] | tuple[Declension, ...] | None
-        :param context: Context of the message.
-        :type context: str
-        :param metadata: Metadata values, as accepted by
-            :meth:`add_metadata`.
-        :type metadata: dict[str, object] | None
-        :param status: ``"draft"`` or ``"complete"``.
-        :type status: MessageStatus
-        :param recorded: Counters taken at the last validation point.
-        :type recorded: ContentCounters | None
-        :raises TypeError: If an argument has the wrong type.
-        :raises ValueError: If ``status`` is neither value.
-        :raises KeyError: If ``metadata`` holds an unknown key.
+        :param id: Identifier of the message: a string, or an int
+            converted with ``str()``.
+        :type id: str | int
+        :param singular: The principal singular; ``""`` gives an absent
+            principal, to be filled later.
+        :type singular: str
+        :param options: ``plurals`` of the principal, ``alternatives``
+            (the texts of each, singular first), and the metadata
+            ``context``, ``locations``, ``flags``, ``user_comments``,
+            ``auto_comments`` and ``rules``.
+        :type options: MessageOptions
+        :raises TypeError: If an option is unknown, is ``status``,
+            ``count`` or ``fill_mask``, or a value has the wrong type.
+        :raises ValueError: If the identifier is empty, a text is not a
+            valid format string, or a flag or a location is refused.
         """
-        ensure_type(id, str, f"Message id must be a string, got {type(id)}")
-        ensure_type(
-            principal,
-            (Declension, type(None)),
-            f"Message principal must be a Declension or None, got {type(principal)}",
-        )
-        ensure_type(
-            variants,
-            (list, tuple, type(None)),
-            f"Message variants must be a list, a tuple or None, got {type(variants)}",
-        )
-        for variant in variants or ():
-            ensure_type(
-                variant,
-                Declension,
-                f"Message variant must be a Declension, got {type(variant)}",
+        guarded = sorted(set(options) & set(_GUARDED_KEYS))
+        if guarded:
+            key = guarded[0]
+            raise TypeError(
+                f"'{key}' is not a Message option: it is set by {_GUARDED_KEYS[key]}"
             )
+        unknown = sorted(set(options) - _MESSAGE_OPTIONS)
+        if unknown:
+            raise TypeError(f"Unknown Message option(s): {', '.join(unknown)}")
+        identifier = _checked_identifier(id)
         ensure_type(
-            context, str, f"Message context must be a string, got {type(context)}"
+            singular, str, f"Message singular must be a string, got {type(singular)}"
         )
+        plurals = options.get("plurals", ())
         ensure_type(
-            metadata,
-            (dict, type(None)),
-            f"Message metadata must be a dict or None, got {type(metadata)}",
+            plurals,
+            (list, tuple),
+            f"Message plurals must be a list or a tuple, got {type(plurals)}",
         )
-        if not is_type(status, str) or str(status) not in _STATUSES:
-            raise ValueError(
-                f"Message status must be 'draft' or 'complete', got {status!r}"
-            )
+        alternatives = options.get("alternatives", ())
         ensure_type(
-            recorded,
-            (ContentCounters, type(None)),
-            "Message recorded must be ContentCounters or None, "
-            + f"got {type(recorded)}",
+            alternatives,
+            (list, tuple),
+            "Message alternatives must be a list or a tuple, "
+            + f"got {type(alternatives)}",
         )
-        self.id = id
-        self._principal = principal if principal is not None else Declension()
-        self._variants = list(variants) if variants is not None else []
-        self.context = context
-        self.metadata = _build_empty_metadata()
+        self._principal = Declension(singular, tuple(plurals))
+        self._variants = [
+            Declension.from_segments(alternative) for alternative in alternatives
+        ]
+        for index, declension in enumerate(self._declensions()):
+            _check_format(index, declension.segments)
+        self.metadata = StrictNestedDictionary(
+            {"id": identifier}, default_setup={"indent": 2}
+        )
         self.plural_rule = None
-        self._status = status
-        self._recorded = recorded
-        if metadata is not None:
-            self.add_metadata(**metadata)
+        self.context = options.get("context", "")
+        self.locations = options.get("locations", [])
+        self.flags = options.get("flags", [])
+        self.user_comments = options.get("user_comments", [])
+        self.auto_comments = options.get("auto_comments", [])
+        self.metadata["status"] = "draft"
+        self.rules = options.get("rules", {})
 
     @classmethod
     def from_matrix(
         cls,
-        id: str,
+        id: str | int,
         matrix: list[list[str]],
-        context: str = "",
-        metadata: dict[str, object] | None = None,
-        status: MessageStatus = "draft",
-        recorded: ContentCounters | None = None,
+        **options: Unpack[MessageOptions],
     ) -> "Message":
         """
-        Build a message from its matrix.
+        Build a draft message from its matrix.
 
-        The matrix has the orientation of the ``.i18t`` format: one row per
+        The matrix has the orientation of the format of 0.10.0: one row per
         segment (row 0 holds the singulars), one column per declension
         (column 0 is the principal). Each column becomes a declension with
         all its cells, empty strings included, so that
         ``Message.from_matrix(id, m).matrix == m``.
 
-        :param id: Identifier of the message.
-        :type id: str
+        :param id: Identifier of the message, as accepted by the
+            constructor.
+        :type id: str | int
         :param matrix: Rows of texts; at least one row, all rows of the
             same non-zero length.
         :type matrix: list[list[str]]
-        :param context: Context of the message.
-        :type context: str
-        :param metadata: Metadata of the message, as accepted by the
-            constructor.
-        :type metadata: dict[str, object] | None
-        :param status: Status of the message, as accepted by the
-            constructor.
-        :type status: MessageStatus
-        :param recorded: Recorded counters, as accepted by the constructor.
-        :type recorded: ContentCounters | None
+        :param options: The metadata options of the constructor; the texts
+            come from the matrix.
+        :type options: MessageOptions
         :return: The message.
         :rtype: Message
-        :raises TypeError: If ``id`` or ``context`` is not a string,
-            ``matrix`` or one of its rows is not a list, or a cell is not a
-            string.
+        :raises TypeError: If ``matrix`` or one of its rows is not a list, a
+            cell is not a string, or an option is refused.
         :raises ValueError: If ``matrix`` is empty or not rectangular.
         """
-        ensure_type(id, str, f"Message id must be a string, got {type(id)}")
+        unknown = sorted(set(options) - _METADATA_OPTIONS - set(_GUARDED_KEYS))
+        if unknown:
+            raise TypeError(f"Unknown Message option(s): {', '.join(unknown)}")
         ensure_type(matrix, list, f"Message matrix must be a list, got {type(matrix)}")
         if len(matrix) == 0:
             raise ValueError("A message matrix has at least one row (the singulars)")
@@ -411,19 +469,31 @@ class Message:
                 "A message matrix is a non-empty rectangle: every row has the "
                 + "same number of cells, at least one"
             )
-        declensions = [
-            Declension(matrix[0][column], tuple(row[column] for row in matrix[1:]))
-            for column in range(columns)
-        ]
-        return cls(
-            id=id,
-            principal=declensions[0],
-            variants=declensions[1:],
-            context=context,
-            metadata=metadata,
-            status=status,
-            recorded=recorded,
-        )
+        declensions = [[row[column] for row in matrix] for column in range(columns)]
+        texts: MessageOptions = {
+            **options,
+            "plurals": declensions[0][1:],
+            "alternatives": declensions[1:],
+        }
+        return cls(id, declensions[0][0], **texts)
+
+    @property
+    def id(self) -> str:
+        """
+        Identifier of the message: ``metadata["id"]``.
+
+        The Book that holds the message is the master of its key: it writes
+        its key here when it renames the message, and writes its key as the
+        ``id`` of the entry on save.
+
+        :return: The identifier.
+        :rtype: str
+        """
+        return cast(str, self.metadata["id"])
+
+    @id.setter
+    def id(self, value: str) -> None:
+        self.metadata["id"] = _checked_identifier(value)
 
     def get_id(self) -> str:
         """
@@ -539,62 +609,97 @@ class Message:
         segments = self._declensions()[variant].segments
         return segments[segment] if segment < len(segments) else ""
 
-    # --- Completion status and counters --------------------------------------
+    # --- Completion status and record --------------------------------------
 
     @property
     def status(self) -> MessageStatus:
         """
-        Completion status: ``"draft"`` or ``"complete"``.
+        Completion status, ``metadata["status"]``: ``"draft"`` or
+        ``"complete"``.
 
         :return: The status.
         :rtype: MessageStatus
         """
-        return self._status
+        return cast(MessageStatus, self.metadata["status"])
+
+    def _padded(self) -> list[list[str]]:
+        """The texts of each declension, padded to the same number of segments."""
+        matrix = self.matrix
+        return [[row[column] for row in matrix] for column in range(len(matrix[0]))]
+
+    def _observed_record(self) -> dict[str, object]:
+        """The record of the current content, as plain values."""
+        declensions = self._padded()
+        return cast("dict[str, object]", observe(declensions[0], declensions[1:]))
 
     @property
     def observed(self) -> ContentCounters:
         """
-        Counters computed from the current content.
+        The record of the current content: its ``count`` and ``fill_mask``.
 
-        :return: The counters, new on each access.
+        Declensions with fewer segments than another are counted padded
+        with ``""``, as they are written.
+
+        :return: The record, new on each access, with the settings of
+            :attr:`metadata`.
         :rtype: ContentCounters
         """
-        return count_content(self.matrix)
+        return ContentCounters(
+            self._observed_record(), default_setup=dict(self.metadata.default_setup)
+        )
 
     @property
     def recorded(self) -> ContentCounters | None:
         """
-        Counters taken at the last validation point, or read from a file.
+        The record taken at the last validation point, or read from a file.
 
-        :return: The counters, or None if the message was never validated.
+        A view on ``metadata["count"]`` and ``metadata["fill_mask"]``: it
+        holds the stored nodes, not copies.
+
+        :return: The record, or None if the message has none.
         :rtype: ContentCounters | None
         """
-        return self._recorded
+        if "count" not in self.metadata or "fill_mask" not in self.metadata:
+            return None
+        return ContentCounters(
+            {"count": self.metadata["count"], "fill_mask": self.metadata["fill_mask"]},
+            default_setup=dict(self.metadata.default_setup),
+        )
 
     @property
     def has_divergence(self) -> bool:
         """
-        Whether the content no longer matches the recorded counters.
+        Whether the content no longer matches the record.
 
-        A ``"complete"`` message without recorded counters cannot be
-        verified and diverges. A draft without recorded counters does not.
+        A ``"complete"`` message without a record cannot be verified and
+        diverges. A draft without a record does not.
 
         :return: True if the message diverges.
         :rtype: bool
         """
-        if self._recorded is None:
-            return self._status == "complete"
-        return self._recorded != self.observed
+        recorded = self.recorded
+        if recorded is None:
+            return self.status == "complete"
+        return recorded != self.observed
+
+    def _take_record(self) -> None:
+        """Store the record of the current content in the metadata."""
+        record = self._observed_record()
+        for key in ("count", "fill_mask"):
+            self.metadata[key] = StrictNestedDictionary(
+                cast("dict[str, object]", record[key]),
+                default_setup=dict(self.metadata.default_setup),
+            )
 
     def mark_complete(self) -> None:
         """
-        Declare the content final: record its counters and lock it.
+        Declare the content final: record it and lock it.
 
         :raises MessageError: If the message is already complete, its
             principal singular is empty, or its declensions do not all
             have the same number of segments. The status is unchanged.
         """
-        if self._status == "complete":
+        if self.status == "complete":
             raise MessageError(f"Message '{self.id}' is already complete")
         if self._principal.singular == "":
             raise MessageError(
@@ -607,35 +712,35 @@ class Message:
                 f"Message '{self.id}' cannot be complete: its declensions have "
                 + f"different segment counts {sorted(lengths)}"
             )
-        self._recorded = self.observed
-        self._status = "complete"
+        self._take_record()
+        self.metadata["status"] = "complete"
 
     def record(self) -> None:
         """
-        Record the counters of a draft, as they are now.
+        Record the content of a draft, as it is now.
 
         Saving a draft is a validation point: ``Book.save()`` calls this
-        method for each draft once the file is written. The counters of a
-        complete message are recorded by :meth:`mark_complete` only.
+        method for each draft once the file is written. The record of a
+        complete message is taken by :meth:`mark_complete` only.
 
         :raises MessageError: If the message is complete.
         """
-        if self._status == "complete":
+        if self.status == "complete":
             raise MessageError(
                 f"Message '{self.id}' is complete: its counters are recorded "
                 + "by mark_complete()"
             )
-        self._recorded = self.observed
+        self._take_record()
 
     def reopen(self) -> None:
         """
-        Make a complete message a draft again; the recorded counters are kept.
+        Make a complete message a draft again; the record is kept.
 
         :raises MessageError: If the message is already a draft.
         """
-        if self._status == "draft":
+        if self.status == "draft":
             raise MessageError(f"Message '{self.id}' is already a draft")
-        self._status = "draft"
+        self.metadata["status"] = "draft"
 
     # --- Changing the principal ----------------------------------------------
 
@@ -661,6 +766,7 @@ class Message:
         principal = _apply_fields(self._principal, fields)
         if principal.singular == "":
             raise ValueError("A principal needs a non-empty singular")
+        _check_format(0, principal.segments)
         self._principal = principal
 
     def update_principal(self, **fields: Unpack[DeclensionFields]) -> None:
@@ -674,7 +780,9 @@ class Message:
         :raises MessageError: If the message is complete.
         """
         self._ensure_draft()
-        self._principal = self._updated(self._principal, fields, "principal")
+        principal = self._updated(self._principal, fields, "principal")
+        _check_format(0, principal.segments)
+        self._principal = principal
 
     def remove_principal(self) -> None:
         """
@@ -706,6 +814,7 @@ class Message:
         variant = _apply_fields(Declension(), fields)
         if variant.singular == "":
             raise ValueError("A variant needs a non-empty singular")
+        _check_format(len(self._variants) + 1, variant.segments)
         self._variants.append(variant)
         return len(self._variants)
 
@@ -725,9 +834,11 @@ class Message:
         """
         self._ensure_draft()
         self._check_variant_index(variant)
-        self._variants[variant - 1] = self._updated(
+        updated = self._updated(
             self._variants[variant - 1], fields, f"variant {variant}"
         )
+        _check_format(variant, updated.segments)
+        self._variants[variant - 1] = updated
 
     def remove_variant(self, variant: int) -> None:
         """
@@ -775,6 +886,7 @@ class Message:
         rows = len(self.matrix)
         if segment < 0 or segment > rows:
             raise IndexError(f"Segment {segment} is out of range 1..{rows}")
+        _check_format(variant, [""] * segment + [text])
         declensions = self._declensions()
         for index, declension in enumerate(declensions):
             segments = list(declension.segments)
@@ -810,6 +922,7 @@ class Message:
             raise ValueError(
                 "The principal singular cannot be emptied: use remove_principal()"
             )
+        _check_format(variant, [""] * segment + [text])
         segments = list(self._declensions()[variant].segments)
         segments.extend("" for _ in range(segment + 1 - len(segments)))
         segments[segment] = text
@@ -951,8 +1064,8 @@ class Message:
 
     def equal(self, other: object) -> bool:
         """
-        Strict equality: same identifier, content, context, metadata,
-        status and recorded counters.
+        Strict equality: same content and same metadata, the identifier,
+        the status and the record included.
 
         :param other: The object to compare with.
         :type other: object
@@ -962,20 +1075,16 @@ class Message:
         if not isinstance(other, Message):
             return False
         return (
-            self.id == other.id
-            and self._principal == other._principal
+            self._principal == other._principal
             and self._variants == other._variants
-            and self.context == other.context
             and self.metadata.to_dict() == other.metadata.to_dict()
-            and self._status == other._status
-            and self._recorded == other._recorded
         )
 
     def isomorph(self, other: object) -> bool:
         """
         Whether ``other`` is a Message with the same matrix.
 
-        Identifier, context and metadata are ignored.
+        Metadata, the identifier included, is ignored.
 
         :param other: The object to compare with.
         :type other: object
@@ -1025,7 +1134,7 @@ class Message:
 
     def _ensure_draft(self) -> None:
         """Refuse a change of texts or structure on a complete message."""
-        if self._status == "complete":
+        if self.status == "complete":
             raise MessageError(
                 f"Message '{self.id}' is complete: reopen() it before changing "
                 + "its texts or structure"
@@ -1037,6 +1146,7 @@ class Message:
 
     def _set_declension(self, variant: int, declension: Declension) -> None:
         """Store ``declension`` at index ``variant`` (0 is the principal)."""
+        _check_format(variant, declension.segments)
         if variant == 0:
             self._principal = declension
         else:
@@ -1081,20 +1191,114 @@ class Message:
 
     # --- Metadata ------------------------------------------------------------
 
+    @property
+    def context(self) -> str:
+        """
+        Context that distinguishes messages with the same text,
+        ``metadata["context"]``.
+
+        :return: The context; ``""`` when there is none.
+        :rtype: str
+        """
+        return cast(str, self.metadata["context"])
+
+    @context.setter
+    def context(self, value: str) -> None:
+        if not is_type(value, str):
+            raise TypeError(f"Message context must be a str, got {type(value)}")
+        self.metadata["context"] = value
+
+    @property
+    def rules(self) -> Mapping[str, JSONInput]:
+        """
+        Plural rules of the message, ``metadata["rules"]``; they override
+        those of the Book key by key.
+
+        :return: The stored rules, a ``StrictNestedDictionary``; empty when
+            there is none.
+        :rtype: Mapping[str, JSONInput]
+        """
+        return cast("Mapping[str, JSONInput]", self.metadata["rules"])
+
+    @rules.setter
+    def rules(self, value: Mapping[str, JSONInput]) -> None:
+        if not is_type(value, Mapping):
+            raise TypeError(f"Message rules must be a mapping, got {type(value)}")
+        self.metadata["rules"] = StrictNestedDictionary(
+            dict(value), default_setup=dict(self.metadata.default_setup)
+        )
+
+    @property
+    def locations(self) -> list[LocationEntry]:
+        """
+        The places in source code that use the message, in insertion
+        order: ``metadata["locations"]``.
+
+        :return: The stored list of locations.
+        :rtype: list[LocationEntry]
+        """
+        return cast("list[LocationEntry]", self.metadata["locations"])
+
+    @locations.setter
+    def locations(self, value: list[LocationEntry]) -> None:
+        if not is_type(value, (list, tuple)):
+            raise TypeError(f"Message locations must be a list, got {type(value)}")
+        self.metadata["locations"] = [
+            _checked_location(item) for item in cast("Sequence[object]", value)
+        ]
+
+    @property
+    def flags(self) -> list[str]:
+        """
+        Flags of the message (``python-format``…), ``metadata["flags"]``.
+
+        :return: The stored list of flags.
+        :rtype: list[str]
+        """
+        return cast("list[str]", self.metadata["flags"])
+
+    @flags.setter
+    def flags(self, value: list[str]) -> None:
+        self.metadata["flags"] = _checked_flags(value)
+
+    @property
+    def user_comments(self) -> list[str]:
+        """
+        Comments written by translators, ``metadata["user_comments"]``.
+
+        :return: The stored list of comments.
+        :rtype: list[str]
+        """
+        return cast("list[str]", self.metadata["user_comments"])
+
+    @user_comments.setter
+    def user_comments(self, value: list[str]) -> None:
+        self.metadata["user_comments"] = _checked_texts(value, "user_comments")
+
+    @property
+    def auto_comments(self) -> list[str]:
+        """
+        Comments extracted from source code, ``metadata["auto_comments"]``.
+
+        :return: The stored list of comments.
+        :rtype: list[str]
+        """
+        return cast("list[str]", self.metadata["auto_comments"])
+
+    @auto_comments.setter
+    def auto_comments(self, value: list[str]) -> None:
+        self.metadata["auto_comments"] = _checked_texts(value, "auto_comments")
+
     def get_metadata(self, key: list[str] | str | None = None) -> object:
         """
         Get metadata from the message.
 
-        Args:
-            key (list[str] or str, optional): The specific metadata key to retrieve.
-                If None, returns all metadata. Defaults to None.
-
-        Returns:
-            object: The requested metadata. If key is None, returns the entire
-                metadata dictionary. If key is provided, returns the value for that key.
-
-        Raises:
-            KeyError: If the specified key doesn't exist in the metadata.
+        :param key: A key or a path of the metadata; None for the whole
+            metadata.
+        :type key: list[str] | str | None
+        :return: The value stored there.
+        :rtype: object
+        :raises KeyError: If the key or the path does not exist.
         """
         if key is None:
             return self.metadata
@@ -1105,16 +1309,6 @@ class Message:
             return self.metadata[key]
 
         raise KeyError(f"Metadata '{key}' is not a key or path")
-
-    @property
-    def locations(self) -> tuple[Location, ...]:
-        """
-        The places in source code that use the message, in insertion order.
-
-        :return: The locations.
-        :rtype: tuple[Location, ...]
-        """
-        return tuple(self.metadata["locations"])
 
     def add_location(
         self,
@@ -1144,157 +1338,199 @@ class Message:
         :raises ValueError: If ``file`` is empty, ``line`` is below 1 or a
             coordinate is negative.
         """
-        location = Location(file, line, variant, segment)
+        location = _checked_location(
+            {"file": file, "line": line, "declension": variant, "segment": segment}
+        )
         if location not in self.locations:
-            self.metadata["locations"].append(location)
+            self.locations.append(location)
 
-    def add_language(self, lang: str) -> None:
+    def remove_location(self, index: int) -> None:
         """
-        Set the language of the message.
+        Remove a location by its position in :attr:`locations`.
 
-        Args:
-            lang (str): An IETF language tag.
+        :param index: Position of the location, from 0.
+        :type index: int
+        :raises TypeError: If ``index`` is not an int.
+        :raises IndexError: If there is no location at ``index``.
         """
-        self.metadata["language"] = normalize_language_tag(lang)
+        _ensure_int(index, "index")
+        if index < 0 or index >= len(self.locations):
+            raise IndexError(
+                f"Location {index} is out of range 0..{len(self.locations) - 1}"
+            )
+        del self.locations[index]
+
+    def add_flag(self, flag: str) -> None:
+        """
+        Add a flag; a flag already present is not added twice.
+
+        :param flag: The flag, a non-empty string.
+        :type flag: str
+        :raises TypeError: If ``flag`` is not a string.
+        :raises ValueError: If ``flag`` is empty.
+        """
+        _ = _checked_flags([flag])
+        if flag not in self.flags:
+            self.flags.append(flag)
+
+    def remove_flag(self, flag: str) -> None:
+        """
+        Remove a flag.
+
+        :param flag: The flag.
+        :type flag: str
+        :raises ValueError: If the message does not carry ``flag``.
+        """
+        if flag not in self.flags:
+            raise ValueError(f"Message '{self.id}' has no flag '{flag}'")
+        self.flags.remove(flag)
 
     def add_comment(self, mode: Literal["auto", "user"], comment: str) -> None:
         """
-        Add an author's comment to the message.
+        Add a comment to the message.
 
-        Args:
-            mode (Literal["auto", "user"], optional): The mode of the comment. Defaults to "auto".
-            comment (str): The author's comment to add.
+        :param mode: ``"auto"`` for a comment extracted from source code,
+            ``"user"`` for a comment written by a translator.
+        :type mode: Literal["auto", "user"]
+        :param comment: The comment, not empty.
+        :type comment: str
+        :raises ValueError: If ``comment`` is empty.
         """
         if len(comment) == 0:
             raise ValueError("Unable to add empty comment")
         key = mode + "_comments"
-        self.metadata[key].append(comment)
+        cast("list[str]", self.metadata[key]).append(comment)
+
+    def remove_comment(self, mode: Literal["auto", "user"], comment: str) -> None:
+        """
+        Remove a comment from the message.
+
+        :param mode: ``"auto"`` or ``"user"``, as for :meth:`add_comment`.
+        :type mode: Literal["auto", "user"]
+        :param comment: The comment.
+        :type comment: str
+        :raises ValueError: If the message does not hold ``comment``.
+        """
+        comments = cast("list[str]", self.metadata[mode + "_comments"])
+        if comment not in comments:
+            raise ValueError(f"Message '{self.id}' has no {mode} comment {comment!r}")
+        comments.remove(comment)
+
+    def _set_metadata(
+        self, method: str, path: str | list[str], value: object, check: bool
+    ) -> None:
+        """
+        Write one metadata value for the generic mutators.
+
+        A key changed only by a dedicated method is refused; a key with a
+        property setter goes through it; inside ``rules`` any path is
+        written, the content of ``rules`` being open.
+        """
+        keys: list[str] = (
+            [cast(str, path)] if is_type(path, str) else list(cast("list[str]", path))
+        )
+        if len(keys) == 0 or not is_type(keys[0], str):
+            raise KeyError(f"The path '{path}' is not a present key in the metadata")
+        head = keys[0]
+        if head in _GUARDED_KEYS:
+            raise ValueError(
+                f"metadata key '{head}' is not changed by {method}(): use "
+                + _GUARDED_KEYS[head]
+            )
+        if head not in _SETTABLE_DEFAULTS and head != "id":
+            raise KeyError(
+                f"The key '{head}' is not a present key in the metadata dictionary"
+            )
+        if len(keys) > 1 and head != "rules":
+            raise KeyError(f"The path '{path}' is not a present key in the metadata")
+        if check:
+            current = self.metadata[keys] if keys in self.metadata.paths() else None
+            if current == value:
+                raise ValueError(
+                    f"The value ({value}) is already stored in the path '{path}'"
+                )
+        if len(keys) > 1:
+            self.metadata[keys] = value
+        else:
+            setattr(self, head, value)
 
     def add_metadata(self, *args: tuple[list[str], object], **kwargs: object) -> None:
         """
-        Set metadata for the message.
+        Set metadata values, by path or by key.
 
-        Args:
-            args (tuple[list[str], object]): The list of keys and value to pass to the metadata.
-            kwargs (dict[str, object]): The kwargs parameters to pass to the metadata.
+        ``status``, ``count`` and ``fill_mask`` are refused: they are
+        changed by :meth:`mark_complete`, :meth:`reopen` and
+        :meth:`record`. The other keys go through the checks of their
+        property; a path inside ``rules`` is written as it is.
 
-        Raises:
-            ValueError: If key_or_dict is malformed and value is None.
+        :param args: ``(path, value)`` pairs.
+        :type args: tuple[list[str], object]
+        :param kwargs: ``key=value`` pairs.
+        :type kwargs: object
+        :raises KeyError: If a key or a path is not one of the metadata.
+        :raises ValueError: If a key is changed by a dedicated method, or a
+            value is refused by its property.
+        :raises TypeError: If a value has the wrong type.
         """
-
-        if args:
-            for path, value in args:
-                if (
-                    is_type(path, str) and self.metadata.paths().__contains__([path])
-                ) or (is_type(path, list) and self.metadata.paths().__contains__(path)):
-                    self.metadata[path] = value
-                else:
-                    raise KeyError(
-                        f"The path '{path}' is not a present key in the metadata dictionary"
-                    )
-        if kwargs:
-            for key, value in kwargs.items():
-
-                if isinstance(value, set):
-                    raise TypeError(
-                        f"{type(value)} type of {value} is not compatible metadata"
-                    )
-
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        path = [key, sub_key]
-                        if not self.metadata.paths().__contains__(path):
-                            raise KeyError(
-                                f"The path '{path}' is not a present key in the metadata dictionary"
-                            )
-                        else:
-                            self.metadata[path] = sub_value
-                elif is_type(key, str) and self.metadata.is_key(key):
-                    self.metadata[key] = value
-                else:
-                    raise KeyError(
-                        f"The key '{key}' is not a present key in the metadata dictionary"
-                    )
+        for path, value in args:
+            self._set_metadata("add_metadata", path, value, check=False)
+        for key, value in kwargs.items():
+            self._set_metadata("add_metadata", key, value, check=False)
 
     def update_metadata(
         self, *args: tuple[list[str], object], **kwargs: object
     ) -> None:
         """
-        Update the message's metadata with new values.
+        Replace metadata values, by path or by key.
 
-        Args:
-            args (tuple[list[str], object]): is a list of (paths, value) pairs is a StrictNestedDictionary
-            kwargs :
+        As :meth:`add_metadata`; a value equal to the stored one is
+        refused.
+
+        :param args: ``(path, value)`` pairs.
+        :type args: tuple[list[str], object]
+        :param kwargs: ``key=value`` pairs.
+        :type kwargs: object
+        :raises KeyError: If a key or a path is not one of the metadata.
+        :raises ValueError: If a key is changed by a dedicated method, a
+            value is already stored, or a value is refused by its property.
+        :raises TypeError: If a value has the wrong type.
         """
-
-        if args:
-            for path, value in args:
-                if (
-                    is_type(path, str) and self.metadata.paths().__contains__([path])
-                ) or (is_type(path, list) and self.metadata.paths().__contains__(path)):
-                    if self.metadata[path] == value:
-                        raise ValueError(
-                            f"The value ({value}) is already stored in the path '{path}'"
-                        )
-                    else:
-                        self.metadata[path] = value
-                else:
-                    raise KeyError(
-                        f"The path '{path}' is not a present key in the metadata dictionary"
-                    )
-        if kwargs:
-            for key, value in kwargs.items():
-                if isinstance(value, set):
-                    raise TypeError(
-                        f"{type(value)} of {value} is not compatible metadata"
-                    )
-
-                if isinstance(value, dict):
-                    for sub_key, sub_value in value.items():
-                        path = [key, sub_key]
-                        if not self.metadata.paths().__contains__(path):
-                            raise KeyError(
-                                f"The path '{path}' is not a present key in the metadata dictionary"
-                            )
-                        elif self.metadata[path] == sub_value:
-                            raise ValueError(
-                                f"The value ({sub_value}) is already stored in the path '{path}'"
-                            )
-                        else:
-                            self.metadata[path] = sub_value
-                elif is_type(key, str) and self.metadata.is_key(key):
-                    if self.metadata[key] == value:
-                        raise ValueError(
-                            f"The value ({value}) is already stored in the path '[{key}]'"
-                        )
-                    else:
-                        self.metadata[key] = value
-                else:
-                    raise KeyError(
-                        f"The key '{key}' is not a present key in the metadata dictionary"
-                    )
+        for path, value in args:
+            self._set_metadata("update_metadata", path, value, check=True)
+        for key, value in kwargs.items():
+            self._set_metadata("update_metadata", key, value, check=True)
 
     def remove_metadata(self, key: str | list[str] | None = None) -> None:
         """
-        Delete metadata from the message.
+        Reset metadata to its default value.
 
-        Args:
-            key (str | None, optional): The specific metadata key to delete.
-                If None, clears all metadata.
-
-        Raises:
-            KeyError: If the specified key doesn't exist in the metadata.
+        :param key: A key or a path inside ``rules``; None resets
+            ``context``, ``locations``, ``flags``, the comments and
+            ``rules``. The identifier, the status and the record are never
+            reset.
+        :type key: str | list[str] | None
+        :raises KeyError: If the key or the path does not exist.
+        :raises ValueError: If the key is the identifier, or a key changed
+            by a dedicated method.
         """
-
-        ref_meta = _build_empty_metadata()
-
         if key is None:
-            self.metadata = ref_meta
-        elif isinstance(key, list) and key not in self.metadata.paths():
+            for name, default in _SETTABLE_DEFAULTS.items():
+                setattr(self, name, type(default)())
+            return
+        keys: list[str] = (
+            [cast(str, key)] if is_type(key, str) else list(cast("list[str]", key))
+        )
+        head = keys[0] if keys else ""
+        if head in _GUARDED_KEYS or head == "id":
+            raise ValueError(
+                f"metadata key '{head}' is not changed by remove_metadata(): use "
+                + _GUARDED_KEYS.get(head, "the id property")
+            )
+        if keys not in self.metadata.paths():
             raise KeyError(
                 f"path '{key}' is not a present key in the metadata dictionary"
             )
-        elif isinstance(key, str) and key not in self.metadata.keys():
-            raise KeyError(f"Metadata key '{key}' not found")
+        if len(keys) > 1:
+            del self.metadata[keys]
         else:
-            self.metadata[key] = ref_meta[key]
+            setattr(self, head, type(_SETTABLE_DEFAULTS[head])())
