@@ -1,12 +1,17 @@
 Core Concepts
 =============
 
-This section explains the key concepts behind **i18n-tools**, including the repository structure, the proprietary translation format, and the conversion of alternative messages.
+This section explains the ideas behind **i18n-tools**: the data model, the
+rules that keep translations consistent, how a message is resolved at
+runtime, and how the package is organised.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
+   model
    repository
-   format
+   integrity
+   fallback
+   formatting
+   architecture
    conversions

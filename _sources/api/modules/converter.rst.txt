@@ -2,7 +2,7 @@ Converter Module
 ================
 
 
-.. automodule:: i18n_tools.converter
+.. py:module:: i18n_tools.converter
 
 Converting functions
 --------------------

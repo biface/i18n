@@ -1,6 +1,6 @@
 Formatter Module
 ================
 
-.. automodule:: i18n_tools.formatter
+.. py:module:: i18n_tools.formatter
 
-   .. autofunction:: publish
+.. autofunction:: publish

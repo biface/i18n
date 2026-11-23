@@ -3,11 +3,11 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="4.5.3. Loader module" href="loader.html"><link rel="prev" title="4.5.1. Utils module" href="utils.html">
+<link rel="index" title="Index" href="../../../genindex.html"><link rel="search" title="Search" href="../../../search.html"><link rel="next" title="Loader module" href="loader.html"><link rel="prev" title="Settings module (internal)" href="settings.html">
         <link rel="prefetch" href="../../../_static/logo.svg" as="image">
 
-    <link rel="shortcut icon" href="../../../_static/logo.svg"><!-- Generated with Sphinx 9.1.0 and Furo 2025.12.19 -->
-        <title>4.5.2. Handler module - pyi18t-tools 0.9.0 documentation</title>
+    <link rel="shortcut icon" href="../../../_static/logo.svg"><!-- Generated with Sphinx 9.1.1 and Furo 2025.12.19 -->
+        <title>Handler module (internal) - pyi18t-tools 0.11.0rc1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=8dab3a3b" />
@@ -162,7 +162,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="../../../index.html"><div class="brand">pyi18t-tools 0.9.0 documentation</div></a>
+      <a href="../../../index.html"><div class="brand">pyi18t-tools 0.11.0rc1 documentation</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -186,7 +186,7 @@
     <img class="sidebar-logo" src="../../../_static/logo.svg" alt="Logo"/>
   </div>
   
-  <span class="sidebar-brand-text">pyi18t-tools 0.9.0 documentation</span>
+  <span class="sidebar-brand-text">pyi18t-tools 0.11.0rc1 documentation</span>
   
 </a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
   <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
@@ -196,36 +196,67 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <p class="caption" role="heading"><span class="caption-text">Documentation content:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../../../introduction.html">1. Introduction to i18n-tools</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../getting_started.html">2. Getting Started with i18n-tools</a></li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../../../concept/index.html">3. Core Concepts</a><input aria-label="Toggle navigation of 3. Core Concepts" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l2"><a class="reference internal" href="../../../concept/repository.html">3.1. Repository Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../concept/format.html">3.2. Proprietary Translation Format</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../../concept/conversions.html">3.3. Conversion of Alternative Messages</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../concept/index.html">1. Core Concepts</a><input aria-label="Toggle navigation of 1. Core Concepts" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/model.html">1.1. Data Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/repository.html">1.2. Repository Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/integrity.html">1.3. Integrity and Consistency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/fallback.html">1.4. Fallback</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/formatting.html">1.5. Formatting and Plural Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/architecture.html">1.6. Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../concept/conversions.html">1.7. Conversion of Alternative Messages</a></li>
 </ul>
 </li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="../../index.html">4. API Reference</a><input aria-label="Toggle navigation of 4. API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../main_variables.html">4.1. Main Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../patterns.html">4.2. Design Patterns Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../api.html">4.3. API Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../locale.html">4.4. Locale module</a></li>
-<li class="toctree-l2 current has-children"><a class="reference internal" href="index.html">4.5. Loaders Module</a><input aria-label="Toggle navigation of 4.5. Loaders Module" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="utils.html">4.5.1. Utils module</a></li>
-<li class="toctree-l3 current current-page"><a class="current reference internal" href="#">4.5.2. Handler module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="loader.html">4.5.3. Loader module</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../guides/index.html">2. Guides</a><input aria-label="Toggle navigation of 2. Guides" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../guides/tutorial.html">2.1. Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guides/models.html">2.2. Working with the Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../guides/cli.html">2.3. Using the Command Line</a></li>
 </ul>
 </li>
-<li class="toctree-l2 has-children"><a class="reference internal" href="../models/index.html">4.6. Models Module</a><input aria-label="Toggle navigation of 4.6. Models Module" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
-<li class="toctree-l3"><a class="reference internal" href="../models/repository.html">4.6.1. Repository</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../models/corpus.html">4.6.2. Corpus module</a></li>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="../../../reference/index.html">3. Reference</a><input aria-label="Toggle navigation of 3. Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/installation.html">3.1. Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/format.html">3.2. The .i18t Format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/cli.html">3.3. Command Line Reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../reference/settings.html">3.4. Settings File Reference</a></li>
+<li class="toctree-l2 current has-children"><a class="reference internal" href="../../index.html">3.5. API Reference</a><input aria-label="Toggle navigation of 3.5. API Reference" checked="" class="toctree-checkbox" id="toctree-checkbox-4" name="toctree-checkbox-4" role="switch" type="checkbox"/><label for="toctree-checkbox-4"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../main_variables.html">3.5.1. Main Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../patterns.html">3.5.2. Patterns module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api.html">3.5.3. API Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../locale.html">3.5.4. Locale module</a></li>
+<li class="toctree-l3 current has-children"><a class="reference internal" href="index.html">3.5.5. Loaders Module</a><input aria-label="Toggle navigation of 3.5.5. Loaders Module" checked="" class="toctree-checkbox" id="toctree-checkbox-5" name="toctree-checkbox-5" role="switch" type="checkbox"/><label for="toctree-checkbox-5"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="utils.html">Utils module (internal)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="settings.html">Settings module (internal)</a></li>
+<li class="toctree-l4 current current-page"><a class="current reference internal" href="#">Handler module (internal)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="loader.html">Loader module</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../config.html">4.7. Configuration Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../converter.html">4.8. Converter Module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../formatter.html">4.9. Formatter Module</a></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../models/index.html">3.5.6. Models Module</a><input aria-label="Toggle navigation of 3.5.6. Models Module" class="toctree-checkbox" id="toctree-checkbox-6" name="toctree-checkbox-6" role="switch" type="checkbox"/><label for="toctree-checkbox-6"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l4"><a class="reference internal" href="../models/repository.html">Repository</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/message.html">Message module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/book.html">Book module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/corpus.html">Corpus module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../models/encyclopaedia.html">Encyclopaedia module</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="../../../indices.html">5. Indices and references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../core.html">3.5.7. Core module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../findings.html">3.5.8. Findings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../exceptions.html">3.5.9. Exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../cli.html">3.5.10. CLI module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../config.html">3.5.11. Configuration Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../converter.html">3.5.12. Converter Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../formatter.html">3.5.13. Formatter Module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../json.html">3.5.14. JSON types (internal)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../project/index.html">4. Project</a><input aria-label="Toggle navigation of 4. Project" class="toctree-checkbox" id="toctree-checkbox-7" name="toctree-checkbox-7" role="switch" type="checkbox"/><label for="toctree-checkbox-7"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../../project/changelog.html">4.1. Changelog</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../project/roadmap.html">4.2. Roadmap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../project/contributing.html">4.3. Contributing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../project/glossary.html">4.4. Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../indices.html">4.5. Indices and references</a></li>
+</ul>
+</li>
 </ul>
 
 </div>
@@ -264,59 +295,67 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="module-i18n_tools.loaders.handler">
-<span id="handler-module"></span><h1><span class="section-number">4.5.2. </span>Handler module<a class="headerlink" href="#module-i18n_tools.loaders.handler" title="Link to this heading">¶</a></h1>
-<p>This module handles the manipulation of files within the repository using utils.py. It calculates paths, controls file names and access, and retrieves data contained in translation files.</p>
-<dl class="simple">
-<dt>Key Responsibilities:</dt><dd><ul class="simple">
-<li><p>Manipulate files within the repository.</p></li>
-<li><p>Calculate paths, control file names and access.</p></li>
-<li><p>Retrieve data from translation files.</p></li>
-</ul>
-</dd>
-</dl>
+          <section id="handler-module-internal">
+<h1>Handler module (internal)<a class="headerlink" href="#handler-module-internal" title="Link to this heading">¶</a></h1>
+<p>Intermediate layer for path and file type management. Internal
+module: imported by the loader module only.</p>
+<dl class="py class" id="module-i18n_tools.loaders._handler">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.BookData">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">BookData</span></span><a class="headerlink" href="#i18n_tools.loaders._handler.BookData" title="Link to this definition">¶</a></dt>
+<dd><p>Content of a Book file as read, in format 1.0.0.</p>
+<p><code class="docutils literal notranslate"><span class="pre">metadata</span></code> holds <code class="docutils literal notranslate"><span class="pre">format_version</span></code>, <code class="docutils literal notranslate"><span class="pre">version</span></code>, <code class="docutils literal notranslate"><span class="pre">language</span></code>,
+<code class="docutils literal notranslate"><span class="pre">domain</span></code>, <code class="docutils literal notranslate"><span class="pre">gettext</span></code> (its seven keys) and <code class="docutils literal notranslate"><span class="pre">rules</span></code>, absent values
+replaced as the format says. <code class="docutils literal notranslate"><span class="pre">entries</span></code> maps each identifier to its
+entry: <code class="docutils literal notranslate"><span class="pre">messages</span></code> (<code class="docutils literal notranslate"><span class="pre">principal</span></code>, <code class="docutils literal notranslate"><span class="pre">alternatives</span></code>) and <code class="docutils literal notranslate"><span class="pre">metadata</span></code>
+(<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">context</span></code>, <code class="docutils literal notranslate"><span class="pre">locations</span></code>, <code class="docutils literal notranslate"><span class="pre">flags</span></code>, <code class="docutils literal notranslate"><span class="pre">user_comments</span></code>,
+<code class="docutils literal notranslate"><span class="pre">auto_comments</span></code>, <code class="docutils literal notranslate"><span class="pre">status</span></code>, <code class="docutils literal notranslate"><span class="pre">rules</span></code>, and <code class="docutils literal notranslate"><span class="pre">count</span></code> and
+<code class="docutils literal notranslate"><span class="pre">fill_mask</span></code> when the entry has a record). The root <code class="docutils literal notranslate"><span class="pre">count</span></code> and
+<code class="docutils literal notranslate"><span class="pre">statistics</span></code> and the entry <code class="docutils literal notranslate"><span class="pre">statistics</span></code> are not kept: a writer
+computes them.</p>
+</dd></dl>
+
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.build_path">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">build_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.build_path" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.build_path">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">build_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sub_dirs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.build_path" title="Link to this definition">¶</a></dt>
 <dd><p>Constructs, cleans, and validates a path by combining a base path with one or more subdirectories.</p>
 <p>This function ensures that the constructed path does not contain any elements
 that could corrupt the path, such as ‘..’. It also verifies that the path exists.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>base_path</strong> (<em>Union</em><em>[</em><em>Path</em><em>, </em><em>str</em><em>]</em>) – The starting path.</p></li>
-<li><p><strong>sub_dirs</strong> (<em>str</em>) – One or more subdirectory names to append to the base path.</p></li>
+<li><p><strong>base_path</strong> (<em>Union</em><em>[</em><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><em>Path</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>]</em>) – The starting path.</p></li>
+<li><p><strong>sub_dirs</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – One or more subdirectory names to append to the base path.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The combined, cleaned, and validated path as a string.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>IOError</strong> – If the constructed path is invalid or does not exist.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#IOError" title="(in Python v3.15)"><strong>IOError</strong></a> – If the constructed path is invalid or does not exist.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.build_book_filename">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">build_book_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.build_book_filename" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.build_book_filename">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">build_book_filename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.build_book_filename" title="Link to this definition">¶</a></dt>
 <dd><p>Resolve the storage format (default + validation) and the corresponding
 <cite>.i18t</cite> filename for a translation domain, without requiring a <cite>Book</cite>
 instance.</p>
 <p>This is the single place where the default-format and filename-building
 rules for a translation dictionary are applied — used by <cite>Book</cite>
 (via <cite>loader.py</cite>, never imported here directly, DD-06) to keep its own
-format default/validation consistent across its constructor and its
-<cite>add_format()</cite>/<cite>update_format()</cite> methods, and reusable from <cite>core.py</cite>,
-<cite>sync.py</cite>, or a future CLI without constructing a <cite>Book</cite> first.</p>
+file format default/validation consistent across its constructor and
+its <cite>add_file_format()</cite>/<cite>update_file_format()</cite> methods, and reusable
+from <cite>core.py</cite>, <cite>sync.py</cite>, or a future CLI without constructing a <cite>Book</cite> first.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>domain</strong> (<em>str</em>) – The translation domain name.</p></li>
-<li><p><strong>fmt</strong> (<em>TranslationFileFormat</em><em> | </em><em>None</em>) – The desired storage format (“json” or “yaml”). Defaults to
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The translation domain name.</p></li>
+<li><p><strong>fmt</strong> (<a class="reference internal" href="../../main_variables.html#i18n_tools.__static__.TranslationFileFormat" title="i18n_tools.__static__.TranslationFileFormat"><em>TranslationFileFormat</em></a><em> | </em><em>None</em>) – The desired storage format (“json” or “yaml”). Defaults to
 “json” if <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></li>
 </ul>
 </dd>
@@ -324,26 +363,26 @@ format default/validation consistent across its constructor and its
 <dd class="field-even"><p>A <code class="docutils literal notranslate"><span class="pre">(format,</span> <span class="pre">filename)</span></code> tuple, e.g. <code class="docutils literal notranslate"><span class="pre">(&quot;json&quot;,</span> <span class="pre">&quot;messages.json.i18t&quot;)</span></code>.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple[TranslationFileFormat, str]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)">tuple</a>[<a class="reference internal" href="../../main_variables.html#i18n_tools.__static__.TranslationFileFormat" title="i18n_tools.__static__.TranslationFileFormat">TranslationFileFormat</a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a>]</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If <code class="docutils literal notranslate"><span class="pre">fmt</span></code> is not a recognised translation format.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If <code class="docutils literal notranslate"><span class="pre">fmt</span></code> is not a recognised translation format.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.build_translation_lang_files">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">build_translation_lang_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.build_translation_lang_files" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.build_translation_lang_files">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">build_translation_lang_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.build_translation_lang_files" title="Link to this definition">¶</a></dt>
 <dd><p>Build from repository TLD, path for translation files</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure which represents the repository information.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – Module name</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – Domain name</p></li>
-<li><p><strong>lang</strong> (<em>str</em>) – language code</p></li>
-<li><p><strong>fmt</strong> (<em>TranslationFileFormat</em><em> | </em><em>None</em>) – Translation file format</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure which represents the repository information.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Module name</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Domain name</p></li>
+<li><p><strong>lang</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – language code</p></li>
+<li><p><strong>fmt</strong> (<a class="reference internal" href="../../main_variables.html#i18n_tools.__static__.TranslationFileFormat" title="i18n_tools.__static__.TranslationFileFormat"><em>TranslationFileFormat</em></a><em> | </em><em>None</em>) – Translation file format</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -353,195 +392,203 @@ format default/validation consistent across its constructor and its
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.check_json_integrity">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">check_json_integrity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.check_json_integrity" title="Link to this definition">¶</a></dt>
-<dd><p>Check the integrity of the JSON locale data.</p>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.check_json_integrity">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">check_json_integrity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.check_json_integrity" title="Link to this definition">¶</a></dt>
+<dd><p>Check the integrity of translation data.</p>
+<p>Every entry other than the reserved <code class="docutils literal notranslate"><span class="pre">.i18n_tools</span></code> and <code class="docutils literal notranslate"><span class="pre">metadata</span></code>
+keys takes one of two forms:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">{&quot;messages&quot;:</span> <span class="pre">matrix,</span> <span class="pre">&quot;metadata&quot;:</span> <span class="pre">{...}}</span></code>, the native <code class="docutils literal notranslate"><span class="pre">.i18t</span></code>
+entry; <code class="docutils literal notranslate"><span class="pre">metadata</span></code> is optional and must be a dictionary;</p></li>
+<li><p>a bare <code class="docutils literal notranslate"><span class="pre">matrix</span></code>, the legacy flat form, still readable.</p></li>
+</ul>
+<p>In both forms the matrix must pass the checks of <code class="docutils literal notranslate"><span class="pre">_check_matrix()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> (<em>dict</em>) – The JSON locale data.</p>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a>) – The translation data.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>True if the data is valid, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.create_catalog">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">create_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.create_catalog" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.create_catalog">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">create_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.create_catalog" title="Link to this definition">¶</a></dt>
 <dd><p>Creates an empty translation catalog for a given language and domain in the specified module.</p>
 <p>This function generates an empty translation catalog (.po) in the appropriate
 directory structure for the specified module, language, and domain.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.create_dictionary">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">create_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.create_dictionary" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.create_dictionary">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">create_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.create_dictionary" title="Link to this definition">¶</a></dt>
 <dd><p>Creates an empty translation dictionary for a given language and domain in the specified module.</p>
 <p>This function generates an empty translation dictionary (.json) in the appropriate
 directory structure for the specified module, language, and domain.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.create_directory">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">create_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.create_directory" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.create_directory">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">create_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.create_directory" title="Link to this definition">¶</a></dt>
 <dd><p>Creates a directory at the specified path.</p>
 <p>This function ensures that the directory and any necessary parent directories
 are created. If the directory already exists, no action is taken.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – The path to the directory to be created.</p>
+<dd class="field-odd"><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The path to the directory to be created.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.create_template">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">create_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.create_template" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.create_template">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">create_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.create_template" title="Link to this definition">¶</a></dt>
 <dd><p>Creates an empty template file for a given domain in the specified module.</p>
 <p>This function generates an empty template file (.pot) in the appropriate
 directory structure for the specified module and domain.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.dump_dictionary">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">dump_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.dump_dictionary" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.dump_dictionary">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">dump_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.dump_dictionary" title="Link to this definition">¶</a></dt>
 <dd><p>Dump the translation dictionary for a given language and domain.</p>
 <p>This function saves the provided translation dictionary to the specified .json file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
-<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The new translation dictionary.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
+<li><p><strong>data</strong> (<em>Mapping</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><em>JSONInput</em></a><em>]</em>) – The new translation dictionary.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.fetch_catalog">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">fetch_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Catalog</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.fetch_catalog" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.fetch_catalog">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">fetch_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://babel.pocoo.org/en/latest/api/messages/catalog.html#babel.messages.catalog.Catalog" title="(in Babel v2.17)"><span class="pre">babel.messages.catalog.Catalog</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.fetch_catalog" title="Link to this definition">¶</a></dt>
 <dd><p>Fetches the translation catalog for a given language and domain.</p>
 <p>This function reads and returns the translation catalog from the specified .po file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The translation catalog.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Catalog</p>
+<dd class="field-odd"><p><a class="reference external" href="https://babel.pocoo.org/en/latest/api/messages/catalog.html#babel.messages.catalog.Catalog" title="(in Babel v2.17)"><em>Catalog</em></a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.fetch_dictionary">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">fetch_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.fetch_dictionary" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.fetch_dictionary">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">fetch_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONValue" title="i18n_tools._json.JSONValue"><span class="pre">JSONValue</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.fetch_dictionary" title="Link to this definition">¶</a></dt>
 <dd><p>Fetches the translation dictionary for a given language and domain.</p>
 <p>This function reads and returns the translation dictionary from the specified .json file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The translation dictionary.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict[str, Any]</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a>, <a class="reference internal" href="../json.html#i18n_tools._json.JSONValue" title="i18n_tools._json.JSONValue">JSONValue</a>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.fetch_template">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">fetch_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Catalog</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.fetch_template" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.fetch_template">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">fetch_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://babel.pocoo.org/en/latest/api/messages/catalog.html#babel.messages.catalog.Catalog" title="(in Babel v2.17)"><span class="pre">babel.messages.catalog.Catalog</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.fetch_template" title="Link to this definition">¶</a></dt>
 <dd><p>Fetches the content of a template file.</p>
 <p>This function reads and returns the content of the specified template file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The content of the template file.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.file_exists">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.file_exists" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.file_exists">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.file_exists" title="Link to this definition">¶</a></dt>
 <dd><p>Checks if a file exists at the given path.</p>
 <p>This function verifies the existence of a file at the specified path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The path to the file.</p>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The path to the file.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>True if the file exists, False otherwise.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)">bool</a></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.load_config">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.load_config" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.load_config">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">load_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONValue" title="i18n_tools._json.JSONValue"><span class="pre">JSONValue</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.load_config" title="Link to this definition">¶</a></dt>
 <dd><p>Load the configuration file (YAML, TOML, or JSON) from the application directories
 (not from the package i18n-tools) and return its contents as a dictionary.</p>
 <dl class="field-list simple">
@@ -550,76 +597,76 @@ directory structure for the specified module and domain.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>FileNotFoundError</strong> – If no configuration file is found in the application directories.</p></li>
-<li><p><strong>ValueError</strong> – If the file format is unsupported.</p></li>
-<li><p><strong>Exception</strong> – For other errors during loading.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If no configuration file is found in the application directories.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the file format is unsupported.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#Exception" title="(in Python v3.15)"><strong>Exception</strong></a> – For other errors during loading.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.remove_catalog">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">remove_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.remove_catalog" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.remove_catalog">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">remove_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.remove_catalog" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a translation catalog and its corresponding machine file for a given language and domain in the specified module.</p>
 <p>This function deletes the specified .po and .mo files if they exist.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionaryNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>FileNotFoundError</strong> – If the catalog or machine file does not exist.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If the catalog or machine file does not exist.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.remove_dictionary">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">remove_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.remove_dictionary" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.remove_dictionary">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">remove_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.remove_dictionary" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a translation dictionary for a given language and domain in the specified module.</p>
 <p>This function deletes the specified .json file if it exists.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>FileNotFoundError</strong> – If the dictionary file does not exist.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If the dictionary file does not exist.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.remove_template">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">remove_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.remove_template" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.remove_template">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">remove_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.remove_template" title="Link to this definition">¶</a></dt>
 <dd><p>Removes a template file for a given domain in the specified module.</p>
 <p>This function deletes the specified template file if it exists.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>FileNotFoundError</strong> – If the template file does not exist.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If the template file does not exist.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.save_config">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.save_config" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.save_config">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">save_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.save_config" title="Link to this definition">¶</a></dt>
 <dd><p>Save configuration data to a file.</p>
 <p>Supports JSON, YAML, and TOML formats.</p>
 <dl class="field-list simple">
@@ -633,45 +680,137 @@ directory structure for the specified module and domain.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.update_catalog">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">update_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.update_catalog" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.update_catalog">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">update_catalog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.update_catalog" title="Link to this definition">¶</a></dt>
 <dd><p>Updates the translation catalog for a given language and domain.</p>
 <p>This function saves the provided translation catalog to the specified .po file
 and updates the corresponding .mo file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
-<li><p><strong>data</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>str</em><em>]</em><em>]</em>) – An adapted translation dictionary.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
+<li><p><strong>data</strong> (<em>Mapping</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>...</em><em>]</em><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>]</em><em>]</em>) – An adapted translation dictionary.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="i18n_tools.loaders.handler.update_dictionary">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">update_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">StrictNestedDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#i18n_tools.loaders.handler.update_dictionary" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.update_dictionary">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">update_dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">language</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.update_dictionary" title="Link to this definition">¶</a></dt>
 <dd><p>Updates the translation dictionary for a given language and domain.</p>
 <p>This function saves the provided translation dictionary to the specified .json file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>StrictNestedDictionary</em>) – The data structure representing the translation repository.</p></li>
-<li><p><strong>module</strong> (<em>str</em>) – The module path.</p></li>
-<li><p><strong>language</strong> (<em>str</em>) – The language code.</p></li>
-<li><p><strong>domain</strong> (<em>str</em>) – The domain name.</p></li>
-<li><p><strong>data</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em>) – The new translation dictionary.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><em>StrictNestedDictionary</em></a>) – The data structure representing the translation repository.</p></li>
+<li><p><strong>module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The module path.</p></li>
+<li><p><strong>language</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The language code.</p></li>
+<li><p><strong>domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – The domain name.</p></li>
+<li><p><strong>data</strong> (<em>Mapping</em><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><em>JSONInput</em></a><em>]</em>) – The new translation dictionary.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Low-level operations offered to the loader module:</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.path_exists">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">path_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.path_exists" title="Link to this definition">¶</a></dt>
+<dd><p>Return whether a file or directory exists at <code class="docutils literal notranslate"><span class="pre">path</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.detect_format">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">detect_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.detect_format" title="Link to this definition">¶</a></dt>
+<dd><p>Detect the serialisation format of a file from its extension.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.load_json">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONValue" title="i18n_tools._json.JSONValue"><span class="pre">JSONValue</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.load_json" title="Link to this definition">¶</a></dt>
+<dd><p>Load a JSON file and return its content.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.save_json">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">save_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.save_json" title="Link to this definition">¶</a></dt>
+<dd><p>Save a dictionary to a JSON file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.load_by_format">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">load_by_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONValue" title="i18n_tools._json.JSONValue"><span class="pre">JSONValue</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.load_by_format" title="Link to this definition">¶</a></dt>
+<dd><p>Load a dictionary file in the given format (json|yaml).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.read_book_data">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">read_book_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><span class="pre">object</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.read_book_data" title="Link to this definition">¶</a></dt>
+<dd><p>Read the content of a Book file, in the format given by its extension
+(DD-34), without checking it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><em>Path</em></a><em> | </em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – Path to the <code class="docutils literal notranslate"><span class="pre">.i18t</span></code> file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The content of the file, keyed by the root keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)">dict</a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)">str</a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)">object</a>]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If the file does not exist.</p></li>
+<li><p><a class="reference internal" href="../exceptions.html#i18n_tools.exceptions.FormatError" title="i18n_tools.exceptions.FormatError"><strong>FormatError</strong></a> – If the content cannot be parsed, or is not a
+mapping.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.save_by_format">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">save_by_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><span class="pre">Mapping</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="../json.html#i18n_tools._json.JSONInput" title="i18n_tools._json.JSONInput"><span class="pre">JSONInput</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.save_by_format" title="Link to this definition">¶</a></dt>
+<dd><p>Save a dictionary to a file in the given format (json|yaml).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.build_dictionary_path">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">build_dictionary_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Literal" title="(in Python v3.15)"><span class="pre">Literal</span></a><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'json'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'yaml'</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.build_dictionary_path" title="Link to this definition">¶</a></dt>
+<dd><p>Build a dictionary file path from a base directory, a domain and a format.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.create_gzip">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">create_gzip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.create_gzip" title="Link to this definition">¶</a></dt>
+<dd><p>Write a gzip-compressed copy of <code class="docutils literal notranslate"><span class="pre">file_path</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.non_traversal_path">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">non_traversal_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">members</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/tarfile.html#tarfile.TarInfo" title="(in Python v3.15)"><span class="pre">tarfile.TarInfo</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/tarfile.html#tarfile.TarInfo" title="(in Python v3.15)"><span class="pre">tarfile.TarInfo</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.non_traversal_path" title="Link to this definition">¶</a></dt>
+<dd><p>Keep the archive members that extract inside the expected module paths.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.check_module">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">check_module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.check_module" title="Link to this definition">¶</a></dt>
+<dd><p>Raise if a module of <code class="docutils literal notranslate"><span class="pre">module_list</span></code> is not defined in the repository.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="i18n_tools.loaders._handler.check_domains">
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">check_domains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repository</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://ndict-tools.readthedocs.io/en/latest/api/public/core.html#ndict_tools.StrictNestedDictionary" title="(in Nested Dictionary Tools v1.3.0)"><span class="pre">StrictNestedDictionary</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">domain_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#i18n_tools.loaders._handler.check_domains" title="Link to this definition">¶</a></dt>
+<dd><p>Raise if a domain of <code class="docutils literal notranslate"><span class="pre">domain_list</span></code> is not defined for <code class="docutils literal notranslate"><span class="pre">module</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">_verify_paths_and_modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">verify_paths_and_modules</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
 <dd><p>Verify that the repository paths and modules exist.</p>
 <p>This function checks if the base path is absolute and if all specified modules
 and their corresponding paths exist in the repository.</p>
@@ -681,8 +820,8 @@ and their corresponding paths exist in the repository.</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>ValueError</strong> – If the base path is not an absolute path.</p></li>
-<li><p><strong>FileNotFoundError</strong> – If any module path does not exist.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the base path is not an absolute path.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#FileNotFoundError" title="(in Python v3.15)"><strong>FileNotFoundError</strong></a> – If any module path does not exist.</p></li>
 </ul>
 </dd>
 </dl>
@@ -690,13 +829,13 @@ and their corresponding paths exist in the repository.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">_verify_available_languages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">verify_available_languages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
 <dd><p>Verify that languages in translation sets are registered in the repository.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>.</em>) – The data structure which represents the repository information.</p></li>
-<li><p><strong>languages</strong> (<em>list</em><em>[</em><em>str</em><em>]</em><em>.</em>) – languages in translation set.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – The data structure which represents the repository information.</p></li>
+<li><p><strong>languages</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><em>list</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>]</em>) – languages in translation set.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -706,20 +845,20 @@ and their corresponding paths exist in the repository.</p>
 <dd class="field-odd"><p>None</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If any language does not exist in allowed languages.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If any language does not exist in allowed languages.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">_verify_target_module</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">_verify_target_module</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
 <dd><p>Verify that a target module is registered in the repository.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>.</em>) – The data structure which represents the repository information.</p></li>
-<li><p><strong>target_module</strong> (<em>str.</em>) – module where translation should be located.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – The data structure which represents the repository information.</p></li>
+<li><p><strong>target_module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – module where translation should be located.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -729,21 +868,21 @@ and their corresponding paths exist in the repository.</p>
 <dd class="field-odd"><p>None</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If any module is not registered in the repository.</p>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If any module is not registered in the repository.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py">
-<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders.handler.</span></span><span class="sig-name descname"><span class="pre">_verify_target_domain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
+<span class="sig-prename descclassname"><span class="pre">i18n_tools.loaders._handler.</span></span><span class="sig-name descname"><span class="pre">verify_target_domain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span></dt>
 <dd><p>Verify that a target domain is registered in the repository.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>repository</strong> (<em>dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>.</em>) – The data structure which represents the repository information.</p></li>
-<li><p><strong>target_module</strong> (<em>str.</em>) – module where translation should be located.</p></li>
-<li><p><strong>target_domain</strong> (<em>str.</em>) – domain of translation.</p></li>
+<li><p><strong>repository</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a><em>, </em><em>Any</em><em>]</em>) – The data structure which represents the repository information.</p></li>
+<li><p><strong>target_module</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – module where translation should be located.</p></li>
+<li><p><strong>target_domain</strong> (<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><em>str</em></a>) – domain of translation.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -753,7 +892,7 @@ and their corresponding paths exist in the repository.</p>
 <dd class="field-odd"><p>None</p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the target module or the target domain is not
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><strong>ValueError</strong></a> – If the target module or the target domain is not
 registered in the repository.</p>
 </dd>
 </dl>
@@ -771,18 +910,18 @@ registered in the repository.</p>
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title"><span class="section-number">4.5.3. </span>Loader module</div>
+                <div class="title">Loader module</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="utils.html">
+          <a class="prev-page" href="settings.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title"><span class="section-number">4.5.1. </span>Utils module</div>
+                <div class="title">Settings module (internal)</div>
                 
               </div>
             </a>
@@ -790,7 +929,7 @@ registered in the repository.</p>
         <div class="bottom-of-page">
           <div class="left-details">
             <div class="copyright">
-                Copyright &#169; 2025, biface
+                Copyright &#169; 2025-2026, biface
             </div>
             Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
             
@@ -816,27 +955,40 @@ registered in the repository.</p>
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">4.5.2. Handler module</a><ul>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.build_path"><code class="docutils literal notranslate"><span class="pre">build_path()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.build_book_filename"><code class="docutils literal notranslate"><span class="pre">build_book_filename()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.build_translation_lang_files"><code class="docutils literal notranslate"><span class="pre">build_translation_lang_files()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.check_json_integrity"><code class="docutils literal notranslate"><span class="pre">check_json_integrity()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.create_catalog"><code class="docutils literal notranslate"><span class="pre">create_catalog()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.create_dictionary"><code class="docutils literal notranslate"><span class="pre">create_dictionary()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.create_directory"><code class="docutils literal notranslate"><span class="pre">create_directory()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.create_template"><code class="docutils literal notranslate"><span class="pre">create_template()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.dump_dictionary"><code class="docutils literal notranslate"><span class="pre">dump_dictionary()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.fetch_catalog"><code class="docutils literal notranslate"><span class="pre">fetch_catalog()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.fetch_dictionary"><code class="docutils literal notranslate"><span class="pre">fetch_dictionary()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.fetch_template"><code class="docutils literal notranslate"><span class="pre">fetch_template()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.remove_catalog"><code class="docutils literal notranslate"><span class="pre">remove_catalog()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.remove_dictionary"><code class="docutils literal notranslate"><span class="pre">remove_dictionary()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.remove_template"><code class="docutils literal notranslate"><span class="pre">remove_template()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.save_config"><code class="docutils literal notranslate"><span class="pre">save_config()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.update_catalog"><code class="docutils literal notranslate"><span class="pre">update_catalog()</span></code></a></li>
-<li><a class="reference internal" href="#i18n_tools.loaders.handler.update_dictionary"><code class="docutils literal notranslate"><span class="pre">update_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#">Handler module (internal)</a><ul>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.BookData"><code class="docutils literal notranslate"><span class="pre">BookData</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.build_path"><code class="docutils literal notranslate"><span class="pre">build_path()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.build_book_filename"><code class="docutils literal notranslate"><span class="pre">build_book_filename()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.build_translation_lang_files"><code class="docutils literal notranslate"><span class="pre">build_translation_lang_files()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.check_json_integrity"><code class="docutils literal notranslate"><span class="pre">check_json_integrity()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.create_catalog"><code class="docutils literal notranslate"><span class="pre">create_catalog()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.create_dictionary"><code class="docutils literal notranslate"><span class="pre">create_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.create_directory"><code class="docutils literal notranslate"><span class="pre">create_directory()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.create_template"><code class="docutils literal notranslate"><span class="pre">create_template()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.dump_dictionary"><code class="docutils literal notranslate"><span class="pre">dump_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.fetch_catalog"><code class="docutils literal notranslate"><span class="pre">fetch_catalog()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.fetch_dictionary"><code class="docutils literal notranslate"><span class="pre">fetch_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.fetch_template"><code class="docutils literal notranslate"><span class="pre">fetch_template()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.file_exists"><code class="docutils literal notranslate"><span class="pre">file_exists()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.remove_catalog"><code class="docutils literal notranslate"><span class="pre">remove_catalog()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.remove_dictionary"><code class="docutils literal notranslate"><span class="pre">remove_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.remove_template"><code class="docutils literal notranslate"><span class="pre">remove_template()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.save_config"><code class="docutils literal notranslate"><span class="pre">save_config()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.update_catalog"><code class="docutils literal notranslate"><span class="pre">update_catalog()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.update_dictionary"><code class="docutils literal notranslate"><span class="pre">update_dictionary()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.path_exists"><code class="docutils literal notranslate"><span class="pre">path_exists()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.detect_format"><code class="docutils literal notranslate"><span class="pre">detect_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.load_json"><code class="docutils literal notranslate"><span class="pre">load_json()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.save_json"><code class="docutils literal notranslate"><span class="pre">save_json()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.load_by_format"><code class="docutils literal notranslate"><span class="pre">load_by_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.read_book_data"><code class="docutils literal notranslate"><span class="pre">read_book_data()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.save_by_format"><code class="docutils literal notranslate"><span class="pre">save_by_format()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.build_dictionary_path"><code class="docutils literal notranslate"><span class="pre">build_dictionary_path()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.create_gzip"><code class="docutils literal notranslate"><span class="pre">create_gzip()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.non_traversal_path"><code class="docutils literal notranslate"><span class="pre">non_traversal_path()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.check_module"><code class="docutils literal notranslate"><span class="pre">check_module()</span></code></a></li>
+<li><a class="reference internal" href="#i18n_tools.loaders._handler.check_domains"><code class="docutils literal notranslate"><span class="pre">check_domains()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -848,7 +1000,7 @@ registered in the repository.</p>
       
     </aside>
   </div>
-</div><script src="../../../_static/documentation_options.js?v=39bb1c6d"></script>
+</div><script src="../../../_static/documentation_options.js?v=ee0a9637"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../../_static/scripts/furo.js?v=46bd48cc"></script>
