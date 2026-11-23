@@ -1,0 +1,40 @@
+{
+    "metadata": {
+        "format_version": "1.0.0",
+        "version": "0.0.1",
+        "language": "fr-FR",
+        "domain": "messages",
+        "gettext": {
+            "project_id_version": "",
+            "report_msgid_bugs_to": "",
+            "pot_creation_date": "",
+            "po_revision_date": "",
+            "last_translator": "",
+            "language_team": "",
+            "header_comment": ""
+        },
+        "rules": {},
+        "count": {
+            "messages": 0,
+            "draft": 0,
+            "complete": 0,
+            "declensions": 0,
+            "alternatives": 0,
+            "singulars": 0,
+            "plurals": 0,
+            "segments": 0,
+            "filled": 0,
+            "empty": 0
+        },
+        "statistics": {
+            "words": 0,
+            "characters": 0,
+            "messages_with_alternatives": 0,
+            "messages_with_plurals": 0,
+            "messages_with_rules": 0,
+            "locations": 0,
+            "flags": {},
+            "tokens": []
+        }
+    }
+}

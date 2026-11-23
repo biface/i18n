@@ -2,7 +2,7 @@ blank_issues_enabled: false
 
 contact_links:
   - name: "📖 Documentation"
-    url: https://i18n-tools.readthedocs.io
+    url: https://pyi18t-tools.readthedocs.io
     about: "Check the full documentation on ReadTheDocs before opening an issue."
 
   - name: "📦 PyPI"

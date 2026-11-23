@@ -21,10 +21,11 @@ objects required) or together with model instances (e.g. ``Book``,
 ``Repository``).
 """
 
-import sys
 import tarfile
+import warnings
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, TypedDict, cast
 
 from ndict_tools import StrictNestedDictionary
 
@@ -36,46 +37,92 @@ from i18n_tools.__static__ import (
     I18N_TOOLS_TEMPLATE,
     TranslationFileFormat,
 )
-from i18n_tools.loaders.handler import (
-    _verify_available_languages,
-    _verify_paths_and_modules,
-    _verify_target_domain,
+from i18n_tools._checks import ensure_type
+from i18n_tools._finding import Finding
+from i18n_tools._json import JSONInput, JSONValue
+from i18n_tools.exceptions import FormatError, I18nToolsWarning
+
+from i18n_tools.loaders._handler import (  # noqa: F401  # isort: skip
+    DEFAULT_VERSION as DEFAULT_VERSION,  # re-exported: version of a new Book
+    RESERVED_KEYS as RESERVED_KEYS,  # re-exported: root keys of no message
 )
-from i18n_tools.loaders.handler import build_book_filename as _build_book_filename
-from i18n_tools.loaders.handler import (
-    build_path,
+from i18n_tools.loaders._handler import (
+    FORMAT_VERSION as FORMAT_VERSION,  # re-exported: version written
+)
+from i18n_tools.loaders._handler import (
+    GETTEXT_KEYS as GETTEXT_KEYS,  # re-exported: keys of the gettext mapping
+)
+from i18n_tools.loaders._handler import (
+    ROOT as ROOT,  # re-exported: ``where`` of a finding about the file root
+)
+from i18n_tools.loaders._handler import BookData as BookData  # re-exported
+from i18n_tools.loaders._handler import book_count, book_statistics
+from i18n_tools.loaders._handler import build_book_filename as _build_book_filename
+from i18n_tools.loaders._handler import build_dictionary_path
+from i18n_tools.loaders._handler import build_path as _build_path
+from i18n_tools.loaders._handler import (
     build_translation_lang_files,
+    check_domains,
     check_json_integrity,
+    check_module,
     create_catalog,
     create_dictionary,
     create_directory,
-    create_template,
-    dump_dictionary,
-    fetch_dictionary,
 )
-from i18n_tools.loaders.handler import file_exists as _file_exists
-from i18n_tools.loaders.handler import is_absolute_path as _is_absolute_path
-from i18n_tools.loaders.handler import (
+from i18n_tools.loaders._handler import create_empty_file as _create_empty_file
+from i18n_tools.loaders._handler import create_empty_json as _create_empty_json
+from i18n_tools.loaders._handler import (
+    create_gzip,
+    create_template,
+    detect_format,
+    dump_dictionary,
+)
+from i18n_tools.loaders._handler import fetch_dictionary as _fetch_dictionary
+from i18n_tools.loaders._handler import file_exists as _file_exists
+from i18n_tools.loaders._handler import inspect_book_data
+from i18n_tools.loaders._handler import is_absolute_path as _is_absolute_path
+from i18n_tools.loaders._handler import load_config as _load_config
+from i18n_tools.loaders._handler import load_json as _load_json
+from i18n_tools.loaders._handler import load_text as _load_text
+from i18n_tools.loaders._handler import non_traversal_path
+from i18n_tools.loaders._handler import (
     normalize_module_identifier as _normalize_module_identifier,
 )
-from i18n_tools.loaders.handler import update_dictionary
-from i18n_tools.loaders.utils import (
-    _build_dictionary_path,
-    _check_domains,
-    _check_module,
-    _create_gzip,
-    _detect_format,
-    _exist_path,
-    _load_by_format,
-    _load_json,
-    _non_traversal_path,
-    _save_by_format,
-    _save_json,
+from i18n_tools.loaders._handler import (
+    path_exists,
+    read_book,
+    read_book_data,
+    save_by_format,
+)
+from i18n_tools.loaders._handler import save_config as _save_config
+from i18n_tools.loaders._handler import (
+    save_json,
+    update_dictionary,
+    verify_available_languages,
+    verify_paths_and_modules,
+    verify_target_domain,
 )
 from i18n_tools.locale import get_all_languages
 
+if TYPE_CHECKING:
+    from babel.messages.catalog import Catalog
 
-def load_locale_json(file_path: str) -> dict[str, Any]:
+    from i18n_tools.models.book import Book
+
+
+class LocaleStructure(TypedDict):
+    """
+    Where :func:`aggregate_locale_json` looks for locale files.
+
+    ``base`` is the root directory; ``modules`` lists the module paths
+    under it, each holding a ``locales`` directory.
+    """
+
+    base: str
+    modules: list[str]
+
+
+def load_locale_json(file_path: Path | str) -> dict[str, JSONValue]:
     """
     This function load a JSON file in the locales repository and containing i18next data. The structure of this
     dictionary is as follows::
@@ -94,90 +141,164 @@ def load_locale_json(file_path: str) -> dict[str, Any]:
         }
 
     :param file_path: Path to the JSON locale file.
-    :type file_path: str
+    :type file_path: ~pathlib.Path | str
     :return: JSON locale data content.
     :rtype: dict
     :raises FileNotFoundError: If the file is not found.
     :raises ValueError: If the file is not a valid JSON or fails the integrity check.
     """
-    data = _load_json(file_path)
+    data = load_json(file_path)
     if not check_json_integrity(data):
         raise ValueError(f"Integrity check failed for file: {file_path}")
     return data
 
 
-def load_book(file_path: str) -> dict[str, Any]:
+def load_book(
+    file_path: str, language: str | None = None, domain: str | None = None
+) -> BookData:
     """
-    Load a .i18t dictionary file and return its contents as a filtered dict (DD-15, DD-16, DD-34).
+    Read a Book file and return its content as format 1.0.0 reads it.
 
-    The serialisation format is detected from the file extension (DD-34),
-    symmetrically to :func:`save_book`. The reserved keys ``.i18n_tools``
-    and ``metadata`` are silently ignored.
+    The encoding is detected from the name of the file, symmetrically to
+    :func:`save_book`. The content is checked against ``language`` and
+    ``domain`` when given, by the rules of the format reference. Errors
+    stop the load; warnings are issued as
+    :class:`~i18n_tools.exceptions.I18nToolsWarning` and the content is
+    returned; information findings are neither raised nor issued.
 
     :param file_path: Path to the .i18t translation file.
     :type file_path: str
-    :return: Mapping of msgid to i18n_tools entry dict
-             ``{"messages": matrix, "metadata": {}}``.
-    :rtype: dict[str, Any]
+    :param language: The normalized language the file should hold, or
+        None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain the file should hold, or None to skip the
+        comparison.
+    :type domain: str | None
+    :return: The root metadata and the entries, as read.
+    :rtype: BookData
     :raises FileNotFoundError: If the file does not exist.
-    :raises ValueError: If the file fails the integrity check.
+    :raises FormatError: If the name is not a Book name, the content does
+        not parse, or it has errors; the message lists every error.
     """
-    fmt = _detect_format(file_path)
-    data = _load_by_format(file_path, fmt)
-    if not check_json_integrity(data):
-        raise ValueError(f"Integrity check failed for file: {file_path}")
-    result = {}
-    for msgid, matrix in data.items():
-        if msgid in (".i18n_tools", "metadata"):
+    data = read_book_data(file_path)
+    content, findings = read_book(data, language, domain)
+    errors = [finding for finding in findings if finding.severity == "error"]
+    if errors or content is None:
+        details = "\n".join(f"  - {e.where}: {e.message}" for e in errors)
+        raise FormatError(f"Integrity check failed for file: {file_path}\n{details}")
+    for finding in findings:
+        if finding.severity != "warning":
             continue
-        result[msgid] = {"messages": matrix, "metadata": {}}
-    return result
+        warnings.warn(
+            f"{file_path}: {finding.where}: {finding.message}",
+            I18nToolsWarning,
+            stacklevel=2,
+        )
+    return content
 
 
-def save_book(book: Any, file_path: str) -> None:
+def inspect_book_file(
+    file_path: str, language: str | None = None, domain: str | None = None
+) -> list[Finding]:
     """
-    Serialize a Book to a .i18t file.
+    Check a .i18t file and list what is wrong with it, without loading it.
 
-    The serialisation format (JSON or YAML) is detected from the file
-    extension. The structure written to disk follows the native .i18t format::
+    The file is read in the format given by its extension (DD-34) and
+    checked by the same rules as :func:`load_book`, against ``language``
+    and ``domain`` when given. Unlike :func:`load_book`, nothing is
+    raised for the content and nothing is warned: every finding, of
+    every severity, is returned. A content that cannot be parsed, or is
+    not a mapping, gives one error finding about the root of the file.
 
-        {
-            "metadata": { ... },
-            "<msgid>": { "messages": [...], "metadata": { ... } },
-            ...
-        }
+    :param file_path: Path to the .i18t translation file.
+    :type file_path: str
+    :param language: The normalized language the file should hold, or
+        None to skip the comparison.
+    :type language: str | None
+    :param domain: The domain the file should hold, or None to skip the
+        comparison.
+    :type domain: str | None
+    :return: The findings, in file order; empty if nothing is wrong.
+    :rtype: list[Finding]
+    :raises TypeError: If ``file_path`` is not a string, or ``language``
+        or ``domain`` is neither a string nor None.
+    :raises FileNotFoundError: If the file does not exist.
+    """
+    ensure_type(
+        file_path,
+        str,
+        f"inspect_book_file() file_path must be a string, got {type(file_path)}",
+    )
+    ensure_type(
+        language,
+        (str, type(None)),
+        f"inspect_book_file() language must be a string or None, got {type(language)}",
+    )
+    ensure_type(
+        domain,
+        (str, type(None)),
+        f"inspect_book_file() domain must be a string or None, got {type(domain)}",
+    )
+    try:
+        data = read_book_data(file_path)
+    except FormatError as e:
+        return [Finding("error", ROOT, str(e))]
+    return inspect_book_data(data, language, domain)
+
+
+def save_book(book: "Book", file_path: str) -> None:
+    """
+    Write a Book to a .i18t file in format 1.0.0.
+
+    The encoding (JSON or YAML) is detected from the name of the file. The
+    root metadata is that of the Book, with ``format_version`` ``"1.0.0"``
+    and the ``count`` and ``statistics`` computed from the entries; each
+    entry is written under the key the Book holds the message by, which is
+    also its ``id``. Keys are written in the order of the format
+    reference, ``metadata`` first.
 
     :param book: The Book instance to persist.
     :type book: Book
     :param file_path: Full path (directory + filename) of the target .i18t file.
     :type file_path: str
     :raises FileNotFoundError: If the parent directory does not exist.
-
-    References
-    ----------
-    - biface/i18n#42 : strict separation models / loaders (DD-06)
-    - biface/i18n#46 : loader ↔ models bridge and native serialisation (DD-15, DD-16)
-    - biface/i18n#56 : .i18t naming convention and format detection (DD-34)
-    - biface/i18n#57 : Book.save() persistence
     """
     from i18n_tools.converter import message_to_i18n_tools_format
 
-    fmt = _detect_format(file_path)
-    data: dict[str, Any] = {"metadata": book.metadata.to_dict()}
-    for msg in book.messages.values():
-        # load_locale_json / check_json_integrity expect each entry to be
-        # the raw messages matrix (a list of lists), not the full
-        # {"messages": ..., "metadata": ...} dict produced by
-        # message_to_i18n_tools_format.  We extract only the "messages" key.
-        data[msg.id] = message_to_i18n_tools_format(msg)["messages"]
-    _save_by_format(file_path, data, fmt)
+    fmt = detect_format(file_path)
+    entries: dict[str, dict[str, JSONInput]] = {
+        str(key): message_to_i18n_tools_format(message, str(key))
+        for key, message in book.messages.items()
+    }
+    meta = book.metadata
+    root: dict[str, JSONInput] = {
+        "format_version": FORMAT_VERSION,
+        "version": meta["version"],
+        "language": meta["language"],
+        "domain": meta["domain"],
+        "gettext": {key: meta[["gettext", key]] for key in GETTEXT_KEYS},
+        "rules": cast(StrictNestedDictionary, meta["rules"]).to_dict(),
+        "count": book_count(
+            {
+                "status": entry["metadata"]["status"],
+                "count": entry["metadata"]["count"],
+                "fill_mask": entry["metadata"]["fill_mask"],
+            }
+            for entry in (
+                cast("dict[str, dict[str, object]]", item) for item in entries.values()
+            )
+        ),
+        "statistics": book_statistics(entries.values()),
+    }
+    data: dict[str, JSONInput] = {"metadata": root, **entries}
+    save_by_format(file_path, data, fmt)
 
 
 def aggregate_locale_json(
-    structure: dict[str, Any],
+    structure: LocaleStructure,
     domains: dict[str, list[str]],
     languages: dict[str, list[str]],
-) -> dict[str, Any]:
+) -> dict[str, dict[str, dict[str, dict[str, JSONValue]]]]:
     """
     Aggregate JSON locale files based on the given structure, domains, and languages.
 
@@ -188,24 +309,25 @@ def aggregate_locale_json(
     duplicate (DD-NN, #69).
 
     :param structure: Dictionary containing 'base' path and list of 'modules'.
-    :type structure: dict[str, Any]
+    :type structure: LocaleStructure
     :param domains: Dictionary where keys are module names and values are lists of domains.
     :type domains: dict[str, list[str]]
     :param languages: Dictionary where keys are language codes and values are lists of regional variants.
     :type languages: dict[str, list[str]]
-    :return: A consolidated dictionary of locale data.
-    :rtype: dict
+    :return: The locale data of each variant, by module, then domain, then
+        variant.
+    :rtype: dict[str, dict[str, dict[str, dict[str, JSONValue]]]]
     """
-    aggregated_data = {}
+    aggregated_data: dict[str, dict[str, dict[str, dict[str, JSONValue]]]] = {}
     base_path = Path(structure["base"])
     modules = structure["modules"]
 
     for module in modules:
         module_path = base_path / module / "locales"
-        module_data = {}
+        module_data: dict[str, dict[str, dict[str, JSONValue]]] = {}
 
         for domain in domains.get(module, []):
-            domain_data = {}
+            domain_data: dict[str, dict[str, JSONValue]] = {}
 
             for lang, variants in languages.items():
                 # Include the main language in the list of variants
@@ -225,7 +347,7 @@ def aggregate_locale_json(
     return aggregated_data
 
 
-def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
+def save_locale_json(file_path: str, data: Mapping[str, JSONInput]) -> None:
     """
     Save data to a JSON locale file.
 
@@ -235,11 +357,12 @@ def save_locale_json(file_path: str, data: dict[str, Any]) -> None:
     :type data: dict
     :raises FileNotFoundError: If the directory for the file is not found.
     """
-    _save_json(file_path, data)
+    save_json(file_path, data)
 
 
 def save_aggregated_locale_json(
-    aggregated_data: dict[str, Any], base_path: str
+    aggregated_data: Mapping[str, Mapping[str, Mapping[str, JSONInput]]],
+    base_path: str,
 ) -> None:
     """
     Save the aggregated locale JSON data as gzipped files for each domain in the locales directory,
@@ -266,24 +389,24 @@ def save_aggregated_locale_json(
         # Save individual domain files
         for domain, domain_data in module_data.items():
             json_file_path = locales_path / f"{domain}.json"
-            _save_json(json_file_path, domain_data)
-            _create_gzip(json_file_path)
+            save_json(json_file_path, domain_data)
+            create_gzip(json_file_path)
             json_file_path.unlink()
 
         # Save aggregated module data
         module_json_path = module_dir / f"{module_name}.json"
-        _save_json(module_json_path, module_data)
-        _create_gzip(module_json_path)
+        save_json(module_json_path, module_data)
+        create_gzip(module_json_path)
         module_json_path.unlink()
 
 
 def build_book_filename(
     domain: str, fmt: TranslationFileFormat | None = None
-) -> tuple[str, str]:
+) -> tuple[TranslationFileFormat, str]:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.build_book_filename`.
+    Pass-through to :func:`i18n_tools.loaders._handler.build_book_filename`.
 
-    Kept here so that `Book` (`models/corpus.py`) only ever talks to
+    Kept here so that `Book` (`models/book.py`) only ever talks to
     `loader.py`, consistent with the existing `load_book`/`save_book`
     pattern (DD-06, DD-08) — never directly to `handler.py`.
 
@@ -293,7 +416,7 @@ def build_book_filename(
                 "json" if ``None``.
     :type fmt: TranslationFileFormat | None
     :return: A ``(format, filename)`` tuple.
-    :rtype: tuple[str, str]
+    :rtype: tuple[TranslationFileFormat, str]
     :raises ValueError: If ``fmt`` is not a recognised translation format.
     """
     return _build_book_filename(domain, fmt)
@@ -301,7 +424,7 @@ def build_book_filename(
 
 def file_exists(file_path: str) -> bool:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.file_exists`.
+    Pass-through to :func:`i18n_tools.loaders._handler.file_exists`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -317,7 +440,7 @@ def file_exists(file_path: str) -> bool:
 
 def is_absolute_path(path: str) -> bool:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.is_absolute_path`.
+    Pass-through to :func:`i18n_tools.loaders._handler.is_absolute_path`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -333,7 +456,7 @@ def is_absolute_path(path: str) -> bool:
 
 def normalize_module_identifier(path: str) -> str:
     """
-    Pass-through to :func:`i18n_tools.loaders.handler.normalize_module_identifier`.
+    Pass-through to :func:`i18n_tools.loaders._handler.normalize_module_identifier`.
 
     Kept here so that `Repository` (`models/repository.py`) only ever talks
     to `loader.py`, consistent with the `build_book_filename` pattern
@@ -344,12 +467,68 @@ def normalize_module_identifier(path: str) -> str:
     :return: The normalized module identifier.
     :rtype: str
     """
+    ensure_type(path, str, f"path must be a string, not {type(path)}")
     return _normalize_module_identifier(path)
 
 
+# Pass-throughs for the modules outside loaders/ (config, core, sync,
+# converter): they import this module only.
+
+
+def build_path(base_path: str, *sub_dirs: str) -> str:
+    """Pass-through to :func:`i18n_tools.loaders._handler.build_path`."""
+    return _build_path(base_path, *sub_dirs)
+
+
+def load_config(config_path: str | None = None) -> dict[str, JSONValue]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_config`."""
+    return _load_config(config_path)
+
+
+def save_config(file_path: str, data: Mapping[str, JSONInput]) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.save_config`."""
+    _save_config(file_path, data)
+
+
+def create_empty_file(file_path: Path | str) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.create_empty_file`."""
+    _create_empty_file(file_path)
+
+
+def create_empty_json(file_path: Path | str) -> None:
+    """Pass-through to :func:`i18n_tools.loaders._handler.create_empty_json`."""
+    _create_empty_json(file_path)
+
+
+def load_json(file_path: Path | str) -> dict[str, JSONValue]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_json`.
+
+    Loads the file as is, without the integrity check of
+    :func:`load_locale_json`.
+    """
+    return _load_json(file_path)
+
+
+def load_text(file_path: Path | str) -> "Catalog":
+    """Pass-through to :func:`i18n_tools.loaders._handler.load_text`."""
+    return _load_text(file_path)
+
+
+def fetch_dictionary(
+    repository: StrictNestedDictionary,
+    module: str,
+    language: str,
+    domain: str,
+    fmt: TranslationFileFormat | None = None,
+) -> dict[str, JSONValue]:
+    """Pass-through to :func:`i18n_tools.loaders._handler.fetch_dictionary`."""
+    return _fetch_dictionary(repository, module, language, domain, fmt)
+
+
 def _update_json_translations(
-    existing_translations: dict[str, Any], translation_data: dict[str, Any]
-):
+    existing_translations: dict[str, JSONInput],
+    translation_data: Mapping[str, JSONInput],
+) -> dict[str, JSONInput]:
     """
     Update translations in JSON with new data.
 
@@ -373,7 +552,7 @@ def create_module_archive(
     by identifying the top-level module from the given module/package path.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module or module/package path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -419,7 +598,7 @@ def restore_module_from_archive(
     Restore a module's contents from a tar.gz archive.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: The module or submodule path (e.g., "mod-1/pkg-1").
     :type module: str
     :param archive_name: The name of the archive file.
@@ -443,25 +622,20 @@ def restore_module_from_archive(
     )
 
     # Check if the archive file exists
-    if _exist_path(archive_path):
+    if path_exists(archive_path):
         # Open the archive file in read mode with gzip compression
         with tarfile.open(archive_path, "r:gz") as tar:
-            # Extract all members that are safe to extract
-            # filter="data" available from Python 3.12 only (PEP 706);
-            # on 3.10/3.11 extractall() has no filter parameter at all,
-            # so it is omitted there rather than raising a TypeError.
-            extractall_kwargs = (
-                {"filter": "data"} if sys.version_info >= (3, 12) else {}
-            )
-            tar.extractall(
-                path=repository[["paths", "repository"]],
-                members=_non_traversal_path(
-                    repository[["paths", "repository"]],
-                    [top_level_module],
-                    tar.getmembers(),
-                ),
-                **extractall_kwargs,
-            )
+            root = repository[["paths", "repository"]]
+            # Only members inside this module's own tree are extracted.
+            members = non_traversal_path(root, [top_level_module], tar.getmembers())
+            # Extraction filters (PEP 706) were backported to 3.11.4, so a
+            # version check on (3, 12) would skip the filter on interpreters
+            # that support it. Detect the feature itself; 3.11.0-3.11.3
+            # have no filter parameter and extract without one.
+            if hasattr(tarfile, "data_filter"):
+                tar.extractall(path=root, members=members, filter="data")
+            else:
+                tar.extractall(path=root, members=members)
     else:
         # Raise an error if the archive file does not exist
         raise FileNotFoundError(f"Archive file '{archive_path}' not found.")
@@ -474,7 +648,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
     the necessary files and directories.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :return: Nothing
     :type: None
     """
@@ -494,7 +668,7 @@ def build_repository(repository: StrictNestedDictionary) -> None:
         )
         module_template_directory = module_directory + "/" + I18N_TOOLS_TEMPLATE
 
-        if not _exist_path(module_template_directory):
+        if not path_exists(module_template_directory):
             create_directory(module_template_directory)
 
         # Iterate through each domain
@@ -537,7 +711,7 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
     Checks the existence of required directories and files for each module, domain, and language.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :return: True if the repository is properly constructed, False otherwise.
     :rtype: bool
     """
@@ -545,9 +719,8 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
         # Get the list of modules from the repository
         modules = repository[["paths", "modules"]]
 
-        # Validate modules
-        if not _check_module(repository, modules):
-            return False
+        # Validate modules (raises ValueError, caught below)
+        check_module(repository, modules)
 
         # Get the list of languages from the repository
         languages = get_all_languages(repository[["languages", "hierarchy"]])
@@ -557,30 +730,29 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
 
         # Check each module
         for module in modules:
-            # Validate domains for this module
+            # Validate domains for this module (raises ValueError, caught below)
             domains = repository[["domains", module]]
-            if not _check_domains(repository, module, domains):
-                return False
+            check_domains(repository, module, domains)
 
             # Check module directory structure
             module_directory = build_path(
                 repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
             )
-            if not _exist_path(module_directory):
+            if not path_exists(module_directory):
                 return False
 
             # Check template directory
             module_template_directory = build_path(
                 module_directory, I18N_TOOLS_TEMPLATE
             )
-            if not _exist_path(module_template_directory):
+            if not path_exists(module_template_directory):
                 return False
 
             # Check each domain
             for domain in domains:
                 # Check template file
                 template_path = build_path(module_template_directory, f"{domain}.pot")
-                if not _exist_path(template_path):
+                if not path_exists(template_path):
                     return False
 
                 # Check each language
@@ -589,19 +761,19 @@ def verify_repository(repository: StrictNestedDictionary) -> bool:
                     language_directory = build_path(
                         module_directory, language, I18N_TOOLS_MESSAGES
                     )
-                    if not _exist_path(language_directory):
+                    if not path_exists(language_directory):
                         return False
 
                     # Check catalog file
                     catalog_path = build_path(language_directory, f"{domain}.po")
-                    if not _exist_path(catalog_path):
+                    if not path_exists(catalog_path):
                         return False
 
                     # Check dictionary file (default json for backward compatibility)
-                    dictionary_path = _build_dictionary_path(
+                    dictionary_path = build_dictionary_path(
                         language_directory, domain, None
                     )
-                    if not _exist_path(dictionary_path):
+                    if not path_exists(dictionary_path):
                         return False
 
         # All checks passed
@@ -618,7 +790,7 @@ def aggregate_dictionaries(
     This function aggregates all dictionaries for a given module and domain into a single JSON file.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: module where translation should be located.
     :type module: str
     :param domain: domain of translation.
@@ -642,15 +814,15 @@ def aggregate_dictionaries(
     module_directory = build_path(
         repository[["paths", "repository"]], module, I18N_TOOLS_LOCALE
     )
-    _save_json(module_directory + f"/{domain}_aggregated.json", domain_dictionary)
-    _create_gzip(module_directory + f"/{domain}_aggregated.json")
+    save_json(module_directory + f"/{domain}_aggregated.json", domain_dictionary)
+    create_gzip(module_directory + f"/{domain}_aggregated.json")
 
 
 def add_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Mapping[str, JSONInput]],
 ):
     """
     Adds a translation set to the translation repository using JSON and PO files.
@@ -660,7 +832,7 @@ def add_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where should be located domain of translations.
     :type module: str
     :param domain: The domain of the translation set.
@@ -670,19 +842,19 @@ def add_translation_set(
     :raises FileNotFoundError: If any module path does not exist.
     """
     # Verifying components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
 
         # Load existing translations
-        existing_translations = (
-            fetch_dictionary(repository, module, lang, domain)
+        existing_translations: dict[str, JSONInput] = (
+            dict(fetch_dictionary(repository, module, lang, domain))
             if _file_exists(json_file_path)
             else {}
         )
@@ -700,7 +872,7 @@ def update_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Mapping[str, JSONInput]],
 ):
     """
     Updates existing translations in the translation repository using JSON and PO files.
@@ -710,7 +882,7 @@ def update_translation_set(
     to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.
@@ -721,18 +893,18 @@ def update_translation_set(
     :raises KeyError: If a msgid to be updated does not exist in the current translations.
     """
     # Verify components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, translation_data in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
         # Load existing translations
-        existing_translations = (
-            fetch_dictionary(repository, module, lang, domain)
+        existing_translations: dict[str, JSONInput] = (
+            dict(fetch_dictionary(repository, module, lang, domain))
             if _file_exists(json_file_path)
             else {}
         )
@@ -754,7 +926,7 @@ def remove_translation_set(
     repository: StrictNestedDictionary,
     module: str,
     domain: str,
-    translations: dict[str, Any],
+    translations: Mapping[str, Sequence[str]],
 ):
     """
     Removes specified translations from the translation repository using JSON and PO files.
@@ -764,7 +936,7 @@ def remove_translation_set(
     the translations conform to the languages defined in the repository.
 
     :param repository: The data structure which represents the repository information.
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module where the translation domain should be located.
     :type module: str
     :param domain: The domain of the translation set.
@@ -774,13 +946,13 @@ def remove_translation_set(
     :raises FileNotFoundError: If any module path does not exist.
     """
     # Verify components
-    _verify_paths_and_modules(repository)
-    _verify_available_languages(repository, list(translations.keys()))
-    _verify_target_domain(repository, module, domain)
+    verify_paths_and_modules(repository)
+    verify_available_languages(repository, list(translations.keys()))
+    verify_target_domain(repository, module, domain)
 
     for lang, msgids in translations.items():
 
-        json_file_path, po_file_path, pot_file_path = build_translation_lang_files(
+        json_file_path, _, _ = build_translation_lang_files(
             repository, module, domain, lang
         )
 
@@ -792,7 +964,7 @@ def remove_translation_set(
         )
 
         # Remove specified translations
-        for msgid, options in msgids.items():
+        for msgid in msgids:
             if msgid in existing_translations:
                 del existing_translations[msgid]
 

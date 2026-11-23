@@ -20,7 +20,7 @@ name: Python CI
 # (tox -e test-core). Sits before test-unit, not parallel to it: a genuine
 # "[core] no longer stands on its own" regression is more fundamental than
 # any unit-test failure downstream, and cheaper to isolate before paying
-# for the full py310-py314 [api] matrix. Same discipline this project
+# for the full py311-py315 [api] matrix. Same discipline this project
 # intends to reapply if/when pyi18t-core/pyi18t-tools become separate
 # packages (DD-42, v1.x -> v2.0.0 horizon).
 #
@@ -66,6 +66,12 @@ jobs:
   quality:
     name: Quality checks
     runs-on: ubuntu-latest
+    # The Python versions of the later jobs, read from .tox-config/versions.txt
+    # and .tox-config/coverage-version.txt by versions.py (which stops the job
+    # if the files are inconsistent).
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
+      coverage-version: ${{ steps.versions.outputs.coverage-version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -80,6 +86,12 @@ jobs:
 
       - name: Install tox
         run: uv pip install --system tox tox-uv
+
+      - name: Read the Python versions
+        id: versions
+        run: |
+          echo "matrix=$(python .tox-config/scripts/versions.py matrix)" >> "$GITHUB_OUTPUT"
+          echo "coverage-version=$(python .tox-config/scripts/versions.py coverage-version)" >> "$GITHUB_OUTPUT"
 
       - name: Run quality checks
         run: tox -e ci-quality
@@ -114,22 +126,20 @@ jobs:
         run: tox -e test-core
 
   # ---------------------------------------------------------------------------
-  # Unit tests — matrix py310-py314, tests/core + tests/api (mocked),
-  # excluding tests/api/integration (real network — see test-integration)
+  # Unit tests — the versions marked ci in .tox-config/versions.txt,
+  # tests/core + tests/api (mocked), excluding tests/api/integration (real
+  # network — see test-integration). Unlike the local run, the coverage
+  # version stays in the matrix: the coverage job does not run on every
+  # push, so it cannot be the only test of that version.
   # ---------------------------------------------------------------------------
   test-unit:
     name: Unit tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
-    needs: test-core
+    needs: [quality, test-core]
 
     strategy:
       fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
-        experimental: [false]
-        include:
-          - python-version: "3.14"
-            experimental: true
+      matrix: ${{ fromJSON(needs.quality.outputs.matrix) }}
 
     continue-on-error: ${{ matrix.experimental }}
 
@@ -141,6 +151,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+          allow-prereleases: ${{ matrix.experimental }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
@@ -149,9 +160,7 @@ jobs:
         run: uv pip install --system tox tox-uv
 
       - name: Run unit tests
-        run: |
-          PYVER=$(echo "${{ matrix.python-version }}" | tr -d '.')
-          tox -e py${PYVER}
+        run: tox -e ${{ matrix.tox-env }}
 
   # ---------------------------------------------------------------------------
   # Integration tests — real network (httpbingo.org), tag-only
@@ -207,9 +216,9 @@ jobs:
   # separate, tag-only "Enforce coverage gate" step at the end of this job.
   # ---------------------------------------------------------------------------
   coverage:
-    name: Coverage
+    name: Coverage (Python ${{ needs.quality.outputs.coverage-version }})
     runs-on: ubuntu-latest
-    needs: test-unit
+    needs: [quality, test-unit]
     if: >-
       startsWith(github.ref, 'refs/tags/') ||
       github.ref == 'refs/heads/master' ||
@@ -228,15 +237,17 @@ jobs:
 
     env:
       HTTPBIN_BASE_URL: http://127.0.0.1:8080
+      # Interpreter of the tox coverage environment (.tox-config/coverage-version.txt).
+      COVERAGE_PYTHON: python${{ needs.quality.outputs.coverage-version }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Setup Python
+      - name: Setup Python ${{ needs.quality.outputs.coverage-version }}
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: ${{ needs.quality.outputs.coverage-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0

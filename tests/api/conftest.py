@@ -9,6 +9,7 @@ tree split — tests/core/ never touches these, so they no longer sit at
 the root where every test collection would need to import them.
 """
 
+from types import SimpleNamespace
 from unittest import mock
 
 import pytest
@@ -192,7 +193,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     )
 
 
-def mock_validate_email(email):
+def mock_validate_email(email, check_deliverability=None):
     """
     Simulates the validate_email function by validating email addresses and raising EmailNotValidError for invalid ones.
 
@@ -201,9 +202,13 @@ def mock_validate_email(email):
 
     Args:
         email (str): The email address to validate.
+        check_deliverability (bool | None): Accepted as the real function
+            accepts it; the mock never queries DNS.
 
     Returns:
-        dict: A dictionary containing the normalized email address.
+        SimpleNamespace: An object exposing ``normalized``, as the real
+        ``ValidatedEmail`` does: the domain is lower-cased, the local part
+        is kept as given.
 
     Raises:
         EmailNotValidError: If the email address is invalid.
@@ -214,8 +219,8 @@ def mock_validate_email(email):
     if "@" not in email or "." not in email.split("@")[1]:
         raise EmailNotValidError(f"The email address '{email}' is not valid.")
 
-    # Return a dictionary with the normalized email address
-    return {"email": email}
+    local_part, domain = email.rsplit("@", 1)
+    return SimpleNamespace(normalized=local_part + "@" + domain.lower())
 
 
 @pytest.fixture(scope="function")

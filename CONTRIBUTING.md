@@ -5,10 +5,7 @@
 ---
 
 Thank you for your interest in i18n-tools. This document describes how the
-project is developed today. It reflects the *current* state of the tooling
-and process — issue/PR templates are part of the v0.6.x CI/repository
-hygiene milestone and are not fully in place yet; this document does not
-pretend otherwise.
+project is developed today.
 
 ## Language policy
 
@@ -34,26 +31,78 @@ before code is written. The maintainer has final arbitration on design
 decisions; discussion on the issue is welcome, but a PR that skips the
 decision step for a non-trivial change will likely be asked to add one.
 
+Each category of decision has its own issue form: architecture
+(`DA-NNN`), design (`DD-NNN`), technical (`DT-NNN`) and quality
+(`DQ-NNN`). The four prefixes share one three-digit counter: check the
+existing decision issues for the next free number before choosing a
+title such as `[DD-041] Title`. The form applies `type: decision` and
+`status: triage`; add the `scope:`, `priority:`, `effort:` and
+`ecosystem:` labels that match your answers.
+
 ## Development environment
 
-The project uses `uv` + `tox-uv` (not plain `pip`/`virtualenv`):
+The project uses `uv` + `tox-uv` (not plain `pip`/`virtualenv`). The
+project environment holds the package and its runtime dependencies only:
 
 ```bash
-uv sync --group dev             # tox, quality tools, test runners
-uv sync --group dev --group docs  # + Sphinx/Furo for documentation work
+uv sync --extra api      # the package, with the [api] extra
 ```
 
-All checks and tests run through `tox` — see `pyproject.toml`'s
-`[tool.tox]` table for the full environment list. In particular:
+Development tools (tox, the quality tools, the test runners, Sphinx) are
+not installed there: tox installs them in its own environments, from
+`.tox-config/requirements/*.txt`, where their versions are pinned. The
+`[dependency-groups]` of `pyproject.toml` only list their names. tox itself
+runs through `uvx`:
 
 ```bash
-uv run tox -e pre-push   # quality gate + unit tests — run this before pushing
-uv run tox -e local      # full workflow: auto-fix, all quality checks, full coverage
-uv run tox -e ci-quality # exactly what CI's `quality` job runs
+uvx --with tox-uv tox -e local      # apply black and isort, then every check and full coverage
+uvx --with tox-uv tox -e pre-push   # last gate before pushing: checks only, stops on any finding
+uvx --with tox-uv tox -e ci-quality # exactly what CI's `quality` job runs
+uvx --with tox-uv tox               # every check environment (env_list)
 ```
+
+`pre-push` does not modify files: when it reports a formatting issue, run
+`local` (or `format`) and run `pre-push` again. See `pyproject.toml`'s
+`[tool.tox]` table for the full environment list.
 
 Individual tools (`basedpyright`, `flake8`, `black`, `isort`, `bandit`) each
 have their own `tox` environment if you want to run just one.
+
+Install the versioned Git hooks once per clone:
+
+```bash
+uvx --with tox-uv tox -e hooks   # git config core.hooksPath .githooks
+```
+
+- `commit-msg` refuses a message that does not follow Conventional
+  Commits (`type(scope)!: description`, blank second line,
+  `BREAKING CHANGE:` footer when the subject carries `!`, subject of at
+  most 100 characters, 72 recommended);
+- `pre-push` runs `tox -e pre-push` before `git push` and aborts the
+  push when it fails; it refuses a push with uncommitted changes to
+  tracked files or of a ref other than `HEAD`, since the gate tests the
+  working tree.
+
+`--no-verify` bypasses either hook for one commit or push.
+
+Python versions are set in two files, and only there:
+
+- `.tox-config/versions.txt`: one tox environment per line with its
+  markers, `local` (run by `pre-push`), `ci` (the CI test matrix),
+  `experimental` (allowed to fail, needs `ci`; with `local`, `pre-push` runs
+  it and only warns when it fails), e.g. `py315 local ci experimental`;
+- `.tox-config/coverage-version.txt`: the version that measures coverage
+  (marked `local` and `ci`). Locally it is tested once, by the coverage
+  run.
+
+When a version is added or retired, update the `Programming Language`
+classifiers of `pyproject.toml` too: `tox -e versions` (run first by
+`ci-quality`, `pre-push` and `local`) stops on any inconsistency between
+the two files and the classifiers.
+
+The documentation builds with `tox -e docs` (`sphinx-build -E -W`, warnings
+as errors, output in `docs/build/html`). It is the build the GitHub Pages
+workflow runs, and `pre-push` runs it too.
 
 ## Tests
 
@@ -132,7 +181,8 @@ Declared in `pyproject.toml` (`[tool.pytest.ini_options]`):
 
 Target: **80%** project-wide (v0.7.x milestone), tracked per-module via
 Codecov components (`models`, `loaders`, `exceptions`, `converter`,
-`config`, `api` — see `.codecov.yml`).
+`config`, `api`, `orchestrator`, `translation`, `package`, `cli` — see
+`.codecov.yml`).
 
 ## Commits
 
@@ -147,23 +197,26 @@ Codecov components (`models`, `loaders`, `exceptions`, `converter`,
 ```
 
 Types in active use in this repository: `feat`, `fix`, `chore`, `ci`,
-`docs`, `refactor`, `test`, `perf`, `security`. Breaking changes: append `!`
+`docs`, `refactor`, `test`, `perf`, `security`, `build`, `revert`, `style`.
+Breaking changes: append `!`
 after the type or add a `BREAKING CHANGE:` footer. One logical unit per
 commit — group multiple files only when they form a single indivisible
 change; don't bundle unrelated concerns together.
 
 ## Pull requests
 
-Labels are applied to this repository (8 categories — `type:`, `status:`,
-`priority:`, `scope:`, `effort:`, `ecosystem:`, `domain:`, `meta:`), but
-formal issue/PR templates are not yet in place — that's part of the v0.6.x
-CI/repository hygiene milestone. In the meantime:
+The repository uses the standard label set, in seven categories:
+`type:`, `status:`, `priority:`, `scope:`, `effort:`, `ecosystem:` and
+`meta:`. Issues are opened from the issue forms (bug, feature,
+documentation, technical task and the four decision forms); blank issues
+are disabled. The pull request template lists what a PR states.
 
-- Open an issue first for anything beyond a small, obvious fix, and apply
-  the relevant `type:` label.
+- Open an issue first for anything beyond a small, obvious fix.
+- Before merge, a PR carries a milestone and at least one `type:` label:
+  Release Drafter builds the release notes from it.
 - Reference the related issue in your PR description (`Closes #NN` /
   `Fixes #NN`) if one exists.
-- Make sure `uv run tox -e pre-push` passes locally before opening the PR —
+- Make sure `uvx --with tox-uv tox -e pre-push` passes locally before opening the PR —
   CI runs the same checks (`quality` → `test-unit` matrix) and will not
   merge a red build.
 - Keep the PR scoped to one concern; split unrelated changes into separate

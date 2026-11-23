@@ -22,8 +22,9 @@ restructuring.
 - ``plurals.py`` — ``PluralRule``: the DD-40 CLDR-baseline-plus-
   business-threshold-overlay plural resolution rule.
 
-This sub-package imports from ``models`` (for type hints only); models
-never import from ``formatter`` (DD-05/DD-06).
+This sub-package imports from ``models`` (``publish()`` checks its
+argument is a ``Message``); models never import from ``formatter``
+(DD-05/DD-06).
 """
 
 from .plurals import PluralRule

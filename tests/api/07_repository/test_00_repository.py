@@ -2,12 +2,17 @@
 Test module for Repository class in module i18n-tools/models
 """
 
+import copy
+import pickle
 import re
 
 import pytest
 from ndict_tools import StrictNestedDictionary
+from ndict_tools.exception import StackedAttributeError
 
+from i18n_tools.models.author import Author
 from i18n_tools.models.repository import Repository
+from i18n_tools.models.translator import Translator
 
 
 @pytest.fixture(scope="class")
@@ -22,9 +27,9 @@ class TestRepositoryInit:
     )
     def test_empty_init(self, key: str):
         repository = Repository()
-        assert repository.get(key) is not None
-        assert isinstance(repository.get(key), StrictNestedDictionary)
-        assert ("indent", 2) in repository.get(key).__getattribute__("default_setup")
+        section = repository.get(key)
+        assert type(section) is StrictNestedDictionary
+        assert section.default_setup == StrictNestedDictionary().default_setup
 
     @pytest.mark.parametrize(
         "parameters, dictionary, control",
@@ -147,6 +152,234 @@ class TestRepositoryInit:
         with pytest.raises((TypeError, KeyError), match=re.escape(expected)):
             d = dict([(key, value)])
             Repository(**d)
+
+
+_TRANSLATOR_PAYLOAD = {
+    "details": {
+        "name": "GoogleTranslate",
+        "status": "free",
+        "url": "https://translate.google.com",
+    },
+    "pricing": {"cost_per_translation": None, "payment_plan": None},
+    "technical": {
+        "api": {
+            "key": "your_api_key",
+            "key_expiration": "2025-12-31",
+            "request_limit": 10000,
+        },
+        "performance": {"max_text_size": 5000, "priority": 1, "success_rate": 99.5},
+    },
+}
+
+_BUILDERS = {
+    "repository": Repository,
+    "author": lambda **options: Author(
+        "Ada", "Lovelace", "ada@example.org", "", ["en"], **options
+    ),
+    "translator": lambda **options: Translator(**_TRANSLATOR_PAYLOAD, **options),
+}
+
+
+class TestRepositorySetup:
+    """Repository, Author and Translator hand ``default_setup`` to
+    StrictNestedDictionary; their sections keep its default configuration."""
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_default_setup(self, kind):
+        built = _BUILDERS[kind]()
+        assert built.default_setup == StrictNestedDictionary().default_setup
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_given_setup(self, kind):
+        built = _BUILDERS[kind](default_setup={"indent": 4})
+        assert ("indent", 4) in built.default_setup
+
+    @pytest.mark.parametrize("kind", list(_BUILDERS))
+    def test_given_setup_rejected(self, kind):
+        with pytest.raises(StackedAttributeError):
+            _ = _BUILDERS[kind](default_setup={"unknown": 1})
+
+    @pytest.mark.parametrize("key", ["details", "pricing", "technical"])
+    def test_translator_sections(self, key):
+        section = _BUILDERS["translator"](default_setup={"indent": 4})[key]
+        assert type(section) is StrictNestedDictionary
+        assert section.default_setup == StrictNestedDictionary().default_setup
+
+    @pytest.mark.parametrize(
+        "duplicate",
+        [copy.copy, copy.deepcopy, lambda repository: repository.deepcopy()],
+        ids=["copy", "deepcopy", "method"],
+    )
+    def test_repository_copy(self, duplicate):
+        repository = Repository()
+        repository.default_setup = {"indent": 4, "default_factory": None}
+        duplicated = duplicate(repository)
+        assert type(duplicated) is Repository
+        assert duplicated == repository
+        assert duplicated.default_setup == repository.default_setup
+
+    @pytest.mark.parametrize(
+        "reset, key",
+        [
+            (lambda repository: repository.clean_modules(), "domains"),
+            (lambda repository: repository.clean_domains(), "domains"),
+            (lambda repository: repository.clean_authors(), "authors"),
+            (lambda repository: repository.clean_translators(), "translators"),
+            (lambda repository: repository.clean_value(["paths"]), "paths"),
+        ],
+        ids=["modules", "domains", "authors", "translators", "value"],
+    )
+    def test_reset_sections(self, reset, key):
+        repository = Repository(default_setup={"indent": 4})
+        reset(repository)
+        assert type(repository[key]) is StrictNestedDictionary
+        assert len(repository[key]) == 0
+
+    def test_reset_hierarchy(self):
+        repository = Repository()
+        repository.clean_hierarchy()
+        assert type(repository[["languages", "hierarchy"]]) is StrictNestedDictionary
+
+
+_AUTHOR_ID = "8b7b6c3e-1f2a-4c3d-9e8f-0a1b2c3d4e5f"
+
+_DUPLICATES = [
+    copy.copy,
+    copy.deepcopy,
+    lambda built: built.copy(),
+    lambda built: built.deepcopy(),
+    lambda built: pickle.loads(pickle.dumps(built)),  # noqa: S301
+]
+_DUPLICATE_IDS = ["copy", "deepcopy", "copy-method", "deepcopy-method", "pickle"]
+
+
+class TestAuthorTranslatorRebuild:
+    """Author and Translator copy and unpickle to equal objects of their
+    class; their constructors take every field or none."""
+
+    @pytest.mark.parametrize("duplicate", _DUPLICATES, ids=_DUPLICATE_IDS)
+    @pytest.mark.parametrize("kind", ["author", "translator"])
+    def test_duplicate(self, kind, duplicate):
+        built = _BUILDERS[kind]()
+        built.default_setup = {"indent": 4, "default_factory": None}
+        duplicated = duplicate(built)
+        assert type(duplicated) is type(built)
+        assert duplicated is not built
+        assert duplicated == built
+
+    @pytest.mark.parametrize("duplicate", _DUPLICATES[:4], ids=_DUPLICATE_IDS[:4])
+    def test_duplicate_setup(self, duplicate):
+        built = _BUILDERS["translator"]()
+        built.default_setup = {"indent": 4, "default_factory": None}
+        duplicated = duplicate(built)
+        assert duplicated.default_setup == built.default_setup
+        assert type(duplicated["details"]) is StrictNestedDictionary
+
+    @pytest.mark.parametrize(
+        "duplicate",
+        [copy.deepcopy, lambda built: built.deepcopy()],
+        ids=["deepcopy", "deepcopy-method"],
+    )
+    def test_deepcopy_is_independent(self, duplicate):
+        author = _BUILDERS["author"]()
+        translator = _BUILDERS["translator"]()
+        copied_author = duplicate(author)
+        copied_translator = duplicate(translator)
+        copied_author["languages"].append("fr")
+        copied_translator[["details", "name"]] = "DeepL"
+        assert author["languages"] == ["en"]
+        assert translator[["details", "name"]] == "GoogleTranslate"
+
+    @pytest.mark.parametrize(
+        "duplicate",
+        [copy.deepcopy, lambda built: built.deepcopy()],
+        ids=["deepcopy", "deepcopy-method"],
+    )
+    def test_deepcopy_repository_holding_them(self, duplicate):
+        repository = Repository()
+        repository.add_author(
+            _AUTHOR_ID, copy.deepcopy(_BUILDERS["author"]().to_dict())
+        )
+        repository.add_translator("google", copy.deepcopy(_TRANSLATOR_PAYLOAD))
+        duplicated = duplicate(repository)
+        assert duplicated == repository
+        assert type(duplicated[["authors", _AUTHOR_ID]]) is Author
+        assert type(duplicated[["translators", "google"]]) is Translator
+
+    @pytest.mark.parametrize("cls", [Author, Translator])
+    def test_empty(self, cls):
+        built = cls(default_setup={"indent": 4})
+        assert type(built) is cls
+        assert len(built) == 0
+        assert ("indent", 4) in built.default_setup
+
+    @pytest.mark.parametrize(
+        "build, expected",
+        [
+            (
+                lambda: Author("Ada"),
+                "Author takes first_name, last_name, email, url and languages"
+                " together, or none of them; missing: last_name, email, url,"
+                " languages",
+            ),
+            (
+                lambda: Author("Ada", "Lovelace", "ada@example.org", "", None),
+                "Author takes first_name, last_name, email, url and languages"
+                " together, or none of them; missing: languages",
+            ),
+            (
+                lambda: Author.from_payload(
+                    dict.fromkeys(
+                        ["first_name", "last_name", "email", "url", "languages"]
+                    )
+                ),
+                "author['languages'] must be a list of strings",
+            ),
+            (
+                lambda: Author.from_payload(
+                    {
+                        "first_name": None,
+                        "last_name": "Lovelace",
+                        "email": "ada@example.org",
+                        "url": "",
+                        "languages": ["en"],
+                    }
+                ),
+                "or none of them; missing: first_name",
+            ),
+            (
+                lambda: Translator(details=_TRANSLATOR_PAYLOAD["details"]),
+                "Translator takes details, pricing and technical together,"
+                " or none of them; missing: pricing, technical",
+            ),
+            (
+                lambda: Translator(
+                    details=_TRANSLATOR_PAYLOAD["details"],
+                    pricing=_TRANSLATOR_PAYLOAD["pricing"],
+                ),
+                "Translator takes details, pricing and technical together,"
+                " or none of them; missing: technical",
+            ),
+        ],
+        ids=[
+            "author-one",
+            "author-four",
+            "author-payload-empty",
+            "author-payload-none",
+            "translator-one",
+            "translator-two",
+        ],
+    )
+    def test_partial_fields_rejected(self, build, expected):
+        payload = copy.deepcopy(_TRANSLATOR_PAYLOAD)
+        with pytest.raises(TypeError, match=re.escape(expected)):
+            _ = build()
+        assert _TRANSLATOR_PAYLOAD == payload
+
+    @pytest.mark.parametrize("cls", [Author, Translator])
+    def test_from_dict_setup_rejected(self, cls):
+        with pytest.raises(TypeError, match="default_setup must be a mapping or None"):
+            _ = cls.from_dict({}, default_setup=4)
 
 
 class TestRepositoryProperties:
@@ -283,7 +516,7 @@ class TestRepositoryProperties:
 
     def test_set_domains(self, repository_fixture):
         assert len(repository_fixture.domains) == 5
-        repository_fixture["domains"] = repository_fixture._new_section({})
+        repository_fixture["domains"] = StrictNestedDictionary()
         assert len(repository_fixture["domains"]) == 0
         repository_fixture.domains = {
             "fsm_tools": ["usage", "model"],

@@ -3,16 +3,24 @@ Test module for core.py — load_book, save_book, load_corpus, save_corpus,
 synchronize (DD-28).
 """
 
+import json
+import warnings
+from pathlib import Path
+
 import pytest
 
+from i18n_tools._finding import Finding
+from i18n_tools.converter import message_to_i18n_tools_format
 from i18n_tools.core import (
+    inspect_corpus,
     load_book,
     load_corpus,
     save_book,
     save_corpus,
     synchronize,
 )
-from i18n_tools.models.corpus import Message
+from i18n_tools.exceptions import BookError, I18nToolsWarning
+from i18n_tools.models.message import Declension, Message
 from i18n_tools.models.repository import Repository
 
 
@@ -66,15 +74,23 @@ class TestLoadBook:
 class TestSaveBook:
     def test_round_trip_a_message(self, synchronized_repository):
         book = load_book(synchronized_repository, "app", "ui", "fr-FR")
-        msg = Message(id="greeting", default="Bonjour")
-        msg.add_language("fr-FR")
+        msg = Message("greeting", "Bonjour")
         book.messages["greeting"] = msg
 
         save_book(book, synchronized_repository, "app")
 
         reloaded = load_book(synchronized_repository, "app", "ui", "fr-FR")
         assert list(reloaded.messages.keys()) == ["greeting"]
-        assert reloaded.messages["greeting"].default == "Bonjour"
+        assert reloaded.messages["greeting"].principal.singular == "Bonjour"
+
+    def test_raises_if_book_has_no_language(self, synchronized_repository):
+        """Book.language may stay unset while the Book is being built,
+        but the target directory depends on it: save_book must refuse."""
+        book = load_book(synchronized_repository, "app", "ui", "fr-FR")
+        book.remove_language()
+
+        with pytest.raises(BookError, match="no language set"):
+            save_book(book, synchronized_repository, "app")
 
     def test_module_is_required_explicitly(self, synchronized_repository):
         """save_book takes module explicitly — Book itself never carries
@@ -104,17 +120,15 @@ class TestSaveCorpus:
 
         for lang in ("fr-FR", "en"):
             book = corpus.get_real_book(lang)
-            msg = Message(id="greeting", default=f"hi-{lang}")
-            msg.add_language(lang)
+            msg = Message("greeting", f"hi-{lang}")
             book.messages["greeting"] = msg
 
         save_corpus(corpus, synchronized_repository, "app")
 
         reloaded = load_corpus(synchronized_repository, "app", "ui")
-        assert reloaded.get_real_book("fr-FR").messages["greeting"].default == (
-            "hi-fr-FR"
-        )
-        assert reloaded.get_real_book("en").messages["greeting"].default == "hi-en"
+        for lang in ("fr-FR", "en"):
+            greeting = reloaded.get_real_book(lang).messages["greeting"]
+            assert greeting.principal.singular == f"hi-{lang}"
         # Untouched language stays empty
         assert len(reloaded.get_real_book("fr-BE").messages) == 0
 
@@ -128,9 +142,128 @@ class TestLoadCorpusThenGetBookWithRepository:
     ):
         corpus = load_corpus(synchronized_repository, "app", "ui")
         book = corpus.get_real_book("fr-FR")
-        msg = Message(id="greeting", default="Bonjour")
-        msg.add_language("fr-FR")
+        msg = Message("greeting", "Bonjour")
         book.messages["greeting"] = msg
 
         fallback_book = corpus.get_book("fr-CH", repository=synchronized_repository)
-        assert fallback_book.get_message("greeting").default == "Bonjour"
+        assert fallback_book.get_message("greeting").principal.singular == "Bonjour"
+
+
+def _book_file(repository, lang):
+    """Path of the ui.json.i18t file of ``lang`` in module app."""
+    root = repository[["paths", "repository"]]
+    return Path(root, "app", "locales", lang, "LC_MESSAGES", "ui.json.i18t")
+
+
+def _entry_with_repeated_flag(identifier):
+    """
+    A draft entry as the writer writes it, with its flag repeated: a file
+    that loads with a warning.
+    """
+    entry = message_to_i18n_tools_format(
+        Message(identifier, "Un", flags=["python-format"]), identifier
+    )
+    entry["metadata"]["flags"] = ["python-format", "python-format"]
+    return entry
+
+
+def _save_complete(repository, lang, matrix):
+    """Save one complete message "items" in the Book of ``lang``."""
+    book = load_book(repository, "app", "ui", lang)
+    message = Message.from_matrix("items", matrix)
+    message.mark_complete()
+    book.messages["items"] = message
+    save_book(book, repository, "app")
+
+
+class TestInspectCorpus:
+    def test_sound_repository(self, synchronized_repository):
+        assert inspect_corpus(synchronized_repository, "app", "ui") == []
+
+    def test_missing_directories(self, repository):
+        findings = inspect_corpus(repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "root", lang) for lang in ("en", "fr", "fr-BE", "fr-FR")
+        ]
+
+    def test_missing_file(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-BE")
+        path.unlink()
+        assert inspect_corpus(synchronized_repository, "app", "ui") == [
+            Finding("error", "root", f"file not found: {path}", "fr-BE")
+        ]
+
+    def test_file_findings_carry_their_language(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["broken"] = "not-a-list"
+        data["odd"] = _entry_with_repeated_flag("odd")
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "broken", "fr-FR"),
+            ("warning", "odd", "fr-FR"),
+        ]
+
+    def test_file_checked_against_its_language(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["metadata"] = {**data.get("metadata", {}), "language": "en-US"}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.severity, f.where, f.language) for f in findings] == [
+            ("error", "root", "fr-FR")
+        ]
+
+    def test_warnings_listed_not_issued(self, synchronized_repository):
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["odd"] = _entry_with_repeated_flag("odd")
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always", I18nToolsWarning)
+            findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [w for w in record if issubclass(w.category, I18nToolsWarning)] == []
+        # The repeated flag, then the Book counters the new entry no longer
+        # matches: warnings only.
+        assert ("warning", "odd", "fr-FR") in [
+            (f.severity, f.where, f.language) for f in findings
+        ]
+        assert {(f.severity, f.language) for f in findings} == {("warning", "fr-FR")}
+
+    def test_corpus_findings_follow(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        _save_complete(synchronized_repository, "fr-FR", [["{count} article"]])
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        assert [(f.where, f.language) for f in findings] == [("items", None)]
+        assert findings[0].message.startswith("tokens of cell (variant 0, segment 0)")
+
+    def test_defective_file_left_out_of_corpus_check(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        _save_complete(synchronized_repository, "fr-FR", [["{count} article"]])
+        path = _book_file(synchronized_repository, "fr-FR")
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["broken"] = "not-a-list"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        findings = inspect_corpus(synchronized_repository, "app", "ui")
+        # Only the findings of the fr-FR file (the broken entry, and the
+        # root statistics it no longer matches): no corpus finding.
+        assert ("error", "broken") in [(f.severity, f.where) for f in findings]
+        assert {f.language for f in findings} == {"fr-FR"}
+
+    def test_files_left_unchanged(self, synchronized_repository):
+        _save_complete(synchronized_repository, "en", [["{n} item"]])
+        path = _book_file(synchronized_repository, "en")
+        before = path.read_bytes()
+        _ = inspect_corpus(synchronized_repository, "app", "ui")
+        assert path.read_bytes() == before
+
+    @pytest.mark.parametrize(
+        "args",
+        [("not a repository", "app", "ui"), (None, 1, "ui"), (None, "app", 1)],
+        ids=["repository", "module", "domain"],
+    )
+    def test_argument_guards(self, synchronized_repository, args):
+        repository = args[0] if args[0] is not None else synchronized_repository
+        with pytest.raises(TypeError, match="inspect_corpus"):
+            inspect_corpus(repository, *args[1:])

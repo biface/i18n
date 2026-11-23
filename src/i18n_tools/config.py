@@ -108,8 +108,9 @@ Only one configuration is managed at a given time.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
+from typing import Literal
 from uuid import UUID, uuid4
 
 from ndict_tools import StrictNestedDictionary
@@ -120,8 +121,11 @@ from .__static__ import (
     I18N_TOOLS_CONFIG_FILE,
     I18N_TOOLS_LOCALE,
 )
+from ._checks import is_type
+from ._compat import override
+from ._json import JSONInput, JSONValue
 from .api import validate_api_url
-from .loaders.handler import build_path, file_exists, load_config, save_config
+from .loaders.loader import build_path, file_exists, load_config, save_config
 from .locale import validate_and_normalize_language_tags
 from .models.author import Authors
 from .models.repository import Repository
@@ -137,12 +141,16 @@ class Config(metaclass=Singleton):
     settings related to translations, translators, authors, and modules.
 
     Attributes:
-        package (StrictNestedDictionary): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
+        package (Repository): A nested dictionary which contains the default i18n-tools package translation repository configuration settings.
 
-        application (StrictNestedDictionary): A nested dictionary which contains the default application translation repository configuration settings.
+        application (Repository): A nested dictionary which contains the default application translation repository configuration settings.
 
         _current_config (str): store the current configuration to manage.
     """
+
+    package: Repository
+    application: Repository
+    _current_config: Literal["package", "application"]
 
     def __init__(self, config_file: str | None = None):
         """
@@ -158,7 +166,7 @@ class Config(metaclass=Singleton):
 
         def _setup_configuration(
             config_dir: str | None = "", settings_file: str | None = ""
-        ) -> StrictNestedDictionary:
+        ) -> Repository:
             """
             This private initialization function is de dedicated to set up configuration parameters and initializes the
             nested dictionary with spécific keys which will be used as to verify while loading the configuration.
@@ -168,7 +176,7 @@ class Config(metaclass=Singleton):
             :param settings_file: file part of configuration file
             :type settings_file: str
             :return: an initialized nested dictionary with used keys
-            :rtype: StrictNestedDictionary
+            :rtype: Repository
             """
             # Initialize using Repository class instead of raw StrictNestedDictionary
             repo = Repository()
@@ -214,7 +222,12 @@ class Config(metaclass=Singleton):
             )
 
         # Load general setup
-        for key, value in config.get(self._current_config, {}).items():
+        setup = config.get(self._current_config, {})
+        if not isinstance(setup, dict):
+            raise TypeError(
+                f"Section '{self._current_config}' of {config_file} must be a mapping"
+            )
+        for key, value in setup.items():
             if key in current_config.keys():
                 current_config[key].update(value)
             else:
@@ -243,7 +256,7 @@ class Config(metaclass=Singleton):
         except Exception as e:
             raise e
 
-    def get(self, key: list[str]) -> Any:
+    def get(self, key: list[str]) -> StrictNestedDictionary | JSONValue:
         """
         Retrieve a configuration value by key.
 
@@ -255,7 +268,7 @@ class Config(metaclass=Singleton):
         else:
             raise KeyError(f"Key '{key[0]}' not found.")
 
-    def set(self, path: list[Any] | str, value: Any, check: bool = True) -> None:
+    def set(self, path: list[str] | str, value: JSONInput, check: bool = True) -> None:
         """
         Set or update a configuration attribute or its nested keys.
 
@@ -272,7 +285,7 @@ class Config(metaclass=Singleton):
                 path = [path]
             else:
                 raise ValueError("Path must be a non-empty string the attribute.")
-        elif not isinstance(path, list) or len(path) == 0:
+        elif not is_type(path, list) or len(path) == 0:
             raise ValueError(
                 "Path must be a non-empty list or list representing the attribute or nested key."
             )
@@ -304,7 +317,7 @@ class Config(metaclass=Singleton):
                 if not isinstance(value, type(attr)):
                     raise TypeError(
                         f"Type mismatch: Cannot assign value of type '{type(value).__name__}' "
-                        f"to attribute '{attr_name}' of type '{type(attr).__name__}'."
+                        + f"to attribute '{attr_name}' of type '{type(attr).__name__}'."
                     )
                 setattr(self, attr_name, value)
 
@@ -327,12 +340,12 @@ class Config(metaclass=Singleton):
                 # Re-raise any ndict-tools specific exception directly
                 raise e
 
-    def get_repository(self) -> StrictNestedDictionary:
+    def get_repository(self) -> Repository:
         """
         Build the repository dictionary from configuration.
 
         :return: a configured repository
-        :rtype: StrictNestedDictionary
+        :rtype: Repository
         """
         return self.__getattribute__(self._current_config)
 
@@ -456,7 +469,7 @@ class Config(metaclass=Singleton):
         if copyright_holder is not None:
             current_repository[["details", "copyright_holder"]] = copyright_holder
 
-    def update_details(self, d_key: str, d_value: Any) -> None:
+    def update_details(self, d_key: str, d_value: JSONInput) -> None:
         """
         update the details of the repository to the configuration..
         :param d_key:
@@ -487,10 +500,12 @@ class Config(metaclass=Singleton):
 
         :param first_name: First name of the author.
         :param last_name: Last name of the author.
-        :param email: Email address of the author.
+        :param email: Email address of the author. Stored in normalized
+            form: domain and local part in lower case. Only its syntax is
+            checked: no DNS request is made.
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
-        :raises EmailNotValidError: if email is malformed
+        :raises email_validator.EmailNotValidError: if email is malformed
         :raises ValueError: If at least one of the languages is not an IETF tag
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
@@ -499,11 +514,13 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "add_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         try:
-            validate_email(email)
+            normalized_email = validate_email(
+                email, check_deliverability=False
+            ).normalized.lower()
             normalized_languages = validate_and_normalize_language_tags(languages)
         except Exception as e:
             raise e
@@ -514,13 +531,13 @@ class Config(metaclass=Singleton):
         )
 
         existing_uuid = Authors.get_id_by_email(
-            current_repository, email
-        ) or Authors.get_id_by_email(other_repository, email)
+            current_repository, normalized_email
+        ) or Authors.get_id_by_email(other_repository, normalized_email)
 
         if existing_uuid:
             if existing_uuid in current_repository["authors"].keys():
                 raise KeyError(
-                    f"Email address '{email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
+                    f"Email address '{normalized_email}' is already registered in the authors dictionary (UUID: {existing_uuid})."
                 )
             else:
                 author_id = existing_uuid
@@ -530,21 +547,23 @@ class Config(metaclass=Singleton):
             author = {
                 "first_name": first_name,
                 "last_name": last_name,
-                "email": email,
+                "email": normalized_email,
                 "url": url,
                 "languages": normalized_languages,
             }
 
         current_repository.add_author(author_id, author)
 
-    def get_author(self, index: str) -> dict[str, Any] | None:
+    def get_author(self, index: str) -> StrictNestedDictionary | None:
         """
         Retrieve an author's details by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
+            An email address is normalized (lower case) before the lookup;
+            only its syntax is checked, without a DNS request.
         :type index: str
-        :return: The author's details as a dictionary, or None if not found.
-        :rtype: dict
+        :return: The author's details, or None if not found.
+        :rtype: ~ndict_tools.StrictNestedDictionary | None
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
         """
@@ -553,7 +572,7 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "get_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         current_config = self.__getattribute__(self._current_config)
@@ -574,12 +593,13 @@ class Config(metaclass=Singleton):
 
         # Validate the email format
         try:
-            validate_email(index)  # Throws EmailNotValidError if invalid
+            # Throws EmailNotValidError if invalid
+            email = validate_email(index, check_deliverability=False).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
         # Search by email in the email index
-        author_id = Authors.get_id_by_email(current_config, index)
+        author_id = Authors.get_id_by_email(current_config, email)
         if author_id:
             return current_config[["authors", author_id]]
 
@@ -591,6 +611,8 @@ class Config(metaclass=Singleton):
         Remove an author from the configuration by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
+            An email address is normalized (lower case) before the lookup;
+            only its syntax is checked, without a DNS request.
         :return: True if the author was successfully removed, False if not found.
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
@@ -600,7 +622,7 @@ class Config(metaclass=Singleton):
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError(
                 "remove_author() requires the 'api' extra — "
-                "install with: pip install pyi18t-tools[api]"
+                + "install with: pip install pyi18t-tools[api]"
             ) from e
 
         current_repository = self.__getattribute__(self._current_config)
@@ -620,12 +642,13 @@ class Config(metaclass=Singleton):
 
         # Validate the email format
         try:
-            validate_email(index)  # Throws EmailNotValidError if invalid
+            # Throws EmailNotValidError if invalid
+            email = validate_email(index, check_deliverability=False).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
         # Search by email
-        author_id = Authors.get_id_by_email(current_repository, index)
+        author_id = Authors.get_id_by_email(current_repository, email)
         if author_id:
             current_repository.remove_author(author_id)
             return True
@@ -733,7 +756,7 @@ class Config(metaclass=Singleton):
         :return: The translator's details as a dictionary, or None if not found.
         """
 
-        return self.get([self._current_config, "translators", name])
+        return self.get_repository()[["translators", name]]
 
     def list_translators(self) -> list[str]:
         """
@@ -744,7 +767,7 @@ class Config(metaclass=Singleton):
 
         return list(self.__getattribute__(self._current_config)["translators"].keys())
 
-    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
+    def update_translator(self, name: str, updates: dict[str, JSONInput]) -> None:
         """
         Update an existing translator's details while ensuring the structure remains valid.
 
@@ -765,7 +788,9 @@ class Config(metaclass=Singleton):
 
         # Recursive function to validate the updates against the existing structure
         def validate_structure(
-            expected: dict[str, Any], actual: dict[str, Any], path: str = ""
+            expected: Mapping[str, object],
+            actual: Mapping[str, JSONInput],
+            path: str = "",
         ):
             for key, value in actual.items():
                 full_path = f"{path}.{key}" if path else key
@@ -774,19 +799,20 @@ class Config(metaclass=Singleton):
                     raise ValueError(f"Invalid key '{full_path}' in updates.")
 
                 # Check for nested dictionaries
-                if isinstance(expected[key], dict):
+                reference = expected[key]
+                if isinstance(reference, dict):
                     if not isinstance(value, dict):
                         raise ValueError(
                             f"Expected a dictionary for '{full_path}', but got '{type(value).__name__}'."
                         )
                     # Recursive validation
-                    validate_structure(expected[key], value, full_path)
+                    validate_structure(reference, value, full_path)
 
                 # Ensure type matches for non-dict values
-                elif not isinstance(value, type(expected[key])):
+                elif not isinstance(value, type(reference)):
                     raise ValueError(
                         f"Type mismatch for '{full_path}': "
-                        f"expected '{type(expected[key]).__name__}', got '{type(value).__name__}'."
+                        + f"expected '{type(reference).__name__}', got '{type(value).__name__}'."
                     )
 
         # Validate updates against the existing translator structure
@@ -942,6 +968,7 @@ class Config(metaclass=Singleton):
             "application" if self._current_config == "package" else "package"
         )
 
+    @override
     def __repr__(self) -> str:
         """
         Represent the `Config` object as a human-readable string.

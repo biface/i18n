@@ -203,18 +203,39 @@ Key Responsibilities:
 import functools
 import re
 import warnings
-from collections.abc import Callable
-from typing import Any, TypeVar
+from collections.abc import Callable, Mapping
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    ParamSpec,
+    TypeAlias,
+    TypedDict,
+    TypeVar,
+    cast,
+)
 
 from babel.messages.catalog import Catalog
 from ndict_tools import StrictNestedDictionary
 
-from i18n_tools.loaders.utils import _load_json, _load_text
+from i18n_tools._counters import entry_statistics
+from i18n_tools._json import JSONInput, JSONValue
+from i18n_tools.loaders.loader import load_json, load_text
 
-_F = TypeVar("_F", bound=Callable[..., Any])
+if TYPE_CHECKING:
+    from i18n_tools.models.message import Message, MessageOptions
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+# Payloads of the deprecated unified-format, Catalog and i18next
+# conversions. These functions are unmaintained and will be rebuilt with
+# the gettext/i18next interoperability: their data stays untyped instead
+# of being narrowed piece by piece.
+_LegacyPayload: TypeAlias = dict[str, Any]  # pyright: ignore[reportExplicitAny]
 
 
-def _deprecated_unmaintained(func: _F) -> _F:
+def _deprecated_unmaintained(func: Callable[_P, _R]) -> Callable[_P, _R]:
     """
     Mark a function as deprecated and unmaintained.
 
@@ -225,20 +246,20 @@ def _deprecated_unmaintained(func: _F) -> _F:
     """
 
     @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: _P.args, **kwargs: _P.kwargs) -> _R:
         warnings.warn(
             f"{func.__name__} is deprecated and unmaintained. It predates "
-            "the current hub-and-spoke architecture (Message/Book as the "
-            "hub, no separate intermediate format) and has no caller "
-            "anywhere in this package. It is kept for reference only, "
-            "pending a proper rebuild when gettext/i18next "
-            "interoperability is actually implemented.",
+            + "the current hub-and-spoke architecture (Message/Book as the "
+            + "hub, no separate intermediate format) and has no caller "
+            + "anywhere in this package. It is kept for reference only, "
+            + "pending a proper rebuild when gettext/i18next "
+            + "interoperability is actually implemented.",
             category=DeprecationWarning,
             stacklevel=2,
         )
         return func(*args, **kwargs)
 
-    return wrapper  # type: ignore[return-value]
+    return wrapper
 
 
 # -----------------------------------------------------------------------------
@@ -252,12 +273,12 @@ def _deprecated_unmaintained(func: _F) -> _F:
 
 
 @_deprecated_unmaintained
-def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
+def catalog_to_unified_format(catalog: Catalog) -> _LegacyPayload:
     """
     Convert a Babel Catalog to a unified format dictionary.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :return: Dictionary in unified format
     :rtype: dict[str, Any]
     """
@@ -321,7 +342,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
         if isinstance(message_id, tuple):
             # Handle plural forms
             singular = message_id[0]
-            message_entry: dict[str, Any] = {
+            message_entry: _LegacyPayload = {
                 "translation": (
                     message.string
                     if isinstance(message.string, str)
@@ -413,7 +434,7 @@ def catalog_to_unified_format(catalog: Catalog) -> dict[str, Any]:
 
 @_deprecated_unmaintained
 def unified_format_to_catalog(
-    unified: dict[str, Any], locale: str | None = None, domain: str | None = None
+    unified: _LegacyPayload, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert a unified format dictionary to a Babel Catalog.
@@ -425,7 +446,7 @@ def unified_format_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     # Extract metadata from unified format
     metadata = unified.get("metadata", {})
@@ -502,12 +523,9 @@ def unified_format_to_catalog(
                 plural_strings.append(plural_forms.get(str(i), ""))
 
             # Create a tuple of message IDs (singular, plural)
-            if isinstance(message_id, str):
-                msg_id_tuple = (message_id, f"{message_id}_plural")
-            else:
-                msg_id_tuple = message_id
+            msg_id_tuple = (message_id, f"{message_id}_plural")
 
-            catalog.add(
+            _ = catalog.add(
                 id=msg_id_tuple,
                 string=tuple(plural_strings),
                 locations=locations,
@@ -518,7 +536,7 @@ def unified_format_to_catalog(
             )
         else:
             # Handle singular form
-            catalog.add(
+            _ = catalog.add(
                 id=message_id,
                 string=entry.get("translation", ""),
                 locations=locations,
@@ -560,7 +578,7 @@ def unified_format_to_catalog(
                     # Create a tuple of message IDs (singular, plural)
                     alt_msg_id_tuple = (alt_message_id, f"{alt_message_id}_plural")
 
-                    catalog.add(
+                    _ = catalog.add(
                         id=alt_msg_id_tuple,
                         string=tuple(alt_plural_strings),
                         locations=locations,
@@ -571,7 +589,7 @@ def unified_format_to_catalog(
                     )
                 else:
                     # Add alternative without plural forms
-                    catalog.add(
+                    _ = catalog.add(
                         id=alt_message_id,
                         string=alt_translation,
                         locations=locations,
@@ -582,7 +600,7 @@ def unified_format_to_catalog(
                     )
             else:
                 # Add alternative without plural forms
-                catalog.add(
+                _ = catalog.add(
                     id=alt_message_id,
                     string=alt_translation,
                     locations=locations,
@@ -596,7 +614,7 @@ def unified_format_to_catalog(
 
 
 @_deprecated_unmaintained
-def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
+def i18next_to_unified_format(i18next_data: _LegacyPayload) -> _LegacyPayload:
     """
     Convert i18next JSON format to unified format.
 
@@ -736,8 +754,8 @@ def i18next_to_unified_format(i18next_data: dict[str, Any]) -> dict[str, Any]:
 
 @_deprecated_unmaintained
 def unified_format_to_i18next(
-    unified: dict[str, Any], flatten: bool = True
-) -> dict[str, Any]:
+    unified: _LegacyPayload, flatten: bool = True
+) -> _LegacyPayload:
     """
     Convert unified format to i18next JSON format.
 
@@ -826,8 +844,8 @@ def unified_format_to_i18next(
 
 @_deprecated_unmaintained
 def i18n_tools_to_unified_format(
-    i18n_tools_data: dict[str, Any],
-) -> dict[str, Any]:
+    i18n_tools_data: _LegacyPayload,
+) -> _LegacyPayload:
     """
     Convert i18n_tools JSON format to unified format.
 
@@ -842,13 +860,15 @@ def i18n_tools_to_unified_format(
         if key == "metadata" or key == ".i18n_tools":  # Skip metadata at root level
             continue
 
+        entry: _LegacyPayload
+
         # Check if the entry has the new structure with messages and metadata
         if isinstance(value, dict) and "messages" in value and "metadata" in value:
             messages = value["messages"]
             metadata = value["metadata"]
 
             # Initialize entry with the main message (first alternative)
-            entry: dict[str, Any] = {
+            entry = {
                 "translation": messages[0][0] if messages and messages[0] else "",
                 "plural_forms": {},
                 "context": "",
@@ -898,7 +918,7 @@ def i18n_tools_to_unified_format(
             value_lists = value
 
             # Initialize entry with the main message (first alternative)
-            entry: dict[str, Any] = {
+            entry = {
                 "translation": (
                     value_lists[0][0] if value_lists and value_lists[0] else ""
                 ),
@@ -943,7 +963,7 @@ def i18n_tools_to_unified_format(
 
 
 @_deprecated_unmaintained
-def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
+def unified_format_to_i18n_tools(unified: _LegacyPayload) -> _LegacyPayload:
     """
     Convert unified format to i18n_tools JSON format.
 
@@ -1022,141 +1042,115 @@ def unified_format_to_i18n_tools(unified: dict[str, Any]) -> dict[str, Any]:
     return i18n_tools
 
 
-def message_to_i18n_tools_format(message) -> dict[str, Any]:
+class MessageEntry(TypedDict):
     """
-    Convert a Message object directly to i18n_tools format without using unified format.
+    The parts of a ``.i18t`` entry that build a Message.
 
-    :param message: A Message object
-    :return: Dictionary in i18n_tools format
-    :rtype: dict[str, Any]
+    ``singular`` and ``options`` are the arguments of the ``Message``
+    constructor; ``status`` and ``record`` (``count`` and ``fill_mask``,
+    empty when the entry has no record) are written in the metadata of the
+    message once it is built.
     """
-    # Start with the singular form and alternatives
-    main_translation = message.default
-    alternatives = message.options
 
-    # Create the first list with main translation and alternatives
-    first_list = [main_translation]
-    # Add alternatives in order of their keys
-    for idx in sorted(alternatives.keys()):
-        first_list.append(alternatives[idx])
-    value_lists = [first_list]
+    singular: str
+    options: "MessageOptions"
+    status: Literal["draft", "complete"]
+    record: dict[str, JSONValue]
 
-    # Add plural forms for main message
-    plural_forms = message.default_plurals
-    max_plural = max(plural_forms.keys()) if plural_forms else 0
 
-    # Add plural forms for alternatives
-    alternative_plural_forms = message.options_plurals
+def message_to_i18n_tools_format(
+    message: "Message", identifier: str
+) -> dict[str, JSONInput]:
+    """
+    Write a Message as a ``.i18t`` entry of format 1.0.0.
 
-    # Determine the maximum number of plural forms needed
-    for i in range(1, max_plural + 1):
-        plural_list = [plural_forms.get(i, "")]
+    The declensions are written padded to the same number of segments, as
+    :attr:`Message.matrix` gives them. The metadata starts with
+    ``identifier``, the key under which the Book holds the message. A
+    complete message writes its record, a draft the record of its
+    content, since saving a draft records it. ``statistics`` is computed
+    from the texts.
 
-        # Add plural forms for each alternative
-        for alt_idx in sorted(alternatives.keys()):
-            alt_plural = ""
-            if (
-                alt_idx in alternative_plural_forms
-                and i in alternative_plural_forms[alt_idx]
-            ):
-                alt_plural = alternative_plural_forms[alt_idx][i]
-            plural_list.append(alt_plural)
-
-        value_lists.append(plural_list)
-
-    # Create entry with new structure (messages and metadata)
-    return {
-        "messages": value_lists,
+    :param message: The message.
+    :type message: Message
+    :param identifier: The key of the message in its Book.
+    :type identifier: str
+    :return: The entry, ``messages`` then ``metadata``.
+    :rtype: dict[str, JSONInput]
+    """
+    matrix = message.matrix
+    declensions = [[row[column] for row in matrix] for column in range(len(matrix[0]))]
+    recorded = message.recorded
+    record = (
+        recorded
+        if message.status == "complete" and recorded is not None
+        else message.observed
+    ).to_dict()
+    rules = cast(StrictNestedDictionary, message.rules).to_dict()
+    entry = {
+        "messages": {"principal": declensions[0], "alternatives": declensions[1:]},
         "metadata": {
-            "version": message.metadata.get("version", "0.0.0"),
-            "language": message.metadata.get("language", ""),
-            "locations": message.metadata.get("locations", []),
-            "flags": message.metadata.get("flags", []),
-            "user_comments": message.metadata.get("user_comments", []),
-            "auto_comments": message.metadata.get("auto_comments", []),
-            "singular_count": len(first_list),
-            "plural_counts": (
-                [len(plural_list) for plural_list in value_lists[1:]]
-                if len(value_lists) > 1
-                else []
-            ),
+            "id": identifier,
+            "context": message.context,
+            "locations": [dict(location) for location in message.locations],
+            "flags": list(message.flags),
+            "user_comments": list(message.user_comments),
+            "auto_comments": list(message.auto_comments),
+            "status": message.status,
+            "rules": rules,
+            "count": record["count"],
+            "fill_mask": record["fill_mask"],
+            "statistics": entry_statistics(declensions[0], declensions[1:]),
         },
     }
+    return cast("dict[str, JSONInput]", entry)
 
 
 def i18n_tools_format_to_message_dict(
-    i18n_tools_entry: dict[str, Any],
-) -> dict[str, Any]:
+    i18n_tools_entry: Mapping[str, JSONValue],
+) -> MessageEntry:
     """
-    Convert an i18n_tools format entry to a dictionary suitable for Message instantiation
-    without using unified format.
+    Read a ``.i18t`` entry, as ``loader.load_book()`` returns it, into the
+    parts that build a Message.
 
-    :param i18n_tools_entry: Dictionary in i18n_tools format
-    :type i18n_tools_entry: dict[str, Any]
-    :return: Dictionary with Message constructor parameters
-    :rtype: dict[str, Any]
+    The entry was checked and read by the loader: its content is
+    ``principal`` and ``alternatives``, its metadata holds every key of
+    format 1.0.0 but ``statistics``, and ``count`` and ``fill_mask`` only
+    when the entry has a record.
+
+    :param i18n_tools_entry: The entry.
+    :type i18n_tools_entry: Mapping[str, JSONValue]
+    :return: The constructor arguments, the status and the record.
+    :rtype: MessageEntry
     """
-    result: dict[str, Any] = {
-        "default": "",
-        "options": {},
-        "default_plurals": {},
-        "options_plurals": {},
-        "context": "",
-        "metadata": {},
-    }
-
-    # Extract messages and metadata
-    messages: list[list[Any]] = i18n_tools_entry.get("messages", [])
-    metadata: dict[str, Any] = i18n_tools_entry.get("metadata", {})
-
-    # Process main translation and alternatives
-    if messages and len(messages) > 0 and len(messages[0]) > 0:
-        # Main translation is the first item in the first list
-        result["default"] = messages[0][0]
-
-        # Process alternatives (remaining items in the first list)
-        # Use 1-based indices for alternatives to match Message class expectations
-        for i, alt in enumerate(messages[0][1:], 1):
-            if alt:  # Only add non-empty alternatives
-                result["options"][i] = alt
-
-    # Process plural forms for main translation
-    for i, plural_list in enumerate(messages[1:], 1):
-        if plural_list and plural_list[0]:
-            result["default_plurals"][i] = plural_list[0]
-
-    # Process plural forms for alternatives
-    if messages and len(messages[0]) > 1:
-        # Use 1-based indices for alternative_plural_forms to match Message class expectations
-        for alt_idx, _ in enumerate(messages[0][1:], 1):
-            for plural_idx, plural_list in enumerate(messages[1:], 1):
-                if (
-                    plural_list
-                    and len(plural_list) > alt_idx  # Adjust index for 1-based
-                    and plural_list[alt_idx]
-                ):
-                    if alt_idx not in result["options_plurals"]:
-                        result["options_plurals"][alt_idx] = {}
-                    result["options_plurals"][alt_idx][plural_idx] = plural_list[
-                        alt_idx
-                    ]
-
-    # Process metadata
-    if metadata:
-        result["metadata"] = {
-            "location": metadata.get("locations", []),
-            "flags": metadata.get("flags", []),
-            "user_comments": metadata.get("user_comments", []),
-            "auto_comments": metadata.get("auto_comments", []),
-            "count": {
-                "singular": metadata.get("singular_count", 1),
-                "plurals": metadata.get("plural_counts", []),
+    content = cast("Mapping[str, JSONValue]", i18n_tools_entry["messages"])
+    metadata = cast("Mapping[str, JSONValue]", i18n_tools_entry["metadata"])
+    principal = cast("list[str]", content["principal"])
+    alternatives = cast("list[list[str]]", content["alternatives"])
+    options = cast(
+        "MessageOptions",
+        cast(
+            object,
+            {
+                "plurals": list(principal[1:]),
+                "alternatives": [list(alternative) for alternative in alternatives],
+                "context": metadata["context"],
+                "locations": metadata["locations"],
+                "flags": metadata["flags"],
+                "user_comments": metadata["user_comments"],
+                "auto_comments": metadata["auto_comments"],
+                "rules": metadata["rules"],
             },
-            "language": metadata.get("language", ""),
-            "version": metadata.get("version", "0.0.0"),
-        }
-
-    return result
+        ),
+    )
+    return {
+        "singular": principal[0],
+        "options": options,
+        "status": "complete" if metadata["status"] == "complete" else "draft",
+        "record": {
+            key: metadata[key] for key in ("count", "fill_mask") if key in metadata
+        },
+    }
 
 
 # -----------------------------------------------------------------------------
@@ -1169,12 +1163,12 @@ def i18n_tools_format_to_message_dict(
 @_deprecated_unmaintained
 def convert_catalog_to_i18next(
     catalog: Catalog, flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Convert a Babel Catalog directly to i18next JSON format.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :param flatten: Whether to flatten nested keys using dot notation
     :type flatten: bool
     :return: Dictionary in i18next format
@@ -1186,7 +1180,7 @@ def convert_catalog_to_i18next(
 
 @_deprecated_unmaintained
 def convert_i18next_to_catalog(
-    i18next_data: dict[str, Any], locale: str | None = None, domain: str | None = None
+    i18next_data: _LegacyPayload, locale: str | None = None, domain: str | None = None
 ) -> Catalog:
     """
     Convert i18next JSON format directly to a Babel Catalog.
@@ -1198,7 +1192,7 @@ def convert_i18next_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     unified = i18next_to_unified_format(i18next_data)
     return unified_format_to_catalog(unified, locale, domain)
@@ -1210,7 +1204,7 @@ def convert_catalog_to_i18n_tools(catalog: Catalog) -> dict[str, list[list[str]]
     Convert a Babel Catalog directly to i18n_tools JSON format.
 
     :param catalog: Babel Catalog object
-    :type catalog: Catalog
+    :type catalog: ~babel.messages.catalog.Catalog
     :return: Dictionary in i18n_tools format
     :rtype: dict[str, list[list[str]]]
     """
@@ -1234,7 +1228,7 @@ def convert_i18n_tools_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
     unified = i18n_tools_to_unified_format(i18n_tools_data)
     catalog = unified_format_to_catalog(unified, locale, domain)
@@ -1243,7 +1237,7 @@ def convert_i18n_tools_to_catalog(
 
 @_deprecated_unmaintained
 def convert_i18next_to_i18n_tools(
-    i18next_data: dict[str, Any],
+    i18next_data: _LegacyPayload,
 ) -> dict[str, list[list[str]]]:
     """
     Convert i18next JSON format directly to i18n_tools JSON format.
@@ -1260,7 +1254,7 @@ def convert_i18next_to_i18n_tools(
 @_deprecated_unmaintained
 def convert_i18n_tools_to_i18next(
     i18n_tools_data: dict[str, list[list[str]]], flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Convert i18n_tools JSON format directly to i18next JSON format.
 
@@ -1285,7 +1279,7 @@ def convert_i18n_tools_to_i18next(
 @_deprecated_unmaintained
 def load_and_convert_po_to_i18next(
     po_file_path: str, flatten: bool = True
-) -> dict[str, Any]:
+) -> _LegacyPayload:
     """
     Load a PO file and convert it to i18next JSON format.
 
@@ -1296,7 +1290,7 @@ def load_and_convert_po_to_i18next(
     :return: Dictionary in i18next format
     :rtype: dict[str, Any]
     """
-    catalog = _load_text(po_file_path)
+    catalog = load_text(po_file_path)
     return convert_catalog_to_i18next(catalog, flatten)
 
 
@@ -1314,9 +1308,9 @@ def load_and_convert_json_to_catalog(
     :param domain: Domain for the catalog
     :type domain: str
     :return: Babel Catalog object
-    :rtype: Catalog
+    :rtype: ~babel.messages.catalog.Catalog
     """
-    i18next_data = _load_json(json_file_path)
+    i18next_data = load_json(json_file_path)
     return convert_i18next_to_catalog(i18next_data, locale, domain)
 
 
@@ -1340,7 +1334,7 @@ def seek_translation(
     Seek a translation in the repository.
 
     :param repository: Repository containing translations
-    :type repository: StrictNestedDictionary
+    :type repository: ~ndict_tools.StrictNestedDictionary
     :param module: Module name
     :type module: str
     :param domain: Domain name
@@ -1352,7 +1346,7 @@ def seek_translation(
     :param alternative: Alternative index (for plural forms)
     :type alternative: int
     :return: Translation data
-    :rtype: StrictNestedDictionary
+    :rtype: ~ndict_tools.StrictNestedDictionary
     :raises KeyError: If the message ID is not found
     """
     translation = StrictNestedDictionary(
@@ -1361,12 +1355,13 @@ def seek_translation(
 
     try:
         # Local import to avoid circular imports at module level
-        from i18n_tools.loaders.handler import fetch_dictionary
+        from i18n_tools.loaders.loader import fetch_dictionary
 
         translations = fetch_dictionary(repository, module, domain, lang)
         if message_id in translations.keys():
             translation["msg_id"] = message_id
-            messages = translations[message_id]
+            # Legacy flat entry: a matrix of message rows.
+            messages = cast("list[list[str]]", translations[message_id])
 
             # Add the translation string
             if messages and len(messages) > 0 and len(messages[0]) > alternative:

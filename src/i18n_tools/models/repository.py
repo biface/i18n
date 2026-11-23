@@ -31,19 +31,17 @@ by other components (loaders, handlers, CLI) to manage i18n content.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
 
 from ndict_tools import StrictNestedDictionary
 
+from .._checks import ensure_type, is_type
+from .._json import JSONInput, JSONValue
 from ..loaders.loader import file_exists, is_absolute_path, normalize_module_identifier
 from ..locale import normalize_language_tag, normalize_languages_hierarchy
-from .author import Author, Authors  # type: ignore[reportImportCycle]
-from .translator import Translators
-
-# Shared default setup to avoid repetition
-_DEFAULT_SETUP = {"indent": 2}
-
+from .author import Author, AuthorPayload, Authors
+from .translator import TranslatorPayload, Translators
 
 # --- Domains helpers ---
 
@@ -101,16 +99,20 @@ class Repository(StrictNestedDictionary):
 
     Notes
     -----
-    All sections are created with a default ndict_tools setup (indent=2) to
-    keep JSON/YAML rendering consistent across the project.
+    ``default_setup`` goes to ``StrictNestedDictionary`` unchanged; ndict-tools
+    passes it when it copies a repository. The sections are
+    ``StrictNestedDictionary`` instances with the default configuration.
     """
 
-    def __init__(self, *args, **kwargs):
-        kwargs.pop("default_setup", None)
-        super().__init__(default_setup=_DEFAULT_SETUP)
+    def __init__(
+        self,
+        *args: tuple[str | list[str], object],
+        default_setup: Mapping[str, object] | None = None,
+        **kwargs: dict[str, object],
+    ) -> None:
+        super().__init__(default_setup=default_setup)
 
-        # Initialize sections with a helper to factorize StrictNestedDictionary creation
-        self["details"] = self._new_section(
+        self["details"] = StrictNestedDictionary(
             {
                 "name": "",  # Configuration name
                 "summary": "",
@@ -134,7 +136,7 @@ class Repository(StrictNestedDictionary):
         # Ensure a flat alias to the creation date exists for convenience/APIs
         self[["details", "creation_date"]] = self[["details", "date", "created"]]
 
-        self["paths"] = self._new_section(
+        self["paths"] = StrictNestedDictionary(
             {
                 "root": "",
                 "repository": "",
@@ -145,16 +147,16 @@ class Repository(StrictNestedDictionary):
                 "modules": [],
             }
         )
-        self["domains"] = self._new_section({})
-        self["languages"] = self._new_section(
+        self["domains"] = StrictNestedDictionary()
+        self["languages"] = StrictNestedDictionary(
             {
                 "source": "",
                 "hierarchy": {},
                 "fallback": "",
             }
         )
-        self["translators"] = self._new_section({})
-        self["authors"] = self._new_section({})
+        self["translators"] = StrictNestedDictionary()
+        self["authors"] = StrictNestedDictionary()
 
         # args content
         self._apply_args(args)
@@ -163,11 +165,7 @@ class Repository(StrictNestedDictionary):
         self._apply_kwargs(kwargs)
 
     # --- Private helpers ---
-    def _new_section(self, data: dict[str, Any]) -> StrictNestedDictionary:
-        """Create a StrictNestedDictionary section with the shared default setup."""
-        return StrictNestedDictionary(data, default_setup=_DEFAULT_SETUP)
-
-    def _apply_args(self, args) -> None:
+    def _apply_args(self, args: tuple[tuple[str | list[str], object], ...]) -> None:
         for path, value in args:
             if not (isinstance(path, list) and path in self.paths()) and not (
                 isinstance(path, str) and self.is_key(path)
@@ -185,7 +183,7 @@ class Repository(StrictNestedDictionary):
                 else:
                     self[path].update(value)
 
-    def _apply_kwargs(self, kwargs: dict[str, Any]) -> None:
+    def _apply_kwargs(self, kwargs: Mapping[str, object]) -> None:
         for key, value in kwargs.items():
             if key in self.keys():
                 if isinstance(value, dict):
@@ -260,7 +258,7 @@ class Repository(StrictNestedDictionary):
         - "%Y-%m-%d"
         """
         dt: datetime | None = None
-        if isinstance(value, str):
+        if is_type(value, str):
             # Try ISO 8601 first
             try:
                 dt = datetime.fromisoformat(value)
@@ -306,8 +304,7 @@ class Repository(StrictNestedDictionary):
         :return:
         :raises ValueError: if module already exists
         """
-        if not isinstance(module, str):
-            raise TypeError(f"Module must be a string, not {type(module)}")
+        ensure_type(module, str, f"Module must be a string, not {type(module)}")
 
         module_path = normalize_module_identifier(module)
 
@@ -337,7 +334,7 @@ class Repository(StrictNestedDictionary):
         :return:
         """
         self[["paths", "modules"]] = []
-        self["domains"] = self._new_section({})
+        self["domains"] = StrictNestedDictionary()
 
     @property
     def domains(self) -> dict[str, list[str]]:
@@ -348,7 +345,7 @@ class Repository(StrictNestedDictionary):
         return self["domains"].to_dict()
 
     @domains.setter
-    def domains(self, value: dict[str, Any]) -> None:
+    def domains(self, value: dict[str, list[str]]) -> None:
         # Accepts an iterable of (module, [domains...]) and merges into self["domains"]
         for module, domains in value.items():
             if module in self[["paths", "modules"]]:
@@ -397,7 +394,7 @@ class Repository(StrictNestedDictionary):
         Removes all domains from the list of  domains.
         :return:
         """
-        self["domains"] = self._new_section({})
+        self["domains"] = StrictNestedDictionary()
 
     # --- paths.repository helpers ---
     @property
@@ -406,8 +403,7 @@ class Repository(StrictNestedDictionary):
 
     @repository.setter
     def repository(self, path: str) -> None:
-        if not isinstance(path, str):
-            raise TypeError(f"Repository must be a string, not {type(path)}")
+        ensure_type(path, str, f"Repository must be a string, not {type(path)}")
         try:
             self.add_repository(path)
         except ValueError:
@@ -448,11 +444,10 @@ class Repository(StrictNestedDictionary):
     @hierarchy.setter
     def hierarchy(self, value: dict[str, str | list[str]]) -> None:
 
-        if not isinstance(value, dict):
-            raise TypeError(f"hierarchy must be a dictionary, not {type(value)}")
+        ensure_type(value, dict, f"hierarchy must be a dictionary, not {type(value)}")
 
         # Rebuild the hierarchy by delegating to add_hierarchy for each fallback
-        self[["languages", "hierarchy"]] = self._new_section({})
+        self[["languages", "hierarchy"]] = StrictNestedDictionary()
         for fallback, variants in value.items():
             self.add_hierarchy(fallback, variants)
 
@@ -508,7 +503,7 @@ class Repository(StrictNestedDictionary):
         self[["languages", "hierarchy", fallback]] = normalized
 
     def clean_hierarchy(self) -> None:
-        self[["languages", "hierarchy"]] = self._new_section({})
+        self[["languages", "hierarchy"]] = StrictNestedDictionary()
 
     # --- languages.source / languages.fallback helpers ---
     # Mirror the hierarchy property above, but for the two singular language
@@ -524,8 +519,7 @@ class Repository(StrictNestedDictionary):
 
     @source.setter
     def source(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError(f"source must be a string, not {type(value)}")
+        ensure_type(value, str, f"source must be a string, not {type(value)}")
         self[["languages", "source"]] = (
             normalize_language_tag(value) if value else value
         )
@@ -536,8 +530,7 @@ class Repository(StrictNestedDictionary):
 
     @fallback.setter
     def fallback(self, value: str) -> None:
-        if not isinstance(value, str):
-            raise TypeError(f"fallback must be a string, not {type(value)}")
+        ensure_type(value, str, f"fallback must be a string, not {type(value)}")
         self[["languages", "fallback"]] = (
             normalize_language_tag(value) if value else value
         )
@@ -559,15 +552,14 @@ class Repository(StrictNestedDictionary):
         return self["authors"]
 
     @authors.setter
-    def authors(self, value: dict[str, Any]) -> None:
-        if not isinstance(value, dict):
-            raise TypeError(f"authors must be a dictionary, not {type(value)}")
+    def authors(self, value: dict[str, AuthorPayload]) -> None:
+        ensure_type(value, dict, f"authors must be a dictionary, not {type(value)}")
         # Replace the whole authors section
-        self["authors"] = self._new_section({})
+        self["authors"] = StrictNestedDictionary()
         for author_id, author in value.items():
             self.add_author(author_id, author)
 
-    def add_author(self, author_id: str, author: dict[str, Any]) -> None:
+    def add_author(self, author_id: str, author: AuthorPayload) -> None:
         """Add a new author entry.
 
         This method mirrors the structure expected by Config.add_author outputs,
@@ -580,7 +572,7 @@ class Repository(StrictNestedDictionary):
         """Remove an author by its identifier. Delegates to Authors.remove()."""
         Authors.remove(self, author_id)
 
-    def update_author(self, author_id: str, updates: dict[str, Any]) -> None:
+    def update_author(self, author_id: str, updates: dict[str, JSONInput]) -> None:
         """Update fields of an existing author with type checking.
 
         Only existing keys can be updated and their types must match the
@@ -600,15 +592,14 @@ class Repository(StrictNestedDictionary):
         return self["translators"]
 
     @translators.setter
-    def translators(self, value: dict[str, Any]) -> None:
-        if not isinstance(value, dict):
-            raise TypeError(f"translators must be a dictionary, not {type(value)}")
+    def translators(self, value: dict[str, TranslatorPayload]) -> None:
+        ensure_type(value, dict, f"translators must be a dictionary, not {type(value)}")
         # Replace the whole translators section
-        self["translators"] = self._new_section({})
+        self["translators"] = StrictNestedDictionary()
         for name, translator in value.items():
             self.add_translator(name, translator)
 
-    def add_translator(self, name: str, translator: dict[str, Any]) -> None:
+    def add_translator(self, name: str, translator: TranslatorPayload) -> None:
         """Add a new translator entry.
 
         Mirrors add_author: caller provides the unique name and a dictionary
@@ -617,7 +608,7 @@ class Repository(StrictNestedDictionary):
         """
         Translators.add(self, name, translator)
 
-    def update_translator(self, name: str, updates: dict[str, Any]) -> None:
+    def update_translator(self, name: str, updates: dict[str, JSONInput]) -> None:
         """
         Update an existing translator's details with structural validation.
 
@@ -644,14 +635,14 @@ class Repository(StrictNestedDictionary):
         """
         Translators.clean(self)
 
-    def add_value(self, path: list[str], value: Any) -> None:
+    def add_value(self, path: list[str], value: JSONInput) -> None:
         """
         Add a value in the repository
 
         :param path: path (hierarchical key of nested dictionary) of the value to add.
         :type path: list[str]
         :param value: value to add.
-        :type value: Any
+        :type value: JSONInput
         :return: void function
         :rtype: None
         :raises KeyError: If the value does not exist.
@@ -672,14 +663,14 @@ class Repository(StrictNestedDictionary):
 
         self[path] = value
 
-    def update_value(self, path: list[str], value: Any) -> None:
+    def update_value(self, path: list[str], value: JSONInput) -> None:
         """
         Update an existing value in the repository.
 
         :param path: hierarchical key (list of str) pointing to the value to update.
         :type path: list[str]
         :param value: new value to set.
-        :type value: Any
+        :type value: JSONInput
         :return: None
         :rtype: None
         :raises KeyError: If the path does not exist in the repository.
@@ -700,7 +691,7 @@ class Repository(StrictNestedDictionary):
 
         self[path] = value
 
-    def _empty_value_for(self, current: Any) -> Any:
+    def _empty_value_for(self, current: object) -> StrictNestedDictionary | JSONValue:
         """
         Compute the empty/default placeholder value matching the type of
         ``current``. Shared by :meth:`remove_value` and :meth:`clean_value`
@@ -709,13 +700,13 @@ class Repository(StrictNestedDictionary):
         to be non-empty first.
 
         :param current: The current value whose type determines the default.
-        :type current: Any
+        :type current: object
         :return: An empty placeholder of the same type as ``current``
                  (``None`` for unrecognised types).
-        :rtype: Any
+        :rtype: ~ndict_tools.StrictNestedDictionary | JSONValue
         """
         if isinstance(current, StrictNestedDictionary):
-            return self._new_section({})
+            return StrictNestedDictionary()
         elif isinstance(current, dict):
             return {}
         elif isinstance(current, list):

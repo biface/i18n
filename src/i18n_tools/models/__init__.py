@@ -39,13 +39,20 @@ This module makes no imports from application layers (``loaders``,
  for the rationale.
 """
 
+from i18n_tools._counters import ContentCounters
+
 from .author import Author, Authors
-from .corpus import Book, Corpus, Encyclopaedia, FallbackBook, Message
+from .book import Book, FallbackBook
+from .corpus import Corpus
+from .encyclopaedia import Encyclopaedia
+from .message import Declension, Message
 from .repository import Repository
 from .translator import Translator, Translators
 
 __all__ = [
     "Message",
+    "Declension",
+    "ContentCounters",
     "Book",
     "Corpus",
     "FallbackBook",

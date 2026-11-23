@@ -1,7 +1,8 @@
 import pytest
 
 from i18n_tools.config import Config
-from i18n_tools.models.corpus import Book, Message
+from i18n_tools.models.book import Book
+from i18n_tools.models.message import Declension, Message
 from i18n_tools.patterns import Singleton
 
 
@@ -34,19 +35,9 @@ def i18t_file(tmp_path):
 
     book = Book(language="fr-FR", domain="messages")
     message = Message(
-        id="greet",
-        default="Bonjour",
-        metadata={
-            "version": "0.9.0",
-            "language": "fr-FR",
-            "location": [],
-            "flags": [],
-            "user_comments": [],
-            "auto_comments": [],
-            "count": {"singular": 0, "plurals": []},
-        },
+        "greet", "Bonjour", locations=[], flags=[], user_comments=[], auto_comments=[]
     )
-    book.add("messages", [message])
+    book.add(message)
     book.save(str(directory))
 
     return str(directory / book.filename)
@@ -79,5 +70,33 @@ def sync_config_file(tmp_path):
         "  languages:\n"
         "    source: en\n"
         "    hierarchy: {}\n"
+    )
+    return str(config_file), str(repository_root)
+
+
+@pytest.fixture
+def corpus_config_file(tmp_path):
+    """
+    An application configuration declaring module "app", domain
+    "messages", source "en" and the hierarchy fr -> fr-FR.
+
+    :return: ``(config_path, repository_root)``.
+    """
+    repository_root = tmp_path / "repo"
+    repository_root.mkdir()
+    config_file = tmp_path / "i18n-tools.yaml"
+    config_file.write_text(
+        "configuration: application\n"
+        "application:\n"
+        "  paths:\n"
+        f"    repository: {repository_root}\n"
+        "  domains:\n"
+        "    app:\n"
+        "      - messages\n"
+        "  languages:\n"
+        "    source: en\n"
+        "    hierarchy:\n"
+        "      fr:\n"
+        "        - fr-FR\n"
     )
     return str(config_file), str(repository_root)

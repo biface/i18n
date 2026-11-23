@@ -12,8 +12,23 @@ updates:
     commit-message:
       prefix: "ci"
 
-  - package-ecosystem: "pip"
+  # Runtime dependencies and extras: pyproject.toml and uv.lock.
+  - package-ecosystem: "uv"
     directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "master"
+    labels:
+      - "type: chore"
+      - "ecosystem: language"
+      - "priority: low"
+    commit-message:
+      prefix: "chore"
+
+  # Development tools: the requirement files tox installs from, where
+  # their versions are pinned. The uv ecosystem does not read them.
+  - package-ecosystem: "pip"
+    directory: "/.tox-config/requirements"
     schedule:
       interval: "monthly"
     target-branch: "master"

@@ -1,0 +1,311 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://pyi18t-tools.readthedocs.io/en/stable/schemas/i18t-1.0.0.schema.json",
+    "title": "pyi18t .i18t file, format 1.0.0",
+    "description": "Structure of a Book file as a conforming writer produces it. The same data model applies to the JSON and YAML encodings. The coherence rules that a schema cannot express (equal segment counts, counters against content, language and domain against the path, identifier of an entry against its key) are specified in the format reference.",
+    "type": "object",
+    "required": ["metadata"],
+    "properties": {
+        "metadata": {"$ref": "#/$defs/bookMetadata"}
+    },
+    "propertyNames": {
+        "minLength": 1,
+        "not": {"enum": [".pyi18t_tools", ".i18n_tools"]}
+    },
+    "additionalProperties": {"$ref": "#/$defs/entry"},
+    "$defs": {
+        "semver": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "tally": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "strings": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "rules": {
+            "description": "Plural rules. Their content is not specified by format 1.0.0; a reader keeps it unchanged.",
+            "type": "object"
+        },
+        "tokenNames": {
+            "description": "Token names of one segment, distinct and sorted.",
+            "type": "array",
+            "items": {"type": "string"},
+            "uniqueItems": true
+        },
+        "bookMetadata": {
+            "type": "object",
+            "required": [
+                "format_version",
+                "version",
+                "language",
+                "domain",
+                "gettext",
+                "rules",
+                "count",
+                "statistics"
+            ],
+            "properties": {
+                "format_version": {
+                    "allOf": [{"$ref": "#/$defs/semver"}],
+                    "const": "1.0.0"
+                },
+                "version": {"$ref": "#/$defs/semver"},
+                "language": {"type": "string", "minLength": 1},
+                "domain": {"type": "string", "minLength": 1},
+                "gettext": {"$ref": "#/$defs/gettext"},
+                "rules": {"$ref": "#/$defs/rules"},
+                "count": {"$ref": "#/$defs/bookCount"},
+                "statistics": {"$ref": "#/$defs/bookStatistics"}
+            },
+            "additionalProperties": false
+        },
+        "gettext": {
+            "type": "object",
+            "required": [
+                "project_id_version",
+                "report_msgid_bugs_to",
+                "pot_creation_date",
+                "po_revision_date",
+                "last_translator",
+                "language_team",
+                "header_comment"
+            ],
+            "properties": {
+                "project_id_version": {"type": "string"},
+                "report_msgid_bugs_to": {"type": "string"},
+                "pot_creation_date": {"type": "string"},
+                "po_revision_date": {"type": "string"},
+                "last_translator": {"type": "string"},
+                "language_team": {"type": "string"},
+                "header_comment": {"type": "string"}
+            },
+            "additionalProperties": false
+        },
+        "bookCount": {
+            "type": "object",
+            "required": [
+                "messages",
+                "draft",
+                "complete",
+                "declensions",
+                "alternatives",
+                "singulars",
+                "plurals",
+                "segments",
+                "filled",
+                "empty"
+            ],
+            "properties": {
+                "messages": {"$ref": "#/$defs/tally"},
+                "draft": {"$ref": "#/$defs/tally"},
+                "complete": {"$ref": "#/$defs/tally"},
+                "declensions": {"$ref": "#/$defs/tally"},
+                "alternatives": {"$ref": "#/$defs/tally"},
+                "singulars": {"$ref": "#/$defs/tally"},
+                "plurals": {"$ref": "#/$defs/tally"},
+                "segments": {"$ref": "#/$defs/tally"},
+                "filled": {"$ref": "#/$defs/tally"},
+                "empty": {"$ref": "#/$defs/tally"}
+            },
+            "additionalProperties": false
+        },
+        "bookStatistics": {
+            "type": "object",
+            "required": [
+                "words",
+                "characters",
+                "messages_with_alternatives",
+                "messages_with_plurals",
+                "messages_with_rules",
+                "locations",
+                "flags",
+                "tokens"
+            ],
+            "properties": {
+                "words": {"$ref": "#/$defs/tally"},
+                "characters": {"$ref": "#/$defs/tally"},
+                "messages_with_alternatives": {"$ref": "#/$defs/tally"},
+                "messages_with_plurals": {"$ref": "#/$defs/tally"},
+                "messages_with_rules": {"$ref": "#/$defs/tally"},
+                "locations": {"$ref": "#/$defs/tally"},
+                "flags": {
+                    "type": "object",
+                    "propertyNames": {"minLength": 1},
+                    "additionalProperties": {"type": "integer", "minimum": 1}
+                },
+                "tokens": {"$ref": "#/$defs/tokenNames"}
+            },
+            "additionalProperties": false
+        },
+        "entry": {
+            "type": "object",
+            "required": ["messages", "metadata"],
+            "properties": {
+                "messages": {"$ref": "#/$defs/messages"},
+                "metadata": {"$ref": "#/$defs/entryMetadata"}
+            },
+            "additionalProperties": false
+        },
+        "messages": {
+            "type": "object",
+            "required": ["principal", "alternatives"],
+            "properties": {
+                "principal": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "minItems": 1
+                },
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "entryMetadata": {
+            "type": "object",
+            "required": [
+                "id",
+                "context",
+                "locations",
+                "flags",
+                "user_comments",
+                "auto_comments",
+                "status",
+                "rules",
+                "count",
+                "fill_mask",
+                "statistics"
+            ],
+            "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "context": {"type": "string"},
+                "locations": {
+                    "type": "array",
+                    "items": {"$ref": "#/$defs/location"}
+                },
+                "flags": {
+                    "type": "array",
+                    "items": {"type": "string", "minLength": 1},
+                    "uniqueItems": true
+                },
+                "user_comments": {"$ref": "#/$defs/strings"},
+                "auto_comments": {"$ref": "#/$defs/strings"},
+                "status": {"enum": ["draft", "complete"]},
+                "rules": {"$ref": "#/$defs/rules"},
+                "count": {"$ref": "#/$defs/entryCount"},
+                "fill_mask": {"$ref": "#/$defs/fillMask"},
+                "statistics": {"$ref": "#/$defs/entryStatistics"}
+            },
+            "additionalProperties": false
+        },
+        "location": {
+            "type": "object",
+            "required": ["file", "line", "declension", "segment"],
+            "properties": {
+                "file": {"type": "string", "minLength": 1},
+                "line": {"type": "integer", "minimum": 1},
+                "declension": {
+                    "anyOf": [
+                        {"type": "integer", "minimum": 0},
+                        {"type": "null"}
+                    ]
+                },
+                "segment": {
+                    "anyOf": [
+                        {"type": "integer", "minimum": 0},
+                        {"type": "null"}
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "entryCount": {
+            "type": "object",
+            "required": [
+                "declensions",
+                "alternatives",
+                "singulars",
+                "plurals",
+                "segments",
+                "tokens"
+            ],
+            "properties": {
+                "declensions": {"type": "integer", "minimum": 1},
+                "alternatives": {"$ref": "#/$defs/tally"},
+                "singulars": {"type": "integer", "minimum": 1},
+                "plurals": {"$ref": "#/$defs/tally"},
+                "segments": {
+                    "type": "object",
+                    "required": ["principal", "alternatives"],
+                    "properties": {
+                        "principal": {"type": "integer", "minimum": 1},
+                        "alternatives": {
+                            "type": "array",
+                            "items": {"type": "integer", "minimum": 1}
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "tokens": {
+                    "type": "object",
+                    "required": ["principal", "alternatives"],
+                    "properties": {
+                        "principal": {
+                            "type": "array",
+                            "items": {"$ref": "#/$defs/tokenNames"},
+                            "minItems": 1
+                        },
+                        "alternatives": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "items": {"$ref": "#/$defs/tokenNames"},
+                                "minItems": 1
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "fillMask": {
+            "type": "object",
+            "required": ["principal", "alternatives"],
+            "properties": {
+                "principal": {
+                    "type": "array",
+                    "items": {"type": "boolean"},
+                    "minItems": 1
+                },
+                "alternatives": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {"type": "boolean"},
+                        "minItems": 1
+                    }
+                }
+            },
+            "additionalProperties": false
+        },
+        "entryStatistics": {
+            "type": "object",
+            "required": ["words", "characters"],
+            "properties": {
+                "words": {"$ref": "#/$defs/tally"},
+                "characters": {"$ref": "#/$defs/tally"}
+            },
+            "additionalProperties": false
+        }
+    }
+}

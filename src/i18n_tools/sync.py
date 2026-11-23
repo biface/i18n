@@ -11,16 +11,28 @@ Key Responsibilities:
 """
 
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 from .__static__ import I18N_TOOLS_MESSAGES, I18N_TOOLS_TEMPLATE
-from .loaders.loader import build_book_filename
-from .loaders.utils import _create_empty_file, _create_empty_json
+from .loaders.loader import build_book_filename, create_empty_file, save_book
 from .locale import get_all_languages, validate_and_normalize_language_tags
+from .models.book import Book
+
+
+class LanguageSettings(TypedDict):
+    """
+    The languages of a repository, as :func:`check_repository` reads them.
+
+    ``source`` is the source language; ``hierarchy`` maps each parent
+    language to its variants.
+    """
+
+    source: str
+    hierarchy: dict[str, list[str]]
 
 
 def check_repository(
-    tld: str, domains: dict[str, list[str]], languages: dict[str, Any]
+    tld: str, domains: dict[str, list[str]], languages: LanguageSettings
 ):
     """
     Checks and creates necessary files in the translation repository.
@@ -61,7 +73,7 @@ def check_repository(
             templates_path.mkdir(parents=True, exist_ok=True)
             pot_file = templates_path / f"{domain}.pot"
             if not pot_file.exists():
-                _create_empty_file(str(pot_file))
+                create_empty_file(str(pot_file))
 
             for lang in validated_languages:
                 lang_path = locales_path / lang / I18N_TOOLS_MESSAGES
@@ -75,11 +87,14 @@ def check_repository(
                 json_file = lang_path / json_filename
                 po_file = lang_path / f"{domain}.po"
 
+                # An empty Book is a root with its complete metadata, the
+                # gettext values "" (no write date: nothing was written to
+                # the Book yet).
                 if not json_file.exists():
-                    _create_empty_json(str(json_file))
+                    save_book(Book(language=lang, domain=domain), str(json_file))
 
                 if not po_file.exists():
-                    _create_empty_file(str(po_file))
+                    create_empty_file(str(po_file))
 
 
 # TODO: look for json files to be gzipped in domains repository (used before making archives)

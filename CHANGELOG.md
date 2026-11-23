@@ -2,9 +2,376 @@
 
 All notable changes to this project are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-Sections per [CONVENTIONS.md](CONVENTIONS.md) §7 (Releases).
+Sections group changes by their `type:` label, as the release notes
+draft does (`.github/release-template-semver.yml`).
 
 Issue/PR references use the GitHub issue number from `biface/i18n`.
+Decisions are cited by the number of their decision issue
+(`DA`, `DD`, `DT` or `DQ`, then three digits), as renumbered on
+2026-11-20.
+
+---
+
+## v0.11.0 — Set in Stone (Unreleased)
+
+The stored structure of a `.i18t` file is frozen as format 1.0.0, with
+`reference/format.rst` as its normative specification and a JSON Schema
+shipped in the package. It does not change before v0.40.0. Files written
+by 0.10.0 are refused on read.
+
+### ⚠️ Breaking Changes
+No deprecated aliases are kept: the library is pre-alpha and its public
+API is frozen only at v0.20.0.
+
+- **`.i18t` format 1.0.0** (DD-019, #147, #169). A file of 0.10.0 is
+  refused with a `FormatError` that lists each defect.
+  - The root `metadata` is required. It holds `format_version`
+    (`"1.0.0"`), `version` (the version of the translation, from
+    `"0.0.1"`), `language` and `domain`, which must match the path, a
+    `gettext` mapping of seven keys (`project_id_version`,
+    `report_msgid_bugs_to`, `pot_creation_date`, `po_revision_date`,
+    `last_translator`, `language_team`, `header_comment`), `rules`, and
+    two nodes recomputed at each save: `count` (integrity, compared on
+    read) and `statistics` (information). `statistics.total_words`,
+    `statistics.total_messages` and `count.messages` are replaced.
+  - A message entry is `{"messages": {"principal": [...],
+    "alternatives": [[...]]}, "metadata": {...}}`; the
+    `[segment][declension]` matrix is refused. The entry metadata holds
+    `id` (equal to the key of the entry), `context`, `locations`,
+    `flags`, `user_comments`, `auto_comments`, `status`, `rules`, and,
+    once recorded, the `count` tree and the `fill_mask` (in the shape of
+    `messages`). `version` and `language` leave the entry: the Book
+    carries them.
+  - A location is an object `{"file", "line", "declension",
+    "segment"}`; an open coordinate is `null`.
+  - A text is a valid `str.format` string. Its tokens are its named
+    fields; a positional field, an attribute or index access
+    (`{user.name}`, `{items[0]}`) and a field nested in a format
+    specification are warnings.
+  - A key that the schema does not list is an error. `.pyi18t_tools`
+    and, until v0.20.0, `.i18n_tools` are reserved root keys.
+- **Book file names** (DT-020, #194). Only `<domain>.json.i18t` and
+  `<domain>.yaml.i18t` are read. `.yml.i18t`, `.i18t` alone and any other
+  case of the suffixes raise `FormatError`, where they were read as JSON.
+- **`Message` rebuilt on declensions** (DD-013, #157). Content is a
+  principal `Declension` (`singular`, `plurals`) and variant
+  `Declension`s, addressed by `(variant, segment)`: `variant=0` is the
+  principal, `segment=0` the singular. Renamed, replaced or removed:
+  - constructor `Message(id, singular="", **options)`, the options being
+    `plurals`, `alternatives` (the texts of each, singular first),
+    `context`, `locations`, `flags`, `user_comments`, `auto_comments` and
+    `rules`. `default`, `options`, `default_plurals`, `options_plurals`
+    and `metadata` are no longer arguments; an unknown option, `status`,
+    `count` or `fill_mask` raises `TypeError`;
+  - an identifier given as an `int` is converted to a string; a `bool`
+    raises `TypeError`, an empty identifier `ValueError`;
+  - attributes `default`/`default_plurals` → `principal`;
+    `options`/`options_plurals` → `variants` (a tuple), both read-only;
+    property `message` → `matrix` (the 0.10.0 orientation, one row per
+    segment, one column per declension);
+  - `get_principal()`/`get_principal_plurals()` → `principal`,
+    `principal.plurals`; `get_variant(option)`/`get_variant_plurals()` →
+    `get_variant(variant)`, which takes variants 1 to n (variant 0
+    raises `IndexError`, as for `update_variant()`/`remove_variant()`);
+  - `get_main_segment()`/`get_variant_segment()`/`get_segment(**kwargs)`
+    → `get_segment(segment, variant=0)`;
+    `add_/update_main_segment()`/`add_/update_variant_segment()` →
+    `add_segment()`, `update_segment()`, `remove_segment()` taking
+    `(text, segment, variant=0)`;
+  - `add_principal()`, `update_principal()`, `add_variant()` and
+    `update_variant()` take the keywords `singular` and `plurals`;
+  - `add_message()`, `update_message()`, `remove_message()`,
+    `from_i18n_tools()`, `to_i18n_tools_format()` and `translations_set`
+    are removed; `equals()`/`is_similar()` → `equal()`/`similar()`;
+  - `get_format_variables()`/`extract_variables()` → `get_tokens()`/
+    `extract_tokens()`. *Token* now means a placeholder variable
+    (`{name}`), no longer a plural position. Tokens are read as
+    `str.format` reads them: `{n:d}` holds `n`, `{{x}}` holds none, and
+    the fields of a format specification are tokens;
+  - `Message.format(variant=0, segment=0, **tokens)` formats exactly the
+    text asked for, with no column fallback; the fallback belongs to
+    `formatter.publish()`;
+  - `Message.metadata` holds the keys of the entry metadata.
+    `metadata["language"]`, `metadata["version"]` and `add_language()`
+    are gone. `location` becomes `locations`, a list of mappings, and
+    `add_location(file, line, variant=None, segment=None)` replaces
+    `add_location(line, file)`. `context`, `rules`, `locations`, `flags`,
+    `user_comments` and `auto_comments` are properties with a setter;
+    `add_metadata()`/`update_metadata()` refuse `status`, `count` and
+    `fill_mask`, and no longer take a `dict`;
+  - a text that is not a valid format string is refused when it is set
+    (`ValueError`); `{n!x}` used to fail only at publication.
+- `formatter.publish(message, variant=0, segment=None, n=None,
+  **tokens)` replaces `alternative`. `segment` and `n` are exclusive
+  (`ValueError`). An old keyword is no longer recognised and is passed on
+  as a token: `publish(m, alternative=1)` formats variant 0. (#157)
+- `PluralIndexError(message_id, segment, segments)`: the constructor
+  takes structured fields, also available as attributes. (#157)
+- **`Book`** (#133, #157, #169):
+  - keywords are the closed set `BookOptions`: `language` and `domain`
+    (required), `file_format`. Any other keyword raises `TypeError`
+    naming it, where it was ignored; a language that is not a string
+    raises `TypeError`, as a domain already did;
+  - `Book.format` → `Book.file_format`: attribute, constructor keyword
+    and the `*_format()` accessors, now
+    `get_/add_/update_/remove_file_format()`;
+  - the gettext keywords (`project_id_version`, `report_msgid_bugs_to`,
+    `pot_creation_date`, `language_team`, `header_comment`) give way to
+    `Book.set_gettext()`, and their placeholder defaults
+    (`"i18n-tools 1.0"`, `"bugs@example.com"`) are no longer written: a
+    new Book has the seven keys at `""`;
+  - `Book.add(domain, messages)` → `Book.add(message)`, which holds the
+    message under `message.id` and refuses a reserved identifier
+    (`metadata`, `.pyi18t_tools`, `.i18n_tools`) or one already present
+    (`ValueError`). A message no longer carries a language to compare
+    with the Book's;
+  - `language` and `domain` are properties on the root metadata, which
+    `Book.metadata` now holds; `format_version` is read-only, `version`
+    is set by its property or `set_version()`; `set_metadata()` refuses
+    a key the root does not have, and `format_version`, `count` and
+    `statistics` (`KeyError`);
+  - loading a file whose content has an error raises `FormatError` (was
+    `ValueError`), and the file is checked against the language and the
+    domain of the Book.
+- `i18n-tools validate <path>` prints every finding of the file (errors,
+  warnings, information) after a summary line, and exits with status 1
+  when one of them is an error, the report being the error message.
+  (#157)
+- `Repository`, `Author` and `Translator` no longer force
+  `{"indent": 2}`: they and their sections use the default configuration
+  of `StrictNestedDictionary`. Since `==` compares the configuration, a
+  section no longer equals a `StrictNestedDictionary` built with
+  `indent: 2`. The three constructors take a keyword-only `default_setup`
+  and pass it on; `Repository(default_setup=...)` was ignored, it is now
+  applied, and a copy of a `Repository` keeps the configuration of the
+  original. (#128)
+
+### ✨ New Features
+- `Declension` and `ContentCounters`, exported by `i18n_tools.models` and
+  the package. (#157, #161)
+- `Message.from_matrix(id, matrix, **options)` builds a message from a
+  matrix in the 0.10.0 orientation, empty texts included. Three
+  comparisons: `equal()` (strict, used by `==`), `isomorph()` (same
+  matrix), `similar()` (same non-empty texts); `texts` gives the
+  non-empty texts. (#157)
+- Message metadata: `add_flag()`, `remove_flag()`, `remove_location()`,
+  `remove_comment()`. (#169)
+- Completion status (DD-014): a message is `draft` or `complete`.
+  `mark_complete()` checks that the principal singular is set and that
+  every declension has the same number of segments, records the content
+  counters and locks texts and structure (`MessageError`); `reopen()`
+  unlocks; `record()` records the content of a draft. `observed` and
+  `recorded` are `ContentCounters` (the `count` tree and the
+  `fill_mask`); `has_divergence` compares them, and
+  `ContentCounters.defects()` and `differences()` say what is wrong.
+  (#161)
+- `Book.save()` records the counters of each draft once the file is
+  written, sets `po_revision_date`, and refuses, before writing, a Book
+  holding a complete message that diverges or has no recorded counters.
+  (#161)
+- `Book.rename(old, new)` changes the key and the `id` of a message
+  together; the message keeps its place. `Book.set_version()` and
+  `Book.set_gettext()`. (#169)
+- Reading a `.i18t` file checks its content against format 1.0.0:
+  errors stop the load (`FormatError` listing them), anomalies that leave
+  it usable are issued as `I18nToolsWarning` (new). A complete message
+  whose record is absent or diverges, or whose principal singular is
+  empty, is read as a draft, its record kept: with a warning in a
+  complete Book, an information in a draft Book. (#157, #161, #169)
+- Integrity checks returning findings (severity, place, message,
+  language): `Book.check()`; `Corpus.check()`, which compares the
+  complete messages of each identifier across languages (structure, then
+  token names per text after the column fallback);
+  `loader.inspect_book_file()`, which checks a file without loading it;
+  `core.inspect_corpus()`, which checks every configured language of a
+  module/domain, then the corpus. (#157, #161)
+- `i18n-tools validate --config C --module M --domain D` checks a
+  module/domain across its configured languages. (#157)
+- `VariantIndexError(message_id, variant, variants)` for a variant that
+  does not exist. (#157)
+- JSON Schema of format 1.0.0 (draft 2020-12),
+  `i18n_tools/schemas/i18t-1.0.0.schema.json`, shipped in the package;
+  its `$id` is
+  `https://pyi18t-tools.readthedocs.io/en/stable/schemas/i18t-1.0.0.schema.json`.
+  (#147)
+
+### 🐛 Bug Fixes
+- `Config.add_author()`/`get_author()`/`remove_author()`: email
+  addresses are normalized before they are stored or looked up —
+  validated by `email-validator`, then lower-cased, local part
+  included. `Marie.Curie@Example.ORG` and `marie.curie@example.org`
+  now designate the same author. Addresses already stored in a
+  settings file are not rewritten: one stored with upper-case letters
+  is no longer found by `get_author()`/`remove_author()`, nor detected
+  as a duplicate by `add_author()`, until it is corrected by hand.
+  `email-validator>=2.0` is now required by the `[api]` extra. (#158)
+- `Config.add_author()`/`get_author()`/`remove_author()` check the
+  syntax of an address and make no DNS request: an address whose domain
+  accepts no mail is stored and found like any other. The deliverability
+  check of `email-validator`, on by default, made a configuration call
+  depend on the network. (#158)
+- `copy.copy()`, `copy.deepcopy()` and pickle of an `Author`, a
+  `Translator` and a `Repository` holding them give equal objects of
+  the same class. The two constructors take every field or none; a
+  partial set raises `TypeError` naming the missing fields. (#164)
+- `core.save_book()` refuses a Book without language with `BookError`.
+  (#129)
+- `Config.load()` refuses a configuration section that is not a mapping
+  with `TypeError`, before loading any key (it failed with an
+  `AttributeError`). (#133)
+- Archive extraction uses `filter="data"` whenever `tarfile` provides it
+  (detected by feature, PEP 706 backport included). (#140)
+- A text made only of whitespace is absent: `publish()` falls back past
+  it instead of returning it, and it counts as empty in the fill mask
+  and in the cross-language check. (#147)
+- YAML Books are written in key order and in readable UTF-8; the keys
+  were sorted and non-ASCII characters escaped. (#194)
+- `sync.check_repository()` writes a missing Book as a root with its
+  complete metadata, the file `Book.save()` writes for an empty Book; it
+  wrote `{}`. (#195)
+- JSON files end with a newline. (#169)
+- Root `language`/`domain`, entry `context`, flags, comments and
+  locations survive a save and a load. (#157)
+
+### 📚 Documentation
+- Documentation tree in four parts: concepts, guides, reference and
+  project. `introduction.rst` is merged into the overview;
+  `getting_started.rst` becomes `reference/installation.rst`, first page
+  of the reference, before the `.i18t` format (moved from
+  `concept/format.rst`), the command line, the settings file and the
+  API. (#144)
+- The installation page follows `pyproject.toml`: Python 3.11 floor,
+  versions tested 3.11 to 3.14, distribution `pyi18t-tools`, `api`
+  extra, import name `i18n_tools` and command `i18n-tools`. (#142)
+- `reference/format.rst` is the normative specification of format
+  1.0.0: names, key order, root metadata, message entry, recorded
+  counters and broken messages, interpretation of the texts, severity of
+  every finding on read. Its complete examples are the valid fixtures of
+  the test suite. (#147)
+- Concept pages on message integrity and on the language and column
+  fallbacks, with Mermaid diagrams (`sphinxcontrib-mermaid` added to the
+  documentation requirements); the concept pages follow format 1.0.0.
+  (#147, #157, #161)
+- API pages for `core`, findings, exceptions and `CliError`; `Corpus`,
+  `FallbackBook` and `ContentCounters` documented. (#146) Each API page
+  declares its module instead of rendering it with `automodule`: module
+  docstrings are no longer published. The internal types named by
+  published signatures have an entry (`JSONValue`, `JSONInput`,
+  `Finding`, `URLCheck`, `BookData`, `LocaleStructure`,
+  `TranslationFileFormat`, `MessageStatus`). (#144)
+- `nitpicky = True`: a cross-reference that resolves to nothing fails
+  the build. intersphinx for Python, Babel and ndict-tools, each
+  inventory with a local copy in `docs/source/_inventories/`, read when
+  its site cannot be reached. (#144)
+- `README.md` and `README.fr.md`: the roadmap and the feature columns
+  follow the milestones. The bug report example names
+  `ndict-tools==1.3.0`; `CONTRIBUTING.md` and `CONTRIBUTING.fr.md` list
+  the ten Codecov components. (#142)
+- The Read the Docs configuration moves to the root and installs what
+  `tox -e docs` installs; `docs/conf/requirements.txt` is removed. The
+  documentation link of the issue chooser points to
+  `pyi18t-tools.readthedocs.io`. (#142)
+
+### 🔧 Maintenance
+- Python 3.11 floor (`requires-python = ">=3.11"`); CI matrix 3.11 to
+  3.14, 3.15 experimental.
+- `ndict-tools>=1.3.0`; the local `ndict_tools` stub is removed, the
+  package ships its own types. (#125, #129)
+- basedpyright 1.40.2 is a blocking gate in tox and CI, and a warning
+  fails it like an error (`failOnWarnings`); `src` has no error and no
+  warning. (#129, #130) Typing work: parameters and attributes annotated,
+  `@override` through a private `_compat.py` shim (`typing_extensions`
+  as a quality dependency only), argument guards through a private
+  `_checks.py`. (#129, #131, #132) `reportMissingTypeStubs` and
+  `reportUnknownParameterType` are enabled; the other disabled rules
+  are reassessed in v0.12.0 and v0.19.0. (#134) `tests/` stays outside
+  the gate. (#135)
+- No explicit `Any` left in signatures (#133): data read from or written
+  to JSON, YAML and TOML files is typed with two recursive aliases,
+  `JSONValue` (read) and `JSONInput` (written), in a private `_json.py`
+  (`TypeAliasType`, backported in `_compat.py` for Python 3.11); fixed
+  shapes are `TypedDict`s next to their owner: `BookOptions`,
+  `MessageOptions`, `LocationEntry`, `AuthorPayload`,
+  `TranslatorPayload` and its sections, `URLCheck`, `URLFormatCheck`,
+  `LocaleStructure`, `LanguageSettings`. The deprecated converter
+  functions keep untyped payloads behind one private alias.
+- `loaders/` layering (DA-006): `_utils.py`, `_settings.py` and
+  `_handler.py` are internal, `loader.py` is the only module imported
+  from outside `loaders/`, and a test checks the import rules. (#132,
+  #159)
+- `models/corpus.py` split into `message.py`, `book.py` (`Book`,
+  `FallbackBook`), `corpus.py` and `encyclopaedia.py`; public imports
+  unchanged. (#157)
+- `src/i18n_tools/locales/api.json` and `config.json`, written in the
+  format of 0.10.0, are removed from the package.
+- Codecov components aligned with the source tree, with a `cli`
+  component.
+- Development tools are installed by tox from
+  `.tox-config/requirements/*.txt`, the only place their versions are
+  pinned (`full.txt` includes the per-tool files; `docs.txt` and
+  `tox.txt` are new). The `dev` and `docs` dependency groups only name
+  the tools, and uv installs no group by default: the project
+  environment is `uv sync --extra api`, tox runs through
+  `uvx --with tox-uv tox`. `jsonschema` is a test dependency. (#137)
+- tox configuration: a bare `tox` runs the check environments only
+  (with `test-core`); each quality command is declared once and spliced
+  into `ci-quality`, `pre-push` and `local` (tox >= 4.65); the
+  single-version base Python is set once; `coverage` starts from clean
+  data. (#137)
+- `pre-push` only checks (`black --check`, `isort --check-only`, docs
+  build, tests, coverage) and stops on the first finding; `local`
+  applies black and isort before the checks. (#137, #138)
+- `test.sh` and `coverage.sh` run their nested environments with the tox
+  pinned in the pre-push environment, log to stderr and handle errors
+  explicitly. (#136)
+- Python versions are set in two files only, read locally and in CI by
+  `.tox-config/scripts/versions.py`: `versions.txt` (one environment per
+  line with `local`, `ci`, `experimental` markers; an experimental
+  version may fail without stopping the run, locally or in CI) and
+  `coverage-version.txt` (the version that measures coverage). The
+  py3NN tox sections are gone (tox derives the interpreter from the
+  name); the py3NN runs no longer measure coverage; locally the coverage
+  version is tested once, by the coverage run; the CI test matrix and
+  the coverage job's Python come from the files. A `versions` tox
+  environment, run first by `ci-quality`, `pre-push` and `local`, stops
+  on any inconsistency, classifiers included. (#136)
+- A `docs` tox environment (`sphinx-build -E -W`) builds the
+  documentation on Python 3.12; the GitHub Pages workflow, the pre-push
+  gate and Read the Docs run the same build. (#138, #144)
+- Dependabot updates `uv.lock` (`uv` ecosystem) and the tool requirement
+  files (`pip` ecosystem on `.tox-config/requirements`). The GitLab
+  mirror skips the Dependabot branches: `push` filter, a job condition
+  on the actor, and negative refspecs on `git push`. (#141)
+- Shared PyCharm run configurations in `.run/` for `local`, `pre-push`
+  and `docs`. (#139)
+- Versioned Git hooks in `.githooks/`, installed by `tox -e hooks`:
+  `commit-msg` checks Conventional Commits with the types the
+  contributing guides list (`security` included, #205), `pre-push` runs
+  the pre-push gate before `git push` and refuses a push the gate would
+  not test. (#171)
+- Issue forms: four decision forms (`decision-architecture`,
+  `decision-design`, `decision-technical`, `decision-quality`) replace
+  `design.yml`; `render` is removed from four fields and set to `text`
+  on "Observed behaviour" of the bug report. The contributing
+  guides, the pull request template, the hook and this file no longer
+  cite an internal conventions document.
+
+### 🧪 Tests
+- An unexpected `I18nToolsWarning` fails the test suite (filter in a
+  `conftest.py` `pytest_configure` hook).
+- `Message` tests rewritten by contract, every argument guard tested per
+  entry point; status, lock, divergence, save refusal and the
+  cross-language check tested from both sides. (#157, #161)
+- Fixtures of format 1.0.0 in `tests/mock/format/1.0.0/` (5 valid, 20
+  invalid with one defect each), checked against the schema; the files
+  written by `Book.save()` and `sync` are compared with the valid
+  fixtures. (#147, #169, #195)
+- `tests/helpers.py::as_plain()` compares content rather than class
+  under ndict-tools 1.3.0. (#125)
+- The configuration of `Repository`, `Author`, `Translator` and their
+  sections, and the copies of a `Repository`, are tested. (#128, #164)
+- `Book` keyword options, the `Config.load()` section guard and the
+  3.11 `TypeAliasType` fallback are tested. (#133)
 
 ---
 
@@ -26,7 +393,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   and a `.toml` settings file still require `[api]`. Calling one of
   these without the extra installed raises a plain `ModuleNotFoundError`
   naming the missing package and the install command, instead of a
-  bare import failure. (DD-41, #117, #118, #119, #120)
+  bare import failure. (DT-033, #117, #118, #119, #120)
 - `dependencies` shrinks from 8 packages to 4: `ndict-tools`, `babel`,
   `langcodes`, `PyYAML`.
 
@@ -64,14 +431,14 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 ## v0.9.0 — Formatting & CLI (2026-08-26)
 
 ### ✨ New Features
-- `formatter/publish.py` — `publish()`: DD-27's four-step column
+- `formatter/publish.py` — `publish()`: DD-017's four-step column
   fallback (`messages[plural_index][alternative]` →
   `messages[plural_index][0]` → `messages[0][alternative]` →
   `messages[0][0]`), reading `Message`'s raw attributes
   (`default`/`options`/`default_plurals`/`options_plurals`) directly.
   `Message.format()` is left untouched — existing, tested, single-cell
-  API, not the DD-27 algorithm. (#112, #37)
-- `formatter/plurals.py` — `PluralRule` (DD-40): a CLDR baseline (via
+  API, not the DD-017 algorithm. (#112, #37)
+- `formatter/plurals.py` — `PluralRule` (DD-018): a CLDR baseline (via
   Babel) for a given locale, overlaid with explicit business-defined
   thresholds that take priority over the CLDR-derived category. Always
   resolves to an integer plural row index, never a CLDR category
@@ -83,12 +450,12 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
   `publish.py`, `plurals.py`. Public import path unchanged
   (`from i18n_tools import formatter`). (#109)
 - `cli.py` — basic CLI on `argparse` (stdlib): `validate <path>` and
-  `info <path>` parse the DD-12 `<lang>/LC_MESSAGES/<domain>.<format>.i18t`
+  `info <path>` parse the DD-021 `<lang>/LC_MESSAGES/<domain>.<format>.i18t`
   layout and load a `Book`; `sync <config>` loads an application
   `Config` and calls `core.synchronize()`; `repl` is a minimal
   interactive loop. Never imports `i18n_tools.loaders.*` directly —
   `core.py` is the only module outside `loaders/` allowed to do that
-  (DD-28). `[project.scripts]` entry point added
+  (DA-007). `[project.scripts]` entry point added
   (`i18n-tools = i18n_tools.cli:main`). (#39)
 
 ### 🧪 Tests
@@ -107,7 +474,7 @@ Issue/PR references use the GitHub issue number from `biface/i18n`.
 ### 🔧 Maintenance
 - `tox.ini` removed entirely — unified into `pyproject.toml`'s
   `[tool.tox]` table (`tox>=4.21`, native support), ~20 environments,
-  functionally unchanged (amends DD-36, DD-39 — see comments on #90,
+  functionally unchanged (amends DQ-036, DQ-037 — see comments on #90,
   #93). Two dead-config findings along the way:
   - `[gh-actions]` (`tox.ini`) was never actually consulted —
     `python-ci.yaml`'s `test-unit` job has always resolved its own tox
@@ -142,7 +509,7 @@ its own tag — no separate release was published for it.
   `translation`, `package`) covering the full `src/i18n_tools/` tree.
   `informational: true` on `master`/`staging/**` for this cycle —
   coverage stays a personal/informative target until v1.0.0, per the
-  2026-07-27 clarification (no new DD issued, consistent with DD-36's
+  2026-07-27 clarification (no new decision issued, consistent with DQ-036's
   original wording). (#96)
 - GitHub issue templates + PR template added, per `CONVENTIONS.md`
   §2/§3 — was a v0.6.0 milestone deliverable that never actually
@@ -159,7 +526,7 @@ its own tag — no separate release was published for it.
   v1.0.0. Distinct from and unrelated to Codecov's `informational`
   status, which was never a viable release gate in the first place —
   GitHub's required-status-checks only apply to branches, never to
-  tags. Documented as its own decision (DD-39) to prevent the two
+  tags. Documented as its own decision (DQ-037) to prevent the two
   mechanisms from being conflated later.
 
 #### 🐛 Bug Fixes
@@ -180,13 +547,13 @@ its own tag — no separate release was published for it.
 - `converter.py` — 13 functions (the intermediate "unified format"
   bridge and every Catalog/i18next conversion function built on it,
   plus `seek_translation`) confirmed to have zero callers anywhere in
-  `src/` or `tests/`. DD-15 already called this code obsolete and
-  DD-17 already decided it should be `@deprecated` and excluded from
+  `src/` or `tests/`. DA-009 already called this code obsolete and
+  DT-023 already decided it should be `@deprecated` and excluded from
   the public API, but neither had actually been implemented. Now
   marked `@_deprecated_unmaintained` (emits `DeprecationWarning` on
   call) rather than removed — not implementing v2.x/v3.x's rebuild
   early. `message_to_i18n_tools_format`/`i18n_tools_format_to_message_dict`
-  (DD-16, actually used by `Book`/`Corpus`/`loader.py`) are untouched.
+  (DT-022, actually used by `Book`/`Corpus`/`loader.py`) are untouched.
   Combined with the `.coveragerc` fix above, `converter.py` coverage
   went from 16% (61/381 lines, mostly this dead code) to 92%
   (56 real lines).

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from babel.core import Locale, UnknownLocaleError
 
+from .._checks import is_type
 from ..exceptions import PluralRuleError
 
 # Canonical CLDR category order (DD-40): used to resolve a CLDR category
@@ -57,16 +58,16 @@ class PluralRule:
             to ``int``.
         """
         try:
-            self._locale = Locale.parse(locale)
+            self._locale: Locale = Locale.parse(locale)
         except (UnknownLocaleError, ValueError) as e:
             raise PluralRuleError(f"Invalid locale for PluralRule: {locale!r}") from e
 
         if thresholds is not None:
             for key, value in thresholds.items():
-                if not isinstance(key, int) or not isinstance(value, int):
+                if not is_type(key, int) or not is_type(value, int):
                     raise PluralRuleError(
-                        f"PluralRule thresholds must map int to int, "
-                        f"got {key!r}: {value!r}"
+                        "PluralRule thresholds must map int to int, "
+                        + f"got {key!r}: {value!r}"
                     )
 
         self._thresholds: dict[int, int] = dict(thresholds) if thresholds else {}

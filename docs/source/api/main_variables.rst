@@ -33,3 +33,12 @@ Configuration and Backup
 
 .. autodata:: i18n_tools.__static__.I18N_TOOLS_BACKUP
    :annotation: = "backup"
+
+Types
+^^^^^
+
+.. py:type:: i18n_tools.__static__.TranslationFileFormat
+   :canonical: Literal['json', 'yaml']
+
+   Encoding of a Book file: ``"json"`` or ``"yaml"``, the ``<format>``
+   part of ``<domain>.<format>.i18t``.
