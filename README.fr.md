@@ -40,7 +40,7 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 | **v0.8.0** | Orchestration — point d'entrée `core.py`, résolution de repli `fallback.py`                      | ✅ Livré     |
 | **v0.9.0** | Formatage & CLI — `formatter.py` complet avec `PluralRule`, CLI/REPL                             | ✅ Livré |
 | **v0.10.0**| Revue d'architecture & des modèles — révision architecturale, extra `api` optionnel        | ✅ Livré     |
-| **v0.11.0**| Format sur disque — format `.i18t` 1.0.0 gelé et spécifié, schéma JSON, loaders sur le nouveau format | 🔵 En cours |
+| **v0.11.0**| Format sur disque — format `.i18t` 1.0.0 gelé et spécifié, schéma JSON, loaders sur le nouveau format | ✅ Livré     |
 | **v0.12.0**| Message et Book sur la structure stockée — les objets lisent les clés du fichier ; paquet renommé `pyi18t_tools` | 🔵 Planifié |
 | **v0.13.0**| Arbre et procédures — `Corpus` et `Encyclopaedia` dans un seul arbre, repli et contrôles sur ses chemins | 🔵 Planifié |
 | **v0.14.0**| CLI et sauvegardes — la CLI passe par `core.py`, sauvegardes compressées et reconstruction  | 🔵 Planifié |

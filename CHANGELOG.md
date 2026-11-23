@@ -12,7 +12,7 @@ Decisions are cited by the number of their decision issue
 
 ---
 
-## v0.11.0 — Set in Stone (Unreleased)
+## v0.11.0 — Set in Stone (2026-11-23)
 
 The stored structure of a `.i18t` file is frozen as format 1.0.0, with
 `reference/format.rst` as its normative specification and a JSON Schema

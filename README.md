@@ -41,7 +41,7 @@ The project follows a progression by deliverable value. Each version is independ
 | **v0.8.0** | Orchestration — `core.py` high-level entry point, `fallback.py` language chain resolution      | ✅ Delivered |
 | **v0.9.0** | Formatting & CLI — `formatter.py` complete with `PluralRule`, CLI/REPL                         | ✅ Delivered |
 | **v0.10.0**| Reviewing architecture & models — architectural review, optional `api` extra                | ✅ Delivered |
-| **v0.11.0**| Format on disk — `.i18t` format 1.0.0 frozen and specified, JSON Schema, loaders on the new format | 🔵 In progress |
+| **v0.11.0**| Format on disk — `.i18t` format 1.0.0 frozen and specified, JSON Schema, loaders on the new format | ✅ Delivered |
 | **v0.12.0**| Message and Book on the stored structure — the objects read the keys of the file; package renamed `pyi18t_tools` | 🔵 Planned |
 | **v0.13.0**| Tree and procedures — `Corpus` and `Encyclopaedia` in one tree, fallback and checks on its paths | 🔵 Planned |
 | **v0.14.0**| CLI and backups — the CLI through `core.py`, compressed backups and reconstruction             | 🔵 Planned |
