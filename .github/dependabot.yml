@@ -24,6 +24,11 @@ updates:
       - "priority: low"
     commit-message:
       prefix: "chore"
+    # One pull request per run for the whole lockfile, instead of one per
+    # package.
+    groups:
+      uv-lockfile:
+        patterns: ["*"]
 
   # Development tools: the requirement files tox installs from, where
   # their versions are pinned. The uv ecosystem does not read them.
@@ -38,3 +43,7 @@ updates:
       - "priority: low"
     commit-message:
       prefix: "chore"
+    # One pull request per run for every requirement file.
+    groups:
+      tool-requirements:
+        patterns: ["*"]
