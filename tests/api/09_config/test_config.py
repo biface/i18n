@@ -1,9 +1,11 @@
 import os
+from unittest import mock
 
 import pytest
 
 # from conftest import conf_tests, tmp_module_repository
-from email_validator import EmailNotValidError
+from email_validator import EmailNotValidError, EmailUndeliverableError
+from email_validator import validate_email as real_validate_email
 
 from i18n_tools.config import Config
 from i18n_tools.patterns import Singleton
@@ -695,6 +697,41 @@ class TestConfigAuthors:
             config.add_author("Marie", "Curie", "marie.curie@DUPONT.org", "", ["fr"])
         assert config.remove_author("Marie.Curie@DUPONT.ORG")
         assert config.get_author("marie.curie@dupont.org") is None
+
+        config.save()
+
+    def test_author_email_needs_no_dns(self, tmp_module_repository):
+        # A domain that accepts no mail (no MX, A or AAAA record) must not
+        # matter: Config checks the syntax of an address, never its
+        # deliverability. The real validate_email is used, whatever the
+        # network fixtures chose, and any DNS check fails.
+        config = tmp_module_repository[4]
+        config.switch_to_application_config()
+        config.set(
+            ["application", "paths", "config"],
+            tmp_module_repository[2][0] + "/fsm_tools/locales/_i18n_tools",
+        )
+        config.set(["application", "paths", "settings"], "i18n-tools.yaml")
+        config.load()
+
+        def no_mail(domain, *args, **kwargs):
+            raise EmailUndeliverableError(f"{domain} does not accept email.")
+
+        with (
+            mock.patch("email_validator.validate_email", real_validate_email),
+            mock.patch(
+                "email_validator.deliverability.validate_email_deliverability",
+                no_mail,
+            ),
+        ):
+            config.add_author("Ada", "Lovelace", "Ada@Lovelace-NoMail.org", "", ["en"])
+            assert config.get_author("ada@lovelace-nomail.org")["email"] == (
+                "ada@lovelace-nomail.org"
+            )
+            assert config.remove_author("ADA@lovelace-nomail.ORG")
+            assert config.get_author("ada@lovelace-nomail.org") is None
+            with pytest.raises(ValueError):
+                config.get_author("ada@nomail")
 
         config.save()
 

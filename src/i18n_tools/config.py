@@ -501,7 +501,8 @@ class Config(metaclass=Singleton):
         :param first_name: First name of the author.
         :param last_name: Last name of the author.
         :param email: Email address of the author. Stored in normalized
-            form: domain and local part in lower case.
+            form: domain and local part in lower case. Only its syntax is
+            checked: no DNS request is made.
         :param url: URL for the author's profile.
         :param languages: List of languages for which the author provides translations.
         :raises email_validator.EmailNotValidError: if email is malformed
@@ -517,7 +518,9 @@ class Config(metaclass=Singleton):
             ) from e
 
         try:
-            normalized_email = validate_email(email).normalized.lower()
+            normalized_email = validate_email(
+                email, check_deliverability=False
+            ).normalized.lower()
             normalized_languages = validate_and_normalize_language_tags(languages)
         except Exception as e:
             raise e
@@ -556,7 +559,8 @@ class Config(metaclass=Singleton):
         Retrieve an author's details by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
-            An email address is normalized (lower case) before the lookup.
+            An email address is normalized (lower case) before the lookup;
+            only its syntax is checked, without a DNS request.
         :type index: str
         :return: The author's details, or None if not found.
         :rtype: ~ndict_tools.StrictNestedDictionary | None
@@ -590,7 +594,7 @@ class Config(metaclass=Singleton):
         # Validate the email format
         try:
             # Throws EmailNotValidError if invalid
-            email = validate_email(index).normalized.lower()
+            email = validate_email(index, check_deliverability=False).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 
@@ -607,7 +611,8 @@ class Config(metaclass=Singleton):
         Remove an author from the configuration by UUID or email.
 
         :param index: The index to search by, either a UUID or an email address.
-            An email address is normalized (lower case) before the lookup.
+            An email address is normalized (lower case) before the lookup;
+            only its syntax is checked, without a DNS request.
         :return: True if the author was successfully removed, False if not found.
         :raises ValueError: If the email format is invalid or the index is neither a UUID nor a valid email.
         :raises ModuleNotFoundError: if the ``api`` extra is not installed.
@@ -638,7 +643,7 @@ class Config(metaclass=Singleton):
         # Validate the email format
         try:
             # Throws EmailNotValidError if invalid
-            email = validate_email(index).normalized.lower()
+            email = validate_email(index, check_deliverability=False).normalized.lower()
         except EmailNotValidError as e:
             raise ValueError(f"Invalid email format: {e}")
 

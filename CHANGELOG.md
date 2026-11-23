@@ -205,6 +205,11 @@ API is frozen only at v0.20.0.
   is no longer found by `get_author()`/`remove_author()`, nor detected
   as a duplicate by `add_author()`, until it is corrected by hand.
   `email-validator>=2.0` is now required by the `[api]` extra. (#158)
+- `Config.add_author()`/`get_author()`/`remove_author()` check the
+  syntax of an address and make no DNS request: an address whose domain
+  accepts no mail is stored and found like any other. The deliverability
+  check of `email-validator`, on by default, made a configuration call
+  depend on the network. (#158)
 - `copy.copy()`, `copy.deepcopy()` and pickle of an `Author`, a
   `Translator` and a `Repository` holding them give equal objects of
   the same class. The two constructors take every field or none; a

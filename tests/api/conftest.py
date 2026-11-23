@@ -193,7 +193,7 @@ def mock_validate_api_url(url: str, timeout: int = 5) -> dict:
     )
 
 
-def mock_validate_email(email):
+def mock_validate_email(email, check_deliverability=None):
     """
     Simulates the validate_email function by validating email addresses and raising EmailNotValidError for invalid ones.
 
@@ -202,6 +202,8 @@ def mock_validate_email(email):
 
     Args:
         email (str): The email address to validate.
+        check_deliverability (bool | None): Accepted as the real function
+            accepts it; the mock never queries DNS.
 
     Returns:
         SimpleNamespace: An object exposing ``normalized``, as the real
