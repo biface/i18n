@@ -2,13 +2,19 @@ name: Mirror to GitLab
 
 on:
   push:
-    branches: ['**']   # all branches
-    tags: ['**']       # all tags (includes releases)
-  delete:              # also synchronise branch/tag deletions
+    branches:
+      - '**'               # all branches,
+      - '!dependabot/**'   # except those of Dependabot
+    tags: ['**']           # all tags (includes releases)
+  delete:                  # also synchronise branch/tag deletions
 
 jobs:
   mirror:
     name: Push mirror
+    # A run started by Dependabot has no access to the Actions secrets:
+    # GITLAB_MIRROR_TOKEN would be empty. This also covers `delete`,
+    # which has no branch filter.
+    if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -25,9 +31,15 @@ jobs:
           # Use refs/remotes/origin/* as source — GitHub Actions checkout only
           # creates local refs/heads/ for the current branch. All other branches
           # are only available as remote tracking refs.
+          # The negative refspecs keep the Dependabot branches off GitLab,
+          # whichever push starts the run. git documents a negative push
+          # refspec as naming the local ref, but matches it against the
+          # destination name: both forms are given.
           git push gitlab \
             --prune \
             "+refs/remotes/origin/*:refs/heads/*" \
+            "^refs/remotes/origin/dependabot/*" \
+            "^refs/heads/dependabot/*" \
             "+refs/tags/*:refs/tags/*"
         env:
           GITLAB_TOKEN: ${{ secrets.GITLAB_MIRROR_TOKEN }}
