@@ -1,2 +1,2 @@
 basedpyright==1.40.2
-typing_extensions>=4.4
+typing_extensions>=4.16.0
