@@ -39,18 +39,25 @@ Le projet suit une progression par valeur livrée. Chaque version est indépenda
 | **v0.7.0** | Couverture de tests & hygiène du dépôt — composants `.codecov.yml`, `coverage-gate`, templates issues/PR, migration CI Node.js 24. Pas de tag séparé — fusionné dans v0.8.0 (réagencement calendaire) | ✅ Livré     |
 | **v0.8.0** | Orchestration — point d'entrée `core.py`, résolution de repli `fallback.py`                      | ✅ Livré     |
 | **v0.9.0** | Formatage & CLI — `formatter.py` complet avec `PluralRule`, CLI/REPL                             | ✅ Livré |
-| **v0.10.0**| Revue d'architecture & des modèles — révision architecturale avant le gel v1.0.0                | 🔵 Planifié |
-| **v0.11.0**| Documentation complète — matériel de référence multilingue                                      | 🔵 Planifié |
-| **v1.0.0** | Gel & vérification — format `.i18t` gelé, API publique gelée, documentation Sphinx complète      | 🔵 Planifié |
-| **v1.x**   | Interopérabilité gettext — import/export `.po`/`.mo` via Babel                                  | 🔵 Horizon  |
-| **v2.x**   | Formats tiers — i18next et autres, hub de conversion central                                    | 🔵 Horizon  |
-| **v3.x**   | CLI complet, API stable, ports Rust/JavaScript                                                  | 🔵 Horizon  |
+| **v0.10.0**| Revue d'architecture & des modèles — révision architecturale, extra `api` optionnel        | ✅ Livré     |
+| **v0.11.0**| Format sur disque — format `.i18t` 1.0.0 gelé et spécifié, schéma JSON, loaders sur le nouveau format | ✅ Livré     |
+| **v0.12.0**| Message et Book sur la structure stockée — les objets lisent les clés du fichier ; paquet renommé `pyi18t_tools` | 🔵 Planifié |
+| **v0.13.0**| Arbre et procédures — `Corpus` et `Encyclopaedia` dans un seul arbre, repli et contrôles sur ses chemins | 🔵 Planifié |
+| **v0.14.0**| CLI et sauvegardes — la CLI passe par `core.py`, sauvegardes compressées et reconstruction  | 🔵 Planifié |
+| **v0.15.0**| Intégrité et audit — audit avant complétion, contrôles répartis entre les niveaux             | 🔵 Planifié |
+| **v0.16.0**| Configuration, dépôts et validation externe — plusieurs dépôts, contrôles en couches          | 🔵 Planifié |
+| **v0.17.0**| Documentation complète — concepts, guides, référence, projet                                  | 🔵 Planifié |
+| **v0.18.0**| Intégration de bout en bout — suite d'intégration, seuil de couverture bloquant              | 🔵 Planifié |
+| **v0.19.0**| Version candidate — revue de l'API et du format, documentation versionnée                   | 🔵 Planifié |
+| **v0.20.0**| Première étape stable — API publique gelée, base des ports Rust, Go et TypeScript           | 🔵 Planifié |
+| **v0.21.0 – v0.30.0** | Interopérabilité gettext — import/export `.po`/`.pot`/`.mo` via Babel, aller-retour | 🔵 Horizon  |
+| **v0.31.0 – v0.40.0** | Interopérabilité i18next — import/export, gettext ↔ i18next par le modèle          | 🔵 Horizon  |
 
 ---
 
 ### Fonctionnalités
 
-| Fonctionnalité                              | v0.2.x    | v0.8.0 | v0.9.0 | v1.0.0 | v1.x | v2.x |
+| Fonctionnalité                              | v0.2.x    | v0.8.0 | v0.9.0 | v0.20.0 | v0.21–v0.30 | v0.31–v0.40 |
 |---------------------------------------------|-----------|--------|--------|--------|------|------|
 | Format `.i18t` natif (JSON/YAML)            | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
 | Identifiants indépendants de la langue      | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
@@ -89,7 +96,7 @@ pip install pyi18t-tools[api]
 
 Appeler une de ces méthodes sans l'extra installé lève une erreur
 `ModuleNotFoundError` explicite, nommant le paquet manquant et cette
-commande d'installation, plutôt qu'un échec d'import brut (DD-41).
+commande d'installation, plutôt qu'un échec d'import brut.
 
 ---
 

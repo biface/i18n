@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# pre-push - run the pre-push gate before anything reaches the remote
+# ==============================================================================
+#
+# Installed by `tox -e hooks` (git config core.hooksPath .githooks).
+#
+# Runs `uvx --with tox-uv tox -e pre-push` and aborts the push if it fails.
+# The gate checks the working tree, so the hook first makes sure the working
+# tree is what is being pushed:
+#   - tracked files modified or staged but not committed: push refused;
+#   - a pushed ref that is not HEAD (git push origin other-branch): refused,
+#     the gate would test another commit;
+#   - untracked files: warning (they may take part in the run).
+# A push that only deletes remote refs runs nothing.
+#
+# Bypass for one push: git push --no-verify
+#
+# ==============================================================================
+
+set -euo pipefail
+
+readonly RED='\033[0;31m'
+readonly YELLOW='\033[1;33m'
+readonly GREEN='\033[0;32m'
+readonly NC='\033[0m'
+
+error()   { echo -e "${RED}[pre-push] error:${NC} $*" >&2; }
+warning() { echo -e "${YELLOW}[pre-push] warning:${NC} $*" >&2; }
+info()    { echo -e "${GREEN}[pre-push]${NC} $*" >&2; }
+
+main() {
+    local remote="${1:-remote}"
+    local head
+    head="$(git rev-parse HEAD)"
+
+    # git passes one line per pushed ref: <local ref> <local sha> <remote ref> <remote sha>
+    local pushing=false
+    local local_ref local_sha remote_ref _remote_sha
+    while read -r local_ref local_sha remote_ref _remote_sha; do
+        if [[ "${local_sha}" =~ ^0+$ ]]; then
+            continue    # deletion of ${remote_ref}
+        fi
+        pushing=true
+        if [[ "${local_sha}" != "${head}" ]]; then
+            error "${local_ref} -> ${remote_ref} is not HEAD: the gate would test another commit"
+            echo "    check out ${local_ref} and push from there (or git push --no-verify)" >&2
+            return 1
+        fi
+    done
+
+    if [[ "${pushing}" == false ]]; then
+        return 0
+    fi
+
+    cd "$(git rev-parse --show-toplevel)" || return 1
+
+    if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+        error "uncommitted changes to tracked files: the gate would not test what is pushed"
+        git status --short --untracked-files=no >&2
+        echo "    commit or stash them, then push again (or git push --no-verify)" >&2
+        return 1
+    fi
+    if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+        warning "untracked files present; they may take part in the run:"
+        git status --short --untracked-files=normal >&2
+    fi
+
+    if ! command -v uvx > /dev/null 2>&1; then
+        error "uvx not found on PATH: install uv (https://docs.astral.sh/uv/)"
+        return 1
+    fi
+
+    info "running the pre-push gate before pushing to ${remote}"
+    if ! uvx --with tox-uv tox -e pre-push; then
+        error "the pre-push gate failed: push aborted (git push --no-verify to bypass)"
+        return 1
+    fi
+    info "gate passed"
+}
+
+main "$@"

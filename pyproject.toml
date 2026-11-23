@@ -1,21 +1,17 @@
 # =============================================================================
 # pyproject.toml — i18n-tools
 # =============================================================================
-# Single configuration file for packaging, toolchain, and test orchestration.
-# Build system, project metadata, runtime dependencies, optional extras, and
-# development dependency groups (PEP 735, managed by uv).
+# Single configuration file for packaging, tool configuration and test
+# orchestration: build system, project metadata, runtime dependencies,
+# optional extras, and the configuration of isort, basedpyright, bandit,
+# pytest, coverage and tox (tox.ini removed, 2026-08-25). flake8 does not
+# read pyproject.toml: its flags are passed in [tool.tox.env.flake8].
 #
-# Tool configuration (flake8, isort, basedpyright, bandit, pytest, coverage,
-# tox) is fully consolidated here — tox.ini removed (unification, 2026-08-25).
-# flake8's [tool.flake8] section below is inert without the Flake8-pyproject
-# plugin (not a dependency here, by choice — see the [tool.tox.env.flake8]
-# comment): flake8's real, effective config is passed as explicit CLI flags
-# in that env's `commands`, the same pattern already used for bandit's
-# `-c pyproject.toml` and matching the approach validated on django-clade.
-#
-# Dependency groups:
-#   uv sync --group dev    — full development toolchain (tox, quality, tests)
-#   uv sync --group docs   — Sphinx documentation build only
+# Development tooling is installed by tox, from
+# .tox-config/requirements/*.txt (the only place its versions are pinned).
+# The project environment holds the package and its runtime dependencies:
+#   uv sync --extra api                  — project environment, with [api]
+#   uvx --with tox-uv tox -e pre-push    — checks and tests, through tox
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -55,18 +51,23 @@ include = [
 # The importable package remains `i18n_tools` (src/i18n_tools/) —
 # `pip install pyi18t-tools` + `import i18n_tools`, unchanged.
 name = "pyi18t-tools"
-version = "0.10.0"
+version = "0.11.0rc1"
 authors = [
     { name = "biface" },
 ]
 description = "Toolbox to manage localized messages with json and gettext functions."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
     "License :: CeCILL-C Free Software License Agreement (CECILL-C)",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
     "Topic :: Utilities",
 ]
@@ -75,10 +76,10 @@ classifiers = [
 # Runtime dependencies — required by any consumer of the package
 # -----------------------------------------------------------------------------
 dependencies = [
-    "ndict-tools>=1.2.0",
+    "ndict-tools>=1.3.0",
     "babel",
     "langcodes",        # IETF tag normalisation — locale.py (DD-14)
-    "PyYAML",           # .yaml / .i18t file loading — loaders/utils.py
+    "PyYAML",           # .yaml / .i18t file loading — loaders/_utils.py
 ]
 
 # -----------------------------------------------------------------------------
@@ -105,62 +106,65 @@ i18n-tools = "i18n_tools.cli:main"
 # or writing a `.toml` settings file (`.yaml`/`.json` settings files need
 # no extra). Core .i18t usage (Message/Book/Corpus/Encyclopaedia/formatter)
 # never needs this (DD-41). Imports are lazy at the point of use — see
-# api.py/config.py/loaders/settings.py.
+# api.py/config.py/loaders/_settings.py.
 api = [
     "requests",         # HTTP calls — api.py (validate_api_url)
     "validators",       # URL syntax check — api.py (validate_url_format, DD-37)
-    "email-validator",  # email validation — config.py
-    "toml",             # .toml settings file — loaders/settings.py (#119)
+    "email-validator>=2.0",  # email validation — config.py (needs .normalized)
+    "toml",             # .toml settings file — loaders/_settings.py (#119)
 ]
 test = [
     "pytest",
     "pytest-cov",
+    "jsonschema>=4.18",  # JSON Schema of the .i18t format, checked on the fixtures
 ]
 
 # -----------------------------------------------------------------------------
-# Development dependency groups (PEP 735) — managed exclusively by uv
-# Not installed when a user does `pip install pyi18t-tools`
+# Development dependency groups (PEP 735) — informational
 #
-# Usage:
-#   uv sync --group dev    → installs tox, quality tools, test runners
-#   uv sync --group docs   → installs Sphinx and theme
-#   uv sync --group dev --group docs  → both at once
+# These lists name the tools the tox environments install, for a reader of
+# this file. They carry no version: the versions are pinned in
+# .tox-config/requirements/*.txt, the only files tox reads. uv installs no
+# group by default ([tool.uv] default-groups below), so `uv sync` keeps the
+# project environment to the package and its runtime dependencies.
 # -----------------------------------------------------------------------------
 [dependency-groups]
 dev = [
-    # tox orchestration — >=4.21 required for native [tool.tox] pyproject.toml support
-    "tox>=4.21",
+    "tox",
     "tox-uv",
-    # test runners
     "pytest",
     "pytest-cov",
-    # quality — static analysis
+    "jsonschema",
     "basedpyright",
-    # quality — linting and formatting
+    "typing_extensions",
     "flake8",
     "black",
     "isort",
-    # quality — security
     "bandit",
 ]
 docs = [
     "Sphinx",
     "furo",
+    "sphinxcontrib-mermaid",
 ]
+
+[tool.uv]
+default-groups = []
 
 # -----------------------------------------------------------------------------
 # Tool configuration
 # -----------------------------------------------------------------------------
 
 [tool.basedpyright]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 pythonPlatform = "Linux"
-stubPath = "stubs"
-reportMissingTypeStubs = false
+# A warning fails the run like an error. Set in the configuration rather
+# than as a --warnings flag so that every invocation (tox envs, CI,
+# editors) applies the same gate.
+failOnWarnings = true
 reportUnknownVariableType = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
-reportUnknownParameterType = false
 reportAny = false
 reportImportCycles = false
 
@@ -172,7 +176,9 @@ multi_line_output = 3
 include_trailing_comma = true
 
 [tool.bandit]
-# B202: tarfile traversal controlled via _non_traversal_path() in loaders.py
+# B202: loaders/loader.py's restore_module_from_archive() extracts only the
+# members returned by non_traversal_path() (loaders/_utils.py), which bandit
+# cannot trace.
 skips = ["B202"]
 # Only read when invoked with `bandit -c pyproject.toml` (see
 # [tool.tox.env.bandit] below) — bandit does not auto-discover pyproject.toml.
@@ -230,27 +236,48 @@ exclude_also = [
 #     above natively; both ultimately resolved to the same settings via
 #     profile = "black", confirmed via `isort --show-config`.
 #
-# Scripts shared, unmodified: .tox-config/scripts/test.sh (reads
-# versions.txt), .tox-config/scripts/coverage.sh (reads
-# coverage-version.txt) — same convention as django-clade/ndict-tools.
+# Python versions: .tox-config/versions.txt (versions and their markers) and
+# .tox-config/coverage-version.txt (the version that measures coverage) are
+# the only files to edit when a Python version is added, retired or moved.
+# The py3NN environments are not declared here: tox derives the interpreter
+# from the environment name (see ignore_base_python_conflict below).
+#
+# Scripts shared with django-clade/ndict-tools: .tox-config/scripts/test.sh
+# and .tox-config/scripts/coverage.sh, both run from pre-push with the tox
+# of that environment (requirements/tox.txt).
 #
 # Refs: DD-36, DD-39 (coverage-gate)
 # -----------------------------------------------------------------------------
 [tool.tox]
-requires = ["tox>=4.21", "tox-uv"]
+# 4.65: first release that splices another environment's commands into a
+# list ({ replace = "ref", ..., extend = true }), used below to declare
+# each quality command once.
+requires = ["tox>=4.65", "tox-uv"]
+# A bare `tox` runs the check environments only. Left out on purpose:
+# environments that rewrite files (black, isort, format), the aggregates
+# that re-run these checks (ci-quality, pre-push, local), and the
+# environments CI runs in their own contexts (integration and coverage
+# need the network, coverage-gate reads the data coverage writes).
 env_list = [
-    "py310", "py311", "py312", "py313", "py314",
-    "integration",
+    "versions",
     "basedpyright", "flake8", "black-check", "isort-check", "bandit",
-    "black", "isort", "format",
-    "ci-quality", "coverage", "coverage-gate",
-    "pre-push", "local",
+    "docs",
+    "test-core",
 ]
+# Any pyNNN environment (py311, py315, ...) takes the interpreter its name
+# gives, instead of the base_python inherited from env_run_base: tox would
+# otherwise refuse py311 on python3.12. This is what lets versions.txt add a
+# version without a section here.
+ignore_base_python_conflict = true
 
 # Base for all py3NN test environments. Quality/coverage/workflow
 # environments override deps/commands entirely.
 [tool.tox.env_run_base]
 runner = "uv-venv-runner"
+# The one Python every single-version environment runs on (test-core,
+# integration, quality tools, workflows), as CI's single-version jobs do.
+# A pyNNN environment takes the interpreter of its name instead.
+base_python = "python3.12"
 set_env = { PYTHONPATH = "{toxinidir}/src:{toxinidir}/tests" }
 uv_seed = true
 # The test suite exercises Config/Repository author & translator management
@@ -266,9 +293,10 @@ deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 # core/api split (DD-41) made "does this need [api]" a directory boundary,
 # and moving 00_api + the translator network tests under
 # tests/api/integration/ made "is this a real network call" one too.
+# No coverage measurement here: the coverage environment measures it, on
+# the version named in .tox-config/coverage-version.txt.
 commands = [
     ["pytest", "--import-mode=importlib",
-     "--cov=i18n_tools", "--cov-report=term-missing",
      "tests/core", "tests/api", "--ignore=tests/api/integration"],
 ]
 
@@ -283,27 +311,11 @@ commands = [
 
 [tool.tox.env.test-core]
 description = "Run tests/core with no [api] extra installed at all"
-base_python = "python3.12"
 extras = []
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
     ["pytest", "--import-mode=importlib", "tests/core"],
 ]
-
-[tool.tox.env.py310]
-base_python = "python3.10"
-
-[tool.tox.env.py311]
-base_python = "python3.11"
-
-[tool.tox.env.py312]
-base_python = "python3.12"
-
-[tool.tox.env.py313]
-base_python = "python3.13"
-
-[tool.tox.env.py314]
-base_python = "python3.14"
 
 # =============================================================================
 # Integration tests — real network calls (httpbingo.org)
@@ -312,7 +324,6 @@ base_python = "python3.14"
 
 [tool.tox.env.integration]
 description = "Integration tests requiring real network access"
-base_python = "python3.12"
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
@@ -327,12 +338,15 @@ commands = [
 
 [tool.tox.env.coverage]
 description = "Generate coverage report (full suite, excludes only timeout)"
-base_python = "python3.12"
+# The interpreter of the coverage run. coverage.sh and the CI coverage job
+# set COVERAGE_PYTHON from .tox-config/coverage-version.txt; without it
+# (a direct `tox -e coverage`), the single-version base Python.
+base_python = [{ replace = "env", name = "COVERAGE_PYTHON", default = "python3.12" }]
 pass_env = ["HTTPBIN_BASE_URL", "GITHUB_REF", "CI_COMMIT_REF_NAME", "CI_COMMIT_TAG"]
 deps = ["-r {toxinidir}/.tox-config/requirements/base.txt"]
 commands = [
     ["pytest", "--import-mode=importlib", "-m", "not timeout",
-     "--cov=i18n_tools", "--cov-append", "--cov-report=term-missing",
+     "--cov=i18n_tools", "--cov-report=term-missing",
      "--cov-report=xml:{toxinidir}/coverage/coverage.xml",
      "--cov-report=html:{toxinidir}/coverage/coverage_html",
      "tests/core", "tests/api"],
@@ -352,13 +366,28 @@ commands = [["coverage", "report", "--fail-under=0"]]
 
 # =============================================================================
 # Individual quality tools
+#
+# Each quality command is declared here only. ci-quality, pre-push and
+# local splice these commands in by reference: change a flag here and every
+# aggregate follows. basedpyright is the exception: a referenced command
+# is resolved in the environment it comes from, so {env_python} would
+# point at .tox/basedpyright instead of the aggregate's own interpreter.
+# Its one-line command is repeated in each aggregate.
 # =============================================================================
+
+# Consistency of .tox-config/versions.txt, .tox-config/coverage-version.txt
+# and the classifiers of [project]: any error stops ci-quality, pre-push and
+# local before the first test; warnings are printed and do not stop them.
+[tool.tox.env.versions]
+description = "Check the Python version files against each other and the classifiers"
+skip_install = true
+deps = []
+commands = [["python", "{toxinidir}/.tox-config/scripts/versions.py", "check"]]
 
 [tool.tox.env.basedpyright]
 description = "Static type checking with basedpyright"
 deps = ["-r {toxinidir}/.tox-config/requirements/type-check.txt"]
-allowlist_externals = ["bash"]
-commands = [["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"]]
+commands = [["basedpyright", "--pythonpath", "{env_python}", "src"]]
 
 [tool.tox.env.flake8]
 description = "Lint the code with flake8"
@@ -376,7 +405,7 @@ commands = [
 [tool.tox.env."black-check"]
 description = "Check code formatting with black (no changes)"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
-commands = [["black", "--check", "--diff", "--target-version", "py310", "src", "tests"]]
+commands = [["black", "--check", "--diff", "src", "tests"]]
 
 [tool.tox.env."isort-check"]
 description = "Check import sorting with isort (no changes)"
@@ -390,13 +419,45 @@ allowlist_externals = ["bandit"]
 commands = [["bandit", "-c", "pyproject.toml", "-r", "src"]]
 
 # =============================================================================
+# Documentation — the same build as the GitHub Pages workflow
+# (docs-ghpages.yml runs this environment). -W turns warnings into errors;
+# -E rebuilds every page, so a warning in an unchanged page is not hidden
+# by the environment pickle of a previous build. Output in docs/build/
+# (git-ignored).
+# =============================================================================
+
+[tool.tox.env.docs]
+description = "Build the HTML documentation, warnings as errors"
+deps = ["-r {toxinidir}/.tox-config/requirements/docs.txt"]
+commands = [
+    ["sphinx-build", "-b", "html", "-E", "-W",
+     "{toxinidir}/docs/source", "{toxinidir}/docs/build/html"],
+]
+
+# =============================================================================
+# Git hooks — versioned in .githooks/ (commit-msg: Conventional Commits check;
+# pre-push: runs the pre-push environment before git push). This environment
+# points the clone at them; `git config --unset core.hooksPath` undoes it.
+# =============================================================================
+
+[tool.tox.env.hooks]
+description = "Install the versioned Git hooks of .githooks/ in this clone"
+skip_install = true
+deps = []
+allowlist_externals = ["git"]
+commands = [
+    ["git", "config", "core.hooksPath", ".githooks"],
+    ["git", "config", "--get", "core.hooksPath"],
+]
+
+# =============================================================================
 # Auto-fix tools
 # =============================================================================
 
 [tool.tox.env.black]
 description = "Auto-format code with black"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
-commands = [["black", "--target-version", "py310", "src", "tests"]]
+commands = [["black", "src", "tests"]]
 
 [tool.tox.env.isort]
 description = "Auto-sort imports with isort"
@@ -407,7 +468,7 @@ commands = [["isort", "src", "tests"]]
 description = "Auto-format code (black then isort)"
 deps = ["-r {toxinidir}/.tox-config/requirements/format.txt"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
+    ["black", "src", "tests"],
     ["isort", "src", "tests"],
 ]
 
@@ -418,60 +479,58 @@ commands = [
 [tool.tox.env."ci-quality"]
 description = "All quality checks chained (used by the CI quality job)"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
-allowlist_externals = ["bash", "flake8", "black", "isort", "bandit"]
+allowlist_externals = ["flake8", "black", "isort", "bandit"]
 commands = [
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["black", "--check", "--diff", "--target-version", "py310", "src", "tests"],
-    ["isort", "--check-only", "--diff", "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "versions", key = "commands", extend = true },
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "black-check", key = "commands", extend = true },
+    { replace = "ref", env = "isort-check", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
 ]
 
 # =============================================================================
 # Local workflows
+#
+# pre-push is the last step before publishing and mirrors CI: it only
+# checks, and stops on the first finding without touching any file.
+# local applies what is fixed systematically (black, isort) and then runs
+# the checks; run it, or format, when pre-push reports a formatting issue.
 # =============================================================================
 
 [tool.tox.env."pre-push"]
-description = "Quality gate + unit tests before pushing"
-deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
+description = "Last gate before publishing: checks only, blocks on any finding (fix with local or format)"
+deps = [
+    "-r {toxinidir}/.tox-config/requirements/full.txt",
+    "-r {toxinidir}/.tox-config/requirements/docs.txt",
+    # the tox test.sh and coverage.sh run nested environments with
+    "-r {toxinidir}/.tox-config/requirements/tox.txt",
+]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
-    ["isort", "src", "tests"],
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "versions", key = "commands", extend = true },
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "black-check", key = "commands", extend = true },
+    { replace = "ref", env = "isort-check", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
+    { replace = "ref", env = "docs", key = "commands", extend = true },
     ["bash", "{toxinidir}/.tox-config/scripts/test.sh"],
     ["bash", "{toxinidir}/.tox-config/scripts/coverage.sh"],
 ]
 
 [tool.tox.env.local]
-description = "Full local workflow: auto-fix, all quality checks, full coverage"
+description = "Apply the systematic fixes (black, isort), then every quality check and full coverage"
 deps = ["-r {toxinidir}/.tox-config/requirements/full.txt"]
 allowlist_externals = ["bash"]
 pass_env = ["HOME", "USER"]
 commands = [
-    ["black", "--target-version", "py310", "src", "tests"],
-    ["isort", "src", "tests"],
-    ["bash", "-c", "basedpyright src; code=$?; [ $code -le 1 ]"],
-    ["flake8",
-     "--max-line-length=88",
-     "--extend-ignore=E203,W503,E501",
-     "--exclude=.tox,.git,__pycache__,build,dist,.eggs,*.egg",
-     "--per-file-ignores=tests/*:F401,F841,E711,E712,E731,F811,F541",
-     "src", "tests"],
-    ["bandit", "-c", "pyproject.toml", "-r", "src"],
+    { replace = "ref", env = "versions", key = "commands", extend = true },
+    { replace = "ref", env = "format", key = "commands", extend = true },
+    ["basedpyright", "--pythonpath", "{env_python}", "src"],
+    { replace = "ref", env = "flake8", key = "commands", extend = true },
+    { replace = "ref", env = "bandit", key = "commands", extend = true },
     ["pytest", "--import-mode=importlib", "-m", "not timeout",
      "--cov=i18n_tools", "--cov-report=term-missing",
      "--cov-report=xml:{toxinidir}/coverage/coverage.xml",

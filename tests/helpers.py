@@ -2,6 +2,7 @@ import os
 import shutil
 
 import yaml
+from ndict_tools import StrictNestedDictionary
 
 # Base URL for @pytest.mark.network tests hitting a go-httpbin-compatible
 # service. Defaults to the public httpbingo.org instance (used locally and
@@ -10,6 +11,19 @@ import yaml
 # container instead, for reliability independent of the public instance's
 # uptime — same codebase, same endpoint shapes, so no test logic changes.
 HTTPBIN_BASE_URL = os.environ.get("HTTPBIN_BASE_URL", "https://httpbingo.org")
+
+
+def as_plain(value):
+    """Return ``value`` with any StrictNestedDictionary turned into plain dicts.
+
+    Since ndict-tools 1.3.0, ``==`` between a nested dictionary and a plain
+    ``dict`` is False even when their content matches. Tests that check
+    content, not container class, compare ``as_plain(actual) == expected``.
+    Any other value is returned unchanged.
+    """
+    if isinstance(value, StrictNestedDictionary):
+        return value.to_dict()
+    return value
 
 
 def update_tmp_repository(key, root_dir, test_dir_conf):

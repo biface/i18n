@@ -40,18 +40,25 @@ The project follows a progression by deliverable value. Each version is independ
 | **v0.7.0** | Test coverage & repository hygiene — `.codecov.yml` components, `coverage-gate`, issue/PR templates, Node.js 24 CI migration. No separate tag — merged into v0.8.0 (calendar reagencement) | ✅ Delivered |
 | **v0.8.0** | Orchestration — `core.py` high-level entry point, `fallback.py` language chain resolution      | ✅ Delivered |
 | **v0.9.0** | Formatting & CLI — `formatter.py` complete with `PluralRule`, CLI/REPL                         | ✅ Delivered |
-| **v0.10.0**| Reviewing architecture & models — architectural review ahead of the v1.0.0 freeze             | 🔵 Planned  |
-| **v0.11.0**| Comprehensive documentation — reference material across languages                             | 🔵 Planned  |
-| **v1.0.0** | Freeze & verification — `.i18t` format frozen, public API frozen, full Sphinx docs published  | 🔵 Planned  |
-| **v1.x**   | gettext interoperability — `.po`/`.mo` import/export via Babel                                | 🔵 Horizon  |
-| **v2.x**   | Third-party formats — i18next and others, central conversion hub                              | 🔵 Horizon  |
-| **v3.x**   | Complete CLI, stable API, Rust/JavaScript ports                                               | 🔵 Horizon  |
+| **v0.10.0**| Reviewing architecture & models — architectural review, optional `api` extra                | ✅ Delivered |
+| **v0.11.0**| Format on disk — `.i18t` format 1.0.0 frozen and specified, JSON Schema, loaders on the new format | ✅ Delivered |
+| **v0.12.0**| Message and Book on the stored structure — the objects read the keys of the file; package renamed `pyi18t_tools` | 🔵 Planned |
+| **v0.13.0**| Tree and procedures — `Corpus` and `Encyclopaedia` in one tree, fallback and checks on its paths | 🔵 Planned |
+| **v0.14.0**| CLI and backups — the CLI through `core.py`, compressed backups and reconstruction             | 🔵 Planned |
+| **v0.15.0**| Integrity and audit — audit before completion, checks shared out between the levels           | 🔵 Planned |
+| **v0.16.0**| Configuration, repositories and external validation — several repositories, layered checks    | 🔵 Planned |
+| **v0.17.0**| Comprehensive documentation — concepts, guides, reference, project                            | 🔵 Planned |
+| **v0.18.0**| End-to-end integration — integration suite, blocking coverage threshold                      | 🔵 Planned |
+| **v0.19.0**| Release candidate — review of the API and the format, versioned documentation               | 🔵 Planned |
+| **v0.20.0**| First stable stage — public API frozen, base of the Rust, Go and TypeScript ports            | 🔵 Planned |
+| **v0.21.0 – v0.30.0** | gettext interoperability — `.po`/`.pot`/`.mo` import/export via Babel, round trip  | 🔵 Horizon |
+| **v0.31.0 – v0.40.0** | i18next interoperability — import/export, gettext ↔ i18next through the model      | 🔵 Horizon |
 
 ---
 
 ### Features
 
-| Feature                                     | v0.2.x    | v0.8.0 | v0.9.0 | v1.0.0 | v1.x | v2.x |
+| Feature                                     | v0.2.x    | v0.8.0 | v0.9.0 | v0.20.0 | v0.21–v0.30 | v0.31–v0.40 |
 |---------------------------------------------|-----------|--------|--------|--------|------|------|
 | Native `.i18t` format (JSON/YAML)           | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
 | Language-neutral identifiers                | ✅         | ✅      | ✅      | ✅      | ✅    | ✅    |
@@ -89,7 +96,7 @@ pip install pyi18t-tools[api]
 
 Calling one of these methods without the extra installed raises a clear
 `ModuleNotFoundError` naming the missing package and this install command,
-rather than a bare import failure (DD-41).
+rather than a bare import failure.
 
 ---
 

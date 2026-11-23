@@ -10,8 +10,12 @@ References
 
 import pytest
 
+from i18n_tools._finding import Finding
 from i18n_tools.exceptions import MessageNotFoundError
-from i18n_tools.models.corpus import Book, Corpus, Encyclopaedia, FallbackBook
+from i18n_tools.models.book import Book, FallbackBook
+from i18n_tools.models.corpus import Corpus
+from i18n_tools.models.encyclopaedia import Encyclopaedia
+from i18n_tools.models.message import Message
 
 # ---------------------------------------------------------------------------
 # TestCorpusInit
@@ -336,7 +340,7 @@ class TestFallbackBookGetMessage:
         msg = fb.get_message("1109")
         # Must come from en_us_book since partial_fr doesn't have it
         assert msg.id == "1109"
-        assert msg.metadata["language"] == "en-US"
+        assert msg is en_us_book.get("1109")
 
     def test_get_message_not_found_raises(self, fr_fr_book):
         fb = FallbackBook([fr_fr_book], "fr-FR")
@@ -347,7 +351,7 @@ class TestFallbackBookGetMessage:
         """id present in both books → first book wins."""
         fb = FallbackBook([fr_fr_book, en_us_book], "fr-FR")
         msg = fb.get_message("1100")
-        assert msg.metadata["language"] == "fr-FR"
+        assert msg is fr_fr_book.get("1100")
 
 
 # ---------------------------------------------------------------------------
@@ -424,3 +428,162 @@ class TestEncyclopaediaAddGet:
         enc.add_corpus("src/app", corpus1)
         enc.add_corpus("src/other", corpus2)
         assert len(enc) == 2
+
+
+# ---------------------------------------------------------------------------
+# TestCorpusCheck
+# ---------------------------------------------------------------------------
+
+
+def _message(language, matrix, complete=True):
+    """
+    Build the message "items" for ``language``, complete by default; the
+    language is that of the Book it goes in.
+    """
+    message = Message.from_matrix("items", matrix)
+    if complete:
+        message.mark_complete()
+    return language, message
+
+
+def _corpus(*messages):
+    """Build a Corpus with one Book per ``(language, message)`` pair."""
+    corpus = Corpus(domain="test")
+    for language, message in messages:
+        corpus.add_book(Book([message], domain="test", language=language))
+    return corpus
+
+
+class TestCorpusCheck:
+    """Corpus.check() — rule 2 of DD-43 between complete messages."""
+
+    def test_empty_corpus(self):
+        assert Corpus(domain="test").check() == []
+
+    def test_consistent_messages(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article", "aucun"], ["{n} articles", ""]]),
+            _message("en-US", [["{n} item", "none"], ["{n} items", ""]]),
+        )
+        assert corpus.check() == []
+
+    def test_structure_mismatch(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article"], ["{n} articles"]]),
+            _message("en-US", [["{n} item"], ["{n} items"], ["{count} lots"]]),
+        )
+        assert corpus.check() == [
+            Finding(
+                "error",
+                "items",
+                "structure differs across languages (declensions x segments): "
+                "fr-FR 1x2, en-US 1x3",
+            )
+        ]
+
+    def test_structure_mismatch_hides_token_mismatches(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{a}", "{b}"]]),
+            _message("en-US", [["{c}"]]),
+        )
+        findings = corpus.check()
+        assert len(findings) == 1
+        assert findings[0].message.startswith("structure differs")
+
+    def test_token_mismatch(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article"], ["{count} articles"]]),
+            _message("en-US", [["{n} item"], ["{n} items"]]),
+        )
+        assert corpus.check() == [
+            Finding(
+                "error",
+                "items",
+                "tokens of cell (variant 0, segment 1) differ across languages: "
+                "fr-FR ['count'], en-US ['n']",
+            )
+        ]
+
+    def test_format_specification_is_not_part_of_the_token(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n:d} article"], ["{n!s} articles"]]),
+            _message("en-US", [["{n} item"], ["{n:>3} items"]]),
+        )
+        assert corpus.check() == []
+
+    def test_doubled_braces_are_not_a_token(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{{n}} article"]]),
+            _message("en-US", [["{n} item"]]),
+        )
+        assert [f.message for f in corpus.check()] == [
+            "tokens of cell (variant 0, segment 0) differ across languages: "
+            "fr-FR [], en-US ['n']"
+        ]
+
+    def test_token_order_and_repetition_ignored(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{a} {b} {a}"]]),
+            _message("en-US", [["{b} {a}"]]),
+        )
+        assert corpus.check() == []
+
+    def test_absent_text_compared_through_column_fallback(self):
+        # fr-FR (variant 1, segment 0) is absent: publish() uses the
+        # principal "{n} article", whose tokens match "{n} thing".
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article", ""]]),
+            _message("en-US", [["{n} item", "{n} thing"]]),
+        )
+        assert corpus.check() == []
+
+    def test_whitespace_text_compared_through_column_fallback(self):
+        # fr-FR (variant 1, segment 0) is whitespace only, so absent: the
+        # principal "{n} article" is compared, not the blank text.
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article", " "]]),
+            _message("en-US", [["{n} item", "{n} thing"]]),
+        )
+        assert corpus.check() == []
+
+    def test_absent_text_mismatch_through_column_fallback(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article", ""]]),
+            _message("en-US", [["{n} item", "no {name}"]]),
+        )
+        findings = corpus.check()
+        assert [f.message for f in findings] == [
+            "tokens of cell (variant 1, segment 0) differ across languages: "
+            "fr-FR ['n'], en-US ['name']"
+        ]
+
+    def test_drafts_left_out(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article"], ["{n} articles"]]),
+            _message("en-US", [["{count} item"]], complete=False),
+        )
+        assert corpus.check() == []
+
+    def test_message_in_one_language_only(self):
+        corpus = _corpus(_message("fr-FR", [["{n} article"]]))
+        corpus.add_book(Book(domain="test", language="en-US"))
+        assert corpus.check() == []
+
+    def test_every_complete_language_listed(self):
+        corpus = _corpus(
+            _message("fr-FR", [["{n} article"]]),
+            _message("en-US", [["{n} item"]]),
+            _message("it-IT", [["{n} articolo"], ["{n} articoli"]]),
+        )
+        [finding] = corpus.check()
+        assert finding.message.endswith("fr-FR 1x1, en-US 1x1, it-IT 1x2")
+
+    def test_books_left_unchanged(self):
+        fr_pair = _message("fr-FR", [["{n} article"], ["{count} articles"]])
+        en_pair = _message("en-US", [["{n} item"], ["{n} items"]])
+        fr, en = fr_pair[1], en_pair[1]
+        before = [(m.matrix, m.metadata.to_dict()) for m in (fr, en)]
+        corpus = _corpus(fr_pair, en_pair)
+        assert corpus.check() != []
+        assert [(m.matrix, m.metadata.to_dict()) for m in (fr, en)] == before
+        assert corpus.get_real_book("fr-FR").get("items") is fr

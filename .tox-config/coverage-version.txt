@@ -1,9 +1,10 @@
-# Python version used to generate the coverage report
-# =====================================================
+# Python version that measures coverage
+# =====================================
 #
-# One active version (first non-commented line).
-# Must match a version available locally.
+# One tox environment, marked local and ci in versions.txt. Locally,
+# test.sh skips it and coverage.sh runs the coverage environment on it,
+# so its tests run once; in CI, the coverage job runs on it.
 #
-# =====================================================
+# =====================================
 
 py312

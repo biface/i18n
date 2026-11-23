@@ -1,0 +1,282 @@
+{
+    "metadata": {
+        "format_version": "1.0.0",
+        "version": "0.0.1",
+        "language": "en-US",
+        "domain": "reserved-key",
+        "gettext": {
+            "project_id_version": "sync-app 2.1",
+            "report_msgid_bugs_to": "i18n@example.org",
+            "pot_creation_date": "2026-11-20 20:22+0100",
+            "po_revision_date": "2026-11-20 20:22+0100",
+            "last_translator": "",
+            "language_team": "",
+            "header_comment": ""
+        },
+        "rules": {},
+        "count": {
+            "messages": 2,
+            "draft": 1,
+            "complete": 1,
+            "declensions": 3,
+            "alternatives": 1,
+            "singulars": 3,
+            "plurals": 4,
+            "segments": 7,
+            "filled": 6,
+            "empty": 1
+        },
+        "statistics": {
+            "words": 30,
+            "characters": 174,
+            "messages_with_alternatives": 1,
+            "messages_with_plurals": 2,
+            "messages_with_rules": 0,
+            "locations": 3,
+            "flags": {
+                "python-format": 2
+            },
+            "tokens": [
+                "n",
+                "name",
+                "percent",
+                "repository"
+            ]
+        }
+    },
+    "files.missing": {
+        "messages": {
+            "principal": [
+                "File {name} is missing.",
+                "{n} files are missing."
+            ],
+            "alternatives": [
+                [
+                    "File {name} is missing from {repository}.",
+                    ""
+                ]
+            ]
+        },
+        "metadata": {
+            "id": "files.missing",
+            "context": "sync report",
+            "locations": [
+                {
+                    "file": "src/app/sync.py",
+                    "line": 42,
+                    "declension": null,
+                    "segment": null
+                },
+                {
+                    "file": "src/app/sync.py",
+                    "line": 57,
+                    "declension": 1,
+                    "segment": 0
+                }
+            ],
+            "flags": [
+                "python-format"
+            ],
+            "user_comments": [],
+            "auto_comments": [],
+            "status": "complete",
+            "rules": {},
+            "count": {
+                "declensions": 2,
+                "alternatives": 1,
+                "singulars": 2,
+                "plurals": 2,
+                "segments": {
+                    "principal": 2,
+                    "alternatives": [
+                        2
+                    ]
+                },
+                "tokens": {
+                    "principal": [
+                        [
+                            "name"
+                        ],
+                        [
+                            "n"
+                        ]
+                    ],
+                    "alternatives": [
+                        [
+                            [
+                                "name",
+                                "repository"
+                            ],
+                            []
+                        ]
+                    ]
+                }
+            },
+            "fill_mask": {
+                "principal": [
+                    true,
+                    true
+                ],
+                "alternatives": [
+                    [
+                        true,
+                        false
+                    ]
+                ]
+            },
+            "statistics": {
+                "words": 14,
+                "characters": 86
+            }
+        }
+    },
+    "disk.alert": {
+        "messages": {
+            "principal": [
+                "Disk usage is normal.",
+                "Disk usage is high ({percent} %).",
+                "Disk is almost full ({percent} %)."
+            ],
+            "alternatives": []
+        },
+        "metadata": {
+            "id": "disk.alert",
+            "context": "",
+            "locations": [
+                {
+                    "file": "src/app/monitor.py",
+                    "line": 18,
+                    "declension": null,
+                    "segment": null
+                }
+            ],
+            "flags": [
+                "python-format"
+            ],
+            "user_comments": [],
+            "auto_comments": [],
+            "status": "draft",
+            "rules": {},
+            "count": {
+                "declensions": 1,
+                "alternatives": 0,
+                "singulars": 1,
+                "plurals": 2,
+                "segments": {
+                    "principal": 3,
+                    "alternatives": []
+                },
+                "tokens": {
+                    "principal": [
+                        [],
+                        [
+                            "percent"
+                        ],
+                        [
+                            "percent"
+                        ]
+                    ],
+                    "alternatives": []
+                }
+            },
+            "fill_mask": {
+                "principal": [
+                    true,
+                    true,
+                    true
+                ],
+                "alternatives": []
+            },
+            "statistics": {
+                "words": 16,
+                "characters": 88
+            }
+        }
+    },
+    ".pyi18t_tools": {
+        "messages": {
+            "principal": [
+                "File {name} is missing.",
+                "{n} files are missing."
+            ],
+            "alternatives": [
+                [
+                    "File {name} is missing from {repository}.",
+                    ""
+                ]
+            ]
+        },
+        "metadata": {
+            "id": ".pyi18t_tools",
+            "context": "sync report",
+            "locations": [
+                {
+                    "file": "src/app/sync.py",
+                    "line": 42,
+                    "declension": null,
+                    "segment": null
+                },
+                {
+                    "file": "src/app/sync.py",
+                    "line": 57,
+                    "declension": 1,
+                    "segment": 0
+                }
+            ],
+            "flags": [
+                "python-format"
+            ],
+            "user_comments": [],
+            "auto_comments": [],
+            "status": "complete",
+            "rules": {},
+            "count": {
+                "declensions": 2,
+                "alternatives": 1,
+                "singulars": 2,
+                "plurals": 2,
+                "segments": {
+                    "principal": 2,
+                    "alternatives": [
+                        2
+                    ]
+                },
+                "tokens": {
+                    "principal": [
+                        [
+                            "name"
+                        ],
+                        [
+                            "n"
+                        ]
+                    ],
+                    "alternatives": [
+                        [
+                            [
+                                "name",
+                                "repository"
+                            ],
+                            []
+                        ]
+                    ]
+                }
+            },
+            "fill_mask": {
+                "principal": [
+                    true,
+                    true
+                ],
+                "alternatives": [
+                    [
+                        true,
+                        false
+                    ]
+                ]
+            },
+            "statistics": {
+                "words": 14,
+                "characters": 86
+            }
+        }
+    }
+}

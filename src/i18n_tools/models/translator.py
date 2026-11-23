@@ -12,17 +12,70 @@ StrictNestedDictionary section.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, MutableMapping
 from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, TypedDict, cast, overload
 
 from ndict_tools import StrictNestedDictionary
 
+from .._checks import ensure_type
+from .._compat import override
+from .._json import JSONInput
 from ..api import validate_url_format
 
 if TYPE_CHECKING:
     from .repository import Repository
 
-_DEFAULT_SETUP = {"indent": 2}
+
+class TranslatorDetails(TypedDict):
+    """Identity of a translation service."""
+
+    name: str
+    status: str
+    url: str
+
+
+class TranslatorPricing(TypedDict):
+    """Pricing of a translation service; None when unknown or free."""
+
+    cost_per_translation: float | None
+    payment_plan: str | None
+
+
+class TranslatorAPI(TypedDict):
+    """Access to the service API; ``key_expiration`` is ``YYYY-MM-DD``."""
+
+    key: str
+    key_expiration: str | None
+    request_limit: int
+
+
+class TranslatorPerformance(TypedDict):
+    """Limits and measured quality of the service."""
+
+    max_text_size: int
+    priority: int
+    success_rate: float
+
+
+class TranslatorTechnical(TypedDict):
+    """Technical sections of a translation service."""
+
+    api: TranslatorAPI
+    performance: TranslatorPerformance
+
+
+class TranslatorPayload(TypedDict):
+    """
+    A translator as a plain mapping, as read from a settings file.
+
+    :meth:`Translator.validate_payload` checks a raw payload against this
+    shape.
+    """
+
+    details: TranslatorDetails
+    pricing: TranslatorPricing
+    technical: TranslatorTechnical
 
 
 class Translator(StrictNestedDictionary):
@@ -32,46 +85,100 @@ class Translator(StrictNestedDictionary):
     Subclasses StrictNestedDictionary, exactly like Repository and Author,
     so that nested-key access and serialization behave consistently with
     the rest of the model layer.
+
+    The three sections are given together, or none of them: ndict-tools
+    copies a translator by building an empty one with
+    ``Translator(default_setup=...)`` and filling its keys. An empty
+    translator is meant for that use only.
     """
+
+    @overload
+    def __init__(
+        self,
+        details: TranslatorDetails,
+        pricing: TranslatorPricing,
+        technical: TranslatorTechnical,
+        *,
+        default_setup: Mapping[str, object] | None = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self, *, default_setup: Mapping[str, object] | None = None
+    ) -> None: ...
 
     def __init__(
         self,
-        details: dict[str, Any],
-        pricing: dict[str, Any],
-        technical: dict[str, Any],
+        details: TranslatorDetails | None = None,
+        pricing: TranslatorPricing | None = None,
+        technical: TranslatorTechnical | None = None,
+        *,
+        default_setup: Mapping[str, object] | None = None,
     ) -> None:
+        if details is None and pricing is None and technical is None:
+            super().__init__(default_setup=default_setup)
+            return
+        if details is None or pricing is None or technical is None:
+            names = ("details", "pricing", "technical")
+            fields = (details, pricing, technical)
+            absent = [name for name, field in zip(names, fields) if field is None]
+            raise TypeError(
+                "Translator takes details, pricing and technical together, "
+                + f"or none of them; missing: {', '.join(absent)}"
+            )
         payload = {"details": details, "pricing": pricing, "technical": technical}
         self.validate_payload(payload)
-        super().__init__(default_setup=_DEFAULT_SETUP)
-        self["details"] = StrictNestedDictionary(details, default_setup=_DEFAULT_SETUP)
-        self["pricing"] = StrictNestedDictionary(pricing, default_setup=_DEFAULT_SETUP)
-        self["technical"] = StrictNestedDictionary(
-            technical, default_setup=_DEFAULT_SETUP
-        )
+        super().__init__(default_setup=default_setup)
+        self["details"] = StrictNestedDictionary(details)
+        self["pricing"] = StrictNestedDictionary(pricing)
+        self["technical"] = StrictNestedDictionary(technical)
 
     @classmethod
-    def from_payload(cls, data: dict[str, Any]) -> "Translator":
-        """Validate and build a Translator from a plain mapping."""
+    def from_payload(
+        cls, data: object, *, default_setup: Mapping[str, object] | None = None
+    ) -> "Translator":
+        """Validate and build a Translator from a plain mapping.
+
+        ``data`` is a raw payload, typically read from a settings file: any
+        value is accepted and checked by :meth:`validate_payload`.
+        """
         cls.validate_payload(data)
+        payload = cast(TranslatorPayload, data)
         return cls(
-            details=data["details"],
-            pricing=data["pricing"],
-            technical=data["technical"],
+            details=payload["details"],
+            pricing=payload["pricing"],
+            technical=payload["technical"],
+            default_setup=default_setup,
         )
 
+    @override
     @classmethod
-    def from_dict(cls, dictionary: dict[str, Any], **class_options) -> "Translator":
+    def from_dict(
+        cls, dictionary: Mapping[str, object], **class_options: object
+    ) -> "Translator":
         """
-        Override of _StackedDict.from_dict() — see Author.from_dict() for
-        the rationale (ndict-tools' Extending guide). Redirects to
-        from_payload() instead of the incompatible generic
-        cls(**class_options) reconstruction.
+        Build a translator from a plain mapping through :meth:`from_payload`.
+
+        Overrides _StackedDict.from_dict(), which would copy the keys
+        without checking them and build every section as a Translator.
+        Pickle goes through this method too, so an unpickled translator is
+        checked like a payload and keeps StrictNestedDictionary sections.
         """
-        return cls.from_payload(dictionary)
+        setup = class_options.get("default_setup")
+        ensure_type(
+            setup, (Mapping, type(None)), "default_setup must be a mapping or None"
+        )
+        # Checked just above: a mapping of settings, or None.
+        return cls.from_payload(
+            dictionary, default_setup=cast("Mapping[str, object] | None", setup)
+        )
 
     @staticmethod
-    def validate_payload(translator: dict[str, Any]) -> None:
+    def validate_payload(translator: object) -> None:
         """Validate the structure of a translator mapping.
+
+        ``translator`` is a raw payload, typically read from a settings file:
+        any value is accepted and checked here.
 
         Expected nested structure and minimal type checks:
           - details: { name: str, status: str, url: str }
@@ -177,7 +284,7 @@ class Translator(StrictNestedDictionary):
             )
         if isinstance(key_exp, str) and key_exp.strip():
             try:
-                datetime.strptime(key_exp, "%Y-%m-%d")
+                _ = datetime.strptime(key_exp, "%Y-%m-%d")
             except ValueError:
                 raise ValueError(
                     "Translator[['technical', 'api', 'key_expiration']] must be in 'YYYY-MM-DD' format"
@@ -218,16 +325,14 @@ class Translators:
     """Manager for the `translators` section of a single Repository."""
 
     @staticmethod
-    def add(repository: "Repository", name: str, translator: dict[str, Any]) -> None:
-        if not isinstance(name, str):
-            raise TypeError("Translator name must be a string")
-        if not isinstance(translator, dict):
-            raise TypeError("Translator content must be a dictionary")
+    def add(repository: "Repository", name: str, translator: TranslatorPayload) -> None:
+        ensure_type(name, str, "Translator name must be a string")
+        ensure_type(translator, dict, "Translator content must be a dictionary")
 
         translator_obj = Translator.from_payload(translator)
 
         if not isinstance(repository["translators"], StrictNestedDictionary):
-            repository["translators"] = repository._new_section({})
+            repository["translators"] = StrictNestedDictionary()
 
         if name in repository["translators"].keys():
             raise ValueError(f"Translator '{name}' already exists")
@@ -235,11 +340,11 @@ class Translators:
         repository[["translators", name]] = translator_obj
 
     @staticmethod
-    def update(repository: "Repository", name: str, updates: dict[str, Any]) -> None:
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
-        if not isinstance(updates, dict):
-            raise TypeError("updates must be a dictionary")
+    def update(
+        repository: "Repository", name: str, updates: dict[str, JSONInput]
+    ) -> None:
+        ensure_type(name, str, "name must be a string")
+        ensure_type(updates, dict, "updates must be a dictionary")
 
         translators = repository["translators"]
         if name not in translators.keys():
@@ -248,7 +353,9 @@ class Translators:
         existing_translator = translators[name]
 
         def validate_and_apply(
-            target: dict[str, Any], patch: dict[str, Any], path: str = ""
+            target: MutableMapping[str, object],
+            patch: Mapping[str, JSONInput],
+            path: str = "",
         ) -> None:
             for key, value in patch.items():
                 full_path = f"{path}.{key}" if path else key
@@ -256,16 +363,17 @@ class Translators:
                     raise KeyError(
                         f"Key '{full_path}' is not a valid field for translator"
                     )
-                if isinstance(target[key], dict):
+                current = target[key]
+                if isinstance(current, dict):
                     if not isinstance(value, dict):
                         raise TypeError(
                             f"Type mismatch for '{full_path}': expected dict, got {type(value)}"
                         )
-                    validate_and_apply(target[key], value, full_path)
+                    validate_and_apply(current, value, full_path)
                 else:
-                    if type(value) is not type(target[key]):
+                    if type(value) is not type(current):
                         raise TypeError(
-                            f"Type mismatch for '{full_path}': expected {type(target[key])}, got {type(value)}"
+                            f"Type mismatch for '{full_path}': expected {type(current)}, got {type(value)}"
                         )
                     target[key] = value
 
@@ -273,8 +381,7 @@ class Translators:
 
     @staticmethod
     def remove(repository: "Repository", name: str) -> None:
-        if not isinstance(name, str):
-            raise TypeError("name must be a string")
+        ensure_type(name, str, "name must be a string")
         translators = repository["translators"]
         if name not in translators.keys():
             raise ValueError(f"Translator '{name}' does not exist")
@@ -282,4 +389,4 @@ class Translators:
 
     @staticmethod
     def clean(repository: "Repository") -> None:
-        repository["translators"] = repository._new_section({})
+        repository["translators"] = StrictNestedDictionary()

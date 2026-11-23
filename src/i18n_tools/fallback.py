@@ -20,9 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import langcodes
-
-from .locale import normalize_language_tag
+from .locale import language_family, normalize_language_tag
 
 if TYPE_CHECKING:
     from .models.repository import Repository
@@ -77,7 +75,7 @@ def resolve(lang: str, repository: "Repository") -> list[str]:
     _add(normalized)
 
     # 2. IETF parent tag, if different from the requested tag itself
-    parent = langcodes.Language.get(normalized).language
+    parent = language_family(normalized)
     parent_tag = normalize_language_tag(parent) if parent else None
     if parent_tag and parent_tag != normalized:
         _add(parent_tag)

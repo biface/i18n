@@ -32,6 +32,8 @@ Key Responsibilities:
       module/domain), by repeating the Book-level operation across
       ``repository.source`` and every language declared in
       ``repository.hierarchy``.
+    - Check a module/domain across its configured languages
+      (``inspect_corpus()``): each file, then the corpus they form.
     - Translate a ``Repository`` into the raw parameters
       ``sync.check_repository()`` already expects, so callers only ever
       deal with ``Repository`` objects at this layer.
@@ -39,33 +41,34 @@ Key Responsibilities:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import os
+import warnings
 
-from .loaders.handler import build_path
+from ._checks import ensure_type
+from ._finding import Finding
+from .exceptions import BookError, I18nToolsWarning
+from .loaders.loader import ROOT, build_path, inspect_book_file
 from .locale import get_all_languages, normalize_language_tag
-from .models.corpus import Book, Corpus
+from .models.book import Book
+from .models.corpus import Corpus
+from .models.repository import Repository
 from .sync import check_repository
 
-if TYPE_CHECKING:
-    from ndict_tools import StrictNestedDictionary
 
-
-def _book_directory(
-    repository: "StrictNestedDictionary", module: str, lang: str
-) -> str:
+def _book_directory(repository: "Repository", module: str, lang: str) -> str:
     """
     Resolve the on-disk directory holding a Book's translation file.
 
     Reuses the same building blocks (``build_path`` and the
     ``I18N_TOOLS_LOCALE``/``I18N_TOOLS_MESSAGES`` constants) already used
-    internally by ``loaders.handler.build_translation_lang_files`` for the
+    internally by the handler layer's ``build_translation_lang_files`` for the
     gettext-oriented (po/pot) paths — this helper only needs the
     directory itself, since ``Book.load()``/``Book.save()`` append their
     own filename.
 
     :param repository: Repository whose ``paths.repository`` root anchors
         the layout.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param lang: Language tag for the Book (e.g. ``"fr-CH"``).
@@ -85,9 +88,7 @@ def _book_directory(
     )
 
 
-def load_book(
-    repository: "StrictNestedDictionary", module: str, domain: str, lang: str
-) -> Book:
+def load_book(repository: "Repository", module: str, domain: str, lang: str) -> Book:
     """
     Load a Book for a given module/domain/language from the repository.
 
@@ -96,7 +97,7 @@ def load_book(
     file read to ``Book.load()``.
 
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param domain: Translation domain name.
@@ -116,7 +117,7 @@ def load_book(
     return book
 
 
-def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> None:
+def save_book(book: Book, repository: "Repository", module: str) -> None:
     """
     Save a Book back to its module's location in the repository.
 
@@ -131,17 +132,22 @@ def save_book(book: Book, repository: "StrictNestedDictionary", module: str) -> 
     :param book: The Book to persist.
     :type book: Book
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier under which to save this Book.
     :type module: str
+    :raises BookError: If the Book has no language set — a Book may be
+        built without deciding between a parent tag and a regional variant,
+        but its target directory depends on that choice.
     :raises IOError: If the module/language directory does not exist —
         typically because the repository has not been synchronized yet.
     """
+    if book.language is None:
+        raise BookError(f"Cannot save Book '{book.domain}': no language set")
     path_directory = _book_directory(repository, module, book.language)
     book.save(path_directory)
 
 
-def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
+def _corpus_languages(repository: "Repository") -> set[str]:
     """
     Compute the full set of languages a Corpus for this repository should
     hold — ``repository.source`` plus every language declared in
@@ -153,7 +159,7 @@ def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
     ``locale.get_all_languages()`` for exactly this reason.
 
     :param repository: Repository declaring ``source``/``hierarchy``.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :return: Set of language tags.
     :rtype: set[str]
     """
@@ -163,9 +169,7 @@ def _corpus_languages(repository: "StrictNestedDictionary") -> set[str]:
     return languages
 
 
-def load_corpus(
-    repository: "StrictNestedDictionary", module: str, domain: str
-) -> Corpus:
+def load_corpus(repository: "Repository", module: str, domain: str) -> Corpus:
     """
     Load a full Corpus — every configured language — for a module/domain.
 
@@ -183,7 +187,7 @@ def load_corpus(
     Corpus-level loading is a separate, later decision.
 
     :param repository: Repository providing paths and declared languages.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier (e.g. ``"src/app"``).
     :type module: str
     :param domain: Translation domain name.
@@ -202,9 +206,79 @@ def load_corpus(
     return corpus
 
 
-def save_corpus(
-    corpus: Corpus, repository: "StrictNestedDictionary", module: str
-) -> None:
+def inspect_corpus(repository: "Repository", module: str, domain: str) -> list[Finding]:
+    """
+    Check every configured language of a module/domain, then the corpus
+    they form, and list what is wrong.
+
+    For each language of ``repository.source`` and ``repository.hierarchy``,
+    in alphabetical order, the ``.i18t`` file is checked by
+    ``loader.inspect_book_file()`` against its language and the domain;
+    its findings carry the language. A missing directory or file is an
+    error finding of that language. A file without error is loaded into
+    the corpus, without the warnings the inspection has already listed.
+    The findings of ``Corpus.check()`` on the loaded books follow; they
+    carry no language, since each names the languages it involves.
+
+    Nothing is raised for the content and the files are not modified.
+    Unlike ``load_corpus()``, a defective file does not stop the check:
+    it is only left out of the corpus comparison.
+
+    :param repository: Repository providing paths and declared languages.
+    :type repository: Repository
+    :param module: Module identifier (e.g. ``"src/app"``).
+    :type module: str
+    :param domain: Translation domain name.
+    :type domain: str
+    :return: The findings, by language, then those of the corpus; empty
+        if nothing is wrong.
+    :rtype: list[Finding]
+    :raises TypeError: If ``repository`` is not a Repository, or
+        ``module`` or ``domain`` is not a string.
+    """
+    ensure_type(
+        repository,
+        Repository,
+        f"inspect_corpus() repository must be a Repository, got {type(repository)}",
+    )
+    ensure_type(
+        module, str, f"inspect_corpus() module must be a string, got {type(module)}"
+    )
+    ensure_type(
+        domain, str, f"inspect_corpus() domain must be a string, got {type(domain)}"
+    )
+    findings: list[Finding] = []
+    corpus = Corpus(domain=domain)
+    for lang in sorted(_corpus_languages(repository)):
+        language = normalize_language_tag(lang)
+        try:
+            directory = _book_directory(repository, module, language)
+        except OSError as e:
+            findings.append(Finding("error", ROOT, str(e), language))
+            continue
+        book = Book(language=language, domain=domain)
+        file_path = os.path.join(directory, book.filename)
+        if not os.path.isfile(file_path):
+            findings.append(
+                Finding("error", ROOT, f"file not found: {file_path}", language)
+            )
+            continue
+        file_findings = [
+            Finding(finding.severity, finding.where, finding.message, language)
+            for finding in inspect_book_file(file_path, language, domain)
+        ]
+        findings.extend(file_findings)
+        if any(finding.severity == "error" for finding in file_findings):
+            continue
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", I18nToolsWarning)
+            book.load(directory)
+        corpus.add_book(book)
+    findings.extend(corpus.check())
+    return findings
+
+
+def save_corpus(corpus: Corpus, repository: "Repository", module: str) -> None:
     """
     Save every Book currently registered in a Corpus back to disk.
 
@@ -218,7 +292,7 @@ def save_corpus(
     :param corpus: The Corpus whose Books should be persisted.
     :type corpus: Corpus
     :param repository: Repository providing the ``paths.repository`` root.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     :param module: Module identifier under which to save these Books.
     :type module: str
     :raises IOError: If a module/language directory does not exist —
@@ -229,7 +303,7 @@ def save_corpus(
         save_book(book, repository, module)
 
 
-def synchronize(repository: "StrictNestedDictionary") -> None:
+def synchronize(repository: "Repository") -> None:
     """
     Ensure the repository's on-disk directory structure exists.
 
@@ -246,7 +320,7 @@ def synchronize(repository: "StrictNestedDictionary") -> None:
 
     :param repository: Repository declaring paths, domains, and
         languages.
-    :type repository: StrictNestedDictionary
+    :type repository: Repository
     """
     check_repository(
         repository[["paths", "repository"]],

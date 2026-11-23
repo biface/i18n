@@ -1,0 +1,92 @@
+metadata:
+  format_version: 1.0.0
+  version: 0.0.1
+  language: fr-FR
+  domain: rules
+  gettext:
+    project_id_version: ''
+    report_msgid_bugs_to: ''
+    pot_creation_date: ''
+    po_revision_date: ''
+    last_translator: ''
+    language_team: ''
+    header_comment: ''
+  rules:
+    opaque: true
+  count:
+    messages: 1
+    draft: 1
+    complete: 0
+    declensions: 2
+    alternatives: 1
+    singulars: 2
+    plurals: 4
+    segments: 6
+    filled: 5
+    empty: 1
+  statistics:
+    words: 20
+    characters: 128
+    messages_with_alternatives: 1
+    messages_with_plurals: 1
+    messages_with_rules: 1
+    locations: 0
+    flags: {}
+    tokens:
+    - excess
+    - limit
+    - used
+quota.used:
+  messages:
+    principal:
+    - Quota normal.
+    - Quota presque atteint ({used} sur {limit}).
+    - Quota dépassé.
+    alternatives:
+    - - Quota du dépôt normal.
+      - ' '
+      - Quota du dépôt dépassé de {excess}.
+  metadata:
+    id: quota.used
+    context: ''
+    locations: []
+    flags: []
+    user_comments: []
+    auto_comments: []
+    status: draft
+    rules:
+      opaque:
+        content:
+        - kept
+        - unchanged
+    count:
+      declensions: 2
+      alternatives: 1
+      singulars: 2
+      plurals: 4
+      segments:
+        principal: 3
+        alternatives:
+        - 3
+      tokens:
+        principal:
+        - []
+        - - limit
+          - used
+        - []
+        alternatives:
+        - - []
+          - []
+          - - excess
+    fill_mask:
+      principal:
+      - true
+      - true
+      - true
+      alternatives:
+      - - true
+        - false
+        - true
+    statistics:
+      words: 20
+      characters: 128

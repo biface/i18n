@@ -27,6 +27,8 @@ from i18n_tools.__static__ import (
 __all__ = [
     # Models
     "Message",
+    "Declension",
+    "ContentCounters",
     "Book",
     "Corpus",
     "FallbackBook",
@@ -47,7 +49,9 @@ __all__ = [
 from i18n_tools.config import Config  # noqa: E402
 from i18n_tools.models import (  # noqa: E402
     Book,
+    ContentCounters,
     Corpus,
+    Declension,
     Encyclopaedia,
     FallbackBook,
     Message,

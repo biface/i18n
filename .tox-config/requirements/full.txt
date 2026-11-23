@@ -1,7 +1,7 @@
-pytest>=8.0
-pytest-cov>=5.0
-black>=24.0
-isort>=5.13
-flake8>=7.0
-bandit>=1.7
-basedpyright>=1.1
+# Every quality tool and the test runners, for the aggregate environments
+# (ci-quality, pre-push, local). Versions are pinned in the included files.
+-r base.txt
+-r format.txt
+-r linter.txt
+-r security.txt
+-r type-check.txt
