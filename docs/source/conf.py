@@ -14,7 +14,7 @@ from pathlib import Path
 project = 'pyi18t-tools'
 copyright = '2025-2026, biface'
 author = 'biface'
-release = '0.11.0rc1'
+release = '0.11.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
